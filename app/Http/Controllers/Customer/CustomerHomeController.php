@@ -6,13 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\Product;
-use Illuminate\Http\Request;
 
 class CustomerHomeController extends Controller
 {
-    public function index(Request $request)
+    public function index(string $subdomain)
     {
-        $client = Client::where('subdomain', 'jaya')
+        $client = Client::where('subdomain', $subdomain)
             ->where('status', 'aktif')
             ->firstOrFail();
 
@@ -26,10 +25,13 @@ class CustomerHomeController extends Controller
             ->orderBy('nama')
             ->get();
 
-        return view('customer.home', compact(
-            'client',
-            'categories',
-            'products'
-        ));
+        return view()->file(
+            resource_path('views/customer/customer.home.blade.php'),
+            compact(
+                'client',
+                'categories',
+                'products'
+            )
+        );
     }
 }
