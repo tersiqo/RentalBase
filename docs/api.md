@@ -1,0 +1,771 @@
+# RentalBase — API Specification
+
+## 1. API Overview
+Laravel menjadi backend utama RentalBase.
+
+Base URL development:
+```text
+http://127.0.0.1:8000/api
+```
+
+## 2. Authentication
+```text
+POST /api/login
+POST /api/logout
+GET  /api/me
+```
+
+### Login
+```http
+POST /api/login
+```
+
+Request:
+```json
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+```
+
+Response:
+```json
+{
+  "message": "Login berhasil",
+  "user": {
+    "id": 1,
+    "name": "User",
+    "role": "customer",
+    "client_id": 1
+  }
+}
+```
+
+## 3. Client
+### Get Current Client
+```http
+GET /api/client
+```
+
+Response:
+```json
+{
+  "id": 1,
+  "nama_usaha": "Jaya Equipment",
+  "deskripsi": "Penyedia rental alat camping di Malang",
+  "logo": "/storage/clients/jaya-logo.png",
+  "subdomain": "jaya",
+  "warna_tema": "#000000",
+  "status": "active"
+}
+```
+
+## 4. Categories
+```http
+GET /api/categories
+GET /api/categories/{id}
+```
+
+Response example:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "nama": "Camping",
+      "deskripsi": "Peralatan camping"
+    }
+  ]
+}
+```
+
+## 5. Products
+```http
+GET /api/products
+GET /api/products/{id}
+```
+
+Query:
+```text
+category_id
+search
+page
+per_page
+```
+
+Example:
+```text
+GET /api/products?category_id=1&search=tenda
+```
+
+Response:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "nama": "Tenda Dome 4P",
+      "deskripsi": "Tenda untuk empat orang",
+      "harga_sewa": 50000,
+      "stok": 5,
+      "foto": "/storage/products/tenda.jpg",
+      "ketentuan_jaminan": "Wajib menyerahkan KTP asli saat pengambilan barang.",
+      "status": "active"
+    }
+  ]
+}
+```
+
+`ketentuan_jaminan` adalah teks informasi bebas yang diisi Admin Rental dan hanya ditampilkan ke customer; tidak ada validasi otomatis terhadap isinya.
+
+Data harus dibatasi berdasarkan client aktif.
+
+## 6. Availability
+```http
+GET /api/products/{id}/availability
+```
+
+Parameter:
+```text
+tanggal_mulai
+tanggal_selesai
+```
+
+Example:
+```text
+GET /api/products/1/availability?tanggal_mulai=2026-10-01&tanggal_selesai=2026-10-03
+```
+
+Response:
+```json
+{
+  "product_id": 1,
+  "tanggal_mulai": "2026-10-01",
+  "tanggal_selesai": "2026-10-03",
+  "stok_total": 5,
+  "stok_tersedia": 3,
+  "tersedia": true
+}
+```
+
+## 7. Orders
+### Create Order
+```http
+POST /api/orders
+```
+
+Sesuai alur booking & checkout pada proposal (6.2), request order menyertakan periode sewa, item, dan alamat pengiriman. Data jaminan identitas (KTP, foto wajah, alamat identitas) dikirim terpisah melalui endpoint Identity Guarantee (lihat bagian 8) karena melibatkan upload file, sebelum bukti pembayaran diunggah.
+
+Request:
+```json
+{
+  "tanggal_mulai": "2026-10-01",
+  "tanggal_selesai": "2026-10-03",
+  "alamat_pengiriman": "Jl. Contoh No. 10, Malang",
+  "items": [
+    {
+      "product_id": 1,
+      "jumlah": 2
+    }
+  ]
+}
+```
+
+Backend harus:
+1. Memastikan customer authenticated.
+2. Menentukan client berdasarkan konteks.
+3. Memastikan product berasal dari client yang sama.
+4. Memeriksa availability.
+5. Menghitung total.
+6. Membuat order beserta `alamat_pengiriman`.
+7. Membuat order items.
+
+Response:
+```json
+{
+  "message": "Order berhasil dibuat",
+  "data": {
+    "id": 10,
+    "kode_order": "ORD-000010",
+    "status": "menunggu_jaminan_identitas",
+    "total_harga": 150000
+  }
+}
+```
+
+### Customer Orders
+```http
+GET /api/orders
+GET /api/orders/{id}
+```
+
+Customer hanya dapat melihat order miliknya. Admin hanya dapat melihat order client-nya.
+
+## 8. Identity Guarantee
+Jaminan identitas bersifat administratif (bukan deposit uang), sesuai batasan proposal. Data ini dikumpulkan pada tahap checkout, setelah order dibuat dan sebelum bukti pembayaran diunggah.
+
+### Submit Identity Guarantee
+```http
+POST /api/orders/{id}/identity-guarantee
+```
+
+Request: `multipart/form-data`
+
+Fields:
+```text
+nama_lengkap
+nomor_identitas
+foto_identitas
+foto_wajah
+alamat
+```
+
+Backend harus:
+1. Memastikan order milik customer yang login.
+2. Memvalidasi tipe dan ukuran file foto.
+3. Menyimpan satu data jaminan identitas per order.
+
+Response:
+```json
+{
+  "message": "Jaminan identitas berhasil disimpan",
+  "data": {
+    "id": 5,
+    "order_id": 10
+  }
+}
+```
+
+### View Identity Guarantee
+```http
+GET /api/orders/{id}/identity-guarantee
+```
+
+Dapat diakses oleh customer pemilik order dan Admin Rental pada client yang sama.
+
+## 9. Payments
+### Upload Payment Proof
+```http
+POST /api/orders/{id}/payment
+```
+
+Request: `multipart/form-data`
+
+Fields:
+```text
+metode
+bukti_pembayaran
+```
+
+Backend memvalidasi ownership order, file type, file size, payment status, dan memastikan jaminan identitas order sudah tersimpan sebelum pembayaran dapat diunggah.
+
+### Admin Verify Payment
+```http
+PATCH /api/admin/payments/{id}/verify
+```
+
+Request:
+```json
+{
+  "status": "diverifikasi",
+  "catatan": "Pembayaran sesuai"
+}
+```
+
+## 10. Shipping
+### Create Shipment
+```http
+POST /api/admin/orders/{id}/shipment
+```
+
+Request:
+```json
+{
+  "metode_pengiriman": "kurir",
+  "nama_kurir": "JNE",
+  "nomor_resi": "ABC123456",
+  "tanggal_kirim": "2026-10-01"
+}
+```
+
+Alamat tujuan pengiriman diambil dari `orders.alamat_pengiriman` yang telah diisi customer saat checkout, sehingga tidak perlu diinput ulang oleh Admin Rental.
+
+### Update Shipment
+```http
+PATCH /api/admin/shipments/{id}
+```
+
+### Customer View Shipment
+```http
+GET /api/orders/{id}/shipment
+```
+
+### Customer Confirm Receipt
+```http
+POST /api/orders/{id}/confirm-receipt
+```
+
+Digunakan customer untuk mengonfirmasi bahwa barang sudah diterima. Backend mengisi `shipments.tanggal_diterima` dan memperbarui `status_pengiriman`.
+
+Response:
+```json
+{
+  "message": "Penerimaan barang berhasil dikonfirmasi",
+  "data": {
+    "order_id": 10,
+    "status_pengiriman": "diterima",
+    "tanggal_diterima": "2026-10-04"
+  }
+}
+```
+
+## 11. Returns
+```http
+POST /api/orders/{id}/return
+PATCH /api/admin/returns/{id}
+```
+
+Create request:
+```json
+{
+  "metode_pengembalian": "langsung",
+  "tanggal_pengembalian": "2026-10-03"
+}
+```
+
+## 12. Condition Checks
+### Create Condition Check (Admin)
+```http
+POST /api/admin/orders/{id}/condition-check
+```
+
+Fields:
+```text
+tipe
+catatan
+foto
+```
+
+Tipe:
+```text
+sebelum
+sesudah
+```
+
+### View Condition Checks
+```http
+GET /api/orders/{id}/condition-checks
+```
+
+Menampilkan seluruh catatan kondisi (sebelum dan sesudah) untuk satu order. Dapat diakses oleh customer pemilik order dan Admin Rental pada client yang sama.
+
+## 13. Damage Reports
+### Create Damage Report (Admin)
+```http
+POST /api/admin/orders/{id}/damage-report
+```
+
+### View Damage Reports
+```http
+GET /api/orders/{id}/damage-reports
+```
+
+Dapat diakses oleh customer pemilik order dan Admin Rental pada client yang sama.
+
+### Customer Response
+```http
+POST /api/damage-reports/{id}/response
+```
+
+Request:
+```json
+{
+  "tanggapan": "Saya menyetujui laporan kerusakan."
+}
+```
+
+## 14. Admin Equipment Management
+```text
+POST   /api/admin/products
+PUT    /api/admin/products/{id}
+DELETE /api/admin/products/{id}
+```
+
+Create Product:
+```json
+{
+  "category_id": 1,
+  "nama": "Tenda Dome 4P",
+  "deskripsi": "Tenda kapasitas 4 orang",
+  "harga_sewa": 50000,
+  "stok": 5,
+  "ketentuan_jaminan": "Wajib menyerahkan KTP asli saat pengambilan barang.",
+  "status": "active"
+}
+```
+
+Admin hanya dapat mengelola produk client sendiri.
+
+## 15. Admin Categories
+```text
+GET    /api/admin/categories
+POST   /api/admin/categories
+PUT    /api/admin/categories/{id}
+DELETE /api/admin/categories/{id}
+```
+
+## 16. Admin Orders
+```text
+GET /api/admin/orders
+GET /api/admin/orders/{id}
+PATCH /api/admin/orders/{id}
+```
+
+Data dibatasi berdasarkan `client_id`.
+
+## 17. Admin Profile & Branding
+Mendukung fitur "Profil dan Branding" pada proposal (5.3). Admin Rental hanya dapat mengubah data usaha miliknya sendiri, dalam batas konfigurasi yang disediakan sistem (nama usaha, deskripsi, logo, warna tema). Subdomain tidak dapat diubah melalui endpoint ini karena dikelola oleh Owner.
+
+```http
+GET   /api/admin/profile
+PATCH /api/admin/profile
+```
+
+Request `PATCH` (`multipart/form-data` jika menyertakan logo):
+```json
+{
+  "nama_usaha": "Jaya Equipment",
+  "deskripsi": "Penyedia rental alat camping terpercaya di Malang",
+  "warna_tema": "#1F3864"
+}
+```
+
+Response:
+```json
+{
+  "message": "Profil usaha berhasil diperbarui",
+  "data": {
+    "id": 1,
+    "nama_usaha": "Jaya Equipment",
+    "deskripsi": "Penyedia rental alat camping terpercaya di Malang",
+    "warna_tema": "#1F3864"
+  }
+}
+```
+
+## 18. Admin Dashboard & Reports
+Mendukung fitur "Dashboard Rental" dan "Laporan" pada proposal (5.3), khusus untuk data milik client yang sedang login.
+
+### Dashboard Summary
+```http
+GET /api/admin/dashboard
+```
+
+Response:
+```json
+{
+  "booking_baru": 4,
+  "pembayaran_menunggu_verifikasi": 2,
+  "perlu_dikirim": 1,
+  "perlu_dikonfirmasi_kembali": 3
+}
+```
+
+### Transaction Report
+```http
+GET /api/admin/reports
+```
+
+Query:
+```text
+tanggal_mulai
+tanggal_selesai
+```
+
+Response:
+```json
+{
+  "data": [
+    {
+      "order_id": 10,
+      "kode_order": "ORD-000010",
+      "total_harga": 150000,
+      "status": "selesai"
+    }
+  ],
+  "total_transaksi": 20,
+  "total_pendapatan": 3000000
+}
+```
+
+## 19. Owner Client Management
+```text
+GET   /api/owner/clients
+POST  /api/owner/clients
+GET   /api/owner/clients/{id}
+PUT   /api/owner/clients/{id}
+PATCH /api/owner/clients/{id}/status
+```
+
+Owner dapat mengelola seluruh client.
+
+### Create Client
+```http
+POST /api/owner/clients
+```
+
+Request:
+```json
+{
+  "nama_usaha": "Jaya Equipment",
+  "subdomain": "jaya",
+  "deskripsi": "Penyedia rental alat camping di Malang",
+  "warna_tema": "#1F3864"
+}
+```
+
+Response:
+```json
+{
+  "message": "Client berhasil dibuat",
+  "data": {
+    "id": 6,
+    "nama_usaha": "Jaya Equipment",
+    "subdomain": "jaya",
+    "status": "active"
+  }
+}
+```
+
+### Update Client Status
+```http
+PATCH /api/owner/clients/{id}/status
+```
+
+Request:
+```json
+{
+  "status": "nonaktif"
+}
+```
+
+## 20. Owner Admin Rental Account Management
+Mendukung fitur "Manajemen Akun Admin Rental" pada proposal (5.3). Owner membuat dan mengelola akun Admin Rental untuk client tertentu.
+
+```text
+GET    /api/owner/clients/{id}/admin-accounts
+POST   /api/owner/clients/{id}/admin-accounts
+PUT    /api/owner/admin-accounts/{id}
+PATCH  /api/owner/admin-accounts/{id}/status
+```
+
+### Create Admin Rental Account
+```http
+POST /api/owner/clients/{id}/admin-accounts
+```
+
+Request:
+```json
+{
+  "name": "Admin Jaya Equipment",
+  "email": "admin@jaya.com",
+  "password": "password123"
+}
+```
+
+Response:
+```json
+{
+  "message": "Akun Admin Rental berhasil dibuat",
+  "data": {
+    "id": 15,
+    "name": "Admin Jaya Equipment",
+    "email": "admin@jaya.com",
+    "role": "admin_rental",
+    "client_id": 6
+  }
+}
+```
+
+Backend harus memastikan akun yang dibuat otomatis terhubung ke `client_id` sesuai `{id}` pada URL.
+
+## 21. Owner License Management
+```text
+GET   /api/owner/licenses
+POST  /api/owner/licenses
+GET   /api/owner/licenses/{id}
+PUT   /api/owner/licenses/{id}
+PATCH /api/owner/licenses/{id}/status
+```
+
+### Create License
+```http
+POST /api/owner/licenses
+```
+
+Request:
+```json
+{
+  "client_id": 6,
+  "tanggal_mulai": "2026-01-01",
+  "tanggal_berakhir": "2027-01-01"
+}
+```
+
+Response:
+```json
+{
+  "message": "License berhasil dibuat",
+  "data": {
+    "id": 12,
+    "client_id": 6,
+    "status": "active"
+  }
+}
+```
+
+### Update License Status
+```http
+PATCH /api/owner/licenses/{id}/status
+```
+
+Request:
+```json
+{
+  "status": "suspended"
+}
+```
+
+## 22. Owner Monitoring Dashboard
+Mendukung fitur "Monitoring Platform" pada proposal (5.3). Menampilkan ringkasan seluruh client tanpa mengakses detail transaksi harian customer.
+
+```http
+GET /api/owner/dashboard
+```
+
+Response:
+```json
+{
+  "total_client": 5,
+  "client_aktif": 4,
+  "client_nonaktif": 1,
+  "license_akan_berakhir": 2,
+  "clients": [
+    {
+      "id": 1,
+      "nama_usaha": "Jaya Equipment",
+      "status": "active",
+      "license_status": "active"
+    }
+  ]
+}
+```
+
+## 23. Authorization Rules
+
+### Customer
+```text
+GET /api/client
+GET /api/categories
+GET /api/products
+GET /api/products/{id}
+GET /api/products/{id}/availability
+POST /api/orders
+GET /api/orders
+GET /api/orders/{id}
+POST /api/orders/{id}/identity-guarantee
+GET /api/orders/{id}/identity-guarantee
+POST /api/orders/{id}/payment
+GET /api/orders/{id}/shipment
+POST /api/orders/{id}/confirm-receipt
+POST /api/orders/{id}/return
+GET /api/orders/{id}/condition-checks
+GET /api/orders/{id}/damage-reports
+POST /api/damage-reports/{id}/response
+```
+
+Customer tidak dapat mengakses endpoint Admin atau Owner.
+
+### Admin Rental
+Mengakses endpoint `/admin/*` (termasuk `/admin/profile`, `/admin/dashboard`, dan `/admin/reports`) hanya untuk data client miliknya.
+
+### Owner
+Mengakses endpoint `/owner/*` (termasuk `/owner/clients/{id}/admin-accounts` dan `/owner/dashboard`) sesuai kebutuhan pengelolaan sistem. Owner tidak mengakses endpoint `/admin/*` transaksi harian.
+
+## 24. API Response Standard
+Success:
+```json
+{
+  "message": "Success",
+  "data": {}
+}
+```
+
+Error:
+```json
+{
+  "message": "Validation failed",
+  "errors": {
+    "field": [
+      "Error message"
+    ]
+  }
+}
+```
+
+HTTP status:
+```text
+200 OK
+201 Created
+400 Bad Request
+401 Unauthorized
+403 Forbidden
+404 Not Found
+422 Unprocessable Entity
+500 Internal Server Error
+```
+
+## 25. API Security
+Setiap endpoint harus memeriksa:
+1. Authentication.
+2. Authorization.
+3. Ownership resource.
+4. Client isolation.
+5. Input validation.
+
+Validasi akses harus dilakukan di backend, bukan hanya frontend.
+
+## 26. API Development Rule
+Prioritas awal:
+```text
+GET /api/client
+GET /api/categories
+GET /api/products
+GET /api/products/{id}
+GET /api/products/{id}/availability
+```
+
+Endpoint tersebut cukup untuk membangun Customer Home + Equipment Listing + Equipment Detail sebagai vertical slice pertama.
+
+Setelah itu:
+```text
+Orders
+↓
+Identity Guarantee
+↓
+Payments
+↓
+Shipping (termasuk confirm-receipt)
+↓
+Returns
+↓
+Condition & Damage
+↓
+Admin Profile & Branding
+↓
+Admin Dashboard & Reports
+↓
+Owner Admin Rental Account Management
+↓
+Owner Dashboard
+```
