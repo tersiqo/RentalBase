@@ -12,7 +12,7 @@ RentalBase adalah sistem informasi penyewaan peralatan berbasis web yang membant
 
 RentalBase menggunakan konsep **multi-client**, sehingga satu aplikasi dapat digunakan oleh beberapa penyedia rental dengan data masing-masing yang tetap terpisah berdasarkan `client_id`.
 
-Customer mengakses layanan penyewaan melalui domain atau subdomain milik masing-masing client. Contoh implementasi utama pada tahap proyek menggunakan skenario rental perlengkapan bayi (stroller, baby box, baby walker, car seat, high chair), namun struktur fitur inti tetap generik untuk jenis usaha rental peralatan lainnya.
+Halaman utama `/` merupakan landing page platform RentalBase. Customer mengakses layanan penyewaan melalui domain atau subdomain milik masing-masing client. Satu akun Customer bersifat global, sehingga dapat digunakan untuk menyewa di beberapa usaha rental (client) yang berbeda tanpa perlu mendaftar ulang. Customer dapat menjelajah katalog dan detail produk tanpa login; login baru diwajibkan saat customer menekan tombol "Sewa Alat" untuk mulai memesan. Contoh implementasi utama pada tahap proyek menggunakan skenario rental perlengkapan bayi (stroller, baby box, baby walker, car seat, high chair), namun struktur fitur inti tetap generik untuk jenis usaha rental peralatan lainnya.
 
 ### 1.3 Tujuan Produk
 1. Membantu penyedia rental mengelola peralatan.
@@ -27,12 +27,13 @@ Customer mengakses layanan penyewaan melalui domain atau subdomain milik masing-
 ## 2. Target Users
 
 ### 2.1 Customer
-- Mengakses website client.
+- Mengakses website client tanpa harus login (guest browsing).
 - Melihat katalog dan detail peralatan, termasuk ketentuan jaminan identitas yang ditampilkan sebagai informasi pada halaman produk.
 - Melihat ketersediaan.
 - Memilih periode penyewaan.
+- Login/registrasi hanya diwajibkan saat menekan tombol "Sewa Alat" untuk melanjutkan ke booking.
 - Booking dan checkout, termasuk mengisi alamat pengiriman.
-- Mengisi data jaminan identitas (KTP, foto wajah, alamat identitas).
+- Mengisi data jaminan identitas untuk setiap order (nama lengkap, nomor KTP, foto KTP, selfie wajah, dan alamat sesuai identitas).
 - Mengunggah bukti pembayaran.
 - Melihat status pembayaran, pesanan, dan pengiriman.
 - Mengonfirmasi penerimaan barang.
@@ -65,11 +66,13 @@ RentalBase adalah software untuk beberapa penyedia rental peralatan. Setiap peny
 
 Setiap client memiliki:
 - `client_id`
-- akun Admin Rental (dibuat oleh Owner)
+- akun Admin Rental (dibuat oleh Owner, terikat pada satu client)
 - domain/subdomain (dikelola oleh Owner)
 - lisensi
 - data produk sendiri
 - data transaksi sendiri
+
+Berbeda dengan akun Admin Rental, akun **Customer bersifat global/lintas-client**: satu akun Customer yang sama dapat digunakan untuk menyewa di beberapa client yang berbeda. Meskipun demikian, setiap order tetap tercatat pada satu client saja (`orders.client_id`), sehingga riwayat transaksi yang ditampilkan di satu subdomain hanya berisi transaksi pada client tersebut.
 
 Data antar-client tidak boleh tercampur.
 
@@ -84,7 +87,13 @@ Customer mengakses penyedia rental melalui domain/subdomain client, misalnya:
 jaya.rentalbase.com
 outdoor.rentalbase.com
 ```
-Customer tidak memilih client melalui marketplace, melainkan melalui landing page pemilihan usaha rental yang mengarahkan ke subdomain/katalog client yang dipilih.
+Halaman `/` digunakan sebagai landing page platform RentalBase dan bukan katalog client. Customer mengakses client melalui domain/subdomain yang diberikan kepada client, misalnya `jaya.rentalbase.com` atau `outdoor.rentalbase.com`.
+
+### 4.2.1 Guest Browsing & Login Gate
+Landing page, katalog, detail produk, dan pengecekan availability dapat diakses tanpa login (guest). Login/registrasi baru diwajibkan saat customer menekan tombol "Sewa Alat" untuk mulai booking. Setelah login berhasil, customer diarahkan kembali ke produk dan periode sewa yang sebelumnya dipilih (intended redirect), bukan ke halaman awal.
+
+### 4.2.2 Cakupan Akun Customer
+Akun Customer bersifat global: satu akun (satu email/password) dapat dipakai untuk login dan bertransaksi di subdomain client mana pun. Ini berbeda dengan akun Admin Rental yang terikat pada satu client. Meskipun akunnya global, tampilan riwayat pesanan pada satu subdomain hanya menampilkan transaksi milik client tersebut.
 
 ### 4.3 Produk
 Produk memiliki nama, deskripsi, kategori, harga sewa, stok, foto, dan status. Admin Rental dapat mengisi teks ketentuan jaminan identitas per produk (misalnya syarat dokumen yang perlu dibawa saat pengambilan barang). Teks ini murni informasi yang ditampilkan ke customer dan tidak memicu validasi atau logika otomatis apa pun pada sistem.
@@ -96,7 +105,7 @@ Ketersediaan ditentukan berdasarkan stok, jumlah yang sedang dipesan, dan period
 Satu booking hanya berasal dari satu client. Pada tahap checkout, customer mengisi jumlah unit, periode sewa, dan alamat pengiriman. Alamat pengiriman disimpan pada data order dan digunakan kembali oleh Admin Rental saat mencatat pengiriman.
 
 ### 4.6 Payment
-Pembayaran menggunakan transfer manual. Customer melakukan transfer dan mengunggah bukti pembayaran setelah jaminan identitas tersimpan. Admin Rental melakukan verifikasi. Tidak ada payment gateway pada tahap awal.
+Pembayaran menggunakan transfer manual. Customer melakukan transfer dan mengunggah bukti pembayaran setelah jaminan identitas berstatus `diverifikasi`. Admin Rental melakukan verifikasi. Tidak ada payment gateway pada tahap awal.
 
 ### 4.7 Identity Guarantee
 Tidak menggunakan deposit uang. Customer mengisi data identitas (nama lengkap, nomor identitas, foto identitas, foto wajah, alamat sesuai identitas) sebagai jaminan administratif pada tahap checkout, sebelum bukti pembayaran diunggah. Tidak ada verifikasi identitas eksternal pada tahap awal.
@@ -116,10 +125,10 @@ Admin Rental dapat mengubah nama usaha, deskripsi, logo, dan warna tema miliknya
 ## 5. Functional Requirements
 
 ### Customer
-- Register, login, logout, profile.
-- View categories, equipment, detail (termasuk ketentuan jaminan identitas), availability.
+- Register (akun global, satu kali daftar berlaku untuk semua client), login, logout, profile.
+- View categories, equipment, detail (termasuk ketentuan jaminan identitas), availability — dapat diakses tanpa login.
 - Select rental period.
-- Create/view booking dengan alamat pengiriman.
+- Login/registrasi (jika belum) saat menekan "Sewa Alat", lalu create/view booking dengan alamat pengiriman.
 - Submit jaminan identitas.
 - Checkout.
 - Upload payment proof.
@@ -205,17 +214,20 @@ Penambahan client tidak memerlukan database terpisah.
 10. Pembayaran transfer manual.
 11. Satu order hanya berasal dari satu client.
 12. Core layout dan struktur fitur dikendalikan RentalBase.
-13. Ketentuan jaminan identitas bersifat teks informasi, bukan aturan yang divalidasi otomatis oleh sistem.
+13. Ketentuan jaminan identitas pada produk bersifat teks informasi, bukan aturan yang divalidasi otomatis oleh sistem.
+14. Landing page platform, katalog client, detail produk, dan availability memiliki konteks akses publik sesuai halaman masing-masing; login customer diwajibkan mulai saat customer menekan "Sewa Alat".
+15. Akun Customer bersifat global (satu akun untuk semua client); akun Admin Rental tetap terikat pada satu client.
 
 ## 11. Success Criteria
-1. Customer dapat mengakses website client.
+1. Customer dapat mengakses website client dan menjelajah katalog tanpa login.
 2. Customer dapat melihat peralatan dan ketersediaannya.
-3. Customer dapat melakukan booking beserta alamat pengiriman.
-4. Customer dapat mengisi jaminan identitas dan mengunggah bukti pembayaran.
-5. Admin dapat memverifikasi pembayaran.
-6. Admin dapat mengelola peralatan, stok, dan profil/branding usahanya.
-7. Sistem mencatat pengiriman, konfirmasi penerimaan, dan pengembalian.
-8. Sistem mencatat kondisi dan kerusakan.
-9. Data antar-client terisolasi dengan `client_id`.
-10. Owner dapat mengelola client, akun Admin Rental, dan lisensi melalui dashboard monitoring ringkas.
-11. Fitur utama berjalan tanpa error pada skenario pengujian yang telah ditentukan (fungsional, performa, dan kompatibilitas).
+3. Customer diarahkan untuk login/registrasi saat menekan "Sewa Alat", lalu melakukan booking beserta alamat pengiriman.
+4. Satu akun Customer dapat digunakan untuk menyewa di lebih dari satu client tanpa mendaftar ulang, dengan riwayat pesanan tetap terpisah per client.
+5. Customer dapat mengisi jaminan identitas untuk setiap order, Admin Rental dapat meninjau jaminan identitas tersebut, dan Customer dapat mengunggah bukti pembayaran setelah jaminan identitas diverifikasi.
+6. Admin dapat memverifikasi pembayaran.
+7. Admin dapat mengelola peralatan, stok, dan profil/branding usahanya.
+8. Sistem mencatat pengiriman, konfirmasi penerimaan, dan pengembalian.
+9. Sistem mencatat kondisi dan kerusakan.
+10. Data antar-client terisolasi dengan `client_id`.
+11. Owner dapat mengelola client, akun Admin Rental, dan lisensi melalui dashboard monitoring ringkas.
+12. Fitur utama berjalan tanpa error pada skenario pengujian yang telah ditentukan (fungsional, performa, dan kompatibilitas).

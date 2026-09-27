@@ -10,10 +10,43 @@ http://127.0.0.1:8000/api
 
 ## 2. Authentication
 ```text
+POST /api/register
 POST /api/login
 POST /api/logout
 GET  /api/me
 ```
+
+Akun Customer bersifat **global/lintas-client**: satu akun dapat digunakan untuk menyewa di banyak usaha rental (client) yang berbeda. Registrasi dan login tidak terikat pada satu subdomain tertentu, meskipun form-nya tampil di dalam tampilan subdomain client yang sedang dikunjungi.
+
+### Register
+```http
+POST /api/register
+```
+
+Request:
+```json
+{
+  "name": "Budi Santoso",
+  "email": "budi@example.com",
+  "password": "password123",
+  "password_confirmation": "password123"
+}
+```
+
+Response:
+```json
+{
+  "message": "Registrasi berhasil",
+  "user": {
+    "id": 20,
+    "name": "Budi Santoso",
+    "role": "customer",
+    "client_id": null
+  }
+}
+```
+
+Akun customer dibuat dengan `client_id = NULL` karena tidak terikat pada satu client.
 
 ### Login
 ```http
@@ -36,7 +69,7 @@ Response:
     "id": 1,
     "name": "User",
     "role": "customer",
-    "client_id": 1
+    "client_id": null
   }
 }
 ```
@@ -47,6 +80,8 @@ Response:
 GET /api/client
 ```
 
+**Akses: publik (guest), tanpa login.**
+
 Response:
 ```json
 {
@@ -56,7 +91,7 @@ Response:
   "logo": "/storage/clients/jaya-logo.png",
   "subdomain": "jaya",
   "warna_tema": "#000000",
-  "status": "active"
+  "status": "aktif"
 }
 ```
 
@@ -65,6 +100,8 @@ Response:
 GET /api/categories
 GET /api/categories/{id}
 ```
+
+**Akses: publik (guest), tanpa login.**
 
 Response example:
 ```json
@@ -84,6 +121,8 @@ Response example:
 GET /api/products
 GET /api/products/{id}
 ```
+
+**Akses: publik (guest), tanpa login.** Customer dapat melihat katalog, detail produk, dan foto sepenuhnya sebelum diminta login.
 
 Query:
 ```text
@@ -110,7 +149,7 @@ Response:
       "stok": 5,
       "foto": "/storage/products/tenda.jpg",
       "ketentuan_jaminan": "Wajib menyerahkan KTP asli saat pengambilan barang.",
-      "status": "active"
+      "status": "aktif"
     }
   ]
 }
@@ -118,12 +157,14 @@ Response:
 
 `ketentuan_jaminan` adalah teks informasi bebas yang diisi Admin Rental dan hanya ditampilkan ke customer; tidak ada validasi otomatis terhadap isinya.
 
-Data harus dibatasi berdasarkan client aktif.
+Data harus dibatasi berdasarkan client aktif (dari subdomain), meskipun endpoint ini publik.
 
 ## 6. Availability
 ```http
 GET /api/products/{id}/availability
 ```
+
+**Akses: publik (guest), tanpa login.** Customer bisa cek ketersediaan sebelum login.
 
 Parameter:
 ```text
@@ -149,12 +190,14 @@ Response:
 ```
 
 ## 7. Orders
+**Titik mulai wajib login.** Saat customer menekan tombol "Sewa Alat" pada halaman detail produk, frontend memeriksa status login sebelum meneruskan ke form booking. Jika belum login, tampilkan modal login/daftar terlebih dahulu (gunakan pola *intended redirect* agar setelah login customer langsung kembali ke produk dan tanggal yang tadi dipilih, bukan ke halaman awal).
+
 ### Create Order
 ```http
 POST /api/orders
 ```
 
-Sesuai alur booking & checkout pada proposal (6.2), request order menyertakan periode sewa, item, dan alamat pengiriman. Data jaminan identitas (KTP, foto wajah, alamat identitas) dikirim terpisah melalui endpoint Identity Guarantee (lihat bagian 8) karena melibatkan upload file, sebelum bukti pembayaran diunggah.
+Sesuai alur booking & checkout pada proposal (6.2), request order menyertakan periode sewa, item, dan alamat pengiriman. Data jaminan identitas (KTP, nomor KTP, foto wajah, alamat sesuai identitas) dikirim terpisah melalui endpoint Identity Guarantee (lihat bagian 8) karena melibatkan upload file, sebelum bukti pembayaran diunggah.
 
 Request:
 ```json
@@ -173,11 +216,11 @@ Request:
 
 Backend harus:
 1. Memastikan customer authenticated.
-2. Menentukan client berdasarkan konteks.
+2. Menentukan client berdasarkan konteks subdomain.
 3. Memastikan product berasal dari client yang sama.
 4. Memeriksa availability.
 5. Menghitung total.
-6. Membuat order beserta `alamat_pengiriman`.
+6. Membuat order beserta `alamat_pengiriman` dan `client_id` sesuai subdomain saat itu.
 7. Membuat order items.
 
 Response:
@@ -187,7 +230,7 @@ Response:
   "data": {
     "id": 10,
     "kode_order": "ORD-000010",
-    "status": "menunggu_jaminan_identitas",
+    "status": "menunggu_konfirmasi",
     "total_harga": 150000
   }
 }
@@ -199,10 +242,68 @@ GET /api/orders
 GET /api/orders/{id}
 ```
 
-Customer hanya dapat melihat order miliknya. Admin hanya dapat melihat order client-nya.
+**Penting:** meskipun akun customer bersifat global (lintas-client), endpoint ini tetap dibatasi berdasarkan `client_id` dari subdomain yang sedang diakses. Artinya daftar order yang tampil adalah riwayat transaksi customer **pada usaha rental yang sedang dikunjungi saja**, bukan gabungan seluruh usaha rental yang pernah ia sewa. Ini untuk menjaga isolasi data antar-client dan menyamakan ekspektasi tampilan "riwayat saya" di tiap subdomain.
+
+Admin hanya dapat melihat order client-nya.
+
+### Order Status
+Status order yang digunakan:
+```text
+menunggu_konfirmasi
+menunggu_pembayaran
+pembayaran_terverifikasi
+diproses
+dikirim
+diterima
+dikembalikan
+selesai
+ditolak
+dibatalkan
+```
+
+Status yang aktif untuk perhitungan availability:
+```text
+menunggu_konfirmasi
+menunggu_pembayaran
+pembayaran_terverifikasi
+diproses
+dikirim
+diterima
+```
+
+Status yang tidak mengurangi availability:
+```text
+dikembalikan
+selesai
+ditolak
+dibatalkan
+```
+
+Alur umum status:
+```text
+menunggu_konfirmasi
+        ↓
+menunggu_pembayaran
+        ↓
+pembayaran_terverifikasi
+        ↓
+diproses
+        ↓
+dikirim
+        ↓
+diterima
+        ↓
+dikembalikan
+        ↓
+selesai
+```
+
+Cabang penolakan/pembatalan dapat terjadi sesuai kondisi bisnis.
 
 ## 8. Identity Guarantee
-Jaminan identitas bersifat administratif (bukan deposit uang), sesuai batasan proposal. Data ini dikumpulkan pada tahap checkout, setelah order dibuat dan sebelum bukti pembayaran diunggah.
+Jaminan identitas bersifat administratif (bukan deposit uang), sesuai batasan proposal. Data dikumpulkan pada tahap checkout setelah order dibuat dan sebelum bukti pembayaran diunggah.
+
+Setiap order wajib memiliki tepat satu data jaminan identitas. Data wajib terdiri dari nama lengkap, nomor KTP, foto KTP, selfie wajah, dan alamat sesuai identitas.
 
 ### Submit Identity Guarantee
 ```http
@@ -222,8 +323,11 @@ alamat
 
 Backend harus:
 1. Memastikan order milik customer yang login.
-2. Memvalidasi tipe dan ukuran file foto.
-3. Menyimpan satu data jaminan identitas per order.
+2. Memastikan order berasal dari client yang sedang diakses.
+3. Memvalidasi tipe dan ukuran file foto.
+4. Menyimpan satu data jaminan identitas per order.
+5. Memberikan status awal `menunggu`.
+6. Jika data sebelumnya berstatus `ditolak`, customer dapat mengirim ulang data untuk order yang sama.
 
 Response:
 ```json
@@ -231,7 +335,8 @@ Response:
   "message": "Jaminan identitas berhasil disimpan",
   "data": {
     "id": 5,
-    "order_id": 10
+    "order_id": 10,
+    "status": "menunggu"
   }
 }
 ```
@@ -242,6 +347,28 @@ GET /api/orders/{id}/identity-guarantee
 ```
 
 Dapat diakses oleh customer pemilik order dan Admin Rental pada client yang sama.
+
+### Admin Review Identity Guarantee
+```http
+PATCH /api/admin/identity-guarantees/{id}/verify
+```
+
+Request:
+```json
+{
+  "status": "diverifikasi",
+  "catatan": "Data identitas sesuai dan dapat diterima."
+}
+```
+
+Nilai status review:
+```text
+menunggu
+diverifikasi
+ditolak
+```
+
+Backend harus memastikan Admin Rental hanya dapat memeriksa jaminan identitas yang terkait dengan order milik client-nya. Jika status `ditolak`, customer dapat memperbaiki dan mengirim ulang data untuk order yang sama.
 
 ## 9. Payments
 ### Upload Payment Proof
@@ -257,7 +384,7 @@ metode
 bukti_pembayaran
 ```
 
-Backend memvalidasi ownership order, file type, file size, payment status, dan memastikan jaminan identitas order sudah tersimpan sebelum pembayaran dapat diunggah.
+Backend memvalidasi ownership order, file type, file size, payment status, dan memastikan jaminan identitas order sudah tersimpan dan berstatus `diverifikasi` sebelum pembayaran dapat diunggah.
 
 ### Admin Verify Payment
 ```http
@@ -293,6 +420,15 @@ Alamat tujuan pengiriman diambil dari `orders.alamat_pengiriman` yang telah diis
 ### Update Shipment
 ```http
 PATCH /api/admin/shipments/{id}
+```
+
+Status pengiriman:
+```text
+menunggu
+diproses
+dikirim
+diterima
+dibatalkan
 ```
 
 ### Customer View Shipment
@@ -333,6 +469,16 @@ Create request:
 }
 ```
 
+Status pengembalian:
+```text
+diajukan
+diproses
+dalam_pengembalian
+diterima
+selesai
+dibatalkan
+```
+
 ## 12. Condition Checks
 ### Create Condition Check (Admin)
 ```http
@@ -370,6 +516,24 @@ POST /api/admin/orders/{id}/damage-report
 GET /api/orders/{id}/damage-reports
 ```
 
+Status damage report:
+```text
+dilaporkan
+ditinjau
+ditindaklanjuti
+selesai
+ditolak
+```
+
+Status damage case:
+```text
+dibuka
+menunggu_tanggapan_customer
+diproses
+selesai
+dibatalkan
+```
+
 Dapat diakses oleh customer pemilik order dan Admin Rental pada client yang sama.
 
 ### Customer Response
@@ -400,7 +564,7 @@ Create Product:
   "harga_sewa": 50000,
   "stok": 5,
   "ketentuan_jaminan": "Wajib menyerahkan KTP asli saat pengambilan barang.",
-  "status": "active"
+  "status": "aktif"
 }
 ```
 
@@ -421,7 +585,7 @@ GET /api/admin/orders/{id}
 PATCH /api/admin/orders/{id}
 ```
 
-Data dibatasi berdasarkan `client_id`.
+Status order yang dapat digunakan mengikuti daftar pada bagian 7 dan perubahan status harus mengikuti alur bisnis transaksi. Data dibatasi berdasarkan `client_id`.
 
 ## 17. Admin Profile & Branding
 Mendukung fitur "Profil dan Branding" pada proposal (5.3). Admin Rental hanya dapat mengubah data usaha miliknya sendiri, dalam batas konfigurasi yang disediakan sistem (nama usaha, deskripsi, logo, warna tema). Subdomain tidak dapat diubah melalui endpoint ini karena dikelola oleh Owner.
@@ -532,7 +696,7 @@ Response:
     "id": 6,
     "nama_usaha": "Jaya Equipment",
     "subdomain": "jaya",
-    "status": "active"
+    "status": "aktif"
   }
 }
 ```
@@ -587,7 +751,7 @@ Response:
 }
 ```
 
-Backend harus memastikan akun yang dibuat otomatis terhubung ke `client_id` sesuai `{id}` pada URL.
+Backend harus memastikan akun yang dibuat otomatis terhubung ke `client_id` sesuai `{id}` pada URL. Berbeda dengan akun Customer, akun Admin Rental wajib memiliki `client_id` dan tidak dapat dipakai lintas-client.
 
 ## 21. Owner License Management
 ```text
@@ -619,7 +783,7 @@ Response:
   "data": {
     "id": 12,
     "client_id": 6,
-    "status": "active"
+    "status": "aktif"
   }
 }
 ```
@@ -654,7 +818,7 @@ Response:
     {
       "id": 1,
       "nama_usaha": "Jaya Equipment",
-      "status": "active",
+      "status": "aktif",
       "license_status": "active"
     }
   ]
@@ -663,13 +827,23 @@ Response:
 
 ## 23. Authorization Rules
 
-### Customer
+### Public (Guest) — tanpa login
+Dapat diakses siapa saja sebelum menekan "Sewa Alat":
 ```text
 GET /api/client
 GET /api/categories
 GET /api/products
 GET /api/products/{id}
 GET /api/products/{id}/availability
+```
+
+### Customer (wajib login)
+Login diwajibkan mulai dari titik ini, dipicu saat customer menekan tombol "Sewa Alat". Akun customer bersifat global dan sama untuk semua client, tetapi resource di bawah ini tetap dibatasi oleh `client_id` dari subdomain yang sedang dikunjungi:
+```text
+POST /api/register
+POST /api/login
+POST /api/logout
+GET  /api/me
 POST /api/orders
 GET /api/orders
 GET /api/orders/{id}
@@ -687,7 +861,7 @@ POST /api/damage-reports/{id}/response
 Customer tidak dapat mengakses endpoint Admin atau Owner.
 
 ### Admin Rental
-Mengakses endpoint `/admin/*` (termasuk `/admin/profile`, `/admin/dashboard`, dan `/admin/reports`) hanya untuk data client miliknya.
+Mengakses endpoint `/admin/*` (termasuk `/admin/profile`, `/admin/dashboard`, `/admin/reports`, dan review Identity Guarantee) hanya untuk data client miliknya. Berbeda dengan Customer, akun Admin Rental terikat pada satu `client_id` dan tidak dapat login lintas-client.
 
 ### Owner
 Mengakses endpoint `/owner/*` (termasuk `/owner/clients/{id}/admin-accounts` dan `/owner/dashboard`) sesuai kebutuhan pengelolaan sistem. Owner tidak mengakses endpoint `/admin/*` transaksi harian.
@@ -745,11 +919,13 @@ GET /api/products/{id}
 GET /api/products/{id}/availability
 ```
 
-Endpoint tersebut cukup untuk membangun Customer Home + Equipment Listing + Equipment Detail sebagai vertical slice pertama.
+Endpoint tersebut bersifat publik (tanpa auth middleware) dan cukup untuk membangun Customer Home + Equipment Listing + Equipment Detail sebagai vertical slice pertama.
 
 Setelah itu:
 ```text
-Orders
+Register & Login
+↓
+Orders (mulai wajib login, dipicu tombol "Sewa Alat")
 ↓
 Identity Guarantee
 ↓

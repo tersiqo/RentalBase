@@ -88,7 +88,7 @@
                 </button>
 
                 <!-- Profile -->
-                <div class="flex items-center gap-2 cursor-pointer pl-2 border-l border-slate-200">
+                <div class="flex items-center gap-2 cursor-pointer pl-2 border-l border-slate-200" onclick="openAuthModal()">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Akun Saya" class="w-8 h-8 rounded-full object-cover border border-slate-200">
                     <span class="text-xs font-bold text-slate-800 hidden sm:inline">Akun Saya</span>
                 </div>
@@ -285,8 +285,8 @@
                             $tags = array_filter(array_map('trim', explode(',', $product->deskripsi ?? '')));
                         @endphp
                         <div class="product-item bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between hover:shadow-md transition group" data-name="{{ $product->nama }}" data-category="{{ strtolower($categoryName) }}" data-price="{{ (int)$product->harga_sewa }}">
-                            <div class="relative aspect-4/3 overflow-hidden bg-slate-100">
-                                <img src="{{ $img }}" alt="{{ $product->nama }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100">
+                                <img src="{{ $img }}" alt="{{ $product->nama }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-300">
                                 
                                 @if($product->stok <= 1)
                                     <span class="absolute top-3 left-3 bg-amber-50/95 backdrop-blur-sm text-amber-800 border border-amber-200/80 text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-xs">
@@ -319,7 +319,7 @@
                                         <div class="text-[10px] text-slate-400 font-medium">Biaya Sewa</div>
                                         <div class="text-slate-900 font-extrabold text-base">Rp {{ number_format($product->harga_sewa, 0, ',', '.') }} <span class="text-xs font-normal text-slate-500">/ hari</span></div>
                                     </div>
-                                    <button onclick="addToCart('{{ addslashes($product->nama) }}')" class="bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-xs">
+                                    <button onclick="openAuthModal()" class="bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-xs">
                                         <span>Sewa Alat</span>
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                                     </button>
@@ -407,24 +407,60 @@
         </div>
     </footer>
 
+    <!-- Auth Required Modal Popup -->
+    <div id="auth-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 transition-all duration-300 opacity-0">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl transform scale-95 transition-all duration-300 border border-slate-100 relative">
+            <button onclick="closeAuthModal()" class="absolute top-3.5 right-3.5 text-slate-400 hover:text-slate-700 p-1 rounded-lg transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+
+            <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+
+            <h3 class="text-lg font-extrabold text-slate-900 mb-2">login/register dlu bos</h3>
+            <p class="text-xs text-slate-500 mb-6 leading-relaxed">Silakan masuk atau buat akun baru terlebih dahulu untuk melanjutkan proses penyewaan peralatan ini.</p>
+
+            <div class="flex items-center gap-2.5">
+                <button onclick="closeAuthModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl transition">
+                    Tutup
+                </button>
+                <button onclick="closeAuthModal()" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition shadow-xs">
+                    Masuk / Daftar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Interactive JavaScript -->
     <script>
-        let cartCount = 0;
-
-        function addToCart(itemName) {
-            cartCount++;
-            document.getElementById('cart-count').innerText = cartCount;
-
-            const toast = document.createElement('div');
-            toast.className = 'fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2.5 transition-all duration-300';
-            toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> <span><strong>${itemName}</strong> ditambahkan ke keranjang sewa!</span>`;
-            document.body.appendChild(toast);
-
+        function openAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
             setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 2500);
+                modal.classList.remove('opacity-0');
+                modal.firstElementChild.classList.remove('scale-95');
+            }, 10);
         }
+
+        function closeAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            if (!modal) return;
+            modal.classList.add('opacity-0');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('auth-modal');
+            if (modal && e.target === modal) {
+                closeAuthModal();
+            }
+        });
 
         const priceRange = document.getElementById('priceRange');
         const maxPriceText = document.getElementById('maxPriceText');

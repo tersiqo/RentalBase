@@ -28,7 +28,7 @@ Contoh implementasi utama pada tahap proyek adalah rental perlengkapan bayi, nam
 ## 3. Multi-Client Rules
 Semua data bisnis milik client harus memperhatikan `client_id`.
 
-Admin Rental hanya boleh melihat dan mengelola data client miliknya. Owner memiliki akses lintas client sesuai fungsi pengelolaan (client, akun Admin Rental, license, dashboard monitoring ringkas), tetapi tidak mengakses transaksi harian customer. Customer mengakses satu client melalui domain/subdomain.
+Admin Rental hanya boleh melihat dan mengelola data client miliknya, dan akunnya terikat pada satu `client_id` (tidak bisa login lintas-client). Owner memiliki akses lintas client sesuai fungsi pengelolaan (client, akun Admin Rental, license, dashboard monitoring ringkas), tetapi tidak mengakses transaksi harian customer. Customer mengakses satu client melalui domain/subdomain, namun akun Customer sendiri bersifat global (`users.client_id = NULL`) dan dapat dipakai untuk menyewa di client mana pun.
 
 ## 4. Actors
 - **Customer:** pengguna yang menyewa peralatan.
@@ -40,31 +40,51 @@ Admin Rental hanya boleh melihat dan mengelola data client miliknya. Owner memil
 2. Tidak ada `branches`.
 3. Tidak ada `branch_id`.
 4. Satu order hanya berasal dari satu client.
-5. Customer mengakses client melalui domain/subdomain.
+5. Customer mengakses client melalui domain/subdomain. Halaman `/` adalah landing page platform RentalBase, bukan katalog client.
 6. Data client harus terisolasi.
 7. Admin Rental tidak boleh mengakses data client lain.
 8. Owner dapat mengelola client.
 9. Owner bukan Admin Rental.
 10. Tidak ada deposit uang.
-11. Identity guarantee adalah jaminan administratif, diisi customer saat checkout sebelum bukti pembayaran diunggah.
-12. Alamat pengiriman diisi customer saat checkout dan disimpan pada `orders.alamat_pengiriman`, digunakan kembali saat Admin Rental membuat data shipment.
-13. Pembayaran transfer manual.
-14. Bukti pembayaran diverifikasi Admin Rental.
-15. Pengiriman melalui kurir atau metode langsung; customer mengonfirmasi penerimaan barang melalui endpoint tersendiri.
-16. Tidak ada GPS/API kurir pada tahap awal.
-17. Pengembalian dicatat terpisah dari pengiriman.
-18. Kondisi barang dicatat sebelum dan sesudah rental.
-19. Kerusakan dapat dibuat sebagai damage case.
-20. Penyelesaian kerusakan mengikuti kebijakan client, bukan otomatisasi AI.
-21. Client (Admin Rental) dapat mengatur nama usaha, deskripsi, logo, dan warna/tema miliknya sendiri; subdomain tetap dikelola Owner.
-22. Core UI tidak boleh diubah sembarangan.
-23. Laravel adalah backend dan business logic utama.
-24. PostgreSQL adalah database utama.
-25. Supabase digunakan sebagai platform PostgreSQL dan layanan terkait yang diperlukan.
-26. Dashboard dan laporan Admin/Owner diambil dari agregasi tabel yang ada, tidak memerlukan tabel baru.
-27. Owner dashboard hanya menampilkan ringkasan client dan license, tidak menampilkan detail transaksi.
-28. Owner membuat akun Admin Rental untuk client melalui fitur tersendiri; akun tersebut otomatis terhubung ke `client_id` client yang dituju.
-29. Ketentuan jaminan identitas pada produk (`products.ketentuan_jaminan`) bersifat teks informasi yang ditampilkan ke customer, bukan aturan yang divalidasi otomatis oleh sistem.
+11. Identity guarantee adalah jaminan administratif, diisi customer untuk setiap order saat checkout sebelum bukti pembayaran diunggah. Data wajib: nama lengkap, nomor KTP, foto KTP, selfie wajah, dan alamat sesuai identitas.
+12. Katalog, detail produk, dan availability dapat diakses tanpa login (guest/publik). Login/registrasi baru diwajibkan saat customer menekan tombol "Sewa Alat"; gunakan intended redirect agar customer kembali ke produk/tanggal yang tadi dipilih setelah login.
+13. Akun Customer bersifat global (`users.client_id = NULL`): satu akun dapat menyewa di banyak client berbeda. `GET /api/orders` tetap dibatasi oleh `client_id` dari subdomain yang sedang diakses — riwayat pesanan yang tampil adalah riwayat pada client tersebut saja, bukan gabungan semua client.
+14. Alamat pengiriman diisi customer saat checkout dan disimpan pada `orders.alamat_pengiriman`, digunakan kembali saat Admin Rental membuat data shipment.
+15. Pembayaran transfer manual.
+16. Bukti pembayaran diverifikasi Admin Rental dan customer hanya dapat mengunggah bukti pembayaran setelah identity guarantee order berstatus `diverifikasi`.
+17. Pengiriman melalui kurir atau metode langsung; customer mengonfirmasi penerimaan barang melalui endpoint tersendiri.
+18. Tidak ada GPS/API kurir pada tahap awal.
+19. Pengembalian dicatat terpisah dari pengiriman.
+20. Kondisi barang dicatat sebelum dan sesudah rental.
+21. Kerusakan dapat dibuat sebagai damage case.
+22. Penyelesaian kerusakan mengikuti kebijakan client, bukan otomatisasi AI.
+23. Client (Admin Rental) dapat mengatur nama usaha, deskripsi, logo, dan warna/tema miliknya sendiri; subdomain tetap dikelola Owner.
+24. Core UI tidak boleh diubah sembarangan.
+25. Laravel adalah backend dan business logic utama.
+26. PostgreSQL adalah database utama.
+27. Supabase digunakan sebagai platform PostgreSQL dan layanan terkait yang diperlukan.
+28. Dashboard dan laporan Admin/Owner diambil dari agregasi tabel yang ada, tidak memerlukan tabel baru. Availability dihitung dari stok dan order aktif yang periodenya bertabrakan.
+29. Owner dashboard hanya menampilkan ringkasan client dan license, tidak menampilkan detail transaksi.
+30. Owner membuat akun Admin Rental untuk client melalui fitur tersendiri; akun tersebut otomatis terhubung ke `client_id` client yang dituju dan wajib memiliki `client_id` (berbeda dengan akun Customer).
+31. Ketentuan jaminan identitas pada produk (`products.ketentuan_jaminan`) bersifat teks informasi yang ditampilkan ke customer, bukan aturan yang divalidasi otomatis oleh sistem.
+
+## 5.1 Final Status Values
+
+```text
+clients.status → aktif, nonaktif
+users.status → aktif, nonaktif
+licenses.status → active, expired, suspended
+products.status → aktif, nonaktif
+orders.status → menunggu_konfirmasi, menunggu_pembayaran, pembayaran_terverifikasi, diproses, dikirim, diterima, dikembalikan, selesai, ditolak, dibatalkan
+payments.status → menunggu, diverifikasi, ditolak
+shipments.status_pengiriman → menunggu, diproses, dikirim, diterima, dibatalkan
+returns.status_pengembalian → diajukan, diproses, dalam_pengembalian, diterima, selesai, dibatalkan
+identity_guarantees.status → menunggu, diverifikasi, ditolak
+damage_reports.status → dilaporkan, ditinjau, ditindaklanjuti, selesai, ditolak
+damage_cases.status → dibuka, menunggu_tanggapan_customer, diproses, selesai, dibatalkan
+```
+
+Availability aktif menggunakan status order `menunggu_konfirmasi`, `menunggu_pembayaran`, `pembayaran_terverifikasi`, `diproses`, `dikirim`, dan `diterima`.
 
 ## 6. Database Rules
 Gunakan PostgreSQL. Laravel Migration adalah source of truth struktur database.
@@ -132,12 +152,12 @@ AI tidak boleh:
 ```text
 1. Project setup
 2. Database foundation
-3. Authentication
-4. Customer Home
+3. Authentication (termasuk Register global untuk Customer)
+4. Customer Home (publik/guest, tanpa login)
 5. Equipment
 6. Availability
-7. Booking
-8. Identity Guarantee
+7. Booking (mulai wajib login, dipicu tombol "Sewa Alat")
+8. Identity Guarantee + Admin Review
 9. Payment
 10. Shipping & Confirm Receipt
 11. Return
