@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Client extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'nama',
+        'nama_usaha',
         'deskripsi',
         'logo',
         'warna_tema',
@@ -16,13 +18,33 @@ class Client extends Model
         'status',
     ];
 
-    public function categories(): HasMany
+    public function licenses()
+    {
+        return $this->hasMany(License::class);
+    }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
+
+    public function categories()
     {
         return $this->hasMany(Category::class);
     }
 
-    public function products(): HasMany
+    public function products()
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 }

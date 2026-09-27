@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $client->nama }} - RentalBase Client</title>
+    <title>{{ $client->nama_usaha }} - RentalBase Client</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,7 +59,7 @@
                             <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">RentalBase</span>
                             <span class="text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-1 rounded">CLIENT</span>
                         </div>
-                        <div class="text-base font-extrabold text-slate-900 leading-tight">{{ $client->nama }}</div>
+                        <div class="text-base font-extrabold text-slate-900 leading-tight">{{ $client->nama_usaha }}</div>
                     </div>
                 </div>
 
@@ -103,7 +103,7 @@
         <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs mb-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div class="flex items-center gap-3 flex-wrap">
-                    <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{{ $client->nama }}</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{{ $client->nama_usaha }}</h1>
                     <span class="bg-emerald-100 text-emerald-800 text-[10px] sm:text-[11px] font-bold tracking-wider px-2.5 py-0.5 rounded-full uppercase">KATALOG PENYEWAAN RESMI</span>
                 </div>
                 <div class="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
@@ -281,7 +281,7 @@
                     @forelse($products as $product)
                         @php
                             $categoryName = $product->category->nama ?? 'Peralatan';
-                            $img = $product->gambar ?: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&auto=format&fit=crop&q=80';
+                            $img = $product->foto ?: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&auto=format&fit=crop&q=80';
                             $tags = array_filter(array_map('trim', explode(',', $product->deskripsi ?? '')));
                         @endphp
                         <div class="product-item bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col justify-between hover:shadow-md transition group" data-name="{{ $product->nama }}" data-category="{{ strtolower($categoryName) }}" data-price="{{ (int)$product->harga_sewa }}">
@@ -359,7 +359,7 @@
                         <div class="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center text-emerald-400 font-bold text-xs">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         </div>
-                        <span class="font-extrabold text-slate-900 text-lg tracking-tight">{{ $client->nama }}</span>
+                        <span class="font-extrabold text-slate-900 text-lg tracking-tight">{{ $client->nama_usaha }}</span>
                     </div>
                     <p class="text-xs text-slate-500 max-w-md leading-relaxed">
                         {{ $client->deskripsi }}
@@ -401,7 +401,7 @@
             </div>
 
             <div class="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-                <span>© 2024 {{ $client->nama }}. Didukung oleh infrastruktur RentalBase.</span>
+                <span>© 2024 {{ $client->nama_usaha }}. Didukung oleh infrastruktur RentalBase.</span>
                 <span class="font-semibold text-slate-600">Status: Sistem Siap / Reservasi Aktif</span>
             </div>
         </div>

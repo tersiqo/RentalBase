@@ -5,13 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Category extends Model
+class ActivityLog extends Model
 {
     use HasFactory;
 
+    public const UPDATED_AT = null;
+
     protected $fillable = [
         'client_id',
-        'nama',
+        'user_id',
+        'aktivitas',
         'deskripsi',
     ];
 
@@ -20,8 +23,8 @@ class Category extends Model
         return $this->belongsTo(Client::class);
     }
 
-    public function products()
+    public function user()
     {
-        return $this->hasMany(Product::class);
+        return $this->belongsTo(User::class);
     }
 }

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Product extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'client_id',
         'category_id',
@@ -14,22 +16,31 @@ class Product extends Model
         'deskripsi',
         'harga_sewa',
         'stok',
-        'gambar',
+        'foto',
+        'ketentuan_jaminan',
         'status',
     ];
 
-    protected $casts = [
-        'harga_sewa' => 'decimal:2',
-        'stok' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'harga_sewa' => 'decimal:2',
+            'stok' => 'integer',
+        ];
+    }
 
-    public function client(): BelongsTo
+    public function client()
     {
         return $this->belongsTo(Client::class);
     }
 
-    public function category(): BelongsTo
+    public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }
