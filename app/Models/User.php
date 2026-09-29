@@ -38,34 +38,4 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Client::class);
     }
-
-    public function orders()
-    {
-        return $this->hasMany(Order::class, 'customer_id');
-    }
-
-    public function verifiedPayments()
-    {
-        return $this->hasMany(Payment::class, 'diverifikasi_oleh');
-    }
-
-    public function conditionChecks()
-    {
-        return $this->hasMany(ConditionCheck::class, 'diperiksa_oleh');
-    }
-
-    public function damageReports()
-    {
-        return $this->hasMany(DamageReport::class, 'dilaporkan_oleh');
-    }
-
-    public function identityGuarantees()
-    {
-        return $this->hasMany(IdentityGuarantee::class, 'customer_id');
-    }
-
-    public function activityLogs()
-    {
-        return $this->hasMany(ActivityLog::class, 'user_id');
-    }
 }

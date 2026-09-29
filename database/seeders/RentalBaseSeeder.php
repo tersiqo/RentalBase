@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Client;
-use App\Models\License;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -378,32 +377,5 @@ class RentalBaseSeeder extends Seeder
             ]
         );
 
-        // =============================================================
-        // LICENSE: Jaya Equipment
-        // =============================================================
-        License::updateOrCreate(
-            [
-                'client_id' => $clientJaya->id,
-                'tanggal_mulai' => now()->startOfDay()->toDateString(),
-            ],
-            [
-                'tanggal_berakhir' => now()->addYear()->startOfDay()->toDateString(),
-                'status' => 'active',
-            ]
-        );
-
-        // =============================================================
-        // LICENSE: Malang Outdoor
-        // =============================================================
-        License::updateOrCreate(
-            [
-                'client_id' => $clientOutdoor->id,
-                'tanggal_mulai' => now()->startOfDay()->toDateString(),
-            ],
-            [
-                'tanggal_berakhir' => now()->addYear()->startOfDay()->toDateString(),
-                'status' => 'active',
-            ]
-        );
     }
 }

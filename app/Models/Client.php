@@ -18,11 +18,6 @@ class Client extends Model
         'status',
     ];
 
-    public function licenses()
-    {
-        return $this->hasMany(License::class);
-    }
-
     public function users()
     {
         return $this->hasMany(User::class);
@@ -36,15 +31,5 @@ class Client extends Model
     public function products()
     {
         return $this->hasMany(Product::class);
-    }
-
-    public function orders()
-    {
-        return $this->hasMany(Order::class);
-    }
-
-    public function activityLogs()
-    {
-        return $this->hasMany(ActivityLog::class);
     }
 }
