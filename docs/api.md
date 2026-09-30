@@ -86,11 +86,11 @@ Response:
 ```json
 {
   "id": 1,
-  "nama_usaha": "Jaya Equipment",
-  "deskripsi": "Penyedia rental alat camping di Malang",
+  "business_name": "Jaya Equipment",
+  "description": "Penyedia rental alat camping di Malang",
   "logo": "/storage/clients/jaya-logo.png",
   "subdomain": "jaya",
-  "warna_tema": "#000000",
+  "theme_color": "#000000",
   "status": "aktif"
 }
 ```
@@ -109,8 +109,8 @@ Response example:
   "data": [
     {
       "id": 1,
-      "nama": "Camping",
-      "deskripsi": "Peralatan camping"
+      "name": "Camping",
+      "description": "Peralatan camping"
     }
   ]
 }
@@ -122,7 +122,7 @@ GET /api/products
 GET /api/products/{id}
 ```
 
-**Akses: publik (guest), tanpa login.** Customer dapat melihat katalog, detail produk, dan foto sepenuhnya sebelum diminta login.
+**Akses: publik (guest), tanpa login.** Customer dapat melihat katalog, detail produk, dan image sepenuhnya sebelum diminta login.
 
 Query:
 ```text
@@ -143,21 +143,36 @@ Response:
   "data": [
     {
       "id": 1,
-      "nama": "Tenda Dome 4P",
-      "deskripsi": "Tenda untuk empat orang",
-      "harga_sewa": 50000,
-      "stok": 5,
-      "foto": "/storage/products/tenda.jpg",
-      "ketentuan_jaminan": "Wajib menyerahkan KTP asli saat pengambilan barang.",
+      "name": "Tenda Dome 4P",
+      "description": "Tenda untuk empat orang",
+      "rental_price": 50000,
+      "total_units": 5,
+      "available_units": 4,
+      "image": "/storage/products/tenda.jpg",
+      "identity_guarantee_requirements": "Wajib menyerahkan KTP asli saat pengambilan barang.",
       "status": "aktif"
     }
   ]
 }
 ```
 
-`ketentuan_jaminan` adalah teks informasi bebas yang diisi Admin Rental dan hanya ditampilkan ke customer; tidak ada validasi otomatis terhadap isinya.
+`identity_guarantee_requirements` adalah teks informasi bebas yang diisi Admin Rental dan hanya ditampilkan ke customer; tidak ada validasi otomatis terhadap isinya.
+
+`total_units` dihitung dari jumlah `equipment_units` yang dimiliki product. `available_units` dihitung berdasarkan status unit dan availability pada konteks yang digunakan.
 
 Data harus dibatasi berdasarkan client aktif (dari subdomain), meskipun endpoint ini publik.
+
+### Equipment Unit Concept
+Setiap product dapat memiliki beberapa physical equipment unit. Customer tidak perlu mengetahui `equipment_unit_id` atau `asset_code` saat browsing; identitas unit digunakan untuk pengelolaan inventory dan transaksi di sisi Admin Rental.
+
+Contoh:
+```text
+Product: Stroller A
+├── ST-001 → available
+├── ST-002 → available
+├── ST-003 → damaged
+└── ST-004 → available
+```
 
 ## 6. Availability
 ```http
@@ -168,26 +183,32 @@ GET /api/products/{id}/availability
 
 Parameter:
 ```text
-tanggal_mulai
-tanggal_selesai
+start_date
+end_date
 ```
 
 Example:
 ```text
-GET /api/products/1/availability?tanggal_mulai=2026-10-01&tanggal_selesai=2026-10-03
+GET /api/products/1/availability?start_date=2026-10-01&end_date=2026-10-03
 ```
 
 Response:
 ```json
 {
   "product_id": 1,
-  "tanggal_mulai": "2026-10-01",
-  "tanggal_selesai": "2026-10-03",
-  "stok_total": 5,
-  "stok_tersedia": 3,
-  "tersedia": true
+  "start_date": "2026-10-01",
+  "end_date": "2026-10-03",
+  "total_units": 5,
+  "available_units": 3,
+  "available": true
 }
 ```
+
+Availability dihitung berdasarkan `equipment_units`, unit yang dialokasikan melalui `order_item_units`, status operasional unit, status order, dan overlap periode rental.
+
+Unit dengan status `maintenance`, `damaged`, `lost`, atau `inactive` tidak dapat dialokasikan untuk rental baru.
+
+Satu equipment unit tidak boleh dialokasikan ke dua order aktif yang periode sewanya saling bertabrakan.
 
 ## 7. Orders
 **Titik mulai wajib login.** Saat customer menekan tombol "Sewa Alat" pada halaman detail produk, frontend memeriksa status login sebelum meneruskan ke form booking. Jika belum login, tampilkan modal login/daftar terlebih dahulu (gunakan pola *intended redirect* agar setelah login customer langsung kembali ke produk dan tanggal yang tadi dipilih, bukan ke halaman awal).
@@ -197,18 +218,18 @@ Response:
 POST /api/orders
 ```
 
-Sesuai alur booking & checkout pada proposal (6.2), request order menyertakan periode sewa, item, dan alamat pengiriman. Data jaminan identitas (KTP, nomor KTP, foto wajah, alamat sesuai identitas) dikirim terpisah melalui endpoint Identity Guarantee (lihat bagian 8) karena melibatkan upload file, sebelum bukti pembayaran diunggah.
+Request order menyertakan periode sewa, item, dan alamat pengiriman. Data Identity Guarantee dikirim terpisah sebelum payment proof diunggah.
 
 Request:
 ```json
 {
-  "tanggal_mulai": "2026-10-01",
-  "tanggal_selesai": "2026-10-03",
-  "alamat_pengiriman": "Jl. Contoh No. 10, Malang",
+  "start_date": "2026-10-01",
+  "end_date": "2026-10-03",
+  "shipping_address": "Jl. Contoh No. 10, Malang",
   "items": [
     {
       "product_id": 1,
-      "jumlah": 2
+      "quantity": 2
     }
   ]
 }
@@ -218,10 +239,13 @@ Backend harus:
 1. Memastikan customer authenticated.
 2. Menentukan client berdasarkan konteks subdomain.
 3. Memastikan product berasal dari client yang sama.
-4. Memeriksa availability.
+4. Memeriksa availability pada periode yang diminta.
 5. Menghitung total.
-6. Membuat order beserta `alamat_pengiriman` dan `client_id` sesuai subdomain saat itu.
+6. Membuat order beserta `shipping_address` dan `client_id` sesuai subdomain saat itu.
 7. Membuat order items.
+8. Ketika order siap diproses, mengalokasikan physical equipment unit melalui `order_item_units` sesuai `quantity`.
+
+Customer tidak mengirim `equipment_unit_id` saat create order. Pemilihan/alokasi unit fisik dilakukan oleh sistem/Admin Rental sesuai proses operasional.
 
 Response:
 ```json
@@ -229,9 +253,9 @@ Response:
   "message": "Order berhasil dibuat",
   "data": {
     "id": 10,
-    "kode_order": "ORD-000010",
+    "order_code": "ORD-000010",
     "status": "menunggu_konfirmasi",
-    "total_harga": 150000
+    "total_amount": 150000
   }
 }
 ```
@@ -242,7 +266,7 @@ GET /api/orders
 GET /api/orders/{id}
 ```
 
-**Penting:** meskipun akun customer bersifat global (lintas-client), endpoint ini tetap dibatasi berdasarkan `client_id` dari subdomain yang sedang diakses. Artinya daftar order yang tampil adalah riwayat transaksi customer **pada usaha rental yang sedang dikunjungi saja**, bukan gabungan seluruh usaha rental yang pernah ia sewa. Ini untuk menjaga isolasi data antar-client dan menyamakan ekspektasi tampilan "riwayat saya" di tiap subdomain.
+**Penting:** meskipun akun customer bersifat global (lintas-client), endpoint ini tetap dibatasi berdasarkan `client_id` dari subdomain yang sedang diakses.
 
 Admin hanya dapat melihat order client-nya.
 
@@ -301,9 +325,9 @@ selesai
 Cabang penolakan/pembatalan dapat terjadi sesuai kondisi bisnis.
 
 ## 8. Identity Guarantee
-Jaminan identitas bersifat administratif (bukan deposit uang), sesuai batasan proposal. Data dikumpulkan pada tahap checkout setelah order dibuat dan sebelum bukti pembayaran diunggah.
+Identity Guarantee bersifat administratif (bukan deposit uang). Data dikumpulkan pada tahap checkout setelah order dibuat dan sebelum payment proof diunggah.
 
-Setiap order wajib memiliki tepat satu data jaminan identitas. Data wajib terdiri dari nama lengkap, nomor KTP, foto KTP, selfie wajah, dan alamat sesuai identitas.
+Setiap order wajib memiliki tepat satu Identity Guarantee. Data wajib terdiri dari full name, identity number, identity document image, face image, dan identity address.
 
 ### Submit Identity Guarantee
 ```http
@@ -314,18 +338,18 @@ Request: `multipart/form-data`
 
 Fields:
 ```text
-nama_lengkap
-nomor_identitas
-foto_identitas
-foto_wajah
-alamat
+full_name
+identity_number
+identity_document_image
+face_image
+identity_address
 ```
 
 Backend harus:
 1. Memastikan order milik customer yang login.
 2. Memastikan order berasal dari client yang sedang diakses.
-3. Memvalidasi tipe dan ukuran file foto.
-4. Menyimpan satu data jaminan identitas per order.
+3. Memvalidasi tipe dan ukuran file image.
+4. Menyimpan satu data Identity Guarantee per order.
 5. Memberikan status awal `menunggu`.
 6. Jika data sebelumnya berstatus `ditolak`, customer dapat mengirim ulang data untuk order yang sama.
 
@@ -357,7 +381,7 @@ Request:
 ```json
 {
   "status": "diverifikasi",
-  "catatan": "Data identitas sesuai dan dapat diterima."
+  "notes": "Data identitas sesuai dan dapat diterima."
 }
 ```
 
@@ -368,7 +392,7 @@ diverifikasi
 ditolak
 ```
 
-Backend harus memastikan Admin Rental hanya dapat memeriksa jaminan identitas yang terkait dengan order milik client-nya. Jika status `ditolak`, customer dapat memperbaiki dan mengirim ulang data untuk order yang sama.
+Backend harus memastikan Admin Rental hanya dapat memeriksa Identity Guarantee yang terkait dengan order milik client-nya. Jika status `ditolak`, customer dapat memperbaiki dan mengirim ulang data untuk order yang sama.
 
 ## 9. Payments
 ### Upload Payment Proof
@@ -380,11 +404,11 @@ Request: `multipart/form-data`
 
 Fields:
 ```text
-metode
-bukti_pembayaran
+payment_method
+payment_proof
 ```
 
-Backend memvalidasi ownership order, file type, file size, payment status, dan memastikan jaminan identitas order sudah tersimpan dan berstatus `diverifikasi` sebelum pembayaran dapat diunggah.
+Backend memvalidasi ownership order, file type, file size, payment status, dan memastikan Identity Guarantee order sudah tersimpan dan berstatus `diverifikasi` sebelum payment proof dapat diunggah.
 
 ### Admin Verify Payment
 ```http
@@ -395,7 +419,7 @@ Request:
 ```json
 {
   "status": "diverifikasi",
-  "catatan": "Pembayaran sesuai"
+  "notes": "Pembayaran sesuai"
 }
 ```
 
@@ -408,21 +432,21 @@ POST /api/admin/orders/{id}/shipment
 Request:
 ```json
 {
-  "metode_pengiriman": "kurir",
-  "nama_kurir": "JNE",
-  "nomor_resi": "ABC123456",
-  "tanggal_kirim": "2026-10-01"
+  "shipping_method": "kurir",
+  "courier_name": "JNE",
+  "tracking_number": "ABC123456",
+  "shipping_date": "2026-10-01"
 }
 ```
 
-Alamat tujuan pengiriman diambil dari `orders.alamat_pengiriman` yang telah diisi customer saat checkout, sehingga tidak perlu diinput ulang oleh Admin Rental.
+Alamat tujuan pengiriman diambil dari `orders.shipping_address` yang telah diisi customer saat checkout, sehingga tidak perlu diinput ulang oleh Admin Rental.
 
 ### Update Shipment
 ```http
 PATCH /api/admin/shipments/{id}
 ```
 
-Status pengiriman:
+Shipping status:
 ```text
 menunggu
 diproses
@@ -441,7 +465,7 @@ GET /api/orders/{id}/shipment
 POST /api/orders/{id}/confirm-receipt
 ```
 
-Digunakan customer untuk mengonfirmasi bahwa barang sudah diterima. Backend mengisi `shipments.tanggal_diterima` dan memperbarui `status_pengiriman`.
+Digunakan customer untuk mengonfirmasi bahwa barang sudah diterima. Backend mengisi `shipments.received_date` dan memperbarui `shipping_status`.
 
 Response:
 ```json
@@ -449,8 +473,8 @@ Response:
   "message": "Penerimaan barang berhasil dikonfirmasi",
   "data": {
     "order_id": 10,
-    "status_pengiriman": "diterima",
-    "tanggal_diterima": "2026-10-04"
+    "shipping_status": "diterima",
+    "received_date": "2026-10-04"
   }
 }
 ```
@@ -464,12 +488,12 @@ PATCH /api/admin/returns/{id}
 Create request:
 ```json
 {
-  "metode_pengembalian": "langsung",
-  "tanggal_pengembalian": "2026-10-03"
+  "return_method": "langsung",
+  "return_date": "2026-10-03"
 }
 ```
 
-Status pengembalian:
+Return status:
 ```text
 diajukan
 diproses
@@ -487,12 +511,13 @@ POST /api/admin/orders/{id}/condition-check
 
 Fields:
 ```text
-tipe
-catatan
-foto
+equipment_unit_id
+check_type
+notes
+image
 ```
 
-Tipe:
+Check type:
 ```text
 sebelum
 sesudah
@@ -503,7 +528,7 @@ sesudah
 GET /api/orders/{id}/condition-checks
 ```
 
-Menampilkan seluruh catatan kondisi (sebelum dan sesudah) untuk satu order. Dapat diakses oleh customer pemilik order dan Admin Rental pada client yang sama.
+Menampilkan seluruh catatan kondisi (sebelum dan sesudah) untuk physical equipment unit yang terkait dengan order. Dapat diakses oleh customer pemilik order dan Admin Rental pada client yang sama.
 
 ## 13. Damage Reports
 ### Create Damage Report (Admin)
@@ -511,12 +536,19 @@ Menampilkan seluruh catatan kondisi (sebelum dan sesudah) untuk satu order. Dapa
 POST /api/admin/orders/{id}/damage-report
 ```
 
+Request fields:
+```text
+equipment_unit_id
+description
+image
+```
+
 ### View Damage Reports
 ```http
 GET /api/orders/{id}/damage-reports
 ```
 
-Status damage report:
+Damage report status:
 ```text
 dilaporkan
 ditinjau
@@ -525,7 +557,7 @@ selesai
 ditolak
 ```
 
-Status damage case:
+Damage case status:
 ```text
 dibuka
 menunggu_tanggapan_customer
@@ -544,11 +576,13 @@ POST /api/damage-reports/{id}/response
 Request:
 ```json
 {
-  "tanggapan": "Saya menyetujui laporan kerusakan."
+  "customer_response": "Saya menyetujui laporan kerusakan."
 }
 ```
 
 ## 14. Admin Equipment Management
+
+### Product Management
 ```text
 POST   /api/admin/products
 PUT    /api/admin/products/{id}
@@ -559,16 +593,48 @@ Create Product:
 ```json
 {
   "category_id": 1,
-  "nama": "Tenda Dome 4P",
-  "deskripsi": "Tenda kapasitas 4 orang",
-  "harga_sewa": 50000,
-  "stok": 5,
-  "ketentuan_jaminan": "Wajib menyerahkan KTP asli saat pengambilan barang.",
+  "name": "Tenda Dome 4P",
+  "description": "Tenda kapasitas 4 orang",
+  "rental_price": 50000,
+  "identity_guarantee_requirements": "Wajib menyerahkan KTP asli saat pengambilan barang.",
   "status": "aktif"
 }
 ```
 
-Admin hanya dapat mengelola produk client sendiri.
+Admin hanya dapat mengelola product pada client sendiri.
+
+Package limit: penambahan product hanya diperbolehkan jika jumlah jenis product client belum mencapai batas paket aktif. Professional tidak memiliki batas jumlah jenis product.
+
+### Equipment Unit Management
+Setiap physical equipment dibuat sebagai `equipment_unit` yang terhubung ke satu product.
+
+```text
+GET    /api/admin/products/{productId}/units
+POST   /api/admin/products/{productId}/units
+PUT    /api/admin/equipment-units/{id}
+PATCH  /api/admin/equipment-units/{id}/status
+```
+
+Create Equipment Unit:
+```json
+{
+  "asset_code": "ST-001",
+  "status": "available"
+}
+```
+
+Equipment unit status:
+```text
+available
+maintenance
+damaged
+lost
+inactive
+```
+
+Admin hanya dapat mengelola equipment unit client sendiri. `client_id` ditentukan oleh konteks server dan `product_id` harus berasal dari client yang sama.
+
+Package limit: penambahan equipment unit harus menghitung total seluruh unit dari semua product dalam client tersebut. Starter maksimal 50 unit total, Business maksimal 100 unit total, dan Professional unlimited.
 
 ## 15. Admin Categories
 ```text
@@ -577,6 +643,8 @@ POST   /api/admin/categories
 PUT    /api/admin/categories/{id}
 DELETE /api/admin/categories/{id}
 ```
+
+Package limit: penambahan kategori hanya diperbolehkan jika jumlah kategori client belum mencapai batas paket aktif. Starter maksimal 5, Business maksimal 20, dan Professional unlimited.
 
 ## 16. Admin Orders
 ```text
@@ -587,8 +655,37 @@ PATCH /api/admin/orders/{id}
 
 Status order yang dapat digunakan mengikuti daftar pada bagian 7 dan perubahan status harus mengikuti alur bisnis transaksi. Data dibatasi berdasarkan `client_id`.
 
-## 17. Admin Profile & Branding
-Mendukung fitur "Profil dan Branding" pada proposal (5.3). Admin Rental hanya dapat mengubah data usaha miliknya sendiri, dalam batas konfigurasi yang disediakan sistem (nama usaha, deskripsi, logo, warna tema). Subdomain tidak dapat diubah melalui endpoint ini karena dikelola oleh Owner.
+## 17. Admin Unit Allocation
+Admin Rental dapat melihat dan mengalokasikan physical equipment unit untuk order yang akan diproses.
+
+```text
+GET  /api/admin/orders/{orderId}/available-units?product_id={productId}
+POST /api/admin/orders/{orderId}/items/{orderItemId}/units
+```
+
+Request allocation:
+```json
+{
+  "equipment_unit_ids": [1, 4]
+}
+```
+
+Backend harus memastikan:
+- jumlah `equipment_unit_ids` sesuai `order_items.quantity`;
+- semua unit berasal dari product dan client yang sama;
+- semua unit memiliki status operasional yang memungkinkan rental;
+- tidak ada unit yang sudah dialokasikan pada order aktif lain dengan periode bertabrakan;
+- allocation disimpan pada `order_item_units`.
+
+## 18. Admin Profile & Branding
+Mendukung fitur "Profil dan Branding" pada proposal (5.3). Admin Rental hanya dapat mengubah data usaha miliknya sendiri.
+
+Aturan branding berdasarkan subscription:
+- Semua paket dapat mengubah data profil usaha dasar: `business_name`, `description`, dan `logo`.
+- Hanya paket **Business** dan **Professional** yang dapat mengubah `theme_color`/warna beberapa elemen desain halaman.
+- Paket **Starter** menggunakan warna/desain bawaan RentalBase dan tidak dapat mengubah `theme_color` melalui endpoint ini.
+- Core layout dan struktur fitur tetap dikendalikan RentalBase.
+- Subdomain tidak dapat diubah melalui endpoint ini karena dikelola oleh Owner.
 
 ```http
 GET   /api/admin/profile
@@ -598,9 +695,9 @@ PATCH /api/admin/profile
 Request `PATCH` (`multipart/form-data` jika menyertakan logo):
 ```json
 {
-  "nama_usaha": "Jaya Equipment",
-  "deskripsi": "Penyedia rental alat camping terpercaya di Malang",
-  "warna_tema": "#1F3864"
+  "business_name": "Jaya Equipment",
+  "description": "Penyedia rental alat camping terpercaya di Malang",
+  "theme_color": "#1F3864"
 }
 ```
 
@@ -610,14 +707,14 @@ Response:
   "message": "Profil usaha berhasil diperbarui",
   "data": {
     "id": 1,
-    "nama_usaha": "Jaya Equipment",
-    "deskripsi": "Penyedia rental alat camping terpercaya di Malang",
-    "warna_tema": "#1F3864"
+    "business_name": "Jaya Equipment",
+    "description": "Penyedia rental alat camping terpercaya di Malang",
+    "theme_color": "#1F3864"
   }
 }
 ```
 
-## 18. Admin Dashboard & Reports
+## 19. Admin Dashboard & Reports
 Mendukung fitur "Dashboard Rental" dan "Laporan" pada proposal (5.3), khusus untuk data milik client yang sedang login.
 
 ### Dashboard Summary
@@ -642,8 +739,8 @@ GET /api/admin/reports
 
 Query:
 ```text
-tanggal_mulai
-tanggal_selesai
+start_date
+end_date
 ```
 
 Response:
@@ -652,8 +749,8 @@ Response:
   "data": [
     {
       "order_id": 10,
-      "kode_order": "ORD-000010",
-      "total_harga": 150000,
+      "order_code": "ORD-000010",
+      "total_amount": 150000,
       "status": "selesai"
     }
   ],
@@ -662,7 +759,7 @@ Response:
 }
 ```
 
-## 19. Owner Client Management
+## 20. Owner Client Management
 ```text
 GET   /api/owner/clients
 POST  /api/owner/clients
@@ -681,10 +778,10 @@ POST /api/owner/clients
 Request:
 ```json
 {
-  "nama_usaha": "Jaya Equipment",
+  "business_name": "Jaya Equipment",
   "subdomain": "jaya",
-  "deskripsi": "Penyedia rental alat camping di Malang",
-  "warna_tema": "#1F3864"
+  "description": "Penyedia rental alat camping di Malang",
+  "theme_color": "#1F3864"
 }
 ```
 
@@ -694,7 +791,7 @@ Response:
   "message": "Client berhasil dibuat",
   "data": {
     "id": 6,
-    "nama_usaha": "Jaya Equipment",
+    "business_name": "Jaya Equipment",
     "subdomain": "jaya",
     "status": "aktif"
   }
@@ -713,7 +810,7 @@ Request:
 }
 ```
 
-## 20. Owner Admin Rental Account Management
+## 21. Owner Admin Rental Account Management
 Mendukung fitur "Manajemen Akun Admin Rental" pada proposal (5.3). Owner membuat dan mengelola akun Admin Rental untuk client tertentu.
 
 ```text
@@ -753,44 +850,72 @@ Response:
 
 Backend harus memastikan akun yang dibuat otomatis terhubung ke `client_id` sesuai `{id}` pada URL. Berbeda dengan akun Customer, akun Admin Rental wajib memiliki `client_id` dan tidak dapat dipakai lintas-client.
 
-## 21. Owner License Management
+Package limit: sebelum membuat Admin Rental baru, backend menghitung jumlah Admin Rental yang masih aktif pada client. Starter maksimal 1, Business maksimal 3, dan Professional maksimal 10.
+
+## 22. Owner Subscription Management
+
+### Package Rules
+
+Package subscription yang tersedia:
+
+| Benefit | Starter | Business | Professional |
+|---|---:|---:|---:|
+| Maks. jenis produk | 10 | 50 | Unlimited |
+| Maks. unit peralatan total | 50 | 100 | Unlimited |
+| Maks. kategori | 5 | 20 | Unlimited |
+| Maks. Admin Rental | 1 | 3 | 10 |
+| Durasi pemakaian aplikasi | 3 bulan | 6 bulan | 12 bulan |
+| Custom warna beberapa elemen halaman | Tidak | Ya | Ya |
+
+Backend harus memeriksa limit package aktif ketika client menambah jenis product, equipment unit, kategori, atau Admin Rental. Saat subscription melewati `end_date` atau tidak berstatus `active`, akses layanan sesuai aturan subscription tidak boleh dianggap aktif.
+
+Fitur operasional inti tidak dibatasi berbeda antar paket; yang dibedakan hanya benefit pada tabel di atas.
+
 ```text
-GET   /api/owner/licenses
-POST  /api/owner/licenses
-GET   /api/owner/licenses/{id}
-PUT   /api/owner/licenses/{id}
-PATCH /api/owner/licenses/{id}/status
+GET   /api/owner/subscriptions
+POST  /api/owner/subscriptions
+GET   /api/owner/subscriptions/{id}
+PUT   /api/owner/subscriptions/{id}
+PATCH /api/owner/subscriptions/{id}/status
 ```
 
-### Create License
+### Create Subscription
 ```http
-POST /api/owner/licenses
+POST /api/owner/subscriptions
 ```
 
 Request:
 ```json
 {
   "client_id": 6,
-  "tanggal_mulai": "2026-01-01",
-  "tanggal_berakhir": "2027-01-01"
+  "plan_name": "Professional",
+  "start_date": "2026-01-01",
+  "end_date": "2027-01-01"
 }
 ```
+
+Aturan validasi:
+- `plan_name` hanya boleh `Starter`, `Business`, atau `Professional`.
+- Durasi subscription harus mengikuti paket yang dipilih: Starter 3 bulan, Business 6 bulan, Professional 12 bulan.
 
 Response:
 ```json
 {
-  "message": "License berhasil dibuat",
+  "message": "Subscription berhasil dibuat",
   "data": {
     "id": 12,
     "client_id": 6,
-    "status": "aktif"
+    "plan_name": "Professional",
+    "start_date": "2026-01-01",
+    "end_date": "2027-01-01",
+    "status": "active"
   }
 }
 ```
 
-### Update License Status
+### Update Subscription Status
 ```http
-PATCH /api/owner/licenses/{id}/status
+PATCH /api/owner/subscriptions/{id}/status
 ```
 
 Request:
@@ -800,8 +925,8 @@ Request:
 }
 ```
 
-## 22. Owner Monitoring Dashboard
-Mendukung fitur "Monitoring Platform" pada proposal (5.3). Menampilkan ringkasan seluruh client tanpa mengakses detail transaksi harian customer.
+## 23. Owner Monitoring Dashboard
+Mendukung fitur "Monitoring Platform" pada proposal. Menampilkan ringkasan seluruh client tanpa mengakses detail transaksi harian customer.
 
 ```http
 GET /api/owner/dashboard
@@ -813,19 +938,30 @@ Response:
   "total_client": 5,
   "client_aktif": 4,
   "client_nonaktif": 1,
-  "license_akan_berakhir": 2,
+  "subscription_akan_berakhir": 2,
   "clients": [
     {
       "id": 1,
-      "nama_usaha": "Jaya Equipment",
+      "business_name": "Jaya Equipment",
       "status": "aktif",
-      "license_status": "active"
+      "subscription_status": "active"
     }
   ]
 }
 ```
 
-## 23. Authorization Rules
+## 24. Authorization Rules
+
+### Subscription Package Enforcement
+Limit package berlaku pada data client yang bersangkutan:
+```text
+Starter      → 10 products, 50 equipment units, 5 categories, 1 admin
+Business     → 50 products, 100 equipment units, 20 categories, 3 admins
+Professional → unlimited products, unlimited equipment units, unlimited categories, 10 admins
+```
+
+`theme_color` hanya dapat diubah bila subscription aktif client adalah **Business** atau **Professional**.
+
 
 ### Public (Guest) — tanpa login
 Dapat diakses siapa saja sebelum menekan "Sewa Alat":
@@ -866,7 +1002,7 @@ Mengakses endpoint `/admin/*` (termasuk `/admin/profile`, `/admin/dashboard`, `/
 ### Owner
 Mengakses endpoint `/owner/*` (termasuk `/owner/clients/{id}/admin-accounts` dan `/owner/dashboard`) sesuai kebutuhan pengelolaan sistem. Owner tidak mengakses endpoint `/admin/*` transaksi harian.
 
-## 24. API Response Standard
+## 25. API Response Standard
 Success:
 ```json
 {
@@ -899,7 +1035,7 @@ HTTP status:
 500 Internal Server Error
 ```
 
-## 25. API Security
+## 26. API Security
 Setiap endpoint harus memeriksa:
 1. Authentication.
 2. Authorization.
@@ -909,7 +1045,7 @@ Setiap endpoint harus memeriksa:
 
 Validasi akses harus dilakukan di backend, bukan hanya frontend.
 
-## 26. API Development Rule
+## 27. API Development Rule
 Prioritas awal:
 ```text
 GET /api/client

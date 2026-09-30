@@ -13,7 +13,7 @@ Satu database digunakan oleh banyak client. Data bisnis client dipisahkan menggu
 ## 2. Entity Overview
 ```text
 clients
-licenses
+subscriptions
 users
 categories
 products
@@ -29,17 +29,18 @@ damage_cases
 activity_logs
 ```
 
-Total: **15 tabel**.
+Total: **17 tabel**.
 
 ## 3. Relationship Overview
 ```text
 clients
- ├── licenses
+ ├── subscriptions
  ├── users
  ├── categories ─── products
- ├── products
+ ├── products ─── equipment_units
  ├── orders
  │    ├── order_items ─── products
+ │    │      └── order_item_units ─── equipment_units
  │    ├── payments
  │    ├── shipments
  │    ├── returns
@@ -63,11 +64,11 @@ users
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
-| nama_usaha | varchar | no | - | Nama usaha client |
-| deskripsi | text | yes | NULL | Deskripsi singkat usaha client |
+| business_name | varchar | no | - | Nama usaha client |
+| description | text | yes | NULL | Deskripsi singkat usaha client |
 | logo | varchar | yes | NULL | Path/URL logo usaha client |
 | subdomain | varchar | no | - | Subdomain client |
-| warna_tema | varchar | yes | NULL | Warna/tema client |
+| theme_color | varchar | yes | NULL | Warna/tema client |
 | status | varchar | no | `aktif` | Status client |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
@@ -75,26 +76,61 @@ users
 Constraint:
 - `subdomain` **UNIQUE**.
 - `status` hanya boleh: `aktif`, `nonaktif`.
-- `nama_usaha`, `deskripsi`, `logo`, dan `warna_tema` dapat diubah Admin Rental melalui Profil dan Branding.
+- `business_name`, `description`, dan `logo` dapat diubah Admin Rental melalui Profil dan Branding.
+- `theme_color` hanya dapat diubah jika subscription aktif client adalah `Business` atau `Professional`; Starter menggunakan tema bawaan RentalBase.
 - `subdomain` hanya dikelola Owner.
 - Client tidak dihapus melalui fitur operasional; status digunakan untuk menonaktifkan client.
 
-### licenses
+### subscriptions
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | client_id | bigint | no | - | Client |
-| tanggal_mulai | date | no | - | Start date |
-| tanggal_berakhir | date | no | - | End date |
-| status | varchar | no | `active` | License status |
+| plan_name | varchar | no | - | Subscription plan name |
+| start_date | date | no | - | Subscription start date |
+| end_date | date | no | - | Subscription end date |
+| status | varchar | no | `active` | Subscription status |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
 Constraint:
 - `client_id` → `clients.id`.
+- `plan_name` hanya boleh: `Starter`, `Business`, `Professional`.
 - `status` hanya boleh: `active`, `expired`, `suspended`.
+- `end_date` tidak boleh lebih awal dari `start_date`.
+- Durasi subscription mengikuti paket: Starter 3 bulan, Business 6 bulan, Professional 12 bulan.
 
-Relationship: `clients 1 ─── N licenses`.
+Relationship: `clients 1 ─── N subscriptions`.
+
+## Package / Subscription Benefits
+
+RentalBase menggunakan 3 paket subscription. Batas paket berlaku untuk setiap client dan hanya mencakup benefit berikut; fitur operasional inti tetap sama untuk semua paket.
+
+### Starter
+- Maks. **10 jenis produk**
+- Maks. **50 unit peralatan total**
+- Maks. **5 kategori**
+- Maks. **1 admin**
+- **3 bulan** durasi pemakaian aplikasi
+
+### Business
+- Maks. **50 jenis produk**
+- Maks. **100 unit peralatan total**
+- Maks. **20 kategori**
+- Maks. **3 admin**
+- **6 bulan** durasi pemakaian aplikasi
+- **Dapat mengubah warna beberapa elemen desain halaman**
+
+### Professional
+- **Unlimited jenis produk**
+- **Unlimited unit peralatan total**
+- **Unlimited kategori**
+- Maks. **10 admin**
+- **12 bulan** durasi pemakaian aplikasi
+- **Dapat mengubah warna beberapa elemen desain halaman**
+
+Tidak ada benefit paket lain yang dibedakan. Fitur inti seperti katalog online, booking rental, availability, pembayaran, pengiriman, pengembalian, condition check, dan damage handling tersedia sama pada seluruh paket.
+
 
 ### users
 | Column | Type | Nullable | Default | Description |
@@ -133,14 +169,14 @@ Rules:
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | client_id | bigint | no | - | Client |
-| nama | varchar | no | - | Category name |
-| deskripsi | text | yes | NULL | Description |
+| name | varchar | no | - | Category name |
+| description | text | yes | NULL | Description |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
 Constraint:
 - `client_id` → `clients.id`.
-- `UNIQUE(client_id, nama)`.
+- `UNIQUE(client_id, name)`.
 - Satu nama kategori boleh digunakan pada client berbeda, tetapi tidak boleh duplikat dalam client yang sama.
 
 ### products
@@ -149,12 +185,11 @@ Constraint:
 | id | bigint | no | auto | Primary key |
 | client_id | bigint | no | - | Client |
 | category_id | bigint | no | - | Category |
-| nama | varchar | no | - | Equipment name |
-| deskripsi | text | yes | NULL | Description |
-| harga_sewa | decimal(12,2) | no | - | Rental price |
-| stok | integer | no | `0` | Total stock |
-| foto | varchar | yes | NULL | Product image path/URL |
-| ketentuan_jaminan | text | yes | NULL | Teks informasi ketentuan jaminan identitas |
+| name | varchar | no | - | Equipment name |
+| description | text | yes | NULL | Description |
+| rental_price | decimal(12,2) | no | - | Rental price |
+| image | varchar | yes | NULL | Product image path/URL |
+| identity_guarantee_requirements | text | yes | NULL | Teks informasi ketentuan jaminan identitas |
 | status | varchar | no | `aktif` | Product status |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
@@ -169,9 +204,38 @@ Constraint:
 - `client_id` → `clients.id`.
 - `category_id` → `categories.id`.
 - Product dan category harus berasal dari client yang sama.
-- `stok >= 0`.
-- `harga_sewa >= 0`.
-- `ketentuan_jaminan` hanya berupa teks informasi yang ditampilkan kepada customer; sistem tidak memvalidasi isi teks tersebut secara otomatis.
+- `rental_price >= 0`.
+- `identity_guarantee_requirements` hanya berupa teks informasi yang ditampilkan kepada customer; sistem tidak memvalidasi isi teks tersebut secara otomatis.
+- Jumlah stock tidak disimpan langsung pada tabel ini. Total stock dan available stock dihitung dari `equipment_units`.
+
+
+### equipment_units
+| Column | Type | Nullable | Default | Description |
+|---|---|---|---|---|
+| id | bigint | no | auto | Primary key |
+| client_id | bigint | no | - | Client |
+| product_id | bigint | no | - | Product |
+| asset_code | varchar | no | - | Unique physical equipment code |
+| status | varchar | no | `available` | Current operational status of the unit |
+| created_at | timestamp | no | auto | Created |
+| updated_at | timestamp | no | auto | Updated |
+
+Equipment unit status:
+```text
+available
+maintenance
+damaged
+lost
+inactive
+```
+
+Constraint:
+- `client_id` → `clients.id`.
+- `product_id` → `products.id`.
+- `UNIQUE(client_id, asset_code)`.
+- Equipment unit dan product harus berasal dari client yang sama.
+- Unit dengan status `maintenance`, `damaged`, `lost`, atau `inactive` tidak dapat dialokasikan untuk rental baru.
+- Status `available` menunjukkan unit secara fisik dapat dipakai; apakah unit tersedia pada periode tertentu tetap dihitung berdasarkan assignment rental dan overlap tanggal.
 
 ### orders
 | Column | Type | Nullable | Default | Description |
@@ -179,11 +243,11 @@ Constraint:
 | id | bigint | no | auto | Primary key |
 | client_id | bigint | no | - | Client |
 | customer_id | bigint | no | - | Customer global |
-| kode_order | varchar | no | - | Order code |
-| tanggal_mulai | date | no | - | Rental start |
-| tanggal_selesai | date | no | - | Rental end |
-| alamat_pengiriman | text | no | - | Alamat tujuan pengiriman untuk order |
-| total_harga | decimal(12,2) | no | `0` | Total transaction |
+| order_code | varchar | no | - | Order code |
+| start_date | date | no | - | Rental start |
+| end_date | date | no | - | Rental end |
+| shipping_address | text | no | - | Alamat tujuan pengiriman untuk order |
+| total_amount | decimal(12,2) | no | `0` | Total transaction |
 | status | varchar | no | `menunggu_konfirmasi` | Order status |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
@@ -207,9 +271,9 @@ Rules:
 - `client_id` → `clients.id`.
 - `customer_id` → `users.id` dengan role `customer`.
 - Customer global dapat memiliki order pada client yang berbeda.
-- `alamat_pengiriman` diisi customer saat checkout dan digunakan kembali saat Admin Rental membuat shipment.
-- `tanggal_selesai` tidak boleh lebih awal dari `tanggal_mulai`.
-- `total_harga >= 0`.
+- `shipping_address` diisi customer saat checkout dan digunakan kembali saat Admin Rental membuat shipment.
+- `end_date` tidak boleh lebih awal dari `start_date`.
+- `total_amount >= 0`.
 
 Status availability aktif:
 ```text
@@ -235,8 +299,8 @@ dibatalkan
 | id | bigint | no | auto | Primary key |
 | order_id | bigint | no | - | Order |
 | product_id | bigint | no | - | Product |
-| jumlah | integer | no | - | Quantity |
-| harga_satuan | decimal(12,2) | no | - | Harga produk pada saat transaksi |
+| quantity | integer | no | - | Quantity |
+| unit_price | decimal(12,2) | no | - | Harga produk pada saat transaksi |
 | subtotal | decimal(12,2) | no | - | Subtotal item |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
@@ -244,22 +308,40 @@ dibatalkan
 Constraint:
 - `order_id` → `orders.id`.
 - `product_id` → `products.id`.
-- `jumlah > 0`.
-- `harga_satuan >= 0`.
+- `quantity > 0`.
+- `unit_price >= 0`.
 - `subtotal >= 0`.
 - Product pada item harus berasal dari client yang sama dengan `orders.client_id`.
+- `quantity` harus sama dengan jumlah unit pada `order_item_units` ketika order siap diproses.
+
+### order_item_units
+| Column | Type | Nullable | Default | Description |
+|---|---|---|---|---|
+| id | bigint | no | auto | Primary key |
+| order_item_id | bigint | no | - | Order item |
+| equipment_unit_id | bigint | no | - | Physical equipment unit |
+| created_at | timestamp | no | auto | Created |
+| updated_at | timestamp | no | auto | Updated |
+
+Constraint:
+- `order_item_id` → `order_items.id`.
+- `equipment_unit_id` → `equipment_units.id`.
+- `UNIQUE(order_item_id, equipment_unit_id)`.
+- Equipment unit yang dialokasikan harus berasal dari product yang sama dengan `order_items.product_id`.
+- Satu equipment unit tidak boleh dialokasikan pada dua order aktif yang periode sewanya saling bertabrakan.
+- Junction ini menyimpan unit fisik mana yang digunakan untuk suatu order item, sehingga riwayat penggunaan unit dapat dilacak.
 
 ### payments
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | order_id | bigint | no | - | Order |
-| metode | varchar | no | `bank_transfer` | Payment method |
-| bukti_pembayaran | varchar | yes | NULL | Path/URL proof file |
-| tanggal_bayar | timestamp | yes | NULL | Payment timestamp |
+| payment_method | varchar | no | `bank_transfer` | Payment method |
+| payment_proof | varchar | yes | NULL | Path/URL proof file |
+| paid_at | timestamp | yes | NULL | Payment timestamp |
 | status | varchar | no | `menunggu` | Payment status |
-| diverifikasi_oleh | bigint | yes | NULL | User admin verifier |
-| catatan | text | yes | NULL | Notes |
+| verified_by | bigint | yes | NULL | User admin verifier |
+| notes | text | yes | NULL | Notes |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
@@ -277,7 +359,7 @@ ditolak
 
 Constraint:
 - `order_id` → `orders.id`.
-- `diverifikasi_oleh` → `users.id`, nullable.
+- `verified_by` → `users.id`, nullable.
 - Bukti pembayaran diperlukan ketika customer mengirim pembayaran.
 - Payment hanya dapat diunggah setelah `identity_guarantees.status = diverifikasi`.
 
@@ -286,17 +368,17 @@ Constraint:
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | order_id | bigint | no | - | Order |
-| metode_pengiriman | varchar | no | - | Delivery method |
-| nama_kurir | varchar | yes | NULL | Courier name |
-| nomor_resi | varchar | yes | NULL | Tracking number |
-| tanggal_kirim | date | yes | NULL | Shipping date |
-| tanggal_diterima | date | yes | NULL | Received date, diisi saat customer konfirmasi |
-| status_pengiriman | varchar | no | `menunggu` | Shipping status |
-| catatan | text | yes | NULL | Notes |
+| shipping_method | varchar | no | - | Delivery method |
+| courier_name | varchar | yes | NULL | Courier name |
+| tracking_number | varchar | yes | NULL | Tracking number |
+| shipping_date | date | yes | NULL | Shipping date |
+| received_date | date | yes | NULL | Received date, diisi saat customer konfirmasi |
+| shipping_status | varchar | no | `menunggu` | Shipping status |
+| notes | text | yes | NULL | Notes |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
-Metode:
+Shipping method:
 ```text
 kurir
 langsung
@@ -313,25 +395,25 @@ dibatalkan
 
 Rules:
 - `order_id` → `orders.id`.
-- Alamat tujuan tidak disimpan ulang; gunakan `orders.alamat_pengiriman`.
-- `nama_kurir` dan `nomor_resi` dapat kosong bila metode `langsung`.
-- `tanggal_diterima` diisi saat customer melakukan konfirmasi penerimaan.
+- Alamat tujuan tidak disimpan ulang; gunakan `orders.shipping_address`.
+- `courier_name` dan `tracking_number` dapat kosong bila metode `langsung`.
+- `received_date` diisi saat customer melakukan konfirmasi penerimaan.
 
 ### returns
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | order_id | bigint | no | - | Order |
-| metode_pengembalian | varchar | no | - | Return method |
-| nama_kurir | varchar | yes | NULL | Courier name |
-| nomor_resi | varchar | yes | NULL | Return tracking |
-| tanggal_pengembalian | date | yes | NULL | Return date |
-| status_pengembalian | varchar | no | `diajukan` | Return status |
-| catatan | text | yes | NULL | Notes |
+| return_method | varchar | no | - | Return method |
+| courier_name | varchar | yes | NULL | Courier name |
+| tracking_number | varchar | yes | NULL | Return tracking |
+| return_date | date | yes | NULL | Return date |
+| return_status | varchar | no | `diajukan` | Return status |
+| notes | text | yes | NULL | Notes |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
-Metode:
+Return method:
 ```text
 kurir
 langsung
@@ -349,7 +431,7 @@ dibatalkan
 
 Rules:
 - `order_id` → `orders.id`.
-- `nama_kurir` dan `nomor_resi` dapat kosong bila metode `langsung`.
+- `courier_name` dan `tracking_number` dapat kosong bila metode `langsung`.
 
 ### identity_guarantees
 | Column | Type | Nullable | Default | Description |
@@ -357,11 +439,11 @@ Rules:
 | id | bigint | no | auto | Primary key |
 | order_id | bigint | no | - | Order |
 | customer_id | bigint | no | - | Customer global |
-| nama_lengkap | varchar | no | - | Full name |
-| nomor_identitas | varchar | no | - | Nomor KTP |
-| foto_identitas | varchar | no | - | Foto KTP |
-| foto_wajah | varchar | no | - | Selfie wajah |
-| alamat | text | no | - | Alamat sesuai identitas (KTP) |
+| full_name | varchar | no | - | Full name |
+| identity_number | varchar | no | - | Nomor KTP |
+| identity_document_image | varchar | no | - | Foto KTP |
+| face_image | varchar | no | - | Selfie wajah |
+| identity_address | text | no | - | Alamat sesuai identitas (KTP) |
 | status | varchar | no | `menunggu` | Identity guarantee review status |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
@@ -387,14 +469,15 @@ Rules:
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | order_id | bigint | no | - | Order |
-| tipe | varchar | no | - | Check type |
-| catatan | text | no | - | Condition notes/checklist |
-| foto | varchar | yes | NULL | Condition photo |
-| diperiksa_oleh | bigint | no | - | User checker |
+| equipment_unit_id | bigint | no | - | Physical equipment unit |
+| check_type | varchar | no | - | Check type |
+| notes | text | no | - | Condition notes/checklist |
+| image | varchar | yes | NULL | Condition photo |
+| checked_by | bigint | no | - | User checker |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
-Tipe:
+Check type:
 ```text
 sebelum
 sesudah
@@ -402,16 +485,19 @@ sesudah
 
 Constraint:
 - `order_id` → `orders.id`.
-- `diperiksa_oleh` → `users.id`.
+- `equipment_unit_id` → `equipment_units.id`.
+- `checked_by` → `users.id`.
+- Equipment unit harus termasuk unit yang dialokasikan ke order tersebut melalui `order_item_units`.
 
 ### damage_reports
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | order_id | bigint | no | - | Order |
-| dilaporkan_oleh | bigint | no | - | User reporter |
-| deskripsi | text | no | - | Damage description |
-| foto | varchar | yes | NULL | Damage photo |
+| equipment_unit_id | bigint | no | - | Physical equipment unit |
+| reported_by | bigint | no | - | User reporter |
+| description | text | no | - | Damage description |
+| image | varchar | yes | NULL | Damage photo |
 | status | varchar | no | `dilaporkan` | Report status |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
@@ -427,7 +513,9 @@ ditolak
 
 Constraint:
 - `order_id` → `orders.id`.
-- `dilaporkan_oleh` → `users.id`.
+- `equipment_unit_id` → `equipment_units.id`.
+- `reported_by` → `users.id`.
+- Equipment unit harus termasuk unit yang dialokasikan ke order tersebut melalui `order_item_units`.
 
 ### damage_cases
 | Column | Type | Nullable | Default | Description |
@@ -435,9 +523,9 @@ Constraint:
 | id | bigint | no | auto | Primary key |
 | damage_report_id | bigint | no | - | Damage report |
 | status | varchar | no | `dibuka` | Case status |
-| tanggapan_customer | text | yes | NULL | Customer response |
-| catatan_admin | text | yes | NULL | Admin notes |
-| hasil_penyelesaian | text | yes | NULL | Resolution |
+| customer_response | text | yes | NULL | Customer response |
+| admin_notes | text | yes | NULL | Admin notes |
+| resolution | text | yes | NULL | Resolution |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
@@ -461,8 +549,8 @@ Constraint:
 | id | bigint | no | auto | Primary key |
 | client_id | bigint | yes | NULL | Client |
 | user_id | bigint | no | - | User |
-| aktivitas | varchar | no | - | Activity name |
-| deskripsi | text | yes | NULL | Activity description |
+| activity | varchar | no | - | Activity name |
+| description | text | yes | NULL | Activity description |
 | created_at | timestamp | no | auto | Created |
 
 Constraint:
@@ -474,13 +562,14 @@ Constraint:
 ```text
 Client
  ├── hasMany Users (Admin Rental)
- ├── hasMany Licenses
+ ├── hasMany Subscriptions
  ├── hasMany Categories
  ├── hasMany Products
+ ├── hasMany EquipmentUnits
  ├── hasMany Orders
  └── hasMany ActivityLogs
 
-License
+Subscription
  └── belongsTo Client
 
 User
@@ -498,7 +587,15 @@ Category
 Product
  ├── belongsTo Client
  ├── belongsTo Category
+ ├── hasMany EquipmentUnits
  └── hasMany OrderItems
+
+EquipmentUnit
+ ├── belongsTo Client
+ ├── belongsTo Product
+ ├── hasMany OrderItemUnits
+ ├── hasMany ConditionChecks
+ └── hasMany DamageReports
 
 Order
  ├── belongsTo Client
@@ -513,7 +610,12 @@ Order
 
 OrderItem
  ├── belongsTo Order
- └── belongsTo Product
+ ├── belongsTo Product
+ └── hasMany OrderItemUnits
+
+OrderItemUnit
+ ├── belongsTo OrderItem
+ └── belongsTo EquipmentUnit
 
 Payment
  ├── belongsTo Order
@@ -531,10 +633,12 @@ IdentityGuarantee
 
 ConditionCheck
  ├── belongsTo Order
+ ├── belongsTo EquipmentUnit
  └── belongsTo Checker (User)
 
 DamageReport
  ├── belongsTo Order
+ ├── belongsTo EquipmentUnit
  ├── belongsTo Reporter (User)
  └── hasOne DamageCase
 
@@ -550,31 +654,38 @@ Catatan:
 - `Order → IdentityGuarantee` adalah `hasOne` karena satu order hanya memiliki satu jaminan identitas aktif untuk transaksi tersebut.
 - `DamageReport → DamageCase` adalah `hasOne`.
 - `identity_guarantees.order_id` dan `damage_cases.damage_report_id` harus unique.
+- `OrderItem → EquipmentUnit` menggunakan tabel penghubung `order_item_units` agar satu order item dengan `quantity > 1` dapat menunjuk beberapa unit fisik yang berbeda.
 
 ## 6. Foreign Key & Delete Rules
 Gunakan aturan berikut untuk menjaga integritas data dan histori transaksi:
 
 | Relasi | On Delete |
 |---|---|
-| `licenses.client_id → clients.id` | RESTRICT |
+| `subscriptions.client_id → clients.id` | RESTRICT |
 | `users.client_id → clients.id` | RESTRICT |
 | `categories.client_id → clients.id` | CASCADE |
 | `products.client_id → clients.id` | CASCADE |
 | `products.category_id → categories.id` | RESTRICT |
+| `equipment_units.client_id → clients.id` | RESTRICT |
+| `equipment_units.product_id → products.id` | RESTRICT |
 | `orders.client_id → clients.id` | RESTRICT |
 | `orders.customer_id → users.id` | RESTRICT |
 | `order_items.order_id → orders.id` | CASCADE |
 | `order_items.product_id → products.id` | RESTRICT |
+| `order_item_units.order_item_id → order_items.id` | CASCADE |
+| `order_item_units.equipment_unit_id → equipment_units.id` | RESTRICT |
 | `payments.order_id → orders.id` | CASCADE |
-| `payments.diverifikasi_oleh → users.id` | SET NULL |
+| `payments.verified_by → users.id` | SET NULL |
 | `shipments.order_id → orders.id` | CASCADE |
 | `returns.order_id → orders.id` | CASCADE |
 | `identity_guarantees.order_id → orders.id` | CASCADE |
 | `identity_guarantees.customer_id → users.id` | RESTRICT |
 | `condition_checks.order_id → orders.id` | CASCADE |
-| `condition_checks.diperiksa_oleh → users.id` | RESTRICT |
+| `condition_checks.equipment_unit_id → equipment_units.id` | RESTRICT |
+| `condition_checks.checked_by → users.id` | RESTRICT |
 | `damage_reports.order_id → orders.id` | CASCADE |
-| `damage_reports.dilaporkan_oleh → users.id` | RESTRICT |
+| `damage_reports.equipment_unit_id → equipment_units.id` | RESTRICT |
+| `damage_reports.reported_by → users.id` | RESTRICT |
 | `damage_cases.damage_report_id → damage_reports.id` | CASCADE |
 | `activity_logs.client_id → clients.id` | SET NULL |
 | `activity_logs.user_id → users.id` | RESTRICT |
@@ -613,15 +724,60 @@ Order::where('customer_id', $userId)
 
 Jangan menghilangkan filter `client_id`, karena satu customer dapat memiliki transaksi pada beberapa client.
 
-## 8. Availability Logic
+### Equipment unit isolation
+Karena equipment unit adalah data fisik milik client, query terhadap `equipment_units` juga harus dibatasi berdasarkan `client_id` dan konteks product/client. Jangan mengambil seluruh unit tanpa filter client.
 
-Ketersediaan tidak hanya berdasarkan `products.stok`. Sistem harus memperhitungkan order yang periode sewanya bertabrakan.
+Contoh:
+```php
+EquipmentUnit::where('client_id', $clientId)
+    ->where('product_id', $productId)
+    ->where('status', 'available')
+    ->get();
+```
+
+## 8. Unit-Level Inventory & Availability Logic
+
+Inventory RentalBase menggunakan pendekatan **unit-level**. `products` menyimpan informasi jenis produk, sedangkan setiap barang fisik dicatat pada `equipment_units`.
+
+Contoh:
+```text
+products
+id = 1
+name = Stroller A
+
+equipment_units
+id | product_id | asset_code | status
+1  | 1          | ST-001     | available
+2  | 1          | ST-002     | available
+3  | 1          | ST-003     | damaged
+4  | 1          | ST-004     | available
+5  | 1          | ST-005     | available
+```
+
+Pada contoh tersebut:
+```text
+Total physical units = 5
+Unavailable units    = 1 (damaged)
+Potentially available = 4
+```
+
+### Unit ID dan Asset Code
+- Setiap physical equipment memiliki primary key `equipment_units.id`.
+- Setiap unit juga memiliki `asset_code` yang unik dalam satu client untuk memudahkan identifikasi fisik, misalnya `ST-001`, `ST-002`, dan seterusnya.
+- `products.id` tetap mengidentifikasi jenis produk, sedangkan `equipment_units.id` mengidentifikasi unit fisik tertentu.
+
+### Perhitungan availability
+Availability tidak lagi dihitung dari `products.stock`. Sistem menghitung unit yang dapat digunakan berdasarkan `equipment_units`, assignment pada `order_item_units`, status order, dan overlap periode sewa.
 
 Konsep:
 ```text
+total_stock = jumlah equipment_units untuk satu product
+
 available_stock =
-product.stok - jumlah unit dari order aktif
-pada periode yang bertabrakan
+total_stock
+- unit dengan status maintenance/damaged/lost/inactive
+- unit yang telah dialokasikan ke order aktif
+  pada periode yang bertabrakan
 ```
 
 Order aktif untuk availability:
@@ -642,7 +798,30 @@ ditolak
 dibatalkan
 ```
 
-Aturan overlap periode harus memastikan booking tidak dapat melebihi `products.stok` pada periode yang sama.
+### Unit damaged
+Jika satu unit mengalami kerusakan, hanya unit tersebut yang diubah statusnya, misalnya:
+```text
+ST-003
+available → damaged
+```
+
+Unit tersebut otomatis tidak dapat dipilih untuk rental baru. Unit lain dari product yang sama tetap dapat disewa. Dengan demikian tidak diperlukan pengurangan `products.stock` secara manual.
+
+### Assignment saat rental
+Jika customer memesan 2 unit dari product yang sama:
+```text
+order_items
+quantity = 2
+```
+Maka sistem harus mengalokasikan 2 unit fisik melalui `order_item_units`, misalnya:
+```text
+order_item_units
+order_item_id | equipment_unit_id
+10            | 1
+10            | 4
+```
+
+Sistem tidak boleh mengalokasikan equipment unit yang sama pada dua order aktif dengan periode yang bertabrakan.
 
 ## 9. Identity Guarantee Flow
 
@@ -652,11 +831,11 @@ Customer login
 Create Order
     ↓
 Submit Identity Guarantee
-    ├── Nama lengkap
-    ├── Nomor KTP
-    ├── Foto KTP
-    ├── Selfie wajah
-    └── Alamat sesuai KTP
+    ├── Full name
+    ├── Identity number
+    ├── Identity document image
+    ├── Face image
+    └── Identity address
     ↓
 status = menunggu
     ↓
@@ -679,8 +858,23 @@ Identity guarantee bukan deposit uang dan tidak menggunakan verifikasi identitas
 Dashboard dan laporan tidak memerlukan tabel baru. Data diperoleh melalui agregasi dari tabel yang sudah ada.
 
 - **Admin Dashboard**: agregasi `orders` dan `payments` berdasarkan `client_id` dan status.
-- **Admin Reports**: agregasi `orders.total_harga` dan `orders.status` dalam rentang tanggal, dibatasi `client_id`.
-- **Owner Dashboard**: agregasi `clients.status` dan `licenses.status` per client. Owner tidak mengakses detail transaksi harian customer.
+- **Admin Reports**: agregasi `orders.total_amount` dan `orders.status` dalam rentang tanggal, dibatasi `client_id`.
+- **Owner Dashboard**: agregasi `clients.status` dan `subscriptions.status` per client. Owner tidak mengakses detail transaksi harian customer.
+
+## 10.1 Subscription Limits & Branding Authorization
+
+Batas paket merupakan aturan bisnis yang menggunakan data dari `subscriptions`. Struktur database tidak memerlukan tabel atau kolom baru hanya untuk menyimpan limit berikut karena paketnya sudah ditentukan oleh RentalBase:
+
+| Benefit | Starter | Business | Professional |
+|---|---:|---:|---:|
+| Maks. jenis produk | 10 | 50 | Unlimited |
+| Maks. unit peralatan total | 50 | 100 | Unlimited |
+| Maks. kategori | 5 | 20 | Unlimited |
+| Maks. Admin Rental | 1 | 3 | 10 |
+| Durasi | 3 bulan | 6 bulan | 12 bulan |
+| Custom warna beberapa elemen | Tidak | Ya | Ya |
+
+Limit harus diperiksa pada business logic/backend sebelum penambahan data. `clients.theme_color` sudah tersedia sehingga tidak membutuhkan kolom tambahan; yang berubah adalah aturan authorization berdasarkan subscription aktif.
 
 ## 11. Database Development Rule
 
@@ -705,6 +899,7 @@ Migration harus merepresentasikan:
 - unique constraint;
 - foreign key;
 - aturan `onDelete`;
-- nilai status/role yang telah ditentukan pada dokumen ini.
+- nilai status/role yang telah ditentukan pada dokumen ini;
+- relasi `products` → `equipment_units` → `order_item_units` untuk inventory unit-level.
 
 Supabase digunakan sebagai platform PostgreSQL dan storage sesuai kebutuhan aplikasi.

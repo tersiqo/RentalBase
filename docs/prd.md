@@ -8,7 +8,7 @@
 **RentalBase: Equipment Rental System**
 
 ### 1.2 Deskripsi
-RentalBase adalah sistem informasi penyewaan peralatan berbasis web yang membantu penyedia rental peralatan dalam mengelola produk, stok, ketersediaan, pemesanan, pembayaran, pengiriman, pengembalian, dan pemeriksaan kondisi barang.
+RentalBase adalah sistem informasi penyewaan peralatan berbasis web yang membantu penyedia rental peralatan dalam mengelola product, physical equipment unit, availability, booking, payment, shipping, return, dan pemeriksaan kondisi barang.
 
 RentalBase menggunakan konsep **multi-client**, sehingga satu aplikasi dapat digunakan oleh beberapa penyedia rental dengan data masing-masing yang tetap terpisah berdasarkan `client_id`.
 
@@ -22,14 +22,14 @@ Halaman utama `/` merupakan landing page platform RentalBase. Customer mengakses
 5. Mencatat pengiriman dan pengembalian.
 6. Mencatat kondisi peralatan sebelum dan setelah penyewaan.
 7. Mendukung beberapa client dalam satu aplikasi.
-8. Membantu Owner memonitor client dan lisensi.
+8. Membantu Owner memonitor client dan subscription.
 
 ## 2. Target Users
 
 ### 2.1 Customer
 - Mengakses website client tanpa harus login (guest browsing).
 - Melihat katalog dan detail peralatan, termasuk ketentuan jaminan identitas yang ditampilkan sebagai informasi pada halaman produk.
-- Melihat ketersediaan.
+- Melihat ketersediaan physical equipment unit.
 - Memilih periode penyewaan.
 - Login/registrasi hanya diwajibkan saat menekan tombol "Sewa Alat" untuk melanjutkan ke booking.
 - Booking dan checkout, termasuk mengisi alamat pengiriman.
@@ -42,7 +42,7 @@ Halaman utama `/` merupakan landing page platform RentalBase. Customer mengakses
 
 ### 2.2 Admin Rental
 - Mengelola profil dan branding usaha (nama usaha, deskripsi, logo, warna tema) dalam batas konfigurasi yang disediakan sistem.
-- Mengelola kategori, peralatan, harga, stok, dan teks ketentuan jaminan identitas per produk.
+- Mengelola kategori, product, physical equipment unit, harga, status unit, dan identity guarantee requirements per product.
 - Memeriksa booking.
 - Memverifikasi pembayaran.
 - Mengelola pengiriman dan pengembalian.
@@ -55,7 +55,7 @@ Halaman utama `/` merupakan landing page platform RentalBase. Customer mengakses
 - Menambahkan client.
 - Membuat dan mengelola akun Admin Rental untuk masing-masing client.
 - Mengelola subdomain.
-- Mengelola lisensi.
+- Mengelola subscription.
 - Mengaktifkan/menonaktifkan client.
 - Melihat dashboard monitoring ringkas seluruh client.
 
@@ -68,7 +68,7 @@ Setiap client memiliki:
 - `client_id`
 - akun Admin Rental (dibuat oleh Owner, terikat pada satu client)
 - domain/subdomain (dikelola oleh Owner)
-- lisensi
+- subscription
 - data produk sendiri
 - data transaksi sendiri
 
@@ -96,13 +96,13 @@ Landing page, katalog, detail produk, dan pengecekan availability dapat diakses 
 Akun Customer bersifat global: satu akun (satu email/password) dapat dipakai untuk login dan bertransaksi di subdomain client mana pun. Ini berbeda dengan akun Admin Rental yang terikat pada satu client. Meskipun akunnya global, tampilan riwayat pesanan pada satu subdomain hanya menampilkan transaksi milik client tersebut.
 
 ### 4.3 Produk
-Produk memiliki nama, deskripsi, kategori, harga sewa, stok, foto, dan status. Admin Rental dapat mengisi teks ketentuan jaminan identitas per produk (misalnya syarat dokumen yang perlu dibawa saat pengambilan barang). Teks ini murni informasi yang ditampilkan ke customer dan tidak memicu validasi atau logika otomatis apa pun pada sistem.
+Product memiliki name, description, category, rental price, image, identity guarantee requirements, dan status. Jumlah unit fisik tidak disimpan langsung pada product. Setiap physical equipment dicatat pada `equipment_units` dan memiliki `asset_code` serta status operasional sendiri. Admin Rental dapat mengisi identity guarantee requirements sebagai teks informasi yang ditampilkan kepada customer dan tidak memicu validasi atau logika otomatis.
 
 ### 4.4 Availability
-Ketersediaan ditentukan berdasarkan stok, jumlah yang sedang dipesan, dan periode penyewaan. Sistem harus mencegah booking melebihi stok pada periode yang sama.
+Ketersediaan ditentukan berdasarkan jumlah `equipment_units` yang dapat digunakan, unit yang sedang dialokasikan pada `order_item_units`, status operasional unit, dan periode penyewaan. Sistem harus mencegah booking melebihi jumlah unit yang tersedia pada periode yang sama.
 
 ### 4.5 Booking & Checkout
-Satu booking hanya berasal dari satu client. Pada tahap checkout, customer mengisi jumlah unit, periode sewa, dan alamat pengiriman. Alamat pengiriman disimpan pada data order dan digunakan kembali oleh Admin Rental saat mencatat pengiriman.
+Satu booking hanya berasal dari satu client. Pada tahap checkout, customer mengisi quantity, periode sewa, dan alamat pengiriman. Physical equipment unit dialokasikan melalui `order_item_units` sesuai quantity. Alamat pengiriman disimpan pada `orders.shipping_address` dan digunakan kembali oleh Admin Rental saat mencatat pengiriman.
 
 ### 4.6 Payment
 Pembayaran menggunakan transfer manual. Customer melakukan transfer dan mengunggah bukti pembayaran setelah jaminan identitas berstatus `diverifikasi`. Admin Rental melakukan verifikasi. Tidak ada payment gateway pada tahap awal.
@@ -117,16 +117,16 @@ Pengiriman melalui kurir pihak ketiga atau langsung. Sistem mencatat nama kurir,
 Pengembalian melalui kurir atau langsung. Pengembalian dicatat terpisah dari pengiriman awal.
 
 ### 4.10 Damage Handling
-Kondisi barang dicatat sebelum dan sesudah penyewaan melalui checklist dan foto. Sistem menyimpan laporan kerusakan, status, dan tanggapan customer. Penyelesaian mengikuti kebijakan penyedia rental, bukan otomatisasi AI.
+Kondisi physical equipment unit dicatat sebelum dan sesudah penyewaan melalui checklist dan image. Sistem menyimpan unit yang diperiksa, laporan kerusakan, status, dan tanggapan customer. Penyelesaian mengikuti kebijakan penyedia rental, bukan otomatisasi AI.
 
 ### 4.11 Client Branding
-Admin Rental dapat mengubah nama usaha, deskripsi, logo, dan warna tema miliknya sendiri melalui fitur Profil dan Branding. Subdomain dan pembuatan akun Admin Rental tetap menjadi wewenang Owner.
+Admin Rental dapat mengubah nama usaha, deskripsi, dan logo miliknya sendiri melalui fitur Profil dan Branding. Pengubahan warna beberapa elemen desain halaman hanya tersedia untuk client dengan paket **Business** atau **Professional**. Paket **Starter** menggunakan warna/desain bawaan RentalBase. Subdomain dan pembuatan akun Admin Rental tetap menjadi wewenang Owner.
 
 ## 5. Functional Requirements
 
 ### Customer
 - Register (akun global, satu kali daftar berlaku untuk semua client), login, logout, profile.
-- View categories, equipment, detail (termasuk ketentuan jaminan identitas), availability — dapat diakses tanpa login.
+- View categories, products, equipment details (termasuk identity guarantee requirements), availability — dapat diakses tanpa login.
 - Select rental period.
 - Login/registrasi (jika belum) saat menekan "Sewa Alat", lalu create/view booking dengan alamat pengiriman.
 - Submit jaminan identitas.
@@ -140,9 +140,9 @@ Admin Rental dapat mengubah nama usaha, deskripsi, logo, dan warna tema miliknya
 
 ### Admin Rental
 - Dashboard operasional (ringkasan booking baru, pembayaran menunggu verifikasi, barang perlu dikirim/diterima).
-- Update profil dan branding usaha (nama usaha, deskripsi, logo, warna tema).
+- Update profil dan branding usaha (nama usaha, deskripsi, logo, dan warna tema jika paket Business/Professional).
 - Category management.
-- Equipment management, termasuk pengisian ketentuan jaminan identitas per produk.
+- Product dan equipment unit management, termasuk pengisian identity guarantee requirements per product.
 - Booking management.
 - Identity guarantee review.
 - Payment verification.
@@ -156,17 +156,48 @@ Admin Rental dapat mengubah nama usaha, deskripsi, logo, dan warna tema miliknya
 - Client management.
 - Membuat dan mengelola akun Admin Rental per client.
 - Subdomain management.
-- License management.
+- Subscription management.
 - Client status.
-- Dashboard monitoring ringkas (jumlah client, status client, status license), tanpa mengakses transaksi harian.
+- Dashboard monitoring ringkas (jumlah client, status client, status subscription), tanpa mengakses transaksi harian.
 
-## 6. License
-Setiap client memiliki tanggal mulai, tanggal berakhir, dan status lisensi:
+## 6. Subscription
+Setiap client dapat memiliki subscription yang merepresentasikan paket layanan RentalBase yang sedang digunakan.
+
+### 6.1 Paket dan Benefit
+
+| Benefit | Starter | Business | Professional |
+|---|---:|---:|---:|
+| Maks. jenis produk | 10 | 50 | Unlimited |
+| Maks. unit peralatan total | 50 | 100 | Unlimited |
+| Maks. kategori | 5 | 20 | Unlimited |
+| Maks. Admin Rental | 1 | 3 | 10 |
+| Durasi pemakaian aplikasi | 3 bulan | 6 bulan | 12 bulan |
+| Custom warna beberapa elemen desain halaman | Tidak | Ya | Ya |
+
+Tidak ada benefit pembeda lain. Katalog online, booking rental, availability, payment, shipping, return, identity guarantee, condition check, dan damage handling tersedia sama pada semua paket.
+
+### 6.2 Data Subscription
+Data utama subscription:
+- `client_id`
+- `plan_name`
+- `start_date`
+- `end_date`
+- `status`
+
+Status subscription:
 ```text
 active
 expired
 suspended
 ```
+
+### 6.3 Aturan Paket
+- Backend wajib membatasi jumlah jenis product, equipment unit total, kategori, dan Admin Rental sesuai paket aktif client.
+- Durasi subscription mengikuti paket yang dipilih.
+- Custom warna beberapa elemen desain halaman hanya dapat digunakan oleh Business dan Professional.
+- Core layout dan fitur operasional RentalBase tetap sama untuk semua paket.
+
+Tidak menggunakan license key, subscription key, token, atau activation code. Status subscription digunakan untuk mengetahui apakah layanan client masih aktif dan untuk kebutuhan monitoring Owner.
 
 ## 7. UI/UX Requirements
 - Responsive.
@@ -207,7 +238,7 @@ Penambahan client tidak memerlukan database terpisah.
 3. Supabase sebagai layanan PostgreSQL.
 4. Tidak ada marketplace.
 5. Tidak ada branch/cabang dalam satu client.
-6. Lokasi tambahan dengan akun/domain/license tersendiri diperlakukan sebagai client baru.
+6. Lokasi tambahan dengan akun/domain/subscription tersendiri diperlakukan sebagai client baru.
 7. Tidak ada deposit uang.
 8. Tidak ada GPS.
 9. Tidak ada API kurir pada tahap awal.
@@ -225,9 +256,10 @@ Penambahan client tidak memerlukan database terpisah.
 4. Satu akun Customer dapat digunakan untuk menyewa di lebih dari satu client tanpa mendaftar ulang, dengan riwayat pesanan tetap terpisah per client.
 5. Customer dapat mengisi jaminan identitas untuk setiap order, Admin Rental dapat meninjau jaminan identitas tersebut, dan Customer dapat mengunggah bukti pembayaran setelah jaminan identitas diverifikasi.
 6. Admin dapat memverifikasi pembayaran.
-7. Admin dapat mengelola peralatan, stok, dan profil/branding usahanya.
+7. Admin dapat mengelola product, physical equipment unit, status unit, dan profil/branding usahanya.
 8. Sistem mencatat pengiriman, konfirmasi penerimaan, dan pengembalian.
 9. Sistem mencatat kondisi dan kerusakan.
 10. Data antar-client terisolasi dengan `client_id`.
-11. Owner dapat mengelola client, akun Admin Rental, dan lisensi melalui dashboard monitoring ringkas.
-12. Fitur utama berjalan tanpa error pada skenario pengujian yang telah ditentukan (fungsional, performa, dan kompatibilitas).
+11. Owner dapat mengelola client, akun Admin Rental, dan subscription melalui dashboard monitoring ringkas.
+12. Sistem menerapkan limit paket untuk jenis product, equipment unit total, kategori, Admin Rental, durasi subscription, dan custom warna sesuai paket.
+13. Fitur utama berjalan tanpa error pada skenario pengujian yang telah ditentukan (fungsional, performa, dan kompatibilitas).
