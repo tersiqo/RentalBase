@@ -50,27 +50,34 @@ Admin Rental hanya boleh melihat dan mengelola data client miliknya, dan akunnya
 12. Katalog, detail produk, dan availability dapat diakses tanpa login (guest/publik). Login/registrasi baru diwajibkan saat customer menekan tombol "Sewa Alat"; gunakan intended redirect agar customer kembali ke produk/tanggal yang tadi dipilih setelah login.
 13. Akun Customer bersifat global (`users.client_id = NULL`): satu akun dapat menyewa di banyak client berbeda. `GET /api/orders` tetap dibatasi oleh `client_id` dari subdomain yang sedang diakses — riwayat pesanan yang tampil adalah riwayat pada client tersebut saja, bukan gabungan semua client.
 14. Alamat pengiriman diisi customer saat checkout dan disimpan pada `orders.shipping_address`, digunakan kembali saat Admin Rental membuat data shipment.
-15. Pembayaran transfer manual.
+15. Pembayaran transfer manual atau QRIS. Admin Rental mengelola metode pembayaran toko (multi rekening bank dan QRIS) melalui fitur pengaturan. Customer melihat daftar metode pembayaran tersedia dan mengunggah bukti pembayaran.
 16. Bukti pembayaran diverifikasi Admin Rental dan customer hanya dapat mengunggah bukti pembayaran setelah identity guarantee order berstatus `diverifikasi`.
 17. Pengiriman melalui kurir atau metode langsung; customer mengonfirmasi penerimaan barang melalui endpoint tersendiri.
 18. Tidak ada GPS/API kurir pada tahap awal.
-19. Pengembalian dicatat terpisah dari pengiriman.
+19. Pengembalian dicatat terpisah dari pengiriman. Admin dapat menambahkan tagihan denda keterlambatan (late fees) jika barang dikembalikan terlambat.
 20. Kondisi barang dicatat sebelum dan sesudah rental.
 21. Kerusakan dapat dibuat sebagai damage case.
 22. Penyelesaian kerusakan mengikuti kebijakan client, bukan otomatisasi AI.
-23. Client (Admin Rental) dapat mengatur nama usaha, deskripsi, dan logo; custom warna beberapa elemen desain halaman hanya tersedia pada paket Business dan Professional; subdomain tetap dikelola Owner.
-24. Core UI tidak boleh diubah sembarangan.
-25. Laravel adalah backend dan business logic utama.
-26. PostgreSQL adalah database utama.
-27. Supabase digunakan sebagai platform PostgreSQL dan layanan terkait yang diperlukan.
-28. Dashboard dan laporan Admin/Owner diambil dari agregasi tabel yang ada, tidak memerlukan tabel baru. Availability dihitung dari physical equipment unit, assignment pada `order_item_units`, status unit, dan order aktif yang periodenya bertabrakan.
-29. Owner dashboard hanya menampilkan ringkasan client dan subscription, tidak menampilkan detail transaksi.
-30. Owner membuat akun Admin Rental untuk client melalui fitur tersendiri; akun tersebut otomatis terhubung ke `client_id` client yang dituju dan wajib memiliki `client_id` (berbeda dengan akun Customer).
-31. Identity guarantee requirements pada product (`products.identity_guarantee_requirements`) bersifat teks informasi yang ditampilkan ke customer, bukan aturan yang divalidasi otomatis oleh sistem.
-32. Setiap product dapat memiliki banyak `equipment_units` sebagai physical inventory unit.
-33. Setiap equipment unit memiliki `asset_code` unik dalam client dan status operasional `available`, `maintenance`, `damaged`, `lost`, atau `inactive`.
-34. Jumlah unit tidak disimpan sebagai angka stock utama pada `products`; total dan available unit dihitung dari `equipment_units`.
-35. `order_item_units` menghubungkan order item dengan physical equipment unit yang dialokasikan sehingga unit tertentu dapat dilacak sepanjang histori rental.
+23. Customer dapat menambahkan produk ke dalam Keranjang Belanja (Cart) dan melakukan checkout sekaligus.
+24. Client (Admin Rental) dapat mengatur nama usaha, deskripsi, dan logo; custom warna beberapa elemen desain halaman hanya tersedia pada paket Business dan Professional; subdomain tetap dikelola Owner.
+25. Core UI tidak boleh diubah sembarangan.
+26. Laravel adalah backend dan business logic utama.
+27. PostgreSQL adalah database utama.
+28. Supabase digunakan sebagai platform PostgreSQL dan layanan terkait yang diperlukan.
+29. Dashboard dan laporan Admin/Owner diambil dari agregasi tabel yang ada, tidak memerlukan tabel baru. Availability dihitung dari physical equipment unit, assignment pada `order_item_units`, status unit, dan order aktif yang periodenya bertabrakan.
+30. Owner dashboard hanya menampilkan ringkasan client dan subscription, tidak menampilkan detail transaksi.
+31. Pendaftaran client baru dilakukan secara semi self-service: calon client memilih paket dan mengisi form pendaftaran di Landing Page (`client_registrations`), kemudian Owner me-review dan menyetujui (ACC) pendaftaran tersebut melalui Owner Dashboard. Setelah disetujui, akun Admin Rental otomatis dibuat dan terikat ke `client_id` terkait.
+32. Identity guarantee requirements pada product (`products.identity_guarantee_requirements`) bersifat teks informasi yang ditampilkan ke customer, bukan aturan yang divalidasi otomatis oleh sistem.
+33. Setiap product dapat memiliki banyak `equipment_units` sebagai physical inventory unit.
+34. Setiap equipment unit memiliki `asset_code` unik dalam client dan status operasional `available`, `maintenance`, `damaged`, `lost`, atau `inactive`.
+35. Jumlah unit tidak disimpan sebagai angka stock utama pada `products`; total dan available unit dihitung dari `equipment_units`.
+36. `order_item_units` menghubungkan order item dengan physical equipment unit yang dialokasikan sehingga unit tertentu dapat dilacak sepanjang histori rental.
+37. Produk mendukung multi foto (JSON array); foto pertama digunakan sebagai foto utama di katalog.
+38. Sistem memiliki notifikasi in-app untuk customer dan admin.
+39. Order yang dibatalkan/ditolak harus menyertakan alasan (`cancellation_reason`).
+40. Keranjang Belanja (`cart_items`) mendukung penyimpanan produk dengan periode tanggal sewa (`start_date` dan `end_date`) yang berbeda-beda. Di UI keranjang, item dikelompokkan berdasarkan kesamaan periode tanggal sewa (Shopee-style grouping). Customer memilih grup tanggal sewa saat checkout, di mana 1 Checkout menghasilkan 1 Order dengan periode tanggal sewa tunggal.
+41. Order diselesaikan (`orders.status = selesai`) secara manual oleh Admin Rental setelah kondisi barang pasca-rental divalidasi. Jika Admin Rental tidak menekan tombol konfirmasi selagi barang sudah dikembalikan (`returns.return_status = diterima`), sistem akan menjalankan **Auto-Complete 3 Hari (72 jam)** untuk mengubah status order dan pengembalian menjadi `selesai`, selama tidak ada laporan kerusakan aktif atau denda yang belum lunas.
+42. Data pendaftaran calon client disimpan pada tabel `client_registrations` dengan status `menunggu_verifikasi`, `disetujui`, atau `ditolak`. Form pendaftaran mencakup validasi ketersediaan subdomain secara realtime. Admin Rental yang sudah aktif dapat melakukan login melalui tombol "Login Admin" di Landing Page dan otomatis di-redirect ke subdomain miliknya.
 
 ## 5.1 Subscription Package Rules
 
@@ -96,15 +103,33 @@ subscriptions.status → active, expired, suspended
 products.status → aktif, nonaktif
 equipment_units.status → available, maintenance, damaged, lost, inactive
 orders.status → menunggu_konfirmasi, menunggu_pembayaran, pembayaran_terverifikasi, diproses, dikirim, diterima, dikembalikan, selesai, ditolak, dibatalkan
+orders.refund_status → tidak_ada, menunggu_refund, refund_selesai
 payments.status → menunggu, diverifikasi, ditolak
 shipments.shipping_status → menunggu, diproses, dikirim, diterima, dibatalkan
 returns.return_status → diajukan, diproses, dalam_pengembalian, diterima, selesai, dibatalkan
+returns.late_fee_status → tidak_ada, menunggu_pembayaran, lunas
 identity_guarantees.status → menunggu, diverifikasi, ditolak
 damage_reports.status → dilaporkan, ditinjau, ditindaklanjuti, selesai, ditolak
 damage_cases.status → dibuka, menunggu_tanggapan_customer, diproses, selesai, dibatalkan
+damage_cases.compensation_status → tidak_ada, menunggu_pembayaran, lunas
+client_registrations.status → menunggu_verifikasi, disetujui, ditolak
 ```
 
 Availability aktif menggunakan status order `menunggu_konfirmasi`, `menunggu_pembayaran`, `pembayaran_terverifikasi`, `diproses`, `dikirim`, dan `diterima`. Unit dengan status `maintenance`, `damaged`, `lost`, atau `inactive` tidak dapat dialokasikan untuk rental baru.
+
+Kalkulasi Total Transaksi:
+- Durasi Sewa (Hari) = `ceil((end_date - start_date) / 24 jam)` (min 1 hari).
+- Total Order = `sum(unit_price * quantity * durasi_hari)`.
+
+Pembatalan Order oleh Customer:
+- Customer dapat membatalkan order sendiri jika status masih `menunggu_konfirmasi` atau `menunggu_pembayaran`.
+
+Penyelesaian Order & Auto-Complete:
+- Admin Rental dapat menyelesaikan order secara manual setelah pemeriksaan kondisi pasca-rental.
+- Auto-complete otomatis aktif 3 hari (72 jam) setelah `returns.return_status = diterima`, apabila tidak ada laporan kerusakan (`damage_reports`) aktif atau tagihan denda keterlambatan (`late_fee_status = menunggu_pembayaran`).
+
+Notification Triggers Matrix:
+- Notifikasi dikirimkan pada 10 event transaksi utama (Order Baru, Review Identitas, Review Pembayaran, Shipping, Return/Denda, Damage Case, dan Refund).
 
 ## 6. Database Rules
 Gunakan PostgreSQL. Laravel Migration adalah source of truth struktur database.
@@ -172,23 +197,25 @@ AI tidak boleh:
 ```text
 1. Project setup
 2. Database foundation
-3. Authentication (termasuk Register global untuk Customer)
-4. Customer Home (publik/guest, tanpa login)
+3. Platform Landing Page (Root Domain - Hero, Features, Pricing Table Paket Subskripsi)
+4. Authentication (termasuk Register global untuk Customer)
+5. Customer Home (publik/guest, tanpa login)
 6. Product
 7. Equipment Unit
 8. Availability
-8. Booking (mulai wajib login, dipicu tombol "Sewa Alat")
-9. Identity Guarantee + Admin Review
-10. Payment
-11. Shipping & Confirm Receipt
-12. Return
-13. Condition & Damage
-14. Admin Profile & Branding
-15. Admin Dashboard & Reports
-16. Owner Admin Rental Account Management
-17. Subscription Package Limit Enforcement
-18. Owner Dashboard
-19. Testing
+9. Cart & Booking (mulai wajib login, dipicu tombol "Sewa Alat" atau lihat Keranjang)
+10. Identity Guarantee + Admin Review
+11. Payment & Payment Methods
+12. Shipping & Confirm Receipt
+13. Return & Late Fees
+14. Condition & Damage
+15. Notifications
+16. Admin Profile & Branding
+17. Admin Dashboard & Reports
+18. Owner Admin Rental Account Management
+19. Subscription Package Limit Enforcement
+20. Owner Dashboard
+21. Testing
 ```
 
 Vertical slice awal:

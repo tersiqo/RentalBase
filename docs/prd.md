@@ -31,32 +31,34 @@ Halaman utama `/` merupakan landing page platform RentalBase. Customer mengakses
 - Melihat katalog dan detail peralatan, termasuk ketentuan jaminan identitas yang ditampilkan sebagai informasi pada halaman produk.
 - Melihat ketersediaan physical equipment unit.
 - Memilih periode penyewaan.
-- Login/registrasi hanya diwajibkan saat menekan tombol "Sewa Alat" untuk melanjutkan ke booking.
-- Booking dan checkout, termasuk mengisi alamat pengiriman.
+- Menambahkan peralatan ke dalam Keranjang Belanja (Cart) sebelum checkout.
+- Login/registrasi hanya diwajibkan saat menekan tombol "Sewa Alat" atau mengakses keranjang.
+- Booking dan checkout sekaligus untuk item di dalam keranjang, termasuk mengisi alamat pengiriman.
 - Mengisi data jaminan identitas untuk setiap order (nama lengkap, nomor KTP, foto KTP, selfie wajah, dan alamat sesuai identitas).
 - Mengunggah bukti pembayaran.
 - Melihat status pembayaran, pesanan, dan pengiriman.
+- Menerima notifikasi status pesanan (verifikasi, pengiriman, dll).
 - Mengonfirmasi penerimaan barang.
 - Melakukan pengembalian.
 - Melihat riwayat.
 
 ### 2.2 Admin Rental
 - Mengelola profil dan branding usaha (nama usaha, deskripsi, logo, warna tema) dalam batas konfigurasi yang disediakan sistem.
-- Mengelola kategori, product, physical equipment unit, harga, status unit, dan identity guarantee requirements per product.
+- Mengelola kategori, product (termasuk multi foto produk), physical equipment unit, harga, status unit, dan identity guarantee requirements per product.
+- Mengelola metode pembayaran toko (multi rekening bank dan QRIS).
 - Memeriksa booking.
 - Memverifikasi pembayaran.
 - Mengelola pengiriman dan pengembalian.
+- Menambahkan tagihan denda keterlambatan (Late Fees) jika customer terlambat mengembalikan barang.
 - Memeriksa kondisi barang.
 - Mengelola laporan kerusakan.
 - Melihat dashboard operasional dan laporan transaksi.
 
 ### 2.3 Owner
-- Mengelola client.
-- Menambahkan client.
-- Membuat dan mengelola akun Admin Rental untuk masing-masing client.
-- Mengelola subdomain.
-- Mengelola subscription.
+- Mengelola client dan peninjauan pendaftaran toko (`client_registrations`).
+- Meninjau, menyetujui (approve), atau menolak pengajuan pendaftaran client baru.
 - Mengaktifkan/menonaktifkan client.
+- Mengelola subdomain dan subscription.
 - Melihat dashboard monitoring ringkas seluruh client.
 
 Owner **bukan** operator transaksi rental harian, dan tidak mengakses detail transaksi customer.
@@ -66,8 +68,8 @@ RentalBase adalah software untuk beberapa penyedia rental peralatan. Setiap peny
 
 Setiap client memiliki:
 - `client_id`
-- akun Admin Rental (dibuat oleh Owner, terikat pada satu client)
-- domain/subdomain (dikelola oleh Owner)
+- akun Admin Rental (dibuat otomatis oleh sistem setelah pengajuan pendaftaran disetujui Owner)
+- domain/subdomain (diajukan calon client & disetujui Owner)
 - subscription
 - data produk sendiri
 - data transaksi sendiri
@@ -87,7 +89,18 @@ Customer mengakses penyedia rental melalui domain/subdomain client, misalnya:
 jaya.rentalbase.com
 outdoor.rentalbase.com
 ```
-Halaman `/` digunakan sebagai landing page platform RentalBase dan bukan katalog client. Customer mengakses client melalui domain/subdomain yang diberikan kepada client, misalnya `jaya.rentalbase.com` atau `outdoor.rentalbase.com`.
+Halaman `/` pada root domain (misal `rentalbase.id`) digunakan sebagai **Landing Page Utama Platform RentalBase** (bukan katalog client). 
+
+**Fitur & Komponen Landing Page Utama:**
+1. **Hero Section**: Penjelasan platform SaaS RentalBase.
+2. **Platform Features**: Highlight fitur keunggulan (Multi-Tenant, Dynamic Availability, Timestamp Precision, Denda Hybrid, & Notifikasi).
+3. **Pricing & Package Showcase**: Tabel perbandingan 3 paket subskripsi (Starter, Business, Professional) beserta fitur, harga, dan limit paket (limit produk, limit unit, & custom warna tema). Setiap paket dilengkapi tombol **"Memulai" / "Get Started"**.
+4. **Alur Pendaftaran Tenant Semi Self-Service**:
+   - Menekan tombol **"Memulai"** mengarahkan calon client ke Form Pendaftaran (`client_registrations`).
+   - Calon client mengisi Nama Usaha, Deskripsi, Subdomain yang diinginkan (dengan realtime availability check), Paket yang dipilih, Nama Admin/PIC, Email, WhatsApp, dan Password Admin.
+   - Pendaftaran tersimpan dengan status `menunggu_verifikasi`.
+   - Owner meninjau pengajuan di Owner Dashboard. Begitu disetujui (ACC), sistem otomatis membuatkan record `clients`, `subscriptions`, dan `users` (Admin Rental).
+   - Admin Rental dapat login langsung dari Landing Page (tombol "Login Admin") dan otomatis di-redirect ke dashboard subdomain miliknya.
 
 ### 4.2.1 Guest Browsing & Login Gate
 Landing page, katalog, detail produk, dan pengecekan availability dapat diakses tanpa login (guest). Login/registrasi baru diwajibkan saat customer menekan tombol "Sewa Alat" untuk mulai booking. Setelah login berhasil, customer diarahkan kembali ke produk dan periode sewa yang sebelumnya dipilih (intended redirect), bukan ke halaman awal.
@@ -96,16 +109,26 @@ Landing page, katalog, detail produk, dan pengecekan availability dapat diakses 
 Akun Customer bersifat global: satu akun (satu email/password) dapat dipakai untuk login dan bertransaksi di subdomain client mana pun. Ini berbeda dengan akun Admin Rental yang terikat pada satu client. Meskipun akunnya global, tampilan riwayat pesanan pada satu subdomain hanya menampilkan transaksi milik client tersebut.
 
 ### 4.3 Produk
-Product memiliki name, description, category, rental price, image, identity guarantee requirements, dan status. Jumlah unit fisik tidak disimpan langsung pada product. Setiap physical equipment dicatat pada `equipment_units` dan memiliki `asset_code` serta status operasional sendiri. Admin Rental dapat mengisi identity guarantee requirements sebagai teks informasi yang ditampilkan kepada customer dan tidak memicu validasi atau logika otomatis.
+Product memiliki name, description, category, rental price, multi foto (JSON array), identity guarantee requirements, dan status. Jumlah unit fisik tidak disimpan langsung pada product. Setiap physical equipment dicatat pada `equipment_units` dan memiliki `asset_code` serta status operasional sendiri. Admin Rental dapat mengisi identity guarantee requirements sebagai teks informasi yang ditampilkan kepada customer dan tidak memicu validasi atau logika otomatis.
 
 ### 4.4 Availability
 Ketersediaan ditentukan berdasarkan jumlah `equipment_units` yang dapat digunakan, unit yang sedang dialokasikan pada `order_item_units`, status operasional unit, dan periode penyewaan. Sistem harus mencegah booking melebihi jumlah unit yang tersedia pada periode yang sama.
 
 ### 4.5 Booking & Checkout
-Satu booking hanya berasal dari satu client. Pada tahap checkout, customer mengisi quantity, periode sewa, dan alamat pengiriman. Physical equipment unit dialokasikan melalui `order_item_units` sesuai quantity. Alamat pengiriman disimpan pada `orders.shipping_address` dan digunakan kembali oleh Admin Rental saat mencatat pengiriman.
+Satu booking hanya berasal dari satu client. Customer dapat menambahkan berbagai peralatan ke dalam Keranjang (Cart) dan melakukan checkout sekaligus, atau melakukan transaksi langsung ("Sewa Alat") pada halaman produk. Pada tahap checkout, customer memvalidasi quantity, periode sewa (jam & tanggal), dan alamat pengiriman. Satu pesanan (`orders`) menggunakan 1 periode sewa yang sama untuk seluruh item. Periode sewa dicatat secara presisi (timestamp) untuk perhitungan masa sewa 24 jam.
+
+**Shopee-Style Cart Grouping by Periode Sewa:**
+Di dalam Keranjang Belanja (Cart), peralatan yang dimasukkan dikelompokkan secara otomatis berdasarkan kesamaan periode sewa (`start_date` dan `end_date`). Customer dapat memilih/menceklis sekelompok barang pada tanggal sewa yang sama untuk di-checkout sekaligus menjadi satu order (`orders.total_amount`).
+
+**Rumus Kalkulasi Total Harga:**
+- Durasi Sewa dalam Hari = $\lceil (\text{end\_date} - \text{start\_date}) / 24 \text{ jam} \rceil$ (dibulatkan ke atas, minimal 1 hari).
+- Subtotal Item = $\text{unit\_price} \times \text{quantity} \times \text{durasi\_hari}$.
+- Total Transaction (`orders.total_amount`) = Jumlah seluruh Subtotal Item.
+
+Physical equipment unit dialokasikan melalui `order_item_units` sesuai quantity. Alamat pengiriman disimpan pada `orders.shipping_address` dan digunakan kembali oleh Admin Rental saat mencatat pengiriman.
 
 ### 4.6 Payment
-Pembayaran menggunakan transfer manual. Customer melakukan transfer dan mengunggah bukti pembayaran setelah jaminan identitas berstatus `diverifikasi`. Admin Rental melakukan verifikasi. Tidak ada payment gateway pada tahap awal.
+Pembayaran menggunakan transfer manual atau QRIS. Admin Rental mengelola metode pembayaran toko (multi rekening bank dan QRIS) melalui fitur pengaturan. Customer melihat daftar metode pembayaran yang tersedia, melakukan transfer/scan QRIS, dan mengunggah bukti pembayaran setelah jaminan identitas berstatus `diverifikasi`. Admin Rental melakukan verifikasi. Tidak ada payment gateway otomatis pada tahap awal.
 
 ### 4.7 Identity Guarantee
 Tidak menggunakan deposit uang. Customer mengisi data identitas (nama lengkap, nomor identitas, foto identitas, foto wajah, alamat sesuai identitas) sebagai jaminan administratif pada tahap checkout, sebelum bukti pembayaran diunggah. Tidak ada verifikasi identitas eksternal pada tahap awal.
@@ -113,22 +136,43 @@ Tidak menggunakan deposit uang. Customer mengisi data identitas (nama lengkap, n
 ### 4.8 Shipping
 Pengiriman melalui kurir pihak ketiga atau langsung. Sistem mencatat nama kurir, nomor resi, tanggal, dan status, dengan alamat tujuan mengikuti alamat pengiriman yang telah diisi pada order. Customer mengonfirmasi penerimaan barang setelah barang diterima. Tidak ada integrasi GPS/API kurir pada tahap awal.
 
-### 4.9 Return
-Pengembalian melalui kurir atau langsung. Pengembalian dicatat terpisah dari pengiriman awal.
+### 4.9 Return & Late Fees
+Pengembalian melalui kurir atau langsung. Pengembalian dicatat terpisah dari pengiriman awal. Karena batas akhir masa sewa (`end_date`) dihitung dengan presisi jam (*timestamp*), Denda Keterlambatan dihitung secara **Hybrid**: Sistem secara otomatis mengkalkulasi estimasi denda (`calculated_late_fee`) berdasarkan selisih jam keterlambatan dikalikan tarif denda produk (`products.late_fee_per_hour`). Namun, Admin Rental memiliki wewenang penuh untuk meng-override (mengubah) nominal denda akhir (`late_fee_amount`) sebelum disimpan apabila ada pertimbangan khusus (diskon/toleransi). Customer mengunggah bukti transfer denda (`returns.late_fee_proof`) jika ada denda.
+
+**Mekanisme Auto-Complete 3 Hari (72 Jam):**
+Jika setelah barang dikirim customer tidak/lupa menekan tombol 'Konfirmasi Penerimaan', sistem akan secara otomatis mengonfirmasi penerimaan barang dan memproses penyelesaian order 3 hari (72 jam) setelah pengiriman dicatat, selama pemeriksaan fisik barang berstatus aman.
 
 ### 4.10 Damage Handling
-Kondisi physical equipment unit dicatat sebelum dan sesudah penyewaan melalui checklist dan image. Sistem menyimpan unit yang diperiksa, laporan kerusakan, status, dan tanggapan customer. Penyelesaian mengikuti kebijakan penyedia rental, bukan otomatisasi AI.
+Kondisi physical equipment unit dicatat sebelum dan sesudah penyewaan melalui checklist dan image. Sistem menyimpan unit yang diperiksa, laporan kerusakan, status, dan tanggapan customer. Penyelesaian mengikuti kebijakan penyedia rental, bukan otomatisasi AI. Admin dapat memberikan tagihan **Biaya Ganti Rugi Kerusakan (Compensation Fee)** kepada customer di dalam Damage Case yang wajib dilunasi. Customer mengunggah bukti transfer ganti rugi (`damage_cases.compensation_proof`).
 
-### 4.11 Client Branding
+### 4.11 Order Cancellation & Refund
+- **Pembatalan oleh Customer**: Customer dapat membatalkan pesanan miliknya secara mandiri **hanya jika** status order masih `menunggu_konfirmasi` atau `menunggu_pembayaran` (sebelum pembayaran diverifikasi).
+- **Pembatalan oleh Admin**: Admin Rental dapat menolak atau membatalkan pesanan kapan saja, dengan menyertakan alasan pembatalan. Jika pesanan dibatalkan setelah customer melakukan pembayaran, uang tidak dikembalikan secara otomatis oleh sistem. Status refund dicatat dalam sistem (`menunggu_refund`, `refund_selesai`), dan admin wajib melakukan transfer manual ke customer di luar sistem. Saat mengubah status menjadi `refund_selesai`, Admin diwajibkan mengunggah foto bukti transfer (`refund_proof`) agar dapat dilihat oleh customer sebagai bukti yang sah.
+
+### 4.12 Client Branding
 Admin Rental dapat mengubah nama usaha, deskripsi, dan logo miliknya sendiri melalui fitur Profil dan Branding. Pengubahan warna beberapa elemen desain halaman hanya tersedia untuk client dengan paket **Business** atau **Professional**. Paket **Starter** menggunakan warna/desain bawaan RentalBase. Subdomain dan pembuatan akun Admin Rental tetap menjadi wewenang Owner.
+
+### 4.13 Notification Triggers Matrix
+Sistem mengirimkan notifikasi (*in-app notification*) pada kejadian-kejadian berikut:
+1. **Order Baru Dibuat (Customer → Admin Rental)**: "Pesanan baru #{order_code} telah dibuat dan menunggu konfirmasi."
+2. **Order Dikonfirmasi / Ditolak (Admin → Customer)**: "Pesanan #{order_code} Anda telah dikonfirmasi / ditolak."
+3. **Review Jaminan Identitas (Admin → Customer)**: "Jaminan Identitas untuk #{order_code} telah diverifikasi / ditolak."
+4. **Bukti Bayar Diunggah (Customer → Admin Rental)**: "Bukti pembayaran baru untuk #{order_code} perlu diverifikasi."
+5. **Review Pembayaran (Admin → Customer)**: "Pembayaran Anda untuk #{order_code} telah diverifikasi / ditolak."
+6. **Pengiriman Barang (Admin → Customer)**: "Pesanan #{order_code} sedang dikirim (Resi: {tracking_number})."
+7. **Penerimaan Barang Konfirmasi (Customer → Admin)**: "Customer mengonfirmasi penerimaan barang untuk #{order_code}."
+8. **Pengembalian & Tagihan Denda (Admin → Customer)**: "Status pengembalian #{order_code} diperbarui / Denda Keterlambatan ditagihkan."
+9. **Tagihan Ganti Rugi Kerusakan (Admin → Customer)**: "Tagihan Ganti Rugi Kerusakan ditambahkan pada pesanan #{order_code}."
+10. **Refund Dikirim (Admin → Customer)**: "Refund untuk pesanan #{order_code} telah ditransfer. Bukti transfer telah dilampirkan."
 
 ## 5. Functional Requirements
 
 ### Customer
 - Register (akun global, satu kali daftar berlaku untuk semua client), login, logout, profile.
 - View categories, products, equipment details (termasuk identity guarantee requirements), availability — dapat diakses tanpa login.
+- Manage Cart (Add/Remove items to shopping cart).
 - Select rental period.
-- Login/registrasi (jika belum) saat menekan "Sewa Alat", lalu create/view booking dengan alamat pengiriman.
+- Login/registrasi (jika belum) saat menekan "Sewa Alat" atau checkout keranjang.
 - Submit jaminan identitas.
 - Checkout.
 - Upload payment proof.
