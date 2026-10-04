@@ -77,7 +77,9 @@ Admin Rental hanya boleh melihat dan mengelola data client miliknya, dan akunnya
 39. Order yang dibatalkan/ditolak harus menyertakan alasan (`cancellation_reason`).
 40. Keranjang Belanja (`cart_items`) mendukung penyimpanan produk dengan periode tanggal sewa (`start_date` dan `end_date`) yang berbeda-beda. Di UI keranjang, item dikelompokkan berdasarkan kesamaan periode tanggal sewa (Shopee-style grouping). Customer memilih grup tanggal sewa saat checkout, di mana 1 Checkout menghasilkan 1 Order dengan periode tanggal sewa tunggal.
 41. Order diselesaikan (`orders.status = selesai`) secara manual oleh Admin Rental setelah kondisi barang pasca-rental divalidasi. Jika Admin Rental tidak menekan tombol konfirmasi selagi barang sudah dikembalikan (`returns.return_status = diterima`), sistem akan menjalankan **Auto-Complete 3 Hari (72 jam)** untuk mengubah status order dan pengembalian menjadi `selesai`, selama tidak ada laporan kerusakan aktif atau denda yang belum lunas.
-42. Data pendaftaran calon client disimpan pada tabel `client_registrations` dengan status `menunggu_verifikasi`, `disetujui`, atau `ditolak`. Form pendaftaran mencakup validasi ketersediaan subdomain secara realtime. Admin Rental yang sudah aktif dapat melakukan login melalui tombol "Login Admin" di Landing Page dan otomatis di-redirect ke subdomain miliknya.
+42. Data pendaftaran calon client disimpan pada tabel `client_registrations` dengan status `menunggu_verifikasi`, `disetujui`, atau `ditolak`. Form pendaftaran mencakup validasi ketersediaan subdomain secara realtime & rate limit `throttle:5,60`. Calon client dapat mengecek status pendaftaran miliknya secara publik di `/register-tenant/status` menggunakan email PIC. Owner dapat mengontak calon client via WhatsApp (`wa.me/{admin_phone}`) dan menyetujui pengajuan di Owner Dashboard. Admin Rental yang sudah aktif dapat melakukan login melalui tombol "Login Admin" di Landing Page dan otomatis di-redirect ke subdomain miliknya.
+43. Harga paket langganan dikonfigurasi secara statis pada file `config/packages.php` tanpa menggunakan tabel database tambahan.
+44. Aplikasi menjalankan 3 scheduled background commands: `orders:auto-complete` (72 jam setelah dikirim), `orders:auto-cancel-unpaid` (24 jam setelah identitas ACC tanpa bayar), dan `subscriptions:check-expired` (harian).
 
 ## 5.1 Subscription Package Rules
 
@@ -97,7 +99,7 @@ Tidak ada benefit pembeda lain. Fitur operasional inti seperti katalog online, b
 ## 5.2 Final Status Values
 
 ```text
-clients.status → aktif, nonaktif
+clients.status → active, suspended
 users.status → aktif, nonaktif
 subscriptions.status → active, expired, suspended
 products.status → aktif, nonaktif
@@ -123,13 +125,14 @@ Kalkulasi Total Transaksi:
 
 Pembatalan Order oleh Customer:
 - Customer dapat membatalkan order sendiri jika status masih `menunggu_konfirmasi` atau `menunggu_pembayaran`.
+- Sistem membatalkan order secara otomatis (Auto-Cancel 24 Jam) jika customer tidak mengunggah bukti bayar 24 jam setelah jaminan identitas diverifikasi.
 
 Penyelesaian Order & Auto-Complete:
 - Admin Rental dapat menyelesaikan order secara manual setelah pemeriksaan kondisi pasca-rental.
-- Auto-complete otomatis aktif 3 hari (72 jam) setelah `returns.return_status = diterima`, apabila tidak ada laporan kerusakan (`damage_reports`) aktif atau tagihan denda keterlambatan (`late_fee_status = menunggu_pembayaran`).
+- Auto-complete otomatis aktif 3 hari (72 jam) setelah `shipments.shipping_status = dikirim`, apabila tidak ada laporan kerusakan (`damage_reports`) aktif atau tagihan denda keterlambatan (`late_fee_status = menunggu_pembayaran`).
 
 Notification Triggers Matrix:
-- Notifikasi dikirimkan pada 10 event transaksi utama (Order Baru, Review Identitas, Review Pembayaran, Shipping, Return/Denda, Damage Case, dan Refund).
+- Notifikasi dikirimkan pada 15 event transaksi & registrasi utama (Pendaftaran Tenant Baru, Order Baru, Cancel Customer, Review Identitas, Review Pembayaran, Shipping, Auto-Complete 72 Jam, Auto-Cancel Unpaid 24 Jam, Return/Denda, Damage Case, Refund, dan Subscription Expiring).ran, Shipping, Return/Denda, Damage Case, dan Refund).
 
 ## 6. Database Rules
 Gunakan PostgreSQL. Laravel Migration adalah source of truth struktur database.

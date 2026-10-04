@@ -85,13 +85,13 @@ client_registrations
 | logo | varchar | yes | NULL | Path/URL logo usaha client |
 | subdomain | varchar | no | - | Subdomain client |
 | theme_color | varchar | yes | NULL | Warna/tema client |
-| status | varchar | no | `aktif` | Status client |
+| status | varchar | no | `active` | Status client |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
 Constraint:
 - `subdomain` **UNIQUE**.
-- `status` hanya boleh: `aktif`, `nonaktif`.
+- `status` hanya boleh: `active`, `suspended`.
 - `business_name`, `description`, dan `logo` dapat diubah Admin Rental melalui Profil dan Branding.
 - `theme_color` hanya dapat diubah jika subscription aktif client adalah `Business` atau `Professional`; Starter menggunakan tema bawaan RentalBase.
 - `subdomain` hanya dikelola Owner.
@@ -106,6 +106,8 @@ Constraint:
 | start_date | date | no | - | Subscription start date |
 | end_date | date | no | - | Subscription end date |
 | status | varchar | no | `active` | Subscription status |
+| payment_proof | varchar | yes | NULL | Path/URL foto bukti transfer pembayaran perpanjangan / upgrade |
+| payment_status | varchar | no | `diverifikasi` | Status verifikasi pembayaran perpanjangan (`menunggu`, `diverifikasi`, `ditolak`) |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
@@ -113,6 +115,7 @@ Constraint:
 - `client_id` → `clients.id`.
 - `plan_name` hanya boleh: `Starter`, `Business`, `Professional`.
 - `status` hanya boleh: `active`, `expired`, `suspended`.
+- `payment_status` hanya boleh: `menunggu`, `diverifikasi`, `ditolak`.
 - `end_date` tidak boleh lebih awal dari `start_date`.
 - Durasi subscription mengikuti paket: Starter 3 bulan, Business 6 bulan, Professional 12 bulan.
 
@@ -672,6 +675,8 @@ shipment
 return
 identity_guarantee
 damage
+registration
+subscription
 general
 ```
 
@@ -708,6 +713,8 @@ Constraint:
 | admin_phone | varchar | yes | NULL | Nomor WA/Telepon kontak PIC |
 | admin_password | varchar | no | - | Hashed password calon Admin Rental |
 | status | varchar | no | `menunggu_verifikasi` | Status pendaftaran |
+| payment_proof | varchar | yes | NULL | Path/URL foto bukti transfer pembayaran subskripsi pendaftaran |
+| payment_status | varchar | no | `menunggu` | Status verifikasi pembayaran subskripsi (`menunggu`, `diverifikasi`, `ditolak`) |
 | rejection_reason | text | yes | NULL | Alasan penolakan dari Owner |
 | reviewed_by | bigint | yes | NULL | Owner yang melakukan review (FK ke users.id) |
 | reviewed_at | timestamp | yes | NULL | Tanggal & jam review oleh Owner |

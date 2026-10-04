@@ -13,11 +13,13 @@ http://127.0.0.1:8000/api
 GET /api/public/packages
 POST /api/public/registrations
 GET /api/public/check-subdomain
+GET /api/public/registrations/status
 ```
 **Akses: publik (guest), tanpa login.**
-- `GET /api/public/packages`: Menampilkan daftar paket langganan (Starter, Business, Professional) beserta fitur dan limit paket.
-- `POST /api/public/registrations`: Mengirimkan form pendaftaran toko baru dari Landing Page.
-- `GET /api/public/check-subdomain?subdomain=xxx`: Mengecek ketersediaan subdomain secara realtime.
+- `GET /api/public/packages`: Menampilkan daftar paket langganan (Starter, Business, Professional) beserta fitur, limit paket, dan harga paket (diambil dari file konfigurasi `config/packages.php`).
+- `POST /api/public/registrations`: Mengirimkan form pendaftaran toko baru dari Landing Page (dikenakan rate limit `throttle:5,60`).
+- `GET /api/public/check-subdomain?subdomain=xxx`: Mengecek ketersediaan subdomain secara realtime (dikenakan rate limit `throttle:30,1`).
+- `GET /api/public/registrations/status?email=xxx`: Mengecek status pendaftaran toko calon tenant secara publik berdasarkan email PIC tanpa login.
 
 Request `POST /api/public/registrations`:
 ```json
@@ -39,6 +41,17 @@ Response:
   "message": "Pendaftaran berhasil dikirim. Menunggu verifikasi dari Owner.",
   "registration_id": 1,
   "status": "menunggu_verifikasi"
+}
+```
+
+Response `GET /api/public/registrations/status?email=rudi@malangcamping.com`:
+```json
+{
+  "registration_id": 1,
+  "business_name": "Malang Camping Gear",
+  "subdomain": "malangcamping",
+  "status": "menunggu_verifikasi",
+  "message": "Pengajuan pendaftaran Anda sedang ditinjau oleh Owner RentalBase. Anda akan dihubungi via WhatsApp."
 }
 ```
 
@@ -600,6 +613,12 @@ Request:
 ```
 
 ## 11. Shipping
+### List Admin Shipments
+```http
+GET /api/admin/shipments
+```
+Menampilkan daftar pengiriman toko client (filter query: `shipping_status`, `search`, `page`).
+
 ### Create Shipment
 ```http
 POST /api/admin/orders/{id}/shipment
@@ -659,6 +678,13 @@ Response:
 ```
 
 ## 12. Returns
+### List Admin Returns
+```http
+GET /api/admin/returns
+```
+Menampilkan daftar pengembalian unit toko client (filter query: `return_status`, `late_fee_status`, `page`).
+
+### Create & Update Return
 ```http
 POST /api/orders/{id}/return
 PATCH /api/admin/returns/{id}
@@ -1088,16 +1114,21 @@ Response:
 
 ### Notification Event Triggers Matrix
 Notifikasi dibuat otomatis di backend (Event Listener / Service) saat kejadian berikut dipicu:
-1. `order_created` $\rightarrow$ Penerima: Admin Rental. Judul: "Pesanan Baru"
-2. `order_status_updated` $\rightarrow$ Penerima: Customer. Judul: "Status Pesanan"
-3. `identity_status_updated` $\rightarrow$ Penerima: Customer. Judul: "Review Identitas"
-4. `payment_uploaded` $\rightarrow$ Penerima: Admin Rental. Judul: "Bukti Pembayaran Baru"
-5. `payment_status_updated` $\rightarrow$ Penerima: Customer. Judul: "Review Pembayaran"
-6. `shipment_created` $\rightarrow$ Penerima: Customer. Judul: "Pesanan Dikirim"
-7. `receipt_confirmed` $\rightarrow$ Penerima: Admin Rental. Judul: "Barang Diterima Customer"
-8. `return_status_updated` $\rightarrow$ Penerima: Customer. Judul: "Pengembalian & Denda"
-9. `damage_case_updated` $\rightarrow$ Penerima: Customer. Judul: "Ganti Rugi Kerusakan"
-10. `refund_transferred` $\rightarrow$ Penerima: Customer. Judul: "Refund Dikirim"
+1. `registration_submitted` $\rightarrow$ Penerima: Owner. Judul: "Pendaftaran Tenant Baru"
+2. `order_created` $\rightarrow$ Penerima: Admin Rental. Judul: "Pesanan Baru"
+3. `order_cancelled_by_customer` $\rightarrow$ Penerima: Admin Rental. Judul: "Pesanan Dibatalkan oleh Customer"
+4. `order_status_updated` $\rightarrow$ Penerima: Customer. Judul: "Status Pesanan"
+5. `identity_status_updated` $\rightarrow$ Penerima: Customer. Judul: "Review Identitas"
+6. `payment_uploaded` $\rightarrow$ Penerima: Admin Rental. Judul: "Bukti Pembayaran Baru"
+7. `payment_status_updated` $\rightarrow$ Penerima: Customer. Judul: "Review Pembayaran"
+8. `shipment_created` $\rightarrow$ Penerima: Customer. Judul: "Pesanan Dikirim"
+9. `receipt_confirmed` $\rightarrow$ Penerima: Admin Rental. Judul: "Barang Diterima Customer"
+10. `order_auto_completed` $\rightarrow$ Penerima: Customer & Admin Rental. Judul: "Pesanan Otomatis Selesai (72 Jam)"
+11. `payment_expired_auto_cancelled` $\rightarrow$ Penerima: Customer & Admin Rental. Judul: "Pesanan Otomatis Dibatalkan (Unpaid 24 Jam)"
+12. `return_status_updated` $\rightarrow$ Penerima: Customer. Judul: "Pengembalian & Denda"
+13. `damage_case_updated` $\rightarrow$ Penerima: Customer. Judul: "Ganti Rugi Kerusakan"
+14. `refund_transferred` $\rightarrow$ Penerima: Customer. Judul: "Refund Dikirim"
+15. `subscription_expiring_soon` $\rightarrow$ Penerima: Admin Rental. Judul: "Subscription Hampir Berakhir"
 
 ### Mark as Read
 ```http
@@ -1114,6 +1145,7 @@ Admin Rental dan Owner dapat melihat log aktivitas.
 
 ```http
 GET /api/admin/activity-logs
+GET /api/owner/activity-logs
 ```
 
 Query:
@@ -1140,7 +1172,7 @@ Response:
 }
 ```
 
-Data dibatasi berdasarkan `client_id` untuk Admin Rental.
+Data dibatasi berdasarkan `client_id` untuk Admin Rental, sedangkan Owner dapat melihat seluruh log aktivitas platform.
 
 ## 24. Owner Client Management
 ```text
