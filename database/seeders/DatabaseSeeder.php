@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ClientAndAuthSeeder::class,
             CatalogAndPaymentSeeder::class,
+            CartAndOrderSeeder::class,
         ]);
     }
 }
