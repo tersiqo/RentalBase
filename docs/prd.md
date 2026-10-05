@@ -57,7 +57,7 @@ Halaman utama `/` merupakan landing page platform RentalBase. Customer mengakses
 ### 2.3 Owner
 - Mengelola client dan peninjauan pendaftaran toko (`client_registrations`).
 - Meninjau, menyetujui (approve), atau menolak pengajuan pendaftaran client baru.
-- Mengaktifkan/menonaktifkan client.
+- Mengubah status client (active/suspended).
 - Mengelola subdomain dan subscription.
 - Melihat dashboard monitoring ringkas seluruh client.
 

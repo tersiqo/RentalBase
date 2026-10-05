@@ -895,7 +895,7 @@ Gunakan aturan berikut untuk menjaga integritas data dan histori transaksi:
 | `notifications.user_id → users.id` | CASCADE |
 
 Catatan:
-- Client dan user tidak dihapus lewat alur operasional utama; status `nonaktif` digunakan bila perlu menonaktifkan.
+- Client dan user tidak dihapus lewat alur operasional utama; status `suspended` (untuk client) atau `nonaktif` (untuk user) digunakan bila perlu menonaktifkan.
 - Aturan `RESTRICT` digunakan pada data historis agar transaksi dan audit tidak terhapus secara tidak sengaja.
 
 ## 7. Multi-Client Data Isolation
