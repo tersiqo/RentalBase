@@ -732,6 +732,12 @@ POST /api/returns/{id}/late-fee-proof
 Request: `multipart/form-data` dengan field `late_fee_proof` (image file).
 
 ## 13. Condition Checks
+### List Condition Checks (Admin)
+```http
+GET /api/admin/condition-checks
+```
+Dapat difilter berdasarkan status order.
+
 ### Create Condition Check (Admin)
 ```http
 POST /api/admin/orders/{id}/condition-check
@@ -759,6 +765,11 @@ GET /api/orders/{id}/condition-checks
 Menampilkan seluruh catatan kondisi (sebelum dan sesudah) untuk physical equipment unit yang terkait dengan order. Dapat diakses oleh customer pemilik order dan Admin Rental pada client yang sama.
 
 ## 14. Damage Reports & Cases
+### List Damage Reports (Admin)
+```http
+GET /api/admin/damage-reports
+```
+
 ### Create Damage Report (Admin)
 ```http
 POST /api/admin/orders/{id}/damage-report
@@ -810,6 +821,7 @@ Request:
 
 ### Admin Damage Case Management
 ```text
+GET   /api/admin/damage-cases
 GET   /api/admin/damage-cases/{id}
 PATCH /api/admin/damage-cases/{id}
 ```
