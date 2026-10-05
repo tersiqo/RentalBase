@@ -13,6 +13,7 @@ new class extends Component
     public $minPrice = 0;
     public $maxPrice = 1000000;
     public $search = '';
+    public $sort = 'terbaru';
 
     // Use with() to expose computed properties to the Blade view below
     public function with()
@@ -41,10 +42,21 @@ new class extends Component
 
         $productsQuery->whereBetween('rental_price_per_day', [(int) $this->minPrice, (int) $this->maxPrice]);
 
+        // Sorting logic
+        if ($this->sort === 'termurah') {
+            $productsQuery->orderBy('rental_price_per_day', 'asc');
+        } elseif ($this->sort === 'termahal') {
+            $productsQuery->orderBy('rental_price_per_day', 'desc');
+        } elseif ($this->sort === 'abjad') {
+            $productsQuery->orderBy('name', 'asc');
+        } else {
+            $productsQuery->orderBy('created_at', 'desc'); // terbaru
+        }
+
         $allProductsCount = Product::where('client_id', $this->client->id)->where('status', 'aktif')->count();
 
         return [
-            'products' => $productsQuery->orderBy('name')->get(),
+            'products' => $productsQuery->get(),
             'allProductsCount' => $allProductsCount
         ];
     }
@@ -52,11 +64,21 @@ new class extends Component
 ?>
 
 <div>
+    <style>
+        @keyframes slideInLeft {
+            0% { opacity: 0; transform: translateX(-40px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        .animate-slide-in {
+            animation: slideInLeft 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+        }
+    </style>
     <!-- Hero Section -->
     <div class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <!-- Breadcrumb / Status -->
-            <div class="flex items-center gap-3 mb-6 text-sm">
+            <div class="flex items-center gap-3 mb-6 text-sm animate-slide-in opacity-0" style="animation-delay: 0ms;">
                 <div class="flex items-center gap-1.5 text-gray-500 font-medium">
                     <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
                     malang-camera.rentalbase.id
@@ -73,11 +95,11 @@ new class extends Component
             </div>
 
             <!-- Title -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 tracking-tight">Katalog Peralatan {{ $client->nama_usaha ?? 'KameraKu Studio' }}</h1>
-            <p class="text-gray-500 text-lg mb-8 max-w-2xl">Sewa kamera dan perlengkapan fotografi profesional di Malang. Cek ketersediaan secara real-time.</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 tracking-tight animate-slide-in opacity-0" style="animation-delay: 100ms;">Katalog Peralatan {{ $client->nama_usaha ?? 'KameraKu Studio' }}</h1>
+            <p class="text-gray-500 text-lg mb-8 max-w-2xl animate-slide-in opacity-0" style="animation-delay: 200ms;">Sewa kamera dan perlengkapan fotografi profesional di Malang. Cek ketersediaan secara real-time.</p>
 
             <!-- Big Search Bar -->
-            <div class="max-w-3xl">
+            <div class="max-w-3xl animate-slide-in opacity-0" style="animation-delay: 300ms;">
                 <form wire:submit.prevent="$refresh" class="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1.5 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 transition-all">
                     <div class="flex-grow flex items-center pl-3">
                         <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -106,7 +128,7 @@ new class extends Component
         <div class="flex flex-col lg:flex-row gap-8">
             
             <!-- Left Sidebar (Filters) -->
-    <div class="w-full lg:w-64 flex-shrink-0 space-y-8">
+    <div class="w-full lg:w-64 flex-shrink-0 space-y-8 animate-slide-in opacity-0" style="animation-delay: 400ms;">
         
         <!-- Category Filter -->
         <div>
@@ -236,11 +258,11 @@ new class extends Component
             <p class="text-sm text-gray-500">Menampilkan <span class="font-semibold text-gray-900">{{ $products->count() }}</span> Peralatan</p>
             <div class="flex items-center gap-2">
                 <label for="sort" class="text-sm text-gray-500">Urutkan:</label>
-                <select id="sort" class="block w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600 sm:text-sm sm:leading-6">
-                    <option>Terbaru</option>
-                    <option>Harga: Rendah ke Tinggi</option>
-                    <option>Harga: Tinggi ke Rendah</option>
-                    <option>Abjad: A-Z</option>
+                <select id="sort" wire:model.live="sort" class="block w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600 sm:text-sm sm:leading-6">
+                    <option value="terbaru">Terbaru</option>
+                    <option value="termurah">Harga: Rendah ke Tinggi</option>
+                    <option value="termahal">Harga: Tinggi ke Rendah</option>
+                    <option value="abjad">Abjad: A-Z</option>
                 </select>
             </div>
         </div>
@@ -255,14 +277,25 @@ new class extends Component
 
         <!-- Product Grid -->
         <div wire:loading.remove class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            @foreach($products as $item)
-            <!-- Card -->
-            <a href="/client/kameraku/products/{{ $item->id }}" class="block group h-full">
-                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full group relative">
-                    
-                    <!-- Image -->
-                    <div class="relative h-48 w-full bg-gray-100 overflow-hidden">
-                        <img src="{{ $item->main_image ? Storage::url($item->main_image) : 'https://placehold.co/400x300/e2e8f0/475569?text=No+Image' }}" alt="{{ $item->name }}" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500" onerror="this.src='https://placehold.co/400x300/e2e8f0/475569?text=Image+Error'">
+            @if($products->isEmpty())
+                <div class="col-span-full py-16 text-center bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center">
+                    <div class="bg-gray-50 text-gray-400 rounded-full p-4 mb-4">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-1">Peralatan tidak ditemukan</h3>
+                    <p class="text-gray-500 max-w-sm mx-auto text-sm">Kami tidak dapat menemukan alat yang cocok dengan pencarian atau filtermu. Coba sesuaikan kata kunci atau atur ulang rentang harga.</p>
+                    @if($search)
+                    <button wire:click="$set('search', '')" class="mt-4 text-primary-600 font-medium hover:text-primary-700 text-sm">Hapus Pencarian</button>
+                    @endif
+                </div>
+            @else
+                @foreach($products as $item)
+                <!-- Card -->
+            <div class="animate-slide-in opacity-0 bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full group relative" style="animation-delay: {{ $loop->index * 100 }}ms;">
+                
+                <!-- Image -->
+                <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="relative h-48 w-full bg-gray-100 overflow-hidden block">
+                        <img src="{{ $item->main_image ? Storage::url($item->main_image) : 'https://placehold.co/400x300/e2e8f0/475569?text=No+Image' }}" alt="{{ $item->name }}" class="object-cover w-full h-full opacity-0 group-hover:scale-110 transition-all duration-700 ease-in-out" onload="this.classList.remove('opacity-0')" onerror="this.src='https://placehold.co/400x300/e2e8f0/475569?text=Image+Error'; this.classList.remove('opacity-0')">
                         <!-- Badge -->
                         @if($item->available_units_count > 0)
                         <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full border border-green-200 shadow-sm flex items-center gap-1">
@@ -275,11 +308,13 @@ new class extends Component
                             <span class="text-xs font-semibold text-gray-600">Kosong</span>
                         </div>
                         @endif
-                    </div>
+                    </a>
                     
                     <!-- Content -->
                     <div class="p-5 flex flex-col flex-grow">
-                        <h3 class="font-bold text-gray-900 text-base mb-1 line-clamp-1">{{ $item->name }}</h3>
+                        <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="hover:text-primary-600 block">
+                            <h3 class="font-bold text-gray-900 text-base mb-1 line-clamp-1">{{ $item->name }}</h3>
+                        </a>
                         <p class="text-xs text-gray-500 mb-3">{{ $item->category->name ?? 'Kategori' }}</p>
                         
                         <div class="mt-auto">
@@ -292,17 +327,15 @@ new class extends Component
                                 <svg class="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 <p class="text-[10px] text-gray-500 leading-tight">Syarat: KTP + Selfie (Deposit Rp {{ number_format($item->deposit_fee, 0, ',', '.') }})</p>
                             </div>
-                            
-                            <div class="w-full bg-primary-500 text-white font-semibold py-2.5 px-4 rounded-lg text-center shadow-sm shadow-primary-500/30 group-hover:bg-primary-600 transition-colors">
+                            <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="block w-full bg-primary-500 text-white font-semibold py-2.5 px-4 rounded-lg text-center shadow-sm shadow-primary-500/30 hover:bg-primary-600 transition-colors">
                                 Sewa Alat
-                            </div>
+                            </a>
                         </div>
                     </div>
                 </div>
-            </a>
             @endforeach
+            @endif
         </div>
-
         <!-- Pagination -->
         <div class="flex items-center justify-between border-t border-gray-200 pt-6 mt-10">
             <p class="text-sm text-gray-500 hidden sm:block">Menampilkan halaman <span class="font-semibold text-gray-900">1</span> dari <span class="font-semibold text-gray-900">1</span></p>
