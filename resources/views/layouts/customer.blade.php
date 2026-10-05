@@ -12,6 +12,7 @@
     
     <!-- Scripts/Styles (Vite) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
     
     <!-- Tailwind CSS (CDN for rapid prototyping if Vite isn't ready) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -126,5 +127,7 @@
             </div>
         </div>
     </footer>
+
+    @livewireScripts
 </body>
 </html>

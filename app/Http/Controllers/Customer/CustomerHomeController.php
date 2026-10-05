@@ -20,15 +20,9 @@ class CustomerHomeController extends Controller
             ->orderBy('name')
             ->get();
 
-        $products = Product::where('client_id', $client->id)
-            ->where('status', 'aktif')
-            ->with('category')
-            ->orderBy('name')
-            ->get();
-
         return view()->file(
             resource_path('views/customer/customer.home.blade.php'),
-            compact('client', 'categories', 'products')
+            compact('client', 'categories')
         );
     }
 }

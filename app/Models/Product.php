@@ -17,4 +17,9 @@ class Product extends Model
     {
         return $this->belongsTo(Client::class);
     }
+
+    public function units()
+    {
+        return $this->hasMany(EquipmentUnit::class);
+    }
 }
