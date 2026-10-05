@@ -10,5 +10,8 @@ Route::get('/', [RentalBaseHomeController::class, 'index'])
 Route::get('/client/{subdomain}', [CustomerHomeController::class, 'index'])
     ->name('customer.home');
 
+Route::get('/client/{subdomain}/products/{product}', [\App\Http\Controllers\Customer\CustomerProductController::class, 'show'])
+    ->name('customer.product.show');
+
 Route::get('/client/{subdomain}/checkout/{product}', [\App\Http\Controllers\Customer\CustomerCheckoutController::class, 'create'])
     ->name('customer.checkout');
