@@ -12,8 +12,24 @@ new class extends Component
     public $selectedCategory = null;
     public $minPrice = 0;
     public $maxPrice = 1000000;
+    public $absoluteMaxPrice = 1000000;
     public $search = '';
     public $sort = 'terbaru';
+
+    public function mount()
+    {
+        $max = Product::where('client_id', $this->client->id)->max('rental_price_per_day');
+        if ($max) {
+            $this->maxPrice = $max;
+            $this->absoluteMaxPrice = $max;
+        }
+    }
+
+    public function resetFilters()
+    {
+        $this->reset(['availableOnly', 'selectedCategory', 'search', 'sort', 'minPrice', 'maxPrice']);
+        $this->maxPrice = $this->absoluteMaxPrice;
+    }
 
     // Use with() to expose computed properties to the Blade view below
     public function with()
@@ -55,9 +71,16 @@ new class extends Component
 
         $allProductsCount = Product::where('client_id', $this->client->id)->where('status', 'aktif')->count();
 
+        $categoryCounts = Product::where('client_id', $this->client->id)
+            ->where('status', 'aktif')
+            ->selectRaw('category_id, count(*) as count')
+            ->groupBy('category_id')
+            ->pluck('count', 'category_id');
+
         return [
             'products' => $productsQuery->get(),
-            'allProductsCount' => $allProductsCount
+            'allProductsCount' => $allProductsCount,
+            'categoryCounts' => $categoryCounts,
         ];
     }
 };
@@ -78,37 +101,33 @@ new class extends Component
     <div class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <!-- Breadcrumb / Status -->
-            <div class="flex items-center gap-3 mb-6 text-sm animate-slide-in opacity-0" style="animation-delay: 0ms;">
+            <div class="flex flex-wrap items-center gap-3 mb-6 text-sm animate-slide-in opacity-0" style="animation-delay: 0ms;">
                 <div class="flex items-center gap-1.5 text-gray-500 font-medium">
-                    <svg class="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
-                    malang-camera.rentalbase.id
+                    <svg class="w-4 h-4 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                    {{ $client->subdomain }}.rentalbase.id
                 </div>
                 <span class="text-gray-300">•</span>
-                <div class="flex items-center gap-1.5 text-green-600 font-medium text-xs bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-                    <div class="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                    Toko Buka
-                </div>
-                <div class="flex items-center gap-1.5 text-green-600 font-medium text-xs bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-                    <div class="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                    Siap Reservasi
+                <div class="flex items-center gap-1.5 text-primary-600 font-medium text-xs bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100">
+                    <div class="w-1.5 h-1.5 bg-primary-500 rounded-full"></div>
+                    Sewa Alat Praktis & Aman
                 </div>
             </div>
 
             <!-- Title -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 tracking-tight animate-slide-in opacity-0" style="animation-delay: 100ms;">Katalog Peralatan {{ $client->nama_usaha ?? 'KameraKu Studio' }}</h1>
-            <p class="text-gray-500 text-lg mb-8 max-w-2xl animate-slide-in opacity-0" style="animation-delay: 200ms;">Sewa kamera dan perlengkapan fotografi profesional di Malang. Cek ketersediaan secara real-time.</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 tracking-tight animate-slide-in opacity-0" style="animation-delay: 100ms;">Katalog Peralatan {{ $client->nama_usaha }}</h1>
+            <p class="text-gray-500 text-lg mb-8 max-w-2xl animate-slide-in opacity-0" style="animation-delay: 200ms;">Eksplorasi koleksi peralatan kami dan cek ketersediaannya secara real-time. Bebas repot, bebas deposit tunai.</p>
 
             <!-- Big Search Bar -->
             <div class="max-w-3xl animate-slide-in opacity-0" style="animation-delay: 300ms;">
-                <form wire:submit.prevent="$refresh" class="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1.5 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 transition-all">
+                <div class="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1.5 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 transition-all">
                     <div class="flex-grow flex items-center pl-3">
                         <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         <input type="text" wire:model.live.debounce.300ms="search" class="w-full pl-3 pr-3 py-2 border-none focus:ring-0 text-gray-700 placeholder-gray-400" placeholder="Cari kamera, lensa, atau aksesoris...">
                     </div>
-                    <button type="submit" class="bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-6 rounded-md transition-colors whitespace-nowrap">
+                    <button type="button" class="bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-6 rounded-md transition-colors whitespace-nowrap hidden sm:block">
                         Cari Alat
                     </button>
-                </form>
+                </div>
                 
                 <!-- Popular Searches -->
                 <div class="flex flex-wrap items-center gap-2 mt-4 text-sm">
@@ -124,15 +143,27 @@ new class extends Component
     </div>
 
     <!-- Main Layout -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ showFilters: false }">
+        
+        <!-- Mobile Filter Toggle -->
+        <div class="lg:hidden mb-6">
+            <button @click="showFilters = !showFilters" class="w-full bg-white border border-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors hover:bg-gray-50">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                <span x-text="showFilters ? 'Tutup Filter' : 'Tampilkan Filter'"></span>
+            </button>
+        </div>
+
         <div class="flex flex-col lg:flex-row gap-8">
             
             <!-- Left Sidebar (Filters) -->
-    <div class="w-full lg:w-64 flex-shrink-0 space-y-8 animate-slide-in opacity-0" style="animation-delay: 400ms;">
+    <div class="w-full lg:w-64 flex-shrink-0 space-y-8 animate-slide-in opacity-0 hidden lg:block" :class="{'hidden': !showFilters, 'block': showFilters}" style="animation-delay: 400ms;">
         
         <!-- Category Filter -->
         <div>
-            <h3 class="font-semibold text-gray-900 mb-4">Kategori Produk</h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-gray-900">Kategori Produk</h3>
+                <button wire:click="resetFilters" class="text-xs text-primary-600 hover:text-primary-700 font-medium hover:underline">Reset Filter</button>
+            </div>
             <ul class="space-y-1">
                 <li>
                     <a href="#" wire:click.prevent="$set('selectedCategory', null)" class="flex items-center justify-between px-3 py-2 text-sm font-medium {{ $selectedCategory === null ? 'bg-primary-50 text-primary-700 border-l-4 border-primary-500 rounded-r' : 'text-gray-600 hover:bg-gray-50 rounded border-l-4 border-transparent hover:border-gray-300 transition-colors' }}">
@@ -144,7 +175,7 @@ new class extends Component
                 <li>
                     <a href="#" wire:click.prevent="$set('selectedCategory', {{ $cat->id }})" class="flex items-center justify-between px-3 py-2 text-sm font-medium {{ $selectedCategory === $cat->id ? 'bg-primary-50 text-primary-700 border-l-4 border-primary-500 rounded-r' : 'text-gray-600 hover:bg-gray-50 rounded border-l-4 border-transparent hover:border-gray-300 transition-colors' }}">
                         {{ $cat->name }}
-                        <span class="text-xs {{ $selectedCategory === $cat->id ? 'bg-white text-primary-600 border border-primary-200 px-1.5 py-0.5 rounded-full' : 'text-gray-400' }}"></span>
+                        <span class="text-xs {{ $selectedCategory === $cat->id ? 'bg-white text-primary-600 border border-primary-200 px-1.5 py-0.5 rounded-full' : 'text-gray-400' }}">({{ $categoryCounts[$cat->id] ?? 0 }})</span>
                     </a>
                 </li>
                 @endforeach
@@ -202,12 +233,13 @@ new class extends Component
                     minPrice: @entangle('minPrice').live,
                     maxPrice: @entangle('maxPrice').live,
                     min: 0,
-                    max: 1000000,
+                    max: {{ $absoluteMaxPrice > 0 ? $absoluteMaxPrice : 1000000 }},
                     minThumb: 0,
                     maxThumb: 0,
                     updateThumbs() {
-                        let rawMinThumb = ((this.minPrice - this.min) / (this.max - this.min)) * 100;
-                        let rawMaxThumb = 100 - (((this.maxPrice - this.min) / (this.max - this.min)) * 100);
+                        let maxLimit = this.max > this.min ? this.max : this.min + 1;
+                        let rawMinThumb = ((this.minPrice - this.min) / (maxLimit - this.min)) * 100;
+                        let rawMaxThumb = 100 - (((this.maxPrice - this.min) / (maxLimit - this.min)) * 100);
                         this.minThumb = Math.max(0, Math.min(100, rawMinThumb));
                         this.maxThumb = Math.max(0, Math.min(100, rawMaxThumb));
                     }
@@ -230,21 +262,21 @@ new class extends Component
                 </div>
             </div>
 
-            <div class="flex justify-between text-[10px] text-gray-400 mt-2">
-                <span>Min: 0</span>
-                <span>Maks: 1Jt+</span>
+            <div class="flex justify-between text-xs text-gray-500 mt-2 font-medium">
+                <span>Rp 0</span>
+                <span>Rp {{ number_format($absoluteMaxPrice, 0, ',', '.') }}</span>
             </div>
         </div>
 
         <!-- Info Box -->
-        <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 relative overflow-hidden mt-8">
+        <div class="bg-primary-50 border border-primary-100 rounded-lg p-4 relative overflow-hidden mt-8">
             <div class="flex items-start gap-3">
                 <div class="flex-shrink-0 mt-0.5">
-                    <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    <svg class="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                 </div>
                 <div>
-                    <h4 class="text-sm font-semibold text-indigo-900 mb-1">Bebas Deposit Uang</h4>
-                    <p class="text-xs text-indigo-700/80 leading-relaxed">Jaminan administratif cukup verifikasi KTP & Swafoto saat konfirmasi booking. Tanpa tahan uang tunai.</p>
+                    <h4 class="text-sm font-semibold text-primary-900 mb-1">Bebas Deposit Uang</h4>
+                    <p class="text-xs text-primary-700/80 leading-relaxed">Jaminan administratif cukup verifikasi KTP & Swafoto. Tidak perlu menahan uang tunai.</p>
                 </div>
             </div>
         </div>
@@ -267,16 +299,20 @@ new class extends Component
             </div>
         </div>
 
-        <div wire:loading class="w-full text-center py-10 text-gray-500">
-            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-primary-500 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Memperbarui Katalog...
-        </div>
+        <!-- Product Grid Overlay Spinner -->
+        <div class="relative min-h-[400px]">
+            <div wire:loading class="absolute inset-0 z-10 flex items-start justify-center pt-20 bg-white/50 backdrop-blur-sm rounded-xl">
+                <div class="bg-white px-5 py-3 rounded-full shadow-lg border border-gray-100 flex items-center gap-3">
+                    <svg class="animate-spin h-5 w-5 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-gray-700 font-medium text-sm">Memperbarui Katalog...</span>
+                </div>
+            </div>
 
-        <!-- Product Grid -->
-        <div wire:loading.remove class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <!-- Product Grid -->
+            <div wire:loading.class="opacity-50 pointer-events-none" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 transition-opacity duration-300">
             @if($products->isEmpty())
                 <div class="col-span-full py-16 text-center bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center">
                     <div class="bg-gray-50 text-gray-400 rounded-full p-4 mb-4">
@@ -291,7 +327,7 @@ new class extends Component
             @else
                 @foreach($products as $item)
                 <!-- Card -->
-            <div class="animate-slide-in opacity-0 bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full group relative" style="animation-delay: {{ $loop->index * 100 }}ms;">
+            <div wire:key="product-{{ $item->id }}" class="animate-slide-in opacity-0 bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full group relative" style="animation-delay: {{ min($loop->index * 50, 500) }}ms;">
                 
                 <!-- Image -->
                 <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="relative h-48 w-full bg-gray-100 overflow-hidden block">
@@ -324,8 +360,8 @@ new class extends Component
                             </div>
                             
                             <div class="flex items-start gap-1.5 mb-5">
-                                <svg class="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                <p class="text-[10px] text-gray-500 leading-tight">Syarat: KTP + Selfie (Deposit Rp {{ number_format($item->deposit_fee, 0, ',', '.') }})</p>
+                                <svg class="w-4 h-4 text-primary-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <p class="text-xs text-gray-500 leading-tight">Syarat sewa: KTP Asli + Swafoto (Tanpa Deposit Uang)</p>
                             </div>
                             <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="block w-full bg-primary-500 text-white font-semibold py-2.5 px-4 rounded-lg text-center shadow-sm shadow-primary-500/30 hover:bg-primary-600 transition-colors">
                                 Sewa Alat
@@ -335,18 +371,6 @@ new class extends Component
                 </div>
             @endforeach
             @endif
-        </div>
-        <!-- Pagination -->
-        <div class="flex items-center justify-between border-t border-gray-200 pt-6 mt-10">
-            <p class="text-sm text-gray-500 hidden sm:block">Menampilkan halaman <span class="font-semibold text-gray-900">1</span> dari <span class="font-semibold text-gray-900">1</span></p>
-            <div class="flex items-center gap-1 mx-auto sm:mx-0">
-                <button class="p-2 border border-transparent rounded hover:bg-gray-100 text-gray-400 cursor-not-allowed" disabled>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                <button class="w-8 h-8 rounded shadow-sm bg-primary-500 text-white font-medium flex items-center justify-center text-sm">1</button>
-                <button class="p-2 border border-transparent rounded hover:bg-gray-100 text-gray-400 cursor-not-allowed" disabled>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
             </div>
         </div>
     </div>

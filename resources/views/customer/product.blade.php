@@ -65,18 +65,18 @@
                 </div>
 
                 <!-- Info Box -->
-                <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-8">
-                    <h3 class="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Syarat Sewa & Deposit
+                <div class="bg-primary-50/50 border border-primary-100 rounded-xl p-4 mb-8">
+                    <h3 class="font-semibold text-primary-900 mb-2 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Bebas Deposit Uang
                     </h3>
-                    <ul class="space-y-2 text-sm text-blue-800/80">
+                    <ul class="space-y-2 text-sm text-primary-800/80">
                         <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-blue-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                            Deposit Tunai: <strong>Rp {{ number_format($product->deposit_fee, 0, ',', '.') }}</strong> (Dikembalikan utuh saat alat kembali)
+                            <svg class="w-4 h-4 text-primary-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Jaminan murni menggunakan data diri yang diverifikasi.
                         </li>
                         <li class="flex items-start gap-2">
-                            <svg class="w-4 h-4 text-blue-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <svg class="w-4 h-4 text-primary-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                             Verifikasi Identitas: <strong>KTP Asli & Swafoto (Selfie)</strong>
                         </li>
                     </ul>
@@ -94,10 +94,18 @@
                 <!-- Actions -->
                 <div class="mt-auto pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
                     <livewire:customer.add-to-cart-modal :product="$product" />
-                    <a href="{{ route('customer.checkout', ['subdomain' => $client->subdomain, 'product' => $product->id]) }}" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg py-4 px-8 rounded-xl text-center transition-all shadow-lg shadow-primary-500/30 flex items-center justify-center gap-2 {{ $product->units->count() == 0 ? 'opacity-50 cursor-not-allowed pointer-events-none' : '' }}">
+                    
+                    @if($product->units->count() > 0)
+                    <a href="{{ route('customer.checkout', ['subdomain' => $client->subdomain, 'product' => $product->id]) }}" wire:navigate class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg py-4 px-8 rounded-xl text-center transition-all shadow-lg shadow-primary-500/30 flex items-center justify-center gap-2">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        {{ $product->units->count() > 0 ? 'Sewa Sekarang' : 'Stok Habis' }}
+                        Sewa Sekarang
                     </a>
+                    @else
+                    <span aria-disabled="true" tabindex="-1" class="flex-1 bg-primary-600 opacity-50 cursor-not-allowed pointer-events-none text-white font-bold text-lg py-4 px-8 rounded-xl text-center flex items-center justify-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Stok Habis
+                    </span>
+                    @endif
                 </div>
             </div>
         </div>
