@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             ClientAndAuthSeeder::class,
             CatalogAndPaymentSeeder::class,
             CartAndOrderSeeder::class,
+            PaymentAndLogisticsSeeder::class,
         ]);
     }
 }
