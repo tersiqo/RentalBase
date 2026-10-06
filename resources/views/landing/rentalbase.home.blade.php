@@ -1,414 +1,311 @@
 <!DOCTYPE html>
-<html lang="id" class="scroll-smooth">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RentalBase - Equipment Rental System</title>
-    <meta name="description" content="Sistem informasi manajemen penyewaan peralatan berbasis web berbasis multi-client untuk mengelola produk, stok, booking, dan transaksi rental.">
+    <title>RentalBase - Kelola Bisnis Rental Peralatan dalam Satu Sistem</title>
     
-    @fonts
-
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #F8FAFC;
+    <!-- CDN Links -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#f97316', // Orange-500
+                            hover: '#ea580c',   // Orange-600
+                            light: '#ffedd5',   // Orange-100
+                        }
+                    }
+                }
+            }
         }
+    </script>
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="text-slate-800 antialiased selection:bg-emerald-500 selection:text-white min-h-screen flex flex-col justify-between">
+<body class="bg-gray-50 text-gray-800 antialiased selection:bg-brand selection:text-white">
 
-    <!-- Navbar -->
-    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <a href="#beranda" class="flex items-center gap-2.5 group">
-                <div class="w-8 h-8 rounded-lg bg-emerald-700 flex items-center justify-center text-white font-extrabold text-sm shadow-xs">
-                    R
-                </div>
-                <div class="flex flex-col">
-                    <span class="font-bold text-slate-900 text-base leading-tight tracking-tight">RentalBase</span>
-                    <span class="text-[10px] text-slate-500 font-medium tracking-wide">Equipment Rental System</span>
-                </div>
-            </a>
-
-            <!-- Desktop Navigation Links -->
-            <nav class="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
-                <a href="#beranda" class="hover:text-emerald-700 transition">Beranda</a>
-                <a href="#paket" class="hover:text-emerald-700 transition">Paket</a>
-                <a href="#fitur" class="hover:text-emerald-700 transition">Fitur</a>
-                <a href="#cara-kerja" class="hover:text-emerald-700 transition">Cara Kerja</a>
-            </nav>
-
-            <!-- Actions -->
-            <div class="hidden md:flex items-center gap-4">
-                <a href="#login" class="text-sm font-semibold text-slate-600 hover:text-slate-900 transition px-2 py-1">Login</a>
-                <a href="#paket" class="bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-xs">
-                    Mulai Sekarang
-                </a>
-            </div>
-
-            <!-- Mobile Hamburger Button -->
-            <button id="mobile-menu-btn" class="md:hidden text-slate-600 hover:text-slate-900 p-2 rounded-lg border border-slate-200" aria-label="Toggle menu">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </button>
-        </div>
-
-        <!-- Mobile Navigation Menu -->
-        <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2">
-            <a href="#beranda" class="block py-2 text-sm font-semibold text-slate-700 hover:text-emerald-700">Beranda</a>
-            <a href="#paket" class="block py-2 text-sm font-semibold text-slate-700 hover:text-emerald-700">Paket</a>
-            <a href="#fitur" class="block py-2 text-sm font-semibold text-slate-700 hover:text-emerald-700">Fitur</a>
-            <a href="#cara-kerja" class="block py-2 text-sm font-semibold text-slate-700 hover:text-emerald-700">Cara Kerja</a>
-            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
-                <a href="#login" class="text-sm font-semibold text-slate-600">Login</a>
-                <a href="#paket" class="bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg">Mulai Sekarang</a>
-            </div>
-        </div>
-    </header>
-
-    <main id="beranda" class="flex-grow">
-        <!-- Hero Section -->
-        <section class="pt-10 sm:pt-14 pb-12 px-4 sm:px-6 max-w-6xl mx-auto">
-            <div class="max-w-3xl mx-auto text-center space-y-4">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold">
-                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-                    Multi-Client Rental Management Platform
-                </span>
-                
-                <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                    Kelola Bisnis Rental dalam Satu Sistem
-                </h1>
-                
-                <p class="text-slate-600 text-sm sm:text-base leading-relaxed font-normal max-w-2xl mx-auto">
-                    RentalBase membantu usaha rental mengelola peralatan, stok, booking, pembayaran, pengiriman, pengembalian, dan kondisi barang secara lebih terstruktur.
-                </p>
-
-                <div class="pt-2 flex flex-wrap items-center justify-center gap-3">
-                    <a href="#paket" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm px-5 py-3 rounded-xl transition shadow-xs flex items-center gap-2">
-                        <span>Lihat Paket</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </a>
-                    <a href="#fitur" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold text-sm px-5 py-3 rounded-xl transition">
-                        Pelajari Fitur
+    <!-- NAVBAR START -->
+    <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="/" class="flex-shrink-0 flex items-center gap-2 group">
+                        <div class="w-10 h-10 bg-brand text-white rounded-lg flex items-center justify-center text-xl font-bold group-hover:bg-brand-hover transition">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        <span class="font-extrabold text-2xl text-gray-900 tracking-tight">Rental<span class="text-brand">Base</span></span>
                     </a>
                 </div>
-            </div>
-
-            <!-- RentalBase UI Mockup -->
-            <div class="mt-10 max-w-4xl mx-auto bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-                <div class="bg-slate-100/90 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-rose-400 inline-block"></span>
-                        <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>
-                        <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
-                        <span class="ml-2 font-mono text-[11px] text-slate-600">rentalbase.com/app/dashboard</span>
-                    </div>
-                    <span class="hidden sm:inline bg-white px-2 py-0.5 rounded border border-slate-200 text-[10px] text-slate-600">RentalBase Core System</span>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#fitur" class="text-gray-600 hover:text-brand font-medium transition">Fitur</a>
+                    <a href="#harga" class="text-gray-600 hover:text-brand font-medium transition">Harga</a>
+                    <a href="#kontak" class="text-gray-600 hover:text-brand font-medium transition">Kontak</a>
+                    <div class="h-6 w-px bg-gray-200"></div>
+                    <a href="#" class="text-gray-700 hover:text-brand font-medium transition">Login Admin/Owner</a>
+                    <a href="/register-tenant" class="bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-full font-semibold transition shadow-lg shadow-orange-200/50 transform hover:-translate-y-0.5">Buka Toko Gratis</a>
                 </div>
-                <div class="p-4 sm:p-6 bg-slate-50/50 space-y-4">
-                    <!-- Top Bar Mockup -->
-                    <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center font-bold text-indigo-700 text-xs">
-                                JB
-                            </div>
-                            <div>
-                                <div class="text-xs font-bold text-slate-900">Jaya Baby Rental</div>
-                                <div class="text-[11px] text-slate-500">Subdomain: <code class="text-emerald-700 font-semibold">jaya</code></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-emerald-200/60">Lisensi Aktif</span>
-                            <span class="bg-slate-100 text-slate-600 text-[11px] font-medium px-2.5 py-1 rounded-md">Client ID #104</span>
-                        </div>
-                    </div>
-
-                    <!-- Mini Stat Cards Mockup -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div class="bg-white p-3 rounded-xl border border-slate-200/80">
-                            <div class="text-[11px] text-slate-500 font-medium">Total Peralatan</div>
-                            <div class="text-lg font-extrabold text-slate-900 mt-0.5">32 Unit</div>
-                        </div>
-                        <div class="bg-white p-3 rounded-xl border border-slate-200/80">
-                            <div class="text-[11px] text-slate-500 font-medium">Booking Aktif</div>
-                            <div class="text-lg font-extrabold text-emerald-700 mt-0.5">14 Pesanan</div>
-                        </div>
-                        <div class="bg-white p-3 rounded-xl border border-slate-200/80">
-                            <div class="text-[11px] text-slate-500 font-medium">Pengiriman Hari Ini</div>
-                            <div class="text-lg font-extrabold text-indigo-600 mt-0.5">3 Unit</div>
-                        </div>
-                        <div class="bg-white p-3 rounded-xl border border-slate-200/80">
-                            <div class="text-[11px] text-slate-500 font-medium">Pengembalian</div>
-                            <div class="text-lg font-extrabold text-amber-600 mt-0.5">2 Unit</div>
-                        </div>
-                    </div>
+                
+                <!-- Mobile Menu Button -->
+                <div class="-mr-2 flex items-center md:hidden">
+                    <button @click="open = !open" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none">
+                        <i class="fa-solid fa-bars text-2xl" x-show="!open"></i>
+                        <i class="fa-solid fa-xmark text-2xl" x-show="open" x-cloak></i>
+                    </button>
                 </div>
             </div>
-        </section>
+        </div>
+        
+        <!-- Mobile Menu Dropdown -->
+        <div x-show="open" class="md:hidden bg-white border-b border-gray-100 absolute w-full shadow-lg" x-transition x-cloak>
+            <div class="px-4 pt-2 pb-6 space-y-2">
+                <a href="#fitur" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Fitur</a>
+                <a href="#harga" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Harga</a>
+                <a href="#kontak" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Kontak</a>
+                <div class="border-t border-gray-100 my-2"></div>
+                <a href="#" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Login</a>
+                <a href="/register-tenant" class="block px-3 py-3 rounded-md text-base font-bold text-center text-white bg-brand hover:bg-brand-hover mt-4">Buka Toko Gratis</a>
+            </div>
+        </div>
+    </nav>
+    <!-- NAVBAR END -->
 
-        <!-- Highlight Paket License Section (Prioritas Utama Setelah Hero) -->
-        <section id="paket" class="py-12 bg-white border-y border-slate-200/80">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6">
-                <div class="text-center max-w-2xl mx-auto mb-10">
-                    <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                        Pilihan Paket RentalBase
-                    </h2>
-                    <p class="text-slate-600 text-xs sm:text-sm mt-2">
-                        Pilih paket license yang sesuai dengan kebutuhan usaha rental Anda.
+    <!-- HERO SECTION START -->
+    <section class="relative bg-white overflow-hidden">
+        <!-- Background Decoration -->
+        <div class="absolute top-0 right-0 w-1/2 h-full bg-brand-light/30 rounded-bl-[100px] -z-10 hidden lg:block"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24">
+            <div class="lg:grid lg:grid-cols-12 lg:gap-12 items-center">
+                <div class="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+                    <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold text-brand bg-brand-light mb-6 border border-orange-200">
+                        <span class="flex h-2 w-2 rounded-full bg-brand mr-2 animate-pulse"></span>
+                        Platform Manajemen Rental #1
+                    </div>
+                    <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl lg:leading-tight">
+                        Kelola Bisnis Rental <br>
+                        <span class="text-brand relative">
+                            dalam Satu Sistem
+                            <svg class="absolute w-full h-3 -bottom-1 left-0 text-brand-light -z-10" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 15 100 5 L 100 10 L 0 10 Z" fill="currentColor"></path></svg>
+                        </span>
+                    </h1>
+                    <p class="mt-6 text-base text-gray-600 sm:text-lg lg:text-xl leading-relaxed">
+                        Tinggalkan pencatatan manual. Pantau ketersediaan barang, jadwal booking, transaksi, hingga laporan kerusakan unit secara real-time.
                     </p>
+                    <div class="mt-10 flex flex-col sm:flex-row gap-4 sm:justify-center lg:justify-start">
+                        <a href="/register-tenant" class="inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-bold rounded-full shadow-lg shadow-orange-200/50 text-white bg-brand hover:bg-brand-hover hover:-translate-y-1 transition duration-300">
+                            Mulai Buka Toko Gratis
+                            <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
+                    <div class="mt-6 flex items-center gap-4 text-sm text-gray-500 sm:justify-center lg:justify-start">
+                        <div class="flex -space-x-2">
+                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=1" alt="User">
+                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=2" alt="User">
+                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=3" alt="User">
+                        </div>
+                        <p>Dipercaya oleh 500+ pemilik rental</p>
+                    </div>
                 </div>
+                <div class="mt-16 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6">
+                    <div class="relative mx-auto w-full rounded-2xl shadow-2xl overflow-hidden bg-white border border-gray-100 aspect-[4/3] flex flex-col">
+                        <div class="bg-gray-100 px-4 py-3 flex items-center gap-2 border-b">
+                            <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                        </div>
+                        <div class="flex-1 flex items-center justify-center bg-gray-50 relative overflow-hidden group">
+                            <!-- Placeholder untuk Image Dashboard Asli -->
+                            <i class="fa-solid fa-chart-pie text-8xl text-gray-200 group-hover:scale-110 transition duration-500"></i>
+                            <div class="absolute inset-0 bg-gradient-to-t from-gray-100/80 to-transparent"></div>
+                            <p class="absolute bottom-6 font-bold text-gray-400 text-lg uppercase tracking-widest">Dashboard Preview</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- HERO SECTION END -->
 
-                <!-- Package Cards Layout (Equal Hierarchy, No Badges/Rankings) -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-                    @foreach($packages as $pkg)
-                        <div class="bg-slate-50/70 rounded-2xl border border-slate-200 p-6 flex flex-col justify-between hover:border-slate-300 transition">
-                            <div class="space-y-4">
-                                <div>
-                                    <h3 class="text-lg font-extrabold text-slate-900 tracking-tight uppercase">{{ $pkg['name'] }}</h3>
-                                    <p class="text-xs text-slate-600 mt-1 min-h-[36px] leading-relaxed">
-                                        {{ $pkg['description'] }}
-                                    </p>
-                                </div>
+    <!-- FEATURES SECTION START -->
+    <section id="fitur" class="py-24 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-brand font-bold tracking-widest uppercase text-sm mb-3">Fitur Unggulan</h2>
+                <p class="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Didesain Khusus untuk Rental Fisik
+                </p>
+                <p class="mt-4 max-w-2xl text-lg text-gray-600 mx-auto">
+                    Bukan sekadar sistem kasir, RentalBase memahami alur kerja penyewaan barang dari awal pemesanan hingga pengembalian.
+                </p>
+            </div>
 
-                                <div class="py-3 border-y border-slate-200/80">
-                                    <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Durasi License</div>
-                                    <div class="text-sm font-bold text-slate-900 mt-0.5">{{ $pkg['duration'] }}</div>
-                                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-6">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Kalender Booking</h3>
+                    <p class="text-gray-600 leading-relaxed">Atur jadwal ketersediaan unit secara visual. Bebas dari risiko bentrok penyewaan (double booking).</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-6">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Inventaris Cerdas</h3>
+                    <p class="text-gray-600 leading-relaxed">Lacak status barang (tersedia, disewa, rusak). Catat riwayat perbaikan tiap unit dengan detail.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-6">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Faktur & Denda</h3>
+                    <p class="text-gray-600 leading-relaxed">Buat invoice otomatis, catat deposit, dan kalkulasi denda keterlambatan secara instan.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition duration-300">
+                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-6">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Laporan Analitik</h3>
+                    <p class="text-gray-600 leading-relaxed">Analisis omzet, unit paling laris, dan performa bisnis Anda melalui dashboard interaktif.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- FEATURES SECTION END -->
 
-                                <div>
-                                    <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5">Cakupan Fitur Utama</div>
-                                    <ul class="space-y-2 text-xs text-slate-700">
-                                        @foreach($pkg['features'] as $feature)
-                                            <li class="flex items-start gap-2">
-                                                <svg class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                <span>{{ $feature }}</span>
-                                            </li>
-                                        @endforeach
-                                    </ul>
+    <!-- PRICING SECTION START -->
+    <section id="harga" class="py-24 bg-white relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-20">
+                <h2 class="text-brand font-bold tracking-widest uppercase text-sm mb-3">Harga Langganan</h2>
+                <p class="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Investasi Tepat untuk Usaha Anda
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+                @if(isset($packages))
+                    @foreach($packages as $index => $pkg)
+                        @php
+                            $isPopular = $pkg['name'] === 'Business';
+                        @endphp
+                        <div class="bg-white border-2 {{ $isPopular ? 'border-brand rounded-3xl p-8 shadow-xl relative transform lg:-translate-y-4' : 'border-gray-200 rounded-3xl p-8 shadow-sm' }} flex flex-col">
+                            @if($isPopular)
+                                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand text-white px-6 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest shadow-md">
+                                    Paling Populer
                                 </div>
+                            @endif
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2 {{ $isPopular ? 'mt-2' : '' }}">{{ $pkg['name'] }}</h3>
+                            <p class="text-gray-500 mb-6 min-h-[48px]">{{ $pkg['description'] }}</p>
+                            <div class="mb-4 flex items-baseline">
+                                <span class="text-3xl font-extrabold text-gray-900">{{ $pkg['price'] }}</span>
                             </div>
-
-                            <div class="pt-6 mt-6 border-t border-slate-200/80 space-y-3">
-                                <div>
-                                    <div class="text-[10px] text-slate-500 font-medium">Biaya License</div>
-                                    <div class="text-lg font-extrabold text-slate-900">{{ $pkg['price'] }}</div>
-                                </div>
-                                <a href="#paket" class="w-full inline-flex justify-center items-center bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs py-3 px-4 rounded-xl transition shadow-xs">
-                                    Pilih Paket
-                                </a>
-                            </div>
+                            <div class="text-sm font-bold text-brand mb-6">Durasi: {{ $pkg['duration'] }}</div>
+                            <ul class="space-y-4 text-gray-{{ $isPopular ? '800' : '600' }} mb-8 flex-1">
+                                @foreach($pkg['features'] as $feature)
+                                    <li class="flex items-start">
+                                        <i class="fa-solid fa-check{{ $isPopular ? '-circle' : '' }} text-brand mt-1 mr-3 {{ $isPopular ? 'text-lg' : '' }}"></i> 
+                                        {{ $feature }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                            <a href="/register-tenant" class="block w-full py-4 px-4 {{ $isPopular ? 'bg-brand text-white hover:bg-brand-hover shadow-lg shadow-orange-200/50' : 'bg-brand-light text-brand hover:bg-orange-200' }} font-bold text-center rounded-xl transition">
+                                Pilih Paket {{ $pkg['name'] }}
+                            </a>
                         </div>
                     @endforeach
-                </div>
+                @else
+                    <!-- Fallback hardcoded if packages are not set -->
+                    <p>Paket sedang tidak tersedia.</p>
+                @endif
             </div>
-        </section>
+        </div>
+    </section>
+    <!-- PRICING SECTION END -->
 
-        <!-- Fitur Utama Section -->
-        <section id="fitur" class="py-12 sm:py-16 max-w-6xl mx-auto px-4 sm:px-6">
-            <div class="text-center max-w-2xl mx-auto mb-10">
-                <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                    Fitur Utama RentalBase
-                </h2>
-                <p class="text-slate-600 text-xs sm:text-sm mt-2">
-                    Fungsi operasional terstruktur untuk mendukung kelancaran penyewaan peralatan Anda.
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                <!-- Fitur 1 -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start gap-3.5">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-sm">
-                        01
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-sm">Peralatan & Stok</h3>
-                        <p class="text-xs text-slate-600 mt-1 leading-relaxed">Kelola inventaris peralatan rental, ketersediaan stok unit, dan varian secara terpusat.</p>
-                    </div>
-                </div>
-
-                <!-- Fitur 2 -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start gap-3.5">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-sm">
-                        02
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-sm">Ketersediaan & Booking</h3>
-                        <p class="text-xs text-slate-600 mt-1 leading-relaxed">Jadwal penyewaan otomatis untuk memastikan ketersediaan barang tanpa bentrok tanggal.</p>
-                    </div>
-                </div>
-
-                <!-- Fitur 3 -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start gap-3.5">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-sm">
-                        03
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-sm">Pembayaran</h3>
-                        <p class="text-xs text-slate-600 mt-1 leading-relaxed">Pencatatan dan konfirmasi pembayaran uang sewa serta bukti transaksi secara akurat.</p>
-                    </div>
-                </div>
-
-                <!-- Fitur 4 -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start gap-3.5">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-sm">
-                        04
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-sm">Pengiriman & Pengembalian</h3>
-                        <p class="text-xs text-slate-600 mt-1 leading-relaxed">Pemantauan status alur pengiriman unit sewa hingga pengembalian tepat waktu.</p>
-                    </div>
-                </div>
-
-                <!-- Fitur 5 -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start gap-3.5">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-sm">
-                        05
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-sm">Kondisi & Kerusakan</h3>
-                        <p class="text-xs text-slate-600 mt-1 leading-relaxed">Pencatatan hasil pengecekan kondisi barang sebelum dan sesudah masa penyewaan.</p>
-                    </div>
-                </div>
-
-                <!-- Fitur 6 -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex items-start gap-3.5">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 font-bold text-sm">
-                        06
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-900 text-sm">Dashboard & Laporan</h3>
-                        <p class="text-xs text-slate-600 mt-1 leading-relaxed">Pantau performa penyewaan, status operasional, dan rekapitulasi data harian.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Cara Kerja Section -->
-        <section id="cara-kerja" class="py-12 sm:py-16 bg-white border-t border-slate-200/80">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6">
-                <div class="text-center max-w-2xl mx-auto mb-10">
-                    <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                        Cara Kerja Platform
+    <!-- CTA SECTION START -->
+    <section class="py-20 bg-white">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-brand rounded-3xl shadow-xl overflow-hidden relative">
+                <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div class="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-white opacity-20 rounded-full blur-3xl"></div>
+                
+                <div class="relative px-8 py-16 sm:px-16 sm:py-20 text-center">
+                    <h2 class="text-3xl font-extrabold text-white sm:text-4xl mb-4">
+                        Siap Membawa Bisnis Rental Anda ke Level Berikutnya?
                     </h2>
-                    <p class="text-slate-600 text-xs sm:text-sm mt-2">
-                        Empat langkah sederhana memulai penggunaan sistem RentalBase.
+                    <p class="text-orange-100 text-lg mb-10 max-w-2xl mx-auto">
+                        Ribuan pemilik rental telah menghemat waktu dan meningkatkan profit mereka. Mulai kelola dengan profesional sekarang.
                     </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6">
-                    <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 relative">
-                        <div class="text-xs font-bold text-emerald-700 tracking-wider">01</div>
-                        <h3 class="font-bold text-slate-900 text-sm mt-1">Pilih Paket</h3>
-                        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Tentukan paket lisensi RentalBase yang sesuai skala bisnis Anda.</p>
-                    </div>
-
-                    <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 relative">
-                        <div class="text-xs font-bold text-emerald-700 tracking-wider">02</div>
-                        <h3 class="font-bold text-slate-900 text-sm mt-1">Aktifkan License</h3>
-                        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Dapatkan lisensi dan akses konfigurasi awal akun rental Anda.</p>
-                    </div>
-
-                    <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 relative">
-                        <div class="text-xs font-bold text-emerald-700 tracking-wider">03</div>
-                        <h3 class="font-bold text-slate-900 text-sm mt-1">Kelola Usaha Rental</h3>
-                        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Atur katalog peralatan, stok, harga, dan branding penyewaan.</p>
-                    </div>
-
-                    <div class="p-5 rounded-xl bg-slate-50 border border-slate-200/80 relative">
-                        <div class="text-xs font-bold text-emerald-700 tracking-wider">04</div>
-                        <h3 class="font-bold text-slate-900 text-sm mt-1">Layani Customer</h3>
-                        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">Terima booking sewa dan proses transaksi rental secara terstruktur.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Keunggulan Section -->
-        <section class="py-12 sm:py-16 max-w-6xl mx-auto px-4 sm:px-6">
-            <div class="bg-slate-900 text-white rounded-2xl p-6 sm:p-10 shadow-sm">
-                <div class="max-w-xl mb-8">
-                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Dirancang untuk Bisnis Rental</h2>
-                    <p class="text-slate-400 text-xs sm:text-sm mt-2">Solusi perangkat lunak terpusat yang fleksibel untuk beragam kategori rental peralatan.</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300">
-                        <span class="text-emerald-400 font-bold shrink-0">✓</span>
-                        <span>Satu sistem untuk proses rental</span>
-                    </div>
-                    <div class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300">
-                        <span class="text-emerald-400 font-bold shrink-0">✓</span>
-                        <span>Data setiap client tetap terpisah</span>
-                    </div>
-                    <div class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300">
-                        <span class="text-emerald-400 font-bold shrink-0">✓</span>
-                        <span>Dapat digunakan berbagai usaha rental</span>
-                    </div>
-                    <div class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300">
-                        <span class="text-emerald-400 font-bold shrink-0">✓</span>
-                        <span>Client memiliki halaman rental sendiri</span>
-                    </div>
-                    <div class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300">
-                        <span class="text-emerald-400 font-bold shrink-0">✓</span>
-                        <span>Admin Rental mengelola operasional</span>
-                    </div>
-                    <div class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300">
-                        <span class="text-emerald-400 font-bold shrink-0">✓</span>
-                        <span>Customer penyewaan via web</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- CTA Section -->
-        <section class="pb-16 pt-4 max-w-4xl mx-auto px-4 sm:px-6 text-center">
-            <div class="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-8 space-y-4">
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                    Siap Mengelola Bisnis Rental dengan Lebih Terstruktur?
-                </h2>
-                <div>
-                    <a href="#paket" class="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-xl transition shadow-xs">
-                        <span>Mulai Sekarang</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    <a href="/register-tenant" class="inline-flex items-center justify-center px-10 py-4 text-lg font-bold rounded-full text-brand bg-white hover:bg-gray-50 hover:scale-105 transition duration-300 shadow-xl">
+                        Buka Toko Sekarang — Gratis
                     </a>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
+    <!-- CTA SECTION END -->
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 text-slate-600 text-xs py-8">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded bg-emerald-700 flex items-center justify-center text-white font-bold text-xs">R</div>
+    <!-- FOOTER START -->
+    <footer id="kontak" class="bg-white border-t border-gray-200 pt-16 pb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-12">
+                <div class="md:col-span-2">
+                    <a href="/" class="flex-shrink-0 flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 bg-brand text-white rounded-lg flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        <span class="font-extrabold text-xl text-gray-900 tracking-tight">Rental<span class="text-brand">Base</span></span>
+                    </a>
+                    <p class="text-gray-500 max-w-sm mb-6 leading-relaxed">Platform SaaS andalan pengusaha rental. Mendukung manajemen penyewaan alat fotografi, kendaraan, perlengkapan bayi, dan masih banyak lagi.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-brand hover:text-white transition"><i class="fa-brands fa-instagram text-lg"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-brand hover:text-white transition"><i class="fa-brands fa-facebook-f text-lg"></i></a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-brand hover:text-white transition"><i class="fa-brands fa-linkedin-in text-lg"></i></a>
+                    </div>
+                </div>
                 <div>
-                    <span class="font-bold text-slate-900">RentalBase</span>
-                    <span class="text-slate-400 text-[11px] ml-1.5">— Equipment Rental System</span>
+                    <h4 class="font-bold text-gray-900 mb-4 uppercase text-sm tracking-wider">Perusahaan</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-500 hover:text-brand transition">Tentang Kami</a></li>
+                        <li><a href="#" class="text-gray-500 hover:text-brand transition">Kontak Developer</a></li>
+                        <li><a href="#" class="text-gray-500 hover:text-brand transition">Pusat Bantuan</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-900 mb-4 uppercase text-sm tracking-wider">Legal</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-500 hover:text-brand transition">Syarat & Ketentuan (Terms)</a></li>
+                        <li><a href="#" class="text-gray-500 hover:text-brand transition">Kebijakan Privasi (Privacy)</a></li>
+                    </ul>
                 </div>
             </div>
-
-            <nav class="flex items-center gap-5 font-semibold text-slate-600">
-                <a href="#beranda" class="hover:text-emerald-700 transition">Beranda</a>
-                <a href="#paket" class="hover:text-emerald-700 transition">Paket</a>
-                <a href="#fitur" class="hover:text-emerald-700 transition">Fitur</a>
-                <a href="#cara-kerja" class="hover:text-emerald-700 transition">Cara Kerja</a>
-            </nav>
-
-            <div class="text-slate-400 text-[11px]">
-                &copy; {{ date('Y') }} RentalBase. All rights reserved.
+            <div class="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm">&copy; {{ date('Y') }} RentalBase. All rights reserved.</p>
+                <p class="text-gray-400 text-sm mt-2 md:mt-0">Dibuat dengan <i class="fa-solid fa-heart text-brand mx-1 animate-pulse"></i> oleh Tim RentalBase</p>
             </div>
         </div>
     </footer>
+    <!-- FOOTER END -->
 
-    <!-- Mobile Menu Toggle Script -->
-    <script>
-        const menuBtn = document.getElementById('mobile-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
-
-        menuBtn.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-    </script>
 </body>
 </html>

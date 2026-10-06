@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [RentalBaseHomeController::class, 'index'])
     ->name('landing.home');
 
+Route::get('/register-tenant', function () {
+    return view('landing.register-tenant');
+})->name('landing.register');
+
 Route::get('/client/{subdomain}', [CustomerHomeController::class, 'index'])
     ->name('customer.home');
 
