@@ -74,6 +74,6 @@ class PageController extends Controller
         ];
 
         // PERBAIKAN: Tambahkan 'client' ke dalam fungsi compact()
-        return view('customer.orders.index', compact('orders', 'client'));
+        return view('customer.orders.my-orders', compact('orders', 'client'));
     }
 }
