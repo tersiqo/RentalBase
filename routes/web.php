@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\ShipmentController;
+use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Customer\CustomerHomeController;
 use App\Http\Controllers\Landing\RentalBaseHomeController;
 use Illuminate\Support\Facades\Route;
@@ -28,7 +29,8 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::get('/orders', fn () => back())->name('orders.index');
     Route::get('/shipments', [ShipmentController::class, 'index'])->name('shipments.index');
     Route::post('/shipments/{order}/process', [ShipmentController::class, 'process'])->name('shipments.process');
-    Route::get('/returns', fn () => back())->name('returns.index');
+    Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
+    Route::post('/returns/{order}/process', [ReturnController::class, 'process'])->name('returns.process');
     Route::get('/condition-checks', fn () => back())->name('condition-checks.index');
     Route::get('/damage-cases', fn () => back())->name('damage-cases.index');
     Route::get('/categories', fn () => back())->name('categories.index');
