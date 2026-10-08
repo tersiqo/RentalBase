@@ -35,3 +35,5 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::get('/reports', fn () => back())->name('reports.index');
     Route::get('/settings', fn () => back())->name('settings.index');
 });
+Route::get('/client/{subdomain}/cart', \App\Livewire\Customer\CartPage::class)
+    ->name('customer.cart');
