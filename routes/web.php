@@ -19,3 +19,6 @@ Route::get('/client/{subdomain}/products/{product}', [\App\Http\Controllers\Cust
 
 Route::get('/client/{subdomain}/checkout/{product}', [\App\Http\Controllers\Customer\CustomerCheckoutController::class, 'create'])
     ->name('customer.checkout');
+
+Route::get('/client/{subdomain}/cart', \App\Livewire\Customer\CartPage::class)
+    ->name('customer.cart');
