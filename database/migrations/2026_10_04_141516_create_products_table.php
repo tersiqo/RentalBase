@@ -20,7 +20,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->decimal('rental_price_per_day', 12, 2);
             $table->decimal('deposit_fee', 12, 2)->default(0);
+            $table->decimal('late_fee_per_hour', 12, 2)->default(0);
             $table->string('main_image')->nullable();
+            $table->text('identity_guarantee_requirements')->nullable();
             $table->string('status')->default('aktif');
             $table->timestamps();
         });
