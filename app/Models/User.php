@@ -16,6 +16,8 @@ use Illuminate\Notifications\Notifiable;
     'password',
     'role',
     'status',
+    'phone',
+    'address',
 ])]
 #[Hidden([
     'password',
