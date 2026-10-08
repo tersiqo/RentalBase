@@ -13,11 +13,11 @@ class ClientAndAuthSeeder extends Seeder
     {
         DB::table('clients')->insert([
             'id' => 1,
-            'business_name' => 'KameraKu Studio Malang',
-            'description' => 'Sewa kamera dan perlengkapan fotografi profesional Malang.',
-            'logo' => 'clients/logos/kameraku.png',
-            'subdomain' => 'kameraku',
-            'theme_color' => '#3B82F6',
+            'business_name' => 'Baby Rental Studio',
+            'description' => 'Sewa perlengkapan bayi profesional Malang.',
+            'logo' => 'clients/logos/babyrental.png',
+            'subdomain' => 'babyrental',
+            'theme_color' => '#F97316',
             'status' => 'aktif',
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
@@ -58,8 +58,8 @@ class ClientAndAuthSeeder extends Seeder
             [
                 'id' => 2,
                 'client_id' => 1,
-                'name' => 'Budi Admin KameraKu',
-                'email' => 'budi@kameraku.com',
+                'name' => 'Budi Admin Baby Rental',
+                'email' => 'budi@babyrental.com',
                 'password' => Hash::make('password123'),
                 'role' => 'admin_rental', // Role resmi Admin Rental Toko
                 'phone' => '081234567890',
@@ -72,8 +72,8 @@ class ClientAndAuthSeeder extends Seeder
             [
                 'id' => 3,
                 'client_id' => 1,
-                'name' => 'Siti Admin KameraKu',
-                'email' => 'siti@kameraku.com',
+                'name' => 'Siti Admin Baby Rental',
+                'email' => 'siti@babyrental.com',
                 'password' => Hash::make('password123'),
                 'role' => 'admin_rental', // Role resmi Admin Rental Toko
                 'phone' => '081299887766',
