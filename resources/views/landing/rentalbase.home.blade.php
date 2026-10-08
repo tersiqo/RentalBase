@@ -56,8 +56,8 @@
                     <a href="#harga" class="text-gray-600 hover:text-brand font-medium transition">Harga</a>
                     <a href="#kontak" class="text-gray-600 hover:text-brand font-medium transition">Kontak</a>
                     <div class="h-6 w-px bg-gray-200"></div>
-                    <a href="#" class="text-gray-700 hover:text-brand font-medium transition">Login Admin/Owner</a>
-                    <a href="/register-tenant" class="bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-full font-semibold transition shadow-lg shadow-orange-200/50 transform hover:-translate-y-0.5">Buka Toko Gratis</a>
+                    <a href="/login" class="text-gray-700 hover:text-brand font-medium transition">Login</a>
+                    <a href="/register" class="bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-full font-semibold transition shadow-lg shadow-orange-200/50 transform hover:-translate-y-0.5">Buka Toko Gratis</a>
                 </div>
                 
                 <!-- Mobile Menu Button -->
@@ -77,8 +77,8 @@
                 <a href="#harga" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Harga</a>
                 <a href="#kontak" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Kontak</a>
                 <div class="border-t border-gray-100 my-2"></div>
-                <a href="#" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Login</a>
-                <a href="/register-tenant" class="block px-3 py-3 rounded-md text-base font-bold text-center text-white bg-brand hover:bg-brand-hover mt-4">Buka Toko Gratis</a>
+                <a href="/login" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Login</a>
+                <a href="/register" class="block px-3 py-3 rounded-md text-base font-bold text-center text-white bg-brand hover:bg-brand-hover mt-4">Buka Toko Gratis</a>
             </div>
         </div>
     </nav>
@@ -107,7 +107,7 @@
                         Tinggalkan pencatatan manual. Pantau ketersediaan barang, jadwal booking, transaksi, hingga laporan kerusakan unit secara real-time.
                     </p>
                     <div class="mt-10 flex flex-col sm:flex-row gap-4 sm:justify-center lg:justify-start">
-                        <a href="/register-tenant" class="inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-bold rounded-full shadow-lg shadow-orange-200/50 text-white bg-brand hover:bg-brand-hover hover:-translate-y-1 transition duration-300">
+                        <a href="/register" class="inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-bold rounded-full shadow-lg shadow-orange-200/50 text-white bg-brand hover:bg-brand-hover hover:-translate-y-1 transition duration-300">
                             Mulai Buka Toko Gratis
                             <i class="fa-solid fa-arrow-right ml-2"></i>
                         </a>
@@ -228,7 +228,7 @@
                                     </li>
                                 @endforeach
                             </ul>
-                            <a href="/register-tenant" class="block w-full py-4 px-4 {{ $isPopular ? 'bg-brand text-white hover:bg-brand-hover shadow-lg shadow-orange-200/50' : 'bg-brand-light text-brand hover:bg-orange-200' }} font-bold text-center rounded-xl transition">
+                            <a href="/register?plan={{ strtolower($pkg['name']) }}" class="block w-full py-4 px-4 {{ $isPopular ? 'bg-brand text-white hover:bg-brand-hover shadow-lg shadow-orange-200/50' : 'bg-brand-light text-brand hover:bg-orange-200' }} font-bold text-center rounded-xl transition">
                                 Pilih Paket {{ $pkg['name'] }}
                             </a>
                         </div>
@@ -256,7 +256,7 @@
                     <p class="text-orange-100 text-lg mb-10 max-w-2xl mx-auto">
                         Ribuan pemilik rental telah menghemat waktu dan meningkatkan profit mereka. Mulai kelola dengan profesional sekarang.
                     </p>
-                    <a href="/register-tenant" class="inline-flex items-center justify-center px-10 py-4 text-lg font-bold rounded-full text-brand bg-white hover:bg-gray-50 hover:scale-105 transition duration-300 shadow-xl">
+                    <a href="/register" class="inline-flex items-center justify-center px-10 py-4 text-lg font-bold rounded-full text-brand bg-white hover:bg-gray-50 hover:scale-105 transition duration-300 shadow-xl">
                         Buka Toko Sekarang — Gratis
                     </a>
                 </div>
