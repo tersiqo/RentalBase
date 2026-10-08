@@ -16,6 +16,9 @@ new class extends Component
     public $search = '';
     public $sort = 'terbaru';
 
+    public $allProductsCount = 0;
+    public $categoryCounts = [];
+
     public function mount()
     {
         $max = Product::where('client_id', $this->client->id)->max('rental_price_per_day');
@@ -23,6 +26,15 @@ new class extends Component
             $this->maxPrice = $max;
             $this->absoluteMaxPrice = $max;
         }
+
+        $this->allProductsCount = Product::where('client_id', $this->client->id)->where('status', 'aktif')->count();
+
+        $this->categoryCounts = Product::where('client_id', $this->client->id)
+            ->where('status', 'aktif')
+            ->selectRaw('category_id, count(*) as count')
+            ->groupBy('category_id')
+            ->pluck('count', 'category_id')
+            ->toArray();
     }
 
     public function resetFilters()
@@ -31,7 +43,6 @@ new class extends Component
         $this->maxPrice = $this->absoluteMaxPrice;
     }
 
-    // Use with() to expose computed properties to the Blade view below
     public function with()
     {
         $productsQuery = Product::where('client_id', $this->client->id)
@@ -42,8 +53,12 @@ new class extends Component
             }]);
 
         if ($this->search) {
-            // ILIKE is used for case-insensitive search in PostgreSQL
-            $productsQuery->where('name', 'ilike', '%' . $this->search . '%');
+            $productsQuery->where(function($query) {
+                $query->where('name', 'ilike', '%' . $this->search . '%')
+                      ->orWhereHas('category', function($q) {
+                          $q->where('name', 'ilike', '%' . $this->search . '%');
+                      });
+            });
         }
 
         if ($this->availableOnly) {
@@ -58,7 +73,6 @@ new class extends Component
 
         $productsQuery->whereBetween('rental_price_per_day', [(int) $this->minPrice, (int) $this->maxPrice]);
 
-        // Sorting logic
         if ($this->sort === 'termurah') {
             $productsQuery->orderBy('rental_price_per_day', 'asc');
         } elseif ($this->sort === 'termahal') {
@@ -66,21 +80,11 @@ new class extends Component
         } elseif ($this->sort === 'abjad') {
             $productsQuery->orderBy('name', 'asc');
         } else {
-            $productsQuery->orderBy('created_at', 'desc'); // terbaru
+            $productsQuery->orderBy('created_at', 'desc');
         }
-
-        $allProductsCount = Product::where('client_id', $this->client->id)->where('status', 'aktif')->count();
-
-        $categoryCounts = Product::where('client_id', $this->client->id)
-            ->where('status', 'aktif')
-            ->selectRaw('category_id, count(*) as count')
-            ->groupBy('category_id')
-            ->pluck('count', 'category_id');
 
         return [
             'products' => $productsQuery->get(),
-            'allProductsCount' => $allProductsCount,
-            'categoryCounts' => $categoryCounts,
         ];
     }
 };
@@ -120,9 +124,17 @@ new class extends Component
             <!-- Big Search Bar -->
             <div class="max-w-3xl animate-slide-in opacity-0" style="animation-delay: 300ms;">
                 <div class="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1.5 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 transition-all">
-                    <div class="flex-grow flex items-center pl-3">
-                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        <input type="text" wire:model.live.debounce.300ms="search" class="w-full pl-3 pr-3 py-2 border-none focus:ring-0 text-gray-700 placeholder-gray-400" placeholder="Cari kamera, lensa, atau aksesoris...">
+                    @php
+                        $catNames = $categories->take(3)->pluck('name')->toArray();
+                        $placeholder = count($catNames) > 0 ? 'Cari ' . implode(', ', $catNames) . '...' : 'Cari perlengkapan...';
+                    @endphp
+                    <div class="flex-grow flex items-center pl-3 relative">
+                        <svg wire:loading.remove class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <svg wire:loading class="animate-spin h-5 w-5 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <input type="text" wire:model.live.debounce.300ms="search" class="w-full pl-3 pr-3 py-2 border-none focus:ring-0 text-gray-700 placeholder-gray-400" placeholder="{{ $placeholder }}">
                     </div>
                     <button type="button" class="bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-6 rounded-md transition-colors whitespace-nowrap hidden sm:block">
                         Cari Alat
@@ -132,11 +144,9 @@ new class extends Component
                 <!-- Popular Searches -->
                 <div class="flex flex-wrap items-center gap-2 mt-4 text-sm">
                     <span class="text-gray-500 mr-1">Pencarian Populer:</span>
-                    <button wire:click="$set('search', 'Sony')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition-colors text-xs font-medium border border-gray-200">Sony</button>
-                    <button wire:click="$set('search', 'Canon')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition-colors text-xs font-medium border border-gray-200">Canon</button>
-                    <button wire:click="$set('search', 'Lensa')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition-colors text-xs font-medium border border-gray-200">Lensa</button>
-                    <button wire:click="$set('search', 'Lighting')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition-colors text-xs font-medium border border-gray-200">Lighting</button>
-                    <button wire:click="$set('search', 'Tripod')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition-colors text-xs font-medium border border-gray-200">Tripod</button>
+                    @foreach($categories->take(5) as $cat)
+                        <button type="button" wire:click="$set('search', '{{ addslashes($cat->name) }}')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full transition-colors text-xs font-medium border border-gray-200 cursor-pointer">{{ $cat->name }}</button>
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -301,18 +311,19 @@ new class extends Component
 
         <!-- Product Grid Overlay Spinner -->
         <div class="relative min-h-[400px]">
-            <div wire:loading class="absolute inset-0 z-10 flex items-start justify-center pt-20 bg-white/50 backdrop-blur-sm rounded-xl">
-                <div class="bg-white px-5 py-3 rounded-full shadow-lg border border-gray-100 flex items-center gap-3">
-                    <svg class="animate-spin h-5 w-5 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <!-- Loading Overlay for Product Cards Grid -->
+            <div wire:loading.flex style="display: none;" class="absolute inset-0 z-30 flex items-start justify-center pt-24 bg-white/70 backdrop-blur-sm rounded-xl transition-all">
+                <div class="bg-white px-6 py-4 rounded-full shadow-xl border border-gray-200 flex items-center gap-3.5">
+                    <svg class="animate-spin h-6 w-6 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span class="text-gray-700 font-medium text-sm">Memperbarui Katalog...</span>
+                    <span class="text-gray-800 font-semibold text-base">Memperbarui Daftar Produk...</span>
                 </div>
             </div>
 
             <!-- Product Grid -->
-            <div wire:loading.class="opacity-50 pointer-events-none" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 transition-opacity duration-300">
+            <div wire:loading.class="opacity-30 pointer-events-none" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 transition-opacity duration-200">
             @if($products->isEmpty())
                 <div class="col-span-full py-16 text-center bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center">
                     <div class="bg-gray-50 text-gray-400 rounded-full p-4 mb-4">
@@ -327,11 +338,11 @@ new class extends Component
             @else
                 @foreach($products as $item)
                 <!-- Card -->
-            <div wire:key="product-{{ $item->id }}" class="animate-slide-in opacity-0 bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full group relative" style="animation-delay: {{ min($loop->index * 50, 500) }}ms;">
+            <div wire:key="product-{{ $item->id }}" class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full group relative">
                 
                 <!-- Image -->
                 <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="relative h-48 w-full bg-gray-100 overflow-hidden block">
-                        <img src="{{ $item->main_image ? Storage::url($item->main_image) : 'https://placehold.co/400x300/e2e8f0/475569?text=No+Image' }}" alt="{{ $item->name }}" class="object-cover w-full h-full opacity-0 group-hover:scale-110 transition-all duration-700 ease-in-out" onload="this.classList.remove('opacity-0')" onerror="this.src='https://placehold.co/400x300/e2e8f0/475569?text=Image+Error'; this.classList.remove('opacity-0')">
+                        <img src="{{ $item->main_image ? Storage::url($item->main_image) : 'https://placehold.co/400x300/e2e8f0/475569?text=No+Image' }}" alt="{{ $item->name }}" class="object-cover w-full h-full group-hover:scale-110 transition-all duration-700 ease-in-out" onerror="this.src='https://placehold.co/400x300/e2e8f0/475569?text=Image+Error'">
                         <!-- Badge -->
                         @if($item->available_units_count > 0)
                         <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full border border-green-200 shadow-sm flex items-center gap-1">
