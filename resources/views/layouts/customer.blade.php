@@ -40,7 +40,7 @@
 <body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
 
     <!-- Header -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header x-data="{ mobileMenuOpen: false }" class="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo & Name -->
@@ -72,21 +72,44 @@
                     <!-- Cart -->
                     <livewire:customer.cart-icon :client="$client" />
 
-                    <!-- Login / Avatar -->
-                    <div class="flex items-center gap-3 pl-2">
-                        <a href="#" class="hidden sm:inline-flex items-center justify-center px-4 py-1.5 border border-primary-500 text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 transition-colors">
-                            Masuk / Daftar
-                        </a>
-                        <button class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <!-- Login / Avatar (Alpine Dropdown) -->
+                    <div x-data="{ open: false }" class="relative flex items-center pl-2">
+                        <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none">
+                            <img src="https://ui-avatars.com/api/?name=Iqo&background=f97316&color=fff&bold=true" alt="Profile" class="w-8 h-8 rounded-full border border-gray-200">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
+                        
+                        <div x-show="open" 
+                             x-transition.opacity.duration.200ms
+                             class="absolute right-0 top-10 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50" 
+                             style="display: none;">
+                            <div class="px-4 py-2 border-b border-gray-100 mb-1">
+                                <p class="text-sm font-bold text-gray-900">Halo, Iqo!</p>
+                            </div>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">Pelanggan</a>
+                            <a href="{{ route('customer.orders') }}" class="block px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 transition">Pesanan Saya</a>
+                            <div class="border-t border-gray-100 mt-1"></div>
+                            <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</a>
+                        </div>
                     </div>
                     
                     <!-- Mobile menu button -->
-                    <button class="md:hidden text-gray-500 hover:text-gray-900">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-gray-500 hover:text-gray-900 focus:outline-none">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Mobile Dropdown Menu -->
+        <div x-show="mobileMenuOpen" 
+             x-transition
+             class="md:hidden bg-white border-t border-gray-100"
+             style="display: none;">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Beranda</a>
+                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-primary-600 bg-primary-50">Katalog</a>
+                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Ketentuan Sewa</a>
             </div>
         </div>
     </header>
