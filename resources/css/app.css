@@ -11,3 +11,12 @@
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+
+.hide-scroll-bar {
+    -ms-overflow-style: none;  
+    scrollbar-width: none;  
+}
+.hide-scroll-bar::-webkit-scrollbar {
+    display: none; 
+}

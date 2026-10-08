@@ -5,12 +5,19 @@ use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Customer\CustomerHomeController;
 use App\Http\Controllers\Landing\RentalBaseHomeController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\Auth\GoogleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [RentalBaseHomeController::class, 'index'])
     ->name('landing.home');
 
+Route::get('/my-orders', [PageController::class, 'myOrders'])
+    ->name('customer.orders');
+
+Route::get('/register-tenant', function () {
+    return view('landing.register-tenant');
+})->name('landing.register');
 Route::get('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showLogin'])->name('login');
 Route::post('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'login']);
 
