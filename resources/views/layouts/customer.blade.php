@@ -62,12 +62,7 @@
                 <!-- Right Actions -->
                 <div class="flex items-center space-x-5">
                     <!-- Search Bar (Header) -->
-                    <div class="hidden lg:flex relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        </div>
-                        <input type="text" class="block w-64 pl-9 pr-3 py-1.5 border border-gray-200 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 text-sm transition duration-150 ease-in-out" placeholder="Cari kamera, lensa...">
-                    </div>
+                    <!-- Search Bar Navbar Dihapus agar tidak double dengan hero search -->
 
                     <!-- Cart -->
                     <livewire:customer.cart-icon :client="$client" />
@@ -148,6 +143,6 @@
         </div>
     </footer>
 
-    @livewireScripts
+    @livewireScriptConfig
 </body>
 </html>

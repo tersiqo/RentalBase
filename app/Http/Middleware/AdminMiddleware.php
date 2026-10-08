@@ -14,24 +14,28 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        /* 
-        // TEMPORARY TESTING BYPASS: Un-comment when authentication is ready.
         if (! Auth::check()) {
             return redirect('/')->with('error', 'Silakan login terlebih dahulu.');
         }
 
         $user = Auth::user();
 
+        if ($user->status === 'menunggu_verifikasi') {
+            return redirect()->route('tenant.waiting');
+        }
+
+        if ($user->status === 'pending_setup') {
+            return redirect()->route('tenant.setup');
+        }
+
         if ($user->status !== 'aktif') {
             Auth::logout();
-
             return redirect('/')->with('error', 'Akun tidak aktif.');
         }
 
         if (! in_array($user->role, ['admin_rental', 'owner'], true)) {
             abort(403, 'Akses ditolak.');
         }
-        */
 
         return $next($request);
     }
