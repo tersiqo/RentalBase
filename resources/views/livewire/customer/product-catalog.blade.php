@@ -1,95 +1,3 @@
-<?php
-
-use Livewire\Component;
-use App\Models\Product;
-use Illuminate\Support\Facades\Storage;
-
-new class extends Component
-{
-    public $client;
-    public $categories;
-    public $availableOnly = false;
-    public $selectedCategory = null;
-    public $minPrice = 0;
-    public $maxPrice = 1000000;
-    public $absoluteMaxPrice = 1000000;
-    public $search = '';
-    public $sort = 'terbaru';
-
-    public $allProductsCount = 0;
-    public $categoryCounts = [];
-
-    public function mount()
-    {
-        $max = Product::where('client_id', $this->client->id)->max('rental_price_per_day');
-        if ($max) {
-            $this->maxPrice = $max;
-            $this->absoluteMaxPrice = $max;
-        }
-
-        $this->allProductsCount = Product::where('client_id', $this->client->id)->where('status', 'aktif')->count();
-
-        $this->categoryCounts = Product::where('client_id', $this->client->id)
-            ->where('status', 'aktif')
-            ->selectRaw('category_id, count(*) as count')
-            ->groupBy('category_id')
-            ->pluck('count', 'category_id')
-            ->toArray();
-    }
-
-    public function resetFilters()
-    {
-        $this->reset(['availableOnly', 'selectedCategory', 'search', 'sort', 'minPrice', 'maxPrice']);
-        $this->maxPrice = $this->absoluteMaxPrice;
-    }
-
-    public function with()
-    {
-        $productsQuery = Product::where('client_id', $this->client->id)
-            ->where('status', 'aktif')
-            ->with('category')
-            ->withCount(['units as available_units_count' => function ($query) {
-                $query->where('status', 'tersedia');
-            }]);
-
-        if ($this->search) {
-            $productsQuery->where(function($query) {
-                $query->where('name', 'ilike', '%' . $this->search . '%')
-                      ->orWhereHas('category', function($q) {
-                          $q->where('name', 'ilike', '%' . $this->search . '%');
-                      });
-            });
-        }
-
-        if ($this->availableOnly) {
-            $productsQuery->whereHas('units', function ($query) {
-                $query->where('status', 'tersedia');
-            });
-        }
-
-        if ($this->selectedCategory) {
-            $productsQuery->where('category_id', $this->selectedCategory);
-        }
-
-        $productsQuery->whereBetween('rental_price_per_day', [(int) $this->minPrice, (int) $this->maxPrice]);
-
-        if ($this->sort === 'termurah') {
-            $productsQuery->orderBy('rental_price_per_day', 'asc');
-        } elseif ($this->sort === 'termahal') {
-            $productsQuery->orderBy('rental_price_per_day', 'desc');
-        } elseif ($this->sort === 'abjad') {
-            $productsQuery->orderBy('name', 'asc');
-        } else {
-            $productsQuery->orderBy('created_at', 'desc');
-        }
-
-        return [
-            'products' => $productsQuery->get(),
-        ];
-    }
-};
-?>
-
 <div>
     <style>
         @keyframes slideInLeft {
@@ -297,7 +205,7 @@ new class extends Component
     <div class="flex-grow">
         <!-- Top bar -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-            <p class="text-sm text-gray-500">Menampilkan <span class="font-semibold text-gray-900">{{ $products->count() }}</span> Peralatan</p>
+            <p class="text-sm text-gray-500">Menampilkan <span class="font-semibold text-gray-900">{{ $this->products->count() }}</span> Peralatan</p>
             <div class="flex items-center gap-2">
                 <label for="sort" class="text-sm text-gray-500">Urutkan:</label>
                 <select id="sort" wire:model.live="sort" class="block w-40 rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600 sm:text-sm sm:leading-6">
@@ -324,7 +232,7 @@ new class extends Component
 
             <!-- Product Grid -->
             <div wire:loading.class="opacity-30 pointer-events-none" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 transition-opacity duration-200">
-            @if($products->isEmpty())
+            @if($this->products->isEmpty())
                 <div class="col-span-full py-16 text-center bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center">
                     <div class="bg-gray-50 text-gray-400 rounded-full p-4 mb-4">
                         <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -336,7 +244,7 @@ new class extends Component
                     @endif
                 </div>
             @else
-                @foreach($products as $item)
+                @foreach($this->products as $item)
                 <!-- Card -->
             <div wire:key="product-{{ $item->id }}" class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full group relative">
                 
