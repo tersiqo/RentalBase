@@ -49,7 +49,7 @@
                  x-transition:leave="ease-in duration-200" 
                  x-transition:leave-start="opacity-100" 
                  x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true" @click="isOpen = false"></div>
+                 class="fixed inset-0 bg-gray-900/75 transition-opacity backdrop-blur-sm z-0" aria-hidden="true" @click="isOpen = false"></div>
 
             <!-- This element is to trick the browser into centering the modal contents. -->
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
@@ -62,7 +62,7 @@
                  x-transition:leave="ease-in duration-200"
                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100">
+                 class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="flex justify-between items-start mb-5">
                         <h3 class="text-xl leading-6 font-bold text-gray-900" id="modal-title">Tambah ke Keranjang</h3>
