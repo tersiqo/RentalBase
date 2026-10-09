@@ -34,7 +34,7 @@
     
     <!-- Button Trigger -->
     <button @click="isOpen = true" type="button" class="flex-none bg-white border-2 border-primary-200 text-primary-600 hover:bg-primary-50 hover:border-primary-300 font-bold text-lg py-4 px-6 rounded-xl text-center transition-all flex items-center justify-center gap-2 {{ $product->units->count() == 0 ? 'opacity-50 cursor-not-allowed pointer-events-none' : '' }}" title="Tambah ke Keranjang">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
         <span class="hidden xl:inline">Keranjang</span>
     </button>
 

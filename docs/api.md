@@ -630,11 +630,12 @@ Request:
   "shipping_method": "kurir",
   "courier_name": "JNE",
   "tracking_number": "ABC123456",
-  "shipping_date": "2026-10-01"
+  "shipping_date": "2026-10-01",
+  "shipping_cost": 50000
 }
 ```
 
-Alamat tujuan pengiriman diambil dari `orders.shipping_address` yang telah diisi customer saat checkout, sehingga tidak perlu diinput ulang oleh Admin Rental.
+Alamat tujuan pengiriman diambil dari `orders.shipping_address` yang telah diisi customer saat checkout, sehingga tidak perlu diinput ulang oleh Admin Rental. Biaya ongkos kirim (`shipping_cost`) diinput secara manual oleh Admin.
 
 ### Update Shipment
 ```http
@@ -1100,6 +1101,8 @@ GET   /api/notifications
 PATCH /api/notifications/{id}/read
 PATCH /api/notifications/read-all
 ```
+
+*Catatan: Sistem notifikasi tidak menggunakan WebSocket/Real-time push, melainkan menggunakan metode **polling** (meminta data terbaru saat halaman direfresh atau dimuat).*
 
 ### Get Notifications
 ```http

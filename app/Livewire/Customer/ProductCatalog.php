@@ -30,8 +30,8 @@ class ProductCatalog extends Component
 
         $max = Product::where('client_id', $this->client->id)->max('rental_price_per_day');
         if ($max) {
-            $this->maxPrice = $max;
-            $this->absoluteMaxPrice = $max;
+            $this->maxPrice = (int)$max;
+            $this->absoluteMaxPrice = (int)$max;
         }
 
         $this->allProductsCount = Product::where('client_id', $this->client->id)->where('status', 'aktif')->count();
