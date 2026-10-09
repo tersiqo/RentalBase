@@ -8,35 +8,34 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Scripts/Styles (Vite) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+<body class="bg-white text-gray-600 font-sans antialiased min-h-screen flex flex-col">
 
     <!-- Header -->
-    <header x-data="{ mobileMenuOpen: false }" class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
+    <header x-data="{ mobileMenuOpen: false }" class="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-[1260px] mx-auto px-6">
+            <div class="flex justify-between items-center h-[68px]">
                 <!-- Logo & Name -->
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-primary-600 rounded-lg text-white flex items-center justify-center font-bold">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="flex items-center gap-3 font-extrabold text-gray-900 text-[17px]">
+                    <div class="w-[38px] h-[38px] bg-primary-500 rounded-xl text-white flex items-center justify-center font-bold shadow-[0_8px_16px_-6px_rgba(249,115,22,0.5)]">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M3 4h3l2 11h10M6 8h13l-2 6H8"/></svg>
                     </div>
-                    <span class="font-bold text-gray-800 hidden sm:block">{{ $client->nama_usaha ?? 'RentalBase Tenant' }}</span>
-                    <span class="text-[10px] font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded border border-gray-200 hidden md:inline-block">Tenant</span>
-                </div>
+                    <span>{{ $client->nama_usaha ?? 'RentalBase Tenant' }}</span>
+                </a>
 
                 <!-- Center Navigation -->
-                <nav class="hidden md:flex items-center space-x-8">
-                    @if(isset($client))
-                        <a href="{{ route('customer.home', ['subdomain' => $client->subdomain]) }}" class="text-primary-600 border-b-2 border-primary-500 pb-[1.125rem] pt-[1.125rem] text-sm font-semibold transition-colors">Katalog</a>
-                    @else
-                        <a href="#" class="text-primary-600 border-b-2 border-primary-500 pb-[1.125rem] pt-[1.125rem] text-sm font-semibold transition-colors">Katalog</a>
-                    @endif
+                <nav class="hidden md:flex items-center space-x-7 font-semibold text-[14px]">
+                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="text-primary-500 border-b-2 border-primary-500 py-[22px] transition-colors">Katalog</a>
+                    <a href="#katalog" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Cara sewa</a>
+                    <a href="#kontak" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Kontak</a>
                 </nav>
 
                 <!-- Right Actions -->
@@ -47,26 +46,33 @@
                     <!-- Cart -->
                     <livewire:customer.cart-icon :client="$client" />
 
-                    <!-- Login / Avatar (Alpine Dropdown) -->
-                    <div x-data="{ open: false }" class="relative flex items-center pl-2">
-                        <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none">
-                            <img src="https://ui-avatars.com/api/?name=Iqo&background=f97316&color=fff&bold=true" alt="Profile" class="w-8 h-8 rounded-full border border-gray-200">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </button>
-                        
-                        <div x-show="open" 
-                             x-transition.opacity.duration.200ms
-                             class="absolute right-0 top-10 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50" 
-                             style="display: none;">
-                            <div class="px-4 py-2 border-b border-gray-100 mb-1">
-                                <p class="text-sm font-bold text-gray-900">Halo, Iqo!</p>
+                    @auth
+                        <!-- Login / Avatar (Alpine Dropdown) -->
+                        <div x-data="{ open: false }" class="relative flex items-center ml-1">
+                            <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=f97316&color=fff&bold=true" alt="Profile" class="w-[42px] h-[42px] rounded-xl border border-gray-200 hover:border-primary-500 transition-colors">
+                            </button>
+                            
+                            <div x-show="open" 
+                                 x-transition.opacity.duration.200ms
+                                 class="absolute right-0 top-12 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50" 
+                                 style="display: none;">
+                                <div class="px-4 py-2 border-b border-gray-100 mb-1">
+                                    <p class="text-sm font-bold text-gray-900">Halo, {{ auth()->user()->name }}!</p>
+                                </div>
+                                <a href="{{ route('customer.orders') }}" class="block px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 transition">Pesanan Saya</a>
+                                <div class="border-t border-gray-100 mt-1"></div>
+                                <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</a>
+                                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                    @csrf
+                                </form>
                             </div>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">Pelanggan</a>
-                            <a href="{{ route('customer.orders') }}" class="block px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 transition">Pesanan Saya</a>
-                            <div class="border-t border-gray-100 mt-1"></div>
-                            <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</a>
                         </div>
-                    </div>
+                    @else
+                        <!-- Guest Actions -->
+                        <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 text-[14px] transition-colors">Masuk</a>
+                        <a href="{{ route('tenant.register') }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-transparent bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 text-[14px] transition-all">Daftar</a>
+                    @endauth
                     
                     <!-- Mobile menu button -->
                     <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-gray-500 hover:text-gray-900 focus:outline-none">
@@ -95,35 +101,18 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-16">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <div class="md:flex md:items-center md:justify-between grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
-                <!-- Left -->
+    <footer id="kontak" class="bg-slate-900 border-t border-slate-800 text-slate-400 py-[30px] text-[13px] mt-16">
+        <div class="max-w-[1260px] mx-auto px-6">
+            <div class="flex justify-between flex-wrap gap-5">
                 <div>
-                    <h3 class="text-base font-semibold text-gray-900 mb-2">{{ $client->nama_usaha ?? 'RentalBase Tenant' }}</h3>
-                    @if(isset($client->address) && $client->address)
-                        <p class="text-gray-500 mb-1">{{ $client->address }}</p>
-                    @endif
-                    @if(isset($client->phone) && $client->phone)
-                    <p class="text-gray-500 flex items-center gap-1 mt-2">
-                        <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                        WhatsApp: {{ $client->phone }}
-                    </p>
-                    @endif
+                    <b class="text-white text-sm block mb-1">{{ $client->nama_usaha ?? 'BabyRent Malang' }}</b>
+                    {{ $client->address ?? 'Jl. Contoh No. 12, Malang.' }}<br>
+                    Buka setiap hari {{ $client->operational_hours ?? '08.00 - 20.00' }}<br>
+                    WhatsApp: {{ $client->phone ?? '-' }}
                 </div>
-                <!-- Center -->
-                <div class="md:text-center">
-                    @if(isset($client->operational_hours) && $client->operational_hours)
-                    <h3 class="text-base font-semibold text-gray-900 mb-2">Jam Operasional</h3>
-                    <p class="text-gray-500">{{ $client->operational_hours }}</p>
-                    @endif
-                    <p class="text-gray-500 mt-2">Layanan pickup & return unit tersedia</p>
-                </div>
-                <!-- Right -->
-                <div class="md:text-right flex flex-col justify-end h-full">
-                    <p class="text-gray-500 mb-1">Powered by <span class="font-bold text-primary-600">RentalBase</span></p>
-                    <p class="text-xs text-gray-400 mb-1">Multi-Tenant Rental Engine</p>
-                    <p class="text-xs text-gray-400">&copy; {{ date('Y') }} {{ $client->nama_usaha ?? 'RentalBase Tenant' }}. Hak cipta dilindungi.</p>
+                <div class="text-right">
+                    Ditenagai <b class="text-primary-500">RentalBase</b><br>
+                    &copy; {{ date('Y') }} {{ $client->nama_usaha ?? 'BabyRent Malang' }}.
                 </div>
             </div>
         </div>
