@@ -20,6 +20,7 @@ Route::get('/register-tenant', function () {
 })->name('landing.register');
 Route::get('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showLogin'])->name('login');
 Route::post('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'login']);
+Route::post('/logout', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'logout'])->name('logout');
 
 Route::get('/register', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showRegister'])->name('tenant.register');
 Route::post('/register', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'register']);
@@ -43,8 +44,14 @@ Route::get('/client/{subdomain}', [CustomerHomeController::class, 'index'])
 Route::get('/client/{subdomain}/products/{product}', [\App\Http\Controllers\Customer\CustomerProductController::class, 'show'])
     ->name('customer.product.show');
 
-Route::get('/client/{subdomain}/checkout/{product}', [\App\Http\Controllers\Customer\CustomerCheckoutController::class, 'create'])
-    ->name('customer.checkout');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/client/{subdomain}/checkout', [\App\Http\Controllers\Customer\CustomerCheckoutController::class, 'create'])
+        ->name('customer.checkout');
+    Route::post('/client/{subdomain}/checkout', [\App\Http\Controllers\Customer\CustomerCheckoutController::class, 'store'])
+        ->name('customer.checkout.store');
+    Route::get('/client/{subdomain}/checkout/{product}', [\App\Http\Controllers\Customer\CustomerCheckoutController::class, 'direct'])
+        ->name('customer.checkout.direct');
+});
 
 Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');

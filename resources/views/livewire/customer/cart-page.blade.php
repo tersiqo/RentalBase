@@ -72,6 +72,13 @@
 
     <h1 class="text-3xl font-extrabold text-gray-900 mb-8">Keranjang Sewa</h1>
 
+    @if (session('error'))
+        <div class="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-sm flex gap-3">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <span class="font-medium">{{ session('error') }}</span>
+        </div>
+    @endif
+
     @if(empty($cart))
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -210,7 +217,7 @@
                         </div>
                     </div>
 
-                    <button class="w-full bg-primary-600 text-white font-bold text-lg py-4 px-6 rounded-xl text-center transition-all flex items-center justify-center gap-2"
+                    <button wire:click="proceedToCheckout" class="w-full bg-primary-600 text-white font-bold text-lg py-4 px-6 rounded-xl text-center transition-all flex items-center justify-center gap-2"
                         x-bind:class="$wire.selectedItems.length > 0 ? 'hover:bg-primary-700 shadow-lg shadow-primary-500/30' : 'opacity-50 cursor-not-allowed shadow-none'"
                         x-bind:disabled="$wire.selectedItems.length === 0">
                         <span>Lanjut Pembayaran <span x-show="$wire.selectedItems.length > 0" x-text="'(' + $wire.selectedItems.length + ')'"></span></span>
@@ -240,7 +247,7 @@
                         <div class="text-base font-bold text-primary-600 leading-none mt-0.5 transition-opacity duration-200" x-text="'Rp ' + formatRupiah(grandTotal)">Rp {{ number_format($grandTotal, 0, ',', '.') }}</div>
                     </div>
                 </div>
-                <button class="bg-primary-600 text-white font-bold py-2.5 px-6 rounded-xl transition-all"
+                <button wire:click="proceedToCheckout" class="bg-primary-600 text-white font-bold py-2.5 px-6 rounded-xl transition-all"
                     x-bind:class="$wire.selectedItems.length > 0 ? 'hover:bg-primary-700 shadow-md shadow-primary-500/30' : 'opacity-50 cursor-not-allowed shadow-none'"
                     x-bind:disabled="$wire.selectedItems.length === 0">
                     <span>Checkout <span x-show="$wire.selectedItems.length > 0" x-text="'(' + $wire.selectedItems.length + ')'"></span></span>
