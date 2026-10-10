@@ -17,7 +17,7 @@
         body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
     </style>
 </head>
-<body class="bg-white text-gray-600 font-sans antialiased min-h-screen flex flex-col">
+<body class="bg-[#FAFAFA] text-gray-600 font-sans antialiased min-h-screen flex flex-col">
 
     <!-- Header -->
     <header x-data="{ mobileMenuOpen: false }" class="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
@@ -33,9 +33,13 @@
 
                 <!-- Center Navigation -->
                 <nav class="hidden md:flex items-center space-x-7 font-semibold text-[14px]">
-                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="text-primary-500 border-b-2 border-primary-500 py-[22px] transition-colors">Katalog</a>
-                    <a href="#katalog" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Cara sewa</a>
-                    <a href="#kontak" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Kontak</a>
+                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="{{ !request()->routeIs('customer.checkout*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Katalog</a>
+                    @if(request()->routeIs('customer.checkout*'))
+                        <a href="#" class="text-primary-500 border-b-2 border-primary-500 py-[22px] transition-colors">Checkout</a>
+                    @else
+                        <a href="#katalog" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Cara sewa</a>
+                    @endif
+                    <a href="#bantuan" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Bantuan</a>
                 </nav>
 
                 <!-- Right Actions -->
@@ -88,9 +92,13 @@
              class="md:hidden bg-white border-t border-gray-100"
              style="display: none;">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Beranda</a>
-                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-primary-600 bg-primary-50">Katalog</a>
-                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Ketentuan Sewa</a>
+                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Katalog</a>
+                @if(request()->routeIs('customer.checkout*'))
+                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-primary-600 bg-primary-50">Checkout</a>
+                @else
+                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
+                @endif
+                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Bantuan</a>
             </div>
         </div>
     </header>
