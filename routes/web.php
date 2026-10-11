@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Customer\CustomerHomeController;
@@ -63,7 +64,10 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::post('/returns/{order}/process', [ReturnController::class, 'process'])->name('returns.process');
     Route::get('/condition-checks', fn () => back())->name('condition-checks.index');
     Route::get('/damage-cases', fn () => back())->name('damage-cases.index');
-    Route::get('/categories', fn () => back())->name('categories.index');
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     Route::get('/products', fn () => back())->name('products.index');
     Route::get('/units', fn () => back())->name('units.index');
     Route::get('/reports', fn () => back())->name('reports.index');
