@@ -14,11 +14,11 @@
     $shopLabel = $client->business_name ?? 'Outlet Rental';
 @endphp
 <div class="max-w-[1260px] mx-auto px-6 py-8" x-data="{
-    currentStep: {{ $errors->hasAny(['full_name', 'identity_number', 'identity_address', 'identity_document_image', 'face_image']) ? 3 : ($errors->hasAny(['shipping_address']) ? 2 : ($errors->hasAny(['terms']) ? 4 : 1)) }},
+    currentStep: {{ $errors->hasAny(['full_name', 'identity_number', 'identity_address', 'identity_document_image', 'face_image']) ? 3 : ($errors->hasAny(['shipping_address', 'shipping_method']) ? 2 : ($errors->hasAny(['terms']) ? 4 : 1)) }},
     periodStart: {{ json_encode(old('start_date', $period['start_date'])) }},
     periodEnd: {{ json_encode(old('end_date', $period['end_date'])) }},
     items: {{ json_encode($itemsList->all()) }},
-    ship: 'antar',
+    ship: {{ json_encode(old('shipping_method') === \App\Models\Order::SHIPPING_AMBIL_TOKO ? 'ambil' : 'antar') }},
     shopName: {{ json_encode($shopLabel) }},
     addressText: {{ json_encode(old('shipping_address', '')) }},
     whatsapp: {{ json_encode(old('whatsapp_number', auth()->user()->phone ?? '')) }},
@@ -457,6 +457,9 @@
 
                     <!-- Hidden shipping address (server always expects it) -->
                     <input type="hidden" name="shipping_address" :value="shippingAddress">
+
+                    <!-- Hidden shipping method (server always expects it) -->
+                    <input type="hidden" name="shipping_method" :value="ship === 'ambil' ? '{{ \App\Models\Order::SHIPPING_AMBIL_TOKO }}' : '{{ \App\Models\Order::SHIPPING_KURIR }}'">
 
                     <!-- Antar mode -->
                     <div x-show="ship === 'antar'" class="space-y-4">

@@ -14,6 +14,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CustomerCheckoutController extends Controller
 {
@@ -105,6 +106,7 @@ class CustomerCheckoutController extends Controller
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'shipping_address' => 'required|string|min:10',
+            'shipping_method' => ['required', Rule::in([Order::SHIPPING_KURIR, Order::SHIPPING_AMBIL_TOKO])],
             'full_name' => 'required|string|max:255',
             'identity_number' => 'required|string|min:8|max:30',
             'identity_address' => 'required|string|min:10',
@@ -120,6 +122,8 @@ class CustomerCheckoutController extends Controller
             'end_date.after_or_equal' => 'Tanggal selesai harus setelah tanggal mulai.',
             'shipping_address.required' => 'Alamat pengiriman / rincian lokasi wajib diisi.',
             'shipping_address.min' => 'Alamat pengiriman terlalu singkat.',
+            'shipping_method.required' => 'Metode penerimaan wajib dipilih.',
+            'shipping_method.in' => 'Metode penerimaan tidak valid.',
             'full_name.required' => 'Nama lengkap sesuai KTP wajib diisi.',
             'identity_number.required' => 'Nomor KTP / NIK wajib diisi.',
             'identity_number.min' => 'Nomor KTP minimal 8 digit.',
@@ -136,11 +140,11 @@ class CustomerCheckoutController extends Controller
         $selectedHashes = $request->input('selected_hashes', []);
 
         // Filter out empty/null/undefined values
-        $selectedHashes = array_values(array_filter((array) $selectedHashes, fn ($h) => !empty($h) && $h !== 'undefined'));
+        $selectedHashes = array_values(array_filter((array) $selectedHashes, fn ($h) => ! empty($h) && $h !== 'undefined'));
 
         if (empty($selectedHashes)) {
             $selectedHashes = (array) session()->get('checkout_items', []);
-            $selectedHashes = array_values(array_filter($selectedHashes, fn ($h) => !empty($h) && $h !== 'undefined'));
+            $selectedHashes = array_values(array_filter($selectedHashes, fn ($h) => ! empty($h) && $h !== 'undefined'));
         }
 
         if (empty($selectedHashes)) {
@@ -149,7 +153,7 @@ class CustomerCheckoutController extends Controller
 
         $selected = $this->resolveItems($cart, $selectedHashes);
 
-        if ($selected->isEmpty() && !empty($cart)) {
+        if ($selected->isEmpty() && ! empty($cart)) {
             $selected = collect($cart);
             $selectedHashes = array_keys($cart);
         }
@@ -223,6 +227,7 @@ class CustomerCheckoutController extends Controller
                 'duration_days' => $durationDays,
                 'total_amount' => $totalAmount,
                 'shipping_address' => $request->shipping_address,
+                'shipping_method' => $request->shipping_method,
                 'status' => 'menunggu_konfirmasi',
             ]);
 
