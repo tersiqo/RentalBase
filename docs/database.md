@@ -264,14 +264,13 @@ Constraint:
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | client_id | bigint | no | - | Client |
-| customer_id | bigint | no | - | Customer global |
+| user_id | bigint | no | - | Customer global |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
 Constraint:
 - `client_id` → `clients.id`.
-- `customer_id` → `users.id` dengan role `customer`.
-- `UNIQUE(client_id, customer_id)` (opsional, jika 1 customer hanya boleh punya 1 cart per client).
+- `user_id` → `users.id` dengan role `customer`.
 
 ### cart_items
 | Column | Type | Nullable | Default | Description |
@@ -279,9 +278,11 @@ Constraint:
 | id | bigint | no | auto | Primary key |
 | cart_id | bigint | no | - | Cart |
 | product_id | bigint | no | - | Product |
-| quantity | integer | no | - | Quantity |
 | start_date | timestamp | no | - | Rental start (tanggal & jam) |
 | end_date | timestamp | no | - | Rental end (tanggal & jam) |
+| duration_days | integer | no | - | Durasi sewa (hari) |
+| quantity | integer | no | - | Quantity |
+| subtotal | decimal(12,2) | no | - | Subtotal item |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
@@ -290,21 +291,22 @@ Constraint:
 - `product_id` → `products.id`.
 - Product pada item harus berasal dari client yang sama dengan `carts.client_id`.
 - `start_date` dan `end_date` disimpan per-item pada `cart_items` agar customer dapat memasukkan barang dengan periode tanggal sewa yang berbeda-beda ke dalam satu keranjang.
-- Aturan Checkout: Item dalam keranjang dikelompokkan secara visual di UI berdasarkan kesamaan `(start_date, end_date)` (Shopee-style grouping). Customer men-ceklis satu grup tanggal sewa untuk di-checkout. 1 Checkout mengekstrak item-item yang ber-tanggal sama menjadi 1 `Order`, sehingga `orders.start_date` dan `orders.end_date` bernilai tunggal dan kalkulasi total transaksi berlaku konsisten.
+- Aturan Checkout: Item dalam keranjang dikelompokkan secara visual di UI berdasarkan kesamaan `(start_date, end_date)` (Shopee-style grouping). Customer men-ceklis satu grup tanggal sewa untuk di-checkout. 1 Checkout mengekstrak item-item yang ber-tanggal sama menjadi 1 `Order`, sehingga `orders.rental_start_date` dan `orders.rental_end_date` bernilai tunggal dan kalkulasi total transaksi berlaku konsisten.
 
 ### orders
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | client_id | bigint | no | - | Client |
-| customer_id | bigint | no | - | Customer global |
-| order_code | varchar | no | - | Order code |
-| start_date | timestamp | no | - | Rental start (tanggal & jam) |
-| end_date | timestamp | no | - | Rental end (tanggal & jam) |
+| user_id | bigint | no | - | Customer global |
+| order_number | varchar | no | - | Nomor order (unik) |
+| rental_start_date | timestamp | no | - | Rental start (tanggal & jam) |
+| rental_end_date | timestamp | no | - | Rental end (tanggal & jam) |
+| duration_days | integer | no | - | Durasi sewa (hari) |
 | shipping_address | text | no | - | Alamat tujuan pengiriman untuk order |
 | shipping_method | varchar | no | `kurir` | Metode serah-terima (`kurir` / `ambil_toko`) |
 | total_amount | decimal(12,2) | no | `0` | Total transaction |
-| status | varchar | no | `menunggu_konfirmasi` | Order status |
+| status | varchar | no | `menunggu_pembayaran` | Order status |
 | cancellation_reason | text | yes | NULL | Alasan pembatalan/penolakan order |
 | refund_status | varchar | no | `tidak_ada` | Status refund jika dibatalkan setelah bayar |
 | refund_proof | varchar | yes | NULL | Path/URL foto bukti transfer refund |
@@ -339,10 +341,10 @@ refund_selesai
 Rules:
 - `1 order = 1 client`.
 - `client_id` → `clients.id`.
-- `customer_id` → `users.id` dengan role `customer`.
+- `user_id` → `users.id` dengan role `customer`.
 - Customer global dapat memiliki order pada client yang berbeda.
 - `shipping_address` diisi customer saat checkout dan digunakan kembali saat Admin Rental membuat shipment.
-- `end_date` tidak boleh lebih awal dari `start_date`.
+- `rental_end_date` tidak boleh lebih awal dari `rental_start_date`.
 - `total_amount >= 0`.
 - `cancellation_reason` diisi ketika status order diubah ke `ditolak` atau `dibatalkan`.
 - `refund_status` digunakan untuk melacak pengembalian dana jika order dibatalkan setelah pembayaran terverifikasi.
@@ -376,7 +378,7 @@ dibatalkan
 | order_id | bigint | no | - | Order |
 | product_id | bigint | no | - | Product |
 | quantity | integer | no | - | Quantity |
-| unit_price | decimal(12,2) | no | - | Harga produk pada saat transaksi |
+| price_per_day | decimal(12,2) | no | - | Harga sewa per hari pada saat transaksi |
 | subtotal | decimal(12,2) | no | - | Subtotal item |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
@@ -385,7 +387,7 @@ Constraint:
 - `order_id` → `orders.id`.
 - `product_id` → `products.id`.
 - `quantity > 0`.
-- `unit_price >= 0`.
+- `price_per_day >= 0`.
 - `subtotal >= 0`.
 - Product pada item harus berasal dari client yang sama dengan `orders.client_id`.
 - `quantity` harus sama dengan jumlah unit pada `order_item_units` ketika order siap diproses.
@@ -879,11 +881,11 @@ Gunakan aturan berikut untuk menjaga integritas data dan histori transaksi:
 | `equipment_units.client_id → clients.id` | RESTRICT |
 | `equipment_units.product_id → products.id` | RESTRICT |
 | `carts.client_id → clients.id` | CASCADE |
-| `carts.customer_id → users.id` | CASCADE |
+| `carts.user_id → users.id` | CASCADE |
 | `cart_items.cart_id → carts.id` | CASCADE |
 | `cart_items.product_id → products.id` | CASCADE |
-| `orders.client_id → clients.id` | RESTRICT |
-| `orders.customer_id → users.id` | RESTRICT |
+| `orders.client_id → clients.id` | CASCADE |
+| `orders.user_id → users.id` | CASCADE |
 | `order_items.order_id → orders.id` | CASCADE |
 | `order_items.product_id → products.id` | RESTRICT |
 | `order_item_units.order_item_id → order_items.id` | CASCADE |
@@ -933,7 +935,7 @@ Karena `users.client_id` bernilai `NULL` untuk customer, data transaksi customer
 
 Contoh:
 ```php
-Order::where('customer_id', $userId)
+Order::where('user_id', $userId)
      ->where('client_id', $clientId)
      ->get();
 ```
@@ -1129,6 +1131,6 @@ Untuk performa query multi-tenant (`client_id`) yang optimal saat volume data me
 - `products(client_id, status)`
 - `equipment_units(client_id, status)`
 - `orders(client_id, status)`
-- `carts(client_id, customer_id)`
+- `carts(client_id, user_id)`
 - `notifications(user_id, is_read)`
 - `activity_logs(client_id, created_at)`

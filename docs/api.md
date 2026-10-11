@@ -416,7 +416,7 @@ Backend harus:
 2. Menentukan client berdasarkan konteks subdomain.
 3. Jika `from_cart: true`, ambil item dari `cart_items` milik customer pada client tersebut, lalu hapus `cart_items` setelah order berhasil dibuat. Jika false, gunakan array `items` yang dikirim di body request.
 4. Memeriksa availability pada periode yang diminta.
-5. Menghitung total transaksi: `total_amount = sum(unit_price * quantity * duration_days)`.
+5. Menghitung total transaksi: `total_amount = sum(price_per_day * quantity * duration_days)`.
 6. Membuat order beserta `shipping_address` dan `client_id` sesuai subdomain saat itu.
 7. Membuat order items.
 8. Ketika order siap diproses, mengalokasikan physical equipment unit melalui `order_item_units` sesuai `quantity`.
@@ -429,7 +429,7 @@ Response:
   "message": "Order berhasil dibuat",
   "data": {
     "id": 10,
-    "order_code": "ORD-000010",
+    "order_number": "ORD-000010",
     "status": "menunggu_konfirmasi",
     "total_amount": 300000
   }
@@ -1039,7 +1039,7 @@ Response:
   "data": [
     {
       "order_id": 10,
-      "order_code": "ORD-000010",
+      "order_number": "ORD-000010",
       "total_amount": 150000,
       "status": "selesai"
     }

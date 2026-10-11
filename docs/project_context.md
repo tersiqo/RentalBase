@@ -121,7 +121,7 @@ Availability aktif menggunakan status order `menunggu_konfirmasi`, `dikonfirmasi
 
 Kalkulasi Total Transaksi:
 - Durasi Sewa (Hari) = `ceil((end_date - start_date) / 24 jam)` (min 1 hari).
-- Total Order = `sum(unit_price * quantity * durasi_hari)`.
+- Total Order = `sum(price_per_day * quantity * durasi_hari)`.
 
 Pembatalan Order oleh Customer:
 - Customer dapat membatalkan order sendiri jika status masih `menunggu_konfirmasi` atau `menunggu_pembayaran`.
