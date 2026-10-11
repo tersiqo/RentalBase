@@ -463,11 +463,15 @@ Admin hanya dapat melihat order client-nya.
 Status order yang digunakan:
 ```text
 menunggu_konfirmasi
+dikonfirmasi
 menunggu_pembayaran
 pembayaran_terverifikasi
 diproses
+siap_kirim
 dikirim
 diterima
+sedang_disewa
+menunggu_pembayaran_denda
 dikembalikan
 selesai
 ditolak
@@ -477,15 +481,19 @@ dibatalkan
 Status yang aktif untuk perhitungan availability:
 ```text
 menunggu_konfirmasi
+dikonfirmasi
 menunggu_pembayaran
 pembayaran_terverifikasi
 diproses
+siap_kirim
 dikirim
 diterima
+sedang_disewa
 ```
 
 Status yang tidak mengurangi availability:
 ```text
+menunggu_pembayaran_denda
 dikembalikan
 selesai
 ditolak
@@ -496,15 +504,21 @@ Alur umum status:
 ```text
 menunggu_konfirmasi
         ↓
+dikonfirmasi
+        ↓
 menunggu_pembayaran
         ↓
 pembayaran_terverifikasi
         ↓
-diproses
+diproses / siap_kirim
         ↓
 dikirim
         ↓
 diterima
+        ↓
+sedang_disewa
+        ↓
+menunggu_pembayaran_denda (bila ada denda retur)
         ↓
 dikembalikan
         ↓
@@ -617,7 +631,7 @@ Request:
 ```http
 GET /api/admin/shipments
 ```
-Menampilkan daftar pengiriman toko client (filter query: `shipping_status`, `search`, `page`).
+Menampilkan daftar pengiriman toko client (filter query: `status`, `search`, `page`).
 
 ### Create Shipment
 ```http
@@ -629,18 +643,18 @@ Request:
 {
   "shipping_method": "kurir",
   "courier_name": "JNE",
-  "tracking_number": "ABC123456",
-  "shipping_date": "2026-10-01",
-  "shipping_cost": 50000
+  "tracking_number": "ABC123456"
 }
 ```
 
-Alamat tujuan pengiriman diambil dari `orders.shipping_address` yang telah diisi customer saat checkout, sehingga tidak perlu diinput ulang oleh Admin Rental. Biaya ongkos kirim (`shipping_cost`) diinput secara manual oleh Admin.
+Nilai `shipping_method`: `kurir` atau `ambil_toko`. Alamat tujuan pengiriman diambil dari `orders.shipping_address` (disimpan sebagai `shipments.delivery_address`) yang telah diisi customer saat checkout, sehingga tidak perlu diinput ulang oleh Admin Rental.
 
 ### Update Shipment
 ```http
 PATCH /api/admin/shipments/{id}
 ```
+
+Field status yang diperbarui: `status`.
 
 Shipping status:
 ```text
@@ -661,10 +675,10 @@ GET /api/orders/{id}/shipment
 POST /api/orders/{id}/confirm-receipt
 ```
 
-Digunakan customer untuk mengonfirmasi bahwa barang sudah diterima. Backend mengisi `shipments.received_date` dan memperbarui `shipping_status`.
+Digunakan customer untuk mengonfirmasi bahwa barang sudah diterima. Backend mengisi `shipments.delivered_at` dan memperbarui `shipments.status`.
 
 **Mekanisme Auto-Complete 3 Hari (72 Jam):**
-Jika customer tidak/lupa menekan tombol `POST /api/orders/{id}/confirm-receipt`, sistem secara otomatis akan mengonfirmasi penerimaan barang dan menyelesaikan status order 3 hari (72 jam) setelah `shipping_status` diubah menjadi `dikirim`, selama pemeriksaan kondisi barang diverifikasi aman.
+Jika customer tidak/lupa menekan tombol `POST /api/orders/{id}/confirm-receipt`, sistem secara otomatis akan mengonfirmasi penerimaan barang dan menyelesaikan status order 3 hari (72 jam) setelah `shipments.status` diubah menjadi `dikirim`, selama pemeriksaan kondisi barang diverifikasi aman.
 
 Response:
 ```json
@@ -672,8 +686,8 @@ Response:
   "message": "Penerimaan barang berhasil dikonfirmasi",
   "data": {
     "order_id": 10,
-    "shipping_status": "diterima",
-    "received_date": "2026-10-04"
+    "status": "diterima",
+    "delivered_at": "2026-10-04"
   }
 }
 ```
@@ -694,7 +708,7 @@ PATCH /api/admin/returns/{id}
 Create request:
 ```json
 {
-  "return_method": "langsung",
+  "return_method": "ambil_toko",
   "return_date": "2026-10-03T13:00:00Z"
 }
 ```
@@ -702,12 +716,12 @@ Create request:
 Admin Update request (kalkulasi denda otomatis & override manual):
 ```json
 {
-  "return_status": "selesai",
-  "calculated_late_fee": 60000,
-  "late_fee_amount": 30000,
-  "late_fee_status": "menunggu_pembayaran"
+  "action_type": "denda",
+  "late_fee_amount": 30000
 }
 ```
+
+`action_type = denda` menerbitkan tagihan denda (`late_fee_status = menunggu_pembayaran`, status order menjadi `menunggu_pembayaran_denda`). Nilai lain menandai pengembalian selesai (`late_fee_status = tidak_ada`, status order menjadi `selesai`). Nominal `late_fee_amount` di-override Admin bila diperlukan.
 
 Return status:
 ```text

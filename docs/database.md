@@ -302,6 +302,7 @@ Constraint:
 | start_date | timestamp | no | - | Rental start (tanggal & jam) |
 | end_date | timestamp | no | - | Rental end (tanggal & jam) |
 | shipping_address | text | no | - | Alamat tujuan pengiriman untuk order |
+| shipping_method | varchar | no | `kurir` | Metode serah-terima (`kurir` / `ambil_toko`) |
 | total_amount | decimal(12,2) | no | `0` | Total transaction |
 | status | varchar | no | `menunggu_konfirmasi` | Order status |
 | cancellation_reason | text | yes | NULL | Alasan pembatalan/penolakan order |
@@ -313,11 +314,15 @@ Constraint:
 Order status:
 ```text
 menunggu_konfirmasi
+dikonfirmasi
 menunggu_pembayaran
 pembayaran_terverifikasi
 diproses
+siap_kirim
 dikirim
 diterima
+sedang_disewa
+menunggu_pembayaran_denda
 dikembalikan
 selesai
 ditolak
@@ -345,15 +350,19 @@ Rules:
 Status availability aktif:
 ```text
 menunggu_konfirmasi
+dikonfirmasi
 menunggu_pembayaran
 pembayaran_terverifikasi
 diproses
+siap_kirim
 dikirim
 diterima
+sedang_disewa
 ```
 
 Status yang tidak mengurangi availability:
 ```text
+menunggu_pembayaran_denda
 dikembalikan
 selesai
 ditolak
@@ -406,7 +415,7 @@ Constraint:
 | client_payment_method_id | bigint | no | - | Target metode pembayaran toko (FK ke client_payment_methods.id) |
 | payment_proof | varchar | no | - | Path/URL bukti pembayaran (wajib diunggah) |
 | paid_at | timestamp | yes | NULL | Payment timestamp |
-| status | varchar | no | `menunggu` | Payment status |
+| status | varchar | no | `menunggu_konfirmasi` | Payment status |
 | verified_by | bigint | yes | NULL | User admin verifier |
 | notes | text | yes | NULL | Notes |
 | created_at | timestamp | no | auto | Created |
@@ -414,7 +423,7 @@ Constraint:
 
 Payment status:
 ```text
-menunggu
+menunggu_konfirmasi
 diverifikasi
 ditolak
 ```
@@ -434,17 +443,17 @@ Constraint:
 | shipping_method | varchar | no | - | Delivery method |
 | courier_name | varchar | yes | NULL | Courier name |
 | tracking_number | varchar | yes | NULL | Tracking number |
-| shipping_date | date | yes | NULL | Shipping date |
-| received_date | date | yes | NULL | Received date, diisi saat customer konfirmasi |
-| shipping_status | varchar | no | `menunggu` | Shipping status |
-| notes | text | yes | NULL | Notes |
+| delivery_address | text | no | - | Alamat tujuan pengiriman (dari `orders.shipping_address`) |
+| status | varchar | no | `diproses` | Shipping status |
+| shipped_at | timestamp | yes | NULL | Waktu pengiriman oleh Admin |
+| delivered_at | timestamp | yes | NULL | Waktu penerimaan, diisi saat customer konfirmasi |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
 Shipping method:
 ```text
 kurir
-langsung
+ambil_toko
 ```
 
 Shipping status:
@@ -458,9 +467,9 @@ dibatalkan
 
 Rules:
 - `order_id` → `orders.id`.
-- Alamat tujuan tidak disimpan ulang; gunakan `orders.shipping_address`.
-- `courier_name` dan `tracking_number` dapat kosong bila metode `langsung`.
-- `received_date` diisi saat customer melakukan konfirmasi penerimaan.
+- `delivery_address` menyimpan alamat tujuan (diambil dari `orders.shipping_address`, atau penanda pengambilan di toko).
+- `courier_name` dan `tracking_number` dapat kosong bila metode `ambil_toko`.
+- `shipped_at` diisi saat Admin memproses pengiriman; `delivered_at` diisi saat customer melakukan konfirmasi penerimaan.
 
 ### returns
 | Column | Type | Nullable | Default | Description |
@@ -470,20 +479,22 @@ Rules:
 | return_method | varchar | no | - | Return method |
 | courier_name | varchar | yes | NULL | Courier name |
 | tracking_number | varchar | yes | NULL | Return tracking |
-| return_date | timestamp | yes | NULL | Return timestamp (tanggal & jam dikembalikan) |
+| return_date | timestamp | no | - | Return timestamp (tanggal & jam dikembalikan) |
+| late_hours | integer | no | `0` | Jumlah jam keterlambatan |
 | return_status | varchar | no | `diajukan` | Return status |
 | calculated_late_fee | decimal(12,2) | no | `0` | Estimasi denda hasil kalkulasi otomatis sistem |
 | late_fee_amount | decimal(12,2) | no | `0` | Nominal denda keterlambatan akhir (bisa di-override Admin) |
 | late_fee_status | varchar | no | `tidak_ada` | Status denda |
 | late_fee_proof | varchar | yes | NULL | Path/URL foto bukti transfer pembayaran denda dari customer |
 | notes | text | yes | NULL | Notes |
+| processed_by | bigint | yes | NULL | Admin yang memproses pengembalian |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
 Return method:
 ```text
 kurir
-langsung
+ambil_toko
 ```
 
 Return status:
@@ -505,7 +516,8 @@ lunas
 
 Rules:
 - `order_id` → `orders.id`.
-- `courier_name` dan `tracking_number` dapat kosong bila metode `langsung`.
+- `courier_name` dan `tracking_number` dapat kosong bila metode `ambil_toko`.
+- `processed_by` → `users.id`, diisi Admin yang memproses pengembalian.
 
 ### identity_guarantees
 | Column | Type | Nullable | Default | Description |
@@ -987,15 +999,19 @@ total_stock
 Order aktif untuk availability:
 ```text
 menunggu_konfirmasi
+dikonfirmasi
 menunggu_pembayaran
 pembayaran_terverifikasi
 diproses
+siap_kirim
 dikirim
 diterima
+sedang_disewa
 ```
 
 Order dengan status berikut tidak mengurangi availability:
 ```text
+menunggu_pembayaran_denda
 dikembalikan
 selesai
 ditolak
