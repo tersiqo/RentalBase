@@ -31,7 +31,7 @@
                 
                 @forelse($orders as $order)
                     @php
-                        $isPickup = empty($order->shipping_address) || str_contains(strtolower($order->shipping_address), 'toko');
+                        $isPickup = $order->isPickup();
                         $isToday = \Carbon\Carbon::parse($order->rental_start_date)->isToday();
                     @endphp
 

@@ -52,7 +52,7 @@ Admin Rental hanya boleh melihat dan mengelola data client miliknya, dan akunnya
 14. Alamat pengiriman diisi customer saat checkout dan disimpan pada `orders.shipping_address`, digunakan kembali saat Admin Rental membuat data shipment.
 15. Pembayaran transfer manual atau QRIS. Admin Rental mengelola metode pembayaran toko (multi rekening bank dan QRIS) melalui fitur pengaturan. Customer melihat daftar metode pembayaran tersedia dan mengunggah bukti pembayaran.
 16. Bukti pembayaran diverifikasi Admin Rental dan customer hanya dapat mengunggah bukti pembayaran setelah identity guarantee order berstatus `diverifikasi`.
-17. Pengiriman melalui kurir atau metode langsung; customer mengonfirmasi penerimaan barang melalui endpoint tersendiri.
+17. Pengiriman melalui kurir atau pengambilan di toko (`ambil_toko`); customer mengonfirmasi penerimaan barang melalui endpoint tersendiri.
 18. Tidak ada GPS/API kurir pada tahap awal.
 19. Pengembalian dicatat terpisah dari pengiriman. Admin dapat menambahkan tagihan denda keterlambatan (late fees) jika barang dikembalikan terlambat.
 20. Kondisi barang dicatat sebelum dan sesudah rental.
@@ -104,10 +104,10 @@ users.status → aktif, nonaktif
 subscriptions.status → active, expired, suspended
 products.status → aktif, nonaktif
 equipment_units.status → available, maintenance, damaged, lost, inactive
-orders.status → menunggu_konfirmasi, menunggu_pembayaran, pembayaran_terverifikasi, diproses, dikirim, diterima, dikembalikan, selesai, ditolak, dibatalkan
+orders.status → menunggu_konfirmasi, dikonfirmasi, menunggu_pembayaran, pembayaran_terverifikasi, diproses, siap_kirim, dikirim, diterima, sedang_disewa, menunggu_pembayaran_denda, dikembalikan, selesai, ditolak, dibatalkan
 orders.refund_status → tidak_ada, menunggu_refund, refund_selesai
-payments.status → menunggu, diverifikasi, ditolak
-shipments.shipping_status → menunggu, diproses, dikirim, diterima, dibatalkan
+payments.status → menunggu_konfirmasi, diverifikasi, ditolak
+shipments.status → menunggu, diproses, dikirim, diterima, dibatalkan
 returns.return_status → diajukan, diproses, dalam_pengembalian, diterima, selesai, dibatalkan
 returns.late_fee_status → tidak_ada, menunggu_pembayaran, lunas
 identity_guarantees.status → menunggu, diverifikasi, ditolak
@@ -117,11 +117,11 @@ damage_cases.compensation_status → tidak_ada, menunggu_pembayaran, lunas
 client_registrations.status → menunggu_verifikasi, disetujui, ditolak
 ```
 
-Availability aktif menggunakan status order `menunggu_konfirmasi`, `menunggu_pembayaran`, `pembayaran_terverifikasi`, `diproses`, `dikirim`, dan `diterima`. Unit dengan status `maintenance`, `damaged`, `lost`, atau `inactive` tidak dapat dialokasikan untuk rental baru.
+Availability aktif menggunakan status order `menunggu_konfirmasi`, `dikonfirmasi`, `menunggu_pembayaran`, `pembayaran_terverifikasi`, `diproses`, `siap_kirim`, `dikirim`, `diterima`, dan `sedang_disewa`. Unit dengan status `maintenance`, `damaged`, `lost`, atau `inactive` tidak dapat dialokasikan untuk rental baru.
 
 Kalkulasi Total Transaksi:
 - Durasi Sewa (Hari) = `ceil((end_date - start_date) / 24 jam)` (min 1 hari).
-- Total Order = `sum(unit_price * quantity * durasi_hari)`.
+- Total Order = `sum(price_per_day * quantity * durasi_hari)`.
 
 Pembatalan Order oleh Customer:
 - Customer dapat membatalkan order sendiri jika status masih `menunggu_konfirmasi` atau `menunggu_pembayaran`.
@@ -129,7 +129,7 @@ Pembatalan Order oleh Customer:
 
 Penyelesaian Order & Auto-Complete:
 - Admin Rental dapat menyelesaikan order secara manual setelah pemeriksaan kondisi pasca-rental.
-- Auto-complete otomatis aktif 3 hari (72 jam) setelah `shipments.shipping_status = dikirim`, apabila tidak ada laporan kerusakan (`damage_reports`) aktif atau tagihan denda keterlambatan (`late_fee_status = menunggu_pembayaran`).
+- Auto-complete otomatis aktif 3 hari (72 jam) setelah `shipments.status = dikirim`, apabila tidak ada laporan kerusakan (`damage_reports`) aktif atau tagihan denda keterlambatan (`late_fee_status = menunggu_pembayaran`).
 
 Notification Triggers Matrix:
 - Notifikasi dikirimkan pada 15 event transaksi & registrasi utama (Pendaftaran Tenant Baru, Order Baru, Cancel Customer, Review Identitas, Review Pembayaran, Shipping, Auto-Complete 72 Jam, Auto-Cancel Unpaid 24 Jam, Return/Denda, Damage Case, Refund, dan Subscription Expiring).ran, Shipping, Return/Denda, Damage Case, dan Refund).

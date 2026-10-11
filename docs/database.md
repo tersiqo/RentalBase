@@ -264,14 +264,13 @@ Constraint:
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | client_id | bigint | no | - | Client |
-| customer_id | bigint | no | - | Customer global |
+| user_id | bigint | no | - | Customer global |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
 Constraint:
 - `client_id` → `clients.id`.
-- `customer_id` → `users.id` dengan role `customer`.
-- `UNIQUE(client_id, customer_id)` (opsional, jika 1 customer hanya boleh punya 1 cart per client).
+- `user_id` → `users.id` dengan role `customer`.
 
 ### cart_items
 | Column | Type | Nullable | Default | Description |
@@ -279,9 +278,11 @@ Constraint:
 | id | bigint | no | auto | Primary key |
 | cart_id | bigint | no | - | Cart |
 | product_id | bigint | no | - | Product |
-| quantity | integer | no | - | Quantity |
 | start_date | timestamp | no | - | Rental start (tanggal & jam) |
 | end_date | timestamp | no | - | Rental end (tanggal & jam) |
+| duration_days | integer | no | - | Durasi sewa (hari) |
+| quantity | integer | no | - | Quantity |
+| subtotal | decimal(12,2) | no | - | Subtotal item |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
@@ -290,20 +291,22 @@ Constraint:
 - `product_id` → `products.id`.
 - Product pada item harus berasal dari client yang sama dengan `carts.client_id`.
 - `start_date` dan `end_date` disimpan per-item pada `cart_items` agar customer dapat memasukkan barang dengan periode tanggal sewa yang berbeda-beda ke dalam satu keranjang.
-- Aturan Checkout: Item dalam keranjang dikelompokkan secara visual di UI berdasarkan kesamaan `(start_date, end_date)` (Shopee-style grouping). Customer men-ceklis satu grup tanggal sewa untuk di-checkout. 1 Checkout mengekstrak item-item yang ber-tanggal sama menjadi 1 `Order`, sehingga `orders.start_date` dan `orders.end_date` bernilai tunggal dan kalkulasi total transaksi berlaku konsisten.
+- Aturan Checkout: Item dalam keranjang dikelompokkan secara visual di UI berdasarkan kesamaan `(start_date, end_date)` (Shopee-style grouping). Customer men-ceklis satu grup tanggal sewa untuk di-checkout. 1 Checkout mengekstrak item-item yang ber-tanggal sama menjadi 1 `Order`, sehingga `orders.rental_start_date` dan `orders.rental_end_date` bernilai tunggal dan kalkulasi total transaksi berlaku konsisten.
 
 ### orders
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
 | id | bigint | no | auto | Primary key |
 | client_id | bigint | no | - | Client |
-| customer_id | bigint | no | - | Customer global |
-| order_code | varchar | no | - | Order code |
-| start_date | timestamp | no | - | Rental start (tanggal & jam) |
-| end_date | timestamp | no | - | Rental end (tanggal & jam) |
+| user_id | bigint | no | - | Customer global |
+| order_number | varchar | no | - | Nomor order (unik) |
+| rental_start_date | timestamp | no | - | Rental start (tanggal & jam) |
+| rental_end_date | timestamp | no | - | Rental end (tanggal & jam) |
+| duration_days | integer | no | - | Durasi sewa (hari) |
 | shipping_address | text | no | - | Alamat tujuan pengiriman untuk order |
+| shipping_method | varchar | no | `kurir` | Metode serah-terima (`kurir` / `ambil_toko`) |
 | total_amount | decimal(12,2) | no | `0` | Total transaction |
-| status | varchar | no | `menunggu_konfirmasi` | Order status |
+| status | varchar | no | `menunggu_pembayaran` | Order status |
 | cancellation_reason | text | yes | NULL | Alasan pembatalan/penolakan order |
 | refund_status | varchar | no | `tidak_ada` | Status refund jika dibatalkan setelah bayar |
 | refund_proof | varchar | yes | NULL | Path/URL foto bukti transfer refund |
@@ -313,11 +316,15 @@ Constraint:
 Order status:
 ```text
 menunggu_konfirmasi
+dikonfirmasi
 menunggu_pembayaran
 pembayaran_terverifikasi
 diproses
+siap_kirim
 dikirim
 diterima
+sedang_disewa
+menunggu_pembayaran_denda
 dikembalikan
 selesai
 ditolak
@@ -334,10 +341,10 @@ refund_selesai
 Rules:
 - `1 order = 1 client`.
 - `client_id` → `clients.id`.
-- `customer_id` → `users.id` dengan role `customer`.
+- `user_id` → `users.id` dengan role `customer`.
 - Customer global dapat memiliki order pada client yang berbeda.
 - `shipping_address` diisi customer saat checkout dan digunakan kembali saat Admin Rental membuat shipment.
-- `end_date` tidak boleh lebih awal dari `start_date`.
+- `rental_end_date` tidak boleh lebih awal dari `rental_start_date`.
 - `total_amount >= 0`.
 - `cancellation_reason` diisi ketika status order diubah ke `ditolak` atau `dibatalkan`.
 - `refund_status` digunakan untuk melacak pengembalian dana jika order dibatalkan setelah pembayaran terverifikasi.
@@ -345,15 +352,19 @@ Rules:
 Status availability aktif:
 ```text
 menunggu_konfirmasi
+dikonfirmasi
 menunggu_pembayaran
 pembayaran_terverifikasi
 diproses
+siap_kirim
 dikirim
 diterima
+sedang_disewa
 ```
 
 Status yang tidak mengurangi availability:
 ```text
+menunggu_pembayaran_denda
 dikembalikan
 selesai
 ditolak
@@ -367,7 +378,7 @@ dibatalkan
 | order_id | bigint | no | - | Order |
 | product_id | bigint | no | - | Product |
 | quantity | integer | no | - | Quantity |
-| unit_price | decimal(12,2) | no | - | Harga produk pada saat transaksi |
+| price_per_day | decimal(12,2) | no | - | Harga sewa per hari pada saat transaksi |
 | subtotal | decimal(12,2) | no | - | Subtotal item |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
@@ -376,7 +387,7 @@ Constraint:
 - `order_id` → `orders.id`.
 - `product_id` → `products.id`.
 - `quantity > 0`.
-- `unit_price >= 0`.
+- `price_per_day >= 0`.
 - `subtotal >= 0`.
 - Product pada item harus berasal dari client yang sama dengan `orders.client_id`.
 - `quantity` harus sama dengan jumlah unit pada `order_item_units` ketika order siap diproses.
@@ -406,7 +417,7 @@ Constraint:
 | client_payment_method_id | bigint | no | - | Target metode pembayaran toko (FK ke client_payment_methods.id) |
 | payment_proof | varchar | no | - | Path/URL bukti pembayaran (wajib diunggah) |
 | paid_at | timestamp | yes | NULL | Payment timestamp |
-| status | varchar | no | `menunggu` | Payment status |
+| status | varchar | no | `menunggu_konfirmasi` | Payment status |
 | verified_by | bigint | yes | NULL | User admin verifier |
 | notes | text | yes | NULL | Notes |
 | created_at | timestamp | no | auto | Created |
@@ -414,7 +425,7 @@ Constraint:
 
 Payment status:
 ```text
-menunggu
+menunggu_konfirmasi
 diverifikasi
 ditolak
 ```
@@ -434,17 +445,17 @@ Constraint:
 | shipping_method | varchar | no | - | Delivery method |
 | courier_name | varchar | yes | NULL | Courier name |
 | tracking_number | varchar | yes | NULL | Tracking number |
-| shipping_date | date | yes | NULL | Shipping date |
-| received_date | date | yes | NULL | Received date, diisi saat customer konfirmasi |
-| shipping_status | varchar | no | `menunggu` | Shipping status |
-| notes | text | yes | NULL | Notes |
+| delivery_address | text | no | - | Alamat tujuan pengiriman (dari `orders.shipping_address`) |
+| status | varchar | no | `diproses` | Shipping status |
+| shipped_at | timestamp | yes | NULL | Waktu pengiriman oleh Admin |
+| delivered_at | timestamp | yes | NULL | Waktu penerimaan, diisi saat customer konfirmasi |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
 Shipping method:
 ```text
 kurir
-langsung
+ambil_toko
 ```
 
 Shipping status:
@@ -458,9 +469,9 @@ dibatalkan
 
 Rules:
 - `order_id` → `orders.id`.
-- Alamat tujuan tidak disimpan ulang; gunakan `orders.shipping_address`.
-- `courier_name` dan `tracking_number` dapat kosong bila metode `langsung`.
-- `received_date` diisi saat customer melakukan konfirmasi penerimaan.
+- `delivery_address` menyimpan alamat tujuan (diambil dari `orders.shipping_address`, atau penanda pengambilan di toko).
+- `courier_name` dan `tracking_number` dapat kosong bila metode `ambil_toko`.
+- `shipped_at` diisi saat Admin memproses pengiriman; `delivered_at` diisi saat customer melakukan konfirmasi penerimaan.
 
 ### returns
 | Column | Type | Nullable | Default | Description |
@@ -470,20 +481,22 @@ Rules:
 | return_method | varchar | no | - | Return method |
 | courier_name | varchar | yes | NULL | Courier name |
 | tracking_number | varchar | yes | NULL | Return tracking |
-| return_date | timestamp | yes | NULL | Return timestamp (tanggal & jam dikembalikan) |
+| return_date | timestamp | no | - | Return timestamp (tanggal & jam dikembalikan) |
+| late_hours | integer | no | `0` | Jumlah jam keterlambatan |
 | return_status | varchar | no | `diajukan` | Return status |
 | calculated_late_fee | decimal(12,2) | no | `0` | Estimasi denda hasil kalkulasi otomatis sistem |
 | late_fee_amount | decimal(12,2) | no | `0` | Nominal denda keterlambatan akhir (bisa di-override Admin) |
 | late_fee_status | varchar | no | `tidak_ada` | Status denda |
 | late_fee_proof | varchar | yes | NULL | Path/URL foto bukti transfer pembayaran denda dari customer |
 | notes | text | yes | NULL | Notes |
+| processed_by | bigint | yes | NULL | Admin yang memproses pengembalian |
 | created_at | timestamp | no | auto | Created |
 | updated_at | timestamp | no | auto | Updated |
 
 Return method:
 ```text
 kurir
-langsung
+ambil_toko
 ```
 
 Return status:
@@ -505,7 +518,8 @@ lunas
 
 Rules:
 - `order_id` → `orders.id`.
-- `courier_name` dan `tracking_number` dapat kosong bila metode `langsung`.
+- `courier_name` dan `tracking_number` dapat kosong bila metode `ambil_toko`.
+- `processed_by` → `users.id`, diisi Admin yang memproses pengembalian.
 
 ### identity_guarantees
 | Column | Type | Nullable | Default | Description |
@@ -867,11 +881,11 @@ Gunakan aturan berikut untuk menjaga integritas data dan histori transaksi:
 | `equipment_units.client_id → clients.id` | RESTRICT |
 | `equipment_units.product_id → products.id` | RESTRICT |
 | `carts.client_id → clients.id` | CASCADE |
-| `carts.customer_id → users.id` | CASCADE |
+| `carts.user_id → users.id` | CASCADE |
 | `cart_items.cart_id → carts.id` | CASCADE |
 | `cart_items.product_id → products.id` | CASCADE |
-| `orders.client_id → clients.id` | RESTRICT |
-| `orders.customer_id → users.id` | RESTRICT |
+| `orders.client_id → clients.id` | CASCADE |
+| `orders.user_id → users.id` | CASCADE |
 | `order_items.order_id → orders.id` | CASCADE |
 | `order_items.product_id → products.id` | RESTRICT |
 | `order_item_units.order_item_id → order_items.id` | CASCADE |
@@ -921,7 +935,7 @@ Karena `users.client_id` bernilai `NULL` untuk customer, data transaksi customer
 
 Contoh:
 ```php
-Order::where('customer_id', $userId)
+Order::where('user_id', $userId)
      ->where('client_id', $clientId)
      ->get();
 ```
@@ -987,15 +1001,19 @@ total_stock
 Order aktif untuk availability:
 ```text
 menunggu_konfirmasi
+dikonfirmasi
 menunggu_pembayaran
 pembayaran_terverifikasi
 diproses
+siap_kirim
 dikirim
 diterima
+sedang_disewa
 ```
 
 Order dengan status berikut tidak mengurangi availability:
 ```text
+menunggu_pembayaran_denda
 dikembalikan
 selesai
 ditolak
@@ -1113,6 +1131,6 @@ Untuk performa query multi-tenant (`client_id`) yang optimal saat volume data me
 - `products(client_id, status)`
 - `equipment_units(client_id, status)`
 - `orders(client_id, status)`
-- `carts(client_id, customer_id)`
+- `carts(client_id, user_id)`
 - `notifications(user_id, is_read)`
 - `activity_logs(client_id, created_at)`

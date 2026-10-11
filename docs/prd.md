@@ -135,10 +135,10 @@ Pembayaran menggunakan transfer manual atau QRIS. Admin Rental mengelola metode 
 Tidak menggunakan deposit uang. Customer mengisi data identitas (nama lengkap, nomor identitas, foto identitas, foto wajah, alamat sesuai identitas) sebagai jaminan administratif pada tahap checkout, sebelum bukti pembayaran diunggah. Tidak ada verifikasi identitas eksternal pada tahap awal.
 
 ### 4.8 Shipping
-Pengiriman melalui kurir pihak ketiga atau langsung. Sistem mencatat nama kurir, nomor resi, tanggal, dan status, dengan alamat tujuan mengikuti alamat pengiriman yang telah diisi pada order. Customer mengonfirmasi penerimaan barang setelah barang diterima. Tidak ada integrasi GPS/API kurir pada tahap awal.
+Pengiriman melalui kurir pihak ketiga atau pengambilan di toko (`ambil_toko`). Sistem mencatat nama kurir, nomor resi, tanggal, dan status, dengan alamat tujuan mengikuti alamat pengiriman yang telah diisi pada order. Customer mengonfirmasi penerimaan barang setelah barang diterima. Tidak ada integrasi GPS/API kurir pada tahap awal.
 
 ### 4.9 Return & Late Fees
-Pengembalian melalui kurir atau langsung. Pengembalian dicatat terpisah dari pengiriman awal. Karena batas akhir masa sewa (`end_date`) dihitung dengan presisi jam (*timestamp*), Denda Keterlambatan dihitung secara **Hybrid**: Sistem secara otomatis mengkalkulasi estimasi denda (`calculated_late_fee`) berdasarkan selisih jam keterlambatan dikalikan tarif denda produk (`products.late_fee_per_hour`). Namun, Admin Rental memiliki wewenang penuh untuk meng-override (mengubah) nominal denda akhir (`late_fee_amount`) sebelum disimpan apabila ada pertimbangan khusus (diskon/toleransi). Customer mengunggah bukti transfer denda (`returns.late_fee_proof`) jika ada denda.
+Pengembalian melalui kurir atau pengambilan di toko (`ambil_toko`). Pengembalian dicatat terpisah dari pengiriman awal. Karena batas akhir masa sewa (`end_date`) dihitung dengan presisi jam (*timestamp*), Denda Keterlambatan dihitung secara **Hybrid**: Sistem secara otomatis mengkalkulasi estimasi denda (`calculated_late_fee`) berdasarkan selisih jam keterlambatan dikalikan tarif denda produk (`products.late_fee_per_hour`). Namun, Admin Rental memiliki wewenang penuh untuk meng-override (mengubah) nominal denda akhir (`late_fee_amount`) sebelum disimpan apabila ada pertimbangan khusus (diskon/toleransi). Customer mengunggah bukti transfer denda (`returns.late_fee_proof`) jika ada denda.
 
 **Mekanisme Auto-Complete 3 Hari (72 Jam):**
 Jika setelah barang dikirim customer tidak/lupa menekan tombol 'Konfirmasi Penerimaan', sistem akan secara otomatis mengonfirmasi penerimaan barang dan memproses penyelesaian order 3 hari (72 jam) setelah pengiriman dicatat, selama pemeriksaan fisik barang berstatus aman (dijalankan via Scheduled Command).
@@ -157,19 +157,19 @@ Admin Rental dapat mengubah nama usaha, deskripsi, dan logo miliknya sendiri mel
 ### 4.13 Notification Triggers Matrix
 Sistem mengirimkan notifikasi (*in-app notification*) pada kejadian-kejadian berikut:
 1. **Pendaftaran Tenant Baru (`registration_submitted`)**: Customer → Owner. "Pengajuan pendaftaran toko baru {business_name} telah masuk."
-2. **Order Baru Dibuat (`order_created`)**: Customer → Admin Rental. "Pesanan baru #{order_code} telah dibuat dan menunggu konfirmasi."
-3. **Pembatalan Order oleh Customer (`order_cancelled_by_customer`)**: Customer → Admin Rental. "Pesanan #{order_code} telah dibatalkan oleh customer."
-4. **Order Dikonfirmasi / Ditolak (`order_status_updated`)**: Admin → Customer. "Pesanan #{order_code} Anda telah dikonfirmasi / ditolak."
-5. **Review Jaminan Identitas (`identity_status_updated`)**: Admin → Customer. "Jaminan Identitas untuk #{order_code} telah diverifikasi / ditolak."
-6. **Bukti Bayar Diunggah (`payment_uploaded`)**: Customer → Admin Rental. "Bukti pembayaran baru untuk #{order_code} perlu diverifikasi."
-7. **Review Pembayaran (`payment_status_updated`)**: Admin → Customer. "Pembayaran Anda untuk #{order_code} telah diverifikasi / ditolak."
-8. **Pengiriman Barang (`shipment_created`)**: Admin → Customer. "Pesanan #{order_code} sedang dikirim (Resi: {tracking_number})."
-9. **Penerimaan Barang Konfirmasi (`receipt_confirmed`)**: Customer → Admin Rental. "Customer mengonfirmasi penerimaan barang untuk #{order_code}."
-10. **Auto-Complete Order 72 Jam (`order_auto_completed`)**: System → Customer & Admin Rental. "Pesanan #{order_code} telah otomatis dikonfirmasi selesai oleh sistem."
-11. **Pembatalan Otomatis Unpaid 24 Jam (`payment_expired_auto_cancelled`)**: System → Customer & Admin Rental. "Pesanan #{order_code} otomatis dibatalkan karena batas waktu pembayaran habis."
-12. **Pengembalian & Tagihan Denda (`return_status_updated`)**: Admin → Customer. "Status pengembalian #{order_code} diperbarui / Denda Keterlambatan ditagihkan."
-13. **Tagihan Ganti Rugi Kerusakan (`damage_case_updated`)**: Admin → Customer. "Tagihan Ganti Rugi Kerusakan ditambahkan pada pesanan #{order_code}."
-14. **Refund Dikirim (`refund_transferred`)**: Admin → Customer. "Refund untuk pesanan #{order_code} telah ditransfer. Bukti transfer telah dilampirkan."
+2. **Order Baru Dibuat (`order_created`)**: Customer → Admin Rental. "Pesanan baru #{order_number} telah dibuat dan menunggu konfirmasi."
+3. **Pembatalan Order oleh Customer (`order_cancelled_by_customer`)**: Customer → Admin Rental. "Pesanan #{order_number} telah dibatalkan oleh customer."
+4. **Order Dikonfirmasi / Ditolak (`order_status_updated`)**: Admin → Customer. "Pesanan #{order_number} Anda telah dikonfirmasi / ditolak."
+5. **Review Jaminan Identitas (`identity_status_updated`)**: Admin → Customer. "Jaminan Identitas untuk #{order_number} telah diverifikasi / ditolak."
+6. **Bukti Bayar Diunggah (`payment_uploaded`)**: Customer → Admin Rental. "Bukti pembayaran baru untuk #{order_number} perlu diverifikasi."
+7. **Review Pembayaran (`payment_status_updated`)**: Admin → Customer. "Pembayaran Anda untuk #{order_number} telah diverifikasi / ditolak."
+8. **Pengiriman Barang (`shipment_created`)**: Admin → Customer. "Pesanan #{order_number} sedang dikirim (Resi: {tracking_number})."
+9. **Penerimaan Barang Konfirmasi (`receipt_confirmed`)**: Customer → Admin Rental. "Customer mengonfirmasi penerimaan barang untuk #{order_number}."
+10. **Auto-Complete Order 72 Jam (`order_auto_completed`)**: System → Customer & Admin Rental. "Pesanan #{order_number} telah otomatis dikonfirmasi selesai oleh sistem."
+11. **Pembatalan Otomatis Unpaid 24 Jam (`payment_expired_auto_cancelled`)**: System → Customer & Admin Rental. "Pesanan #{order_number} otomatis dibatalkan karena batas waktu pembayaran habis."
+12. **Pengembalian & Tagihan Denda (`return_status_updated`)**: Admin → Customer. "Status pengembalian #{order_number} diperbarui / Denda Keterlambatan ditagihkan."
+13. **Tagihan Ganti Rugi Kerusakan (`damage_case_updated`)**: Admin → Customer. "Tagihan Ganti Rugi Kerusakan ditambahkan pada pesanan #{order_number}."
+14. **Refund Dikirim (`refund_transferred`)**: Admin → Customer. "Refund untuk pesanan #{order_number} telah ditransfer. Bukti transfer telah dilampirkan."
 15. **Subscription Expiring Soon (`subscription_expiring_soon`)**: System → Admin Rental. "Masa berlaku paket subskripsi toko Anda akan berakhir dalam 7 hari."
 
 ### 4.14 Scheduled Background Commands (Laravel Console)
