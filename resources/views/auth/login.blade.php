@@ -24,6 +24,9 @@
 
     <form method="POST" action="{{ route('login') }}" novalidate>
         @csrf
+        @if(request()->filled('redirect'))
+            <input type="hidden" name="redirect" value="{{ request('redirect') }}">
+        @endif
 
         <div class="field">
             <label for="email">Alamat email <i>*</i></label>

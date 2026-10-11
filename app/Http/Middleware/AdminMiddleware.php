@@ -34,7 +34,7 @@ class AdminMiddleware
         }
 
         if (! in_array($user->role, ['admin_rental', 'owner'], true)) {
-            abort(403, 'Akses ditolak.');
+            return redirect('/')->with('error', 'Akses ditolak. Halaman tersebut hanya dapat diakses oleh pengelola toko.');
         }
 
         return $next($request);

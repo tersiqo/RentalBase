@@ -2,18 +2,31 @@
 
 @section('content')
 @php
-    $itemsList = $items->values();
+    $itemsList = $items->values()->map(function ($item) {
+        if (empty($item['image_url']) && !empty($item['main_image'])) {
+            $item['image_url'] = \Illuminate\Support\Facades\Storage::url($item['main_image']);
+        }
+        if (empty($item['hash'])) {
+            $item['hash'] = md5($item['product_id'].$item['start_date'].$item['end_date']);
+        }
+        return $item;
+    });
     $shopLabel = $client->business_name ?? 'Outlet Rental';
 @endphp
 <div class="max-w-[1260px] mx-auto px-6 py-8" x-data="{
-    currentStep: 1,
+    currentStep: {{ $errors->hasAny(['full_name', 'identity_number', 'identity_address', 'identity_document_image', 'face_image']) ? 3 : ($errors->hasAny(['shipping_address']) ? 2 : ($errors->hasAny(['terms']) ? 4 : 1)) }},
     periodStart: {{ json_encode(old('start_date', $period['start_date'])) }},
     periodEnd: {{ json_encode(old('end_date', $period['end_date'])) }},
     items: {{ json_encode($itemsList->all()) }},
     ship: 'antar',
     shopName: {{ json_encode($shopLabel) }},
     addressText: {{ json_encode(old('shipping_address', '')) }},
+    whatsapp: {{ json_encode(old('whatsapp_number', auth()->user()->phone ?? '')) }},
+    fullName: {{ json_encode(old('full_name', auth()->user()->name ?? '')) }},
+    identityNumber: {{ json_encode(old('identity_number', '')) }},
+    identityAddress: {{ json_encode(old('identity_address', '')) }},
     agree: false,
+    stepErrors: [],
 
     ktpPreview: null,
     ktpError: '',
@@ -78,6 +91,7 @@
         reader.onload = (e) => {
             if (type === 'ktp') this.ktpPreview = e.target.result;
             if (type === 'selfie') this.selfiePreview = e.target.result;
+            this.stepErrors = [];
         };
         reader.readAsDataURL(file);
     },
@@ -85,10 +99,93 @@
     removeFile(type) {
         if (type === 'ktp') {
             this.ktpPreview = null;
-            document.getElementById('identity_document_image').value = '';
+            const input = document.getElementById('identity_document_image');
+            if (input) input.value = '';
         } else if (type === 'selfie') {
             this.selfiePreview = null;
-            document.getElementById('face_image').value = '';
+            const input = document.getElementById('face_image');
+            if (input) input.value = '';
+        }
+    },
+
+    validateStep(step) {
+        let errs = [];
+        if (step === 1) {
+            if (!this.periodStart) errs.push('Tanggal mulai sewa wajib dipilih.');
+            if (!this.periodEnd) errs.push('Tanggal selesai sewa wajib dipilih.');
+            if (this.periodStart && this.periodEnd && new Date(this.periodEnd) < new Date(this.periodStart)) {
+                errs.push('Tanggal selesai harus setelah tanggal mulai.');
+            }
+            if (!this.items || this.items.length === 0) {
+                errs.push('Keranjang sewa tidak boleh kosong.');
+            }
+        } else if (step === 2) {
+            if (this.ship === 'antar') {
+                if (!this.addressText || this.addressText.trim().length < 10) {
+                    errs.push('Alamat pengiriman minimal 10 karakter.');
+                }
+            }
+            if (!this.whatsapp || this.whatsapp.trim().length < 8) {
+                errs.push('Nomor WhatsApp aktif penerima minimal 8 digit.');
+            }
+        } else if (step === 3) {
+            if (!this.fullName || this.fullName.trim().length < 3) {
+                errs.push('Nama lengkap sesuai KTP wajib diisi.');
+            }
+            if (!this.identityNumber || this.identityNumber.trim().length < 8) {
+                errs.push('Nomor KTP minimal 8 digit.');
+            }
+            if (!this.identityAddress || this.identityAddress.trim().length < 10) {
+                errs.push('Alamat sesuai KTP minimal 10 karakter.');
+            }
+            const ktpInput = document.getElementById('identity_document_image');
+            const hasKtpFile = ktpInput && ktpInput.files && ktpInput.files.length > 0;
+            if (!this.ktpPreview && !hasKtpFile) {
+                errs.push('Foto KTP wajib diunggah.');
+            }
+            const selfieInput = document.getElementById('face_image');
+            const hasSelfieFile = selfieInput && selfieInput.files && selfieInput.files.length > 0;
+            if (!this.selfiePreview && !hasSelfieFile) {
+                errs.push('Foto swafoto (selfie memegang KTP) wajib diunggah.');
+            }
+        }
+        return errs;
+    },
+
+    goToStep(targetStep) {
+        this.stepErrors = [];
+        if (targetStep < this.currentStep) {
+            this.currentStep = targetStep;
+            return;
+        }
+        for (let s = this.currentStep; s < targetStep; s++) {
+            const errs = this.validateStep(s);
+            if (errs.length > 0) {
+                this.stepErrors = errs;
+                this.currentStep = s;
+                window.scrollTo({ top: 150, behavior: 'smooth' });
+                return;
+            }
+        }
+        this.currentStep = targetStep;
+        window.scrollTo({ top: 150, behavior: 'smooth' });
+    },
+
+    handleSubmit(e) {
+        this.stepErrors = [];
+        for (let s = 1; s <= 3; s++) {
+            const errs = this.validateStep(s);
+            if (errs.length > 0) {
+                e.preventDefault();
+                this.stepErrors = errs;
+                this.currentStep = s;
+                window.scrollTo({ top: 150, behavior: 'smooth' });
+                return false;
+            }
+        }
+        if (!this.agree) {
+            e.preventDefault();
+            return false;
         }
     }
 }">
@@ -129,7 +226,7 @@
     <div class="mb-8 bg-white border border-slate-100 rounded-3xl p-5 sm:p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.07)]">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <!-- Step 1 -->
-            <button type="button" @click="currentStep = 1" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
+            <button type="button" @click="goToStep(1)" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
                 <span class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm flex-none transition-all duration-200"
                     :class="currentStep === 1 ? 'bg-primary-500 text-white shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">1</span>
                 <div class="min-w-0">
@@ -140,7 +237,7 @@
             </button>
 
             <!-- Step 2 -->
-            <button type="button" @click="currentStep = 2" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
+            <button type="button" @click="goToStep(2)" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
                 <span class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm flex-none transition-all duration-200"
                     :class="currentStep === 2 ? 'bg-primary-500 text-white shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">2</span>
                 <div class="min-w-0">
@@ -151,7 +248,7 @@
             </button>
 
             <!-- Step 3 -->
-            <button type="button" @click="currentStep = 3" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
+            <button type="button" @click="goToStep(3)" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
                 <span class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm flex-none transition-all duration-200"
                     :class="currentStep === 3 ? 'bg-primary-500 text-white shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">3</span>
                 <div class="min-w-0">
@@ -162,7 +259,7 @@
             </button>
 
             <!-- Step 4 -->
-            <button type="button" @click="currentStep = 4" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
+            <button type="button" @click="goToStep(4)" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
                 <span class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm flex-none transition-all duration-200"
                     :class="currentStep === 4 ? 'bg-primary-500 text-white shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">4</span>
                 <div class="min-w-0">
@@ -175,7 +272,7 @@
     </div>
 
     <!-- Form Container -->
-    <form action="{{ route('customer.checkout.store', ['subdomain' => $client->subdomain]) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('customer.checkout.store', ['subdomain' => $client->subdomain]) }}" method="POST" enctype="multipart/form-data" @submit="handleSubmit($event)">
         @csrf
 
         <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
@@ -208,15 +305,32 @@
                         </div>
                     </div>
 
+                    <!-- Step 1 Validation Errors -->
+                    <template x-if="stepErrors.length > 0 && currentStep === 1">
+                        <div class="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-sm">
+                            <div class="font-bold mb-1 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                Terjadi kesalahan input:
+                            </div>
+                            <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm font-medium">
+                                <template x-for="(err, idx) in stepErrors" :key="idx">
+                                    <li x-text="err"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+
                     <!-- Item list -->
                     <div class="space-y-4">
                         <template x-for="(item, idx) in items" :key="item.hash">
                             <div class="grid grid-cols-[78px_1fr_auto] gap-4 items-center border border-gray-100 rounded-2xl p-3.5 bg-gray-50/50">
                                 <div class="w-[78px] h-[78px] rounded-xl bg-white border border-gray-200/80 overflow-hidden flex-none flex items-center justify-center relative">
-                                    <template x-if="item.main_image">
-                                        <img :src="'/storage/' + item.main_image" :alt="item.name" class="w-full h-full object-cover">
+                                    <template x-if="item.image_url || item.main_image">
+                                        <div class="w-full h-full relative">
+                                            <img :src="item.image_url || ('https://ekiclwgioicjakapbeuc.supabase.co/storage/v1/object/public/rentalbase-storage/' + item.main_image)" :alt="item.name" class="w-full h-full object-cover">
+                                        </div>
                                     </template>
-                                    <template x-if="!item.main_image">
+                                    <template x-if="!item.image_url && !item.main_image">
                                         <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                     </template>
                                 </div>
@@ -278,7 +392,7 @@
 
                     <!-- Footer Navigation -->
                     <div class="pt-4 border-t border-gray-100 flex justify-end">
-                        <button type="button" @click="currentStep = 2" class="inline-flex items-center gap-2 rounded-xl font-bold px-6 py-3 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition text-sm cursor-pointer">
+                        <button type="button" @click="goToStep(2)" class="inline-flex items-center gap-2 rounded-xl font-bold px-6 py-3 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition text-sm cursor-pointer">
                             Lanjut ke Pengiriman
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M13 6l6 6-6 6"/></svg>
                         </button>
@@ -300,6 +414,21 @@
                             <p class="text-xs text-gray-500 font-medium mt-0.5">Pilih cara menerima barang dan masukkan kontak penerima.</p>
                         </div>
                     </div>
+
+                    <!-- Step 2 Validation Errors -->
+                    <template x-if="stepErrors.length > 0 && currentStep === 2">
+                        <div class="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-sm">
+                            <div class="font-bold mb-1 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                Terjadi kesalahan input:
+                            </div>
+                            <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm font-medium">
+                                <template x-for="(err, idx) in stepErrors" :key="idx">
+                                    <li x-text="err"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
 
                     <!-- Delivery method toggle -->
                     <div>
@@ -344,7 +473,7 @@
                         </div>
                         <div>
                             <label for="wa" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nomor WhatsApp / Telepon Aktif Penerima <span class="text-red-500">*</span></label>
-                            <input type="tel" id="wa" inputmode="tel" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-400" placeholder="08xxxxxxxxxx">
+                            <input type="tel" id="wa" x-model="whatsapp" inputmode="tel" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-400" placeholder="08xxxxxxxxxx">
                         </div>
                         <div class="bg-primary-50/70 border border-primary-100 rounded-xl p-4 flex gap-3">
                             <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
@@ -365,16 +494,16 @@
                         </div>
                         <div>
                             <label for="wa2" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nomor WhatsApp / Telepon Aktif Penerima <span class="text-red-500">*</span></label>
-                            <input type="tel" id="wa2" inputmode="tel" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-400" placeholder="08xxxxxxxxxx">
+                            <input type="tel" id="wa2" x-model="whatsapp" inputmode="tel" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-400" placeholder="08xxxxxxxxxx">
                         </div>
                         <p class="text-xs text-gray-400">Tunjukkan nomor pesanan saat mengambil barang di outlet.</p>
                     </div>
 
                     <div class="pt-4 border-t border-gray-100 flex justify-between">
-                        <button type="button" @click="currentStep = 1" class="inline-flex items-center gap-2 rounded-xl font-bold px-5 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                        <button type="button" @click="goToStep(1)" class="inline-flex items-center gap-2 rounded-xl font-bold px-5 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
                             &larr; Kembali
                         </button>
-                        <button type="button" @click="currentStep = 3" class="inline-flex items-center gap-2 rounded-xl font-bold px-6 py-2.5 bg-primary-500 text-white shadow-sm hover:bg-primary-600 transition">
+                        <button type="button" @click="goToStep(3)" class="inline-flex items-center gap-2 rounded-xl font-bold px-6 py-2.5 bg-primary-500 text-white shadow-sm hover:bg-primary-600 transition">
                             Lanjut ke Jaminan Identitas &rarr;
                         </button>
                     </div>
@@ -396,6 +525,21 @@
                         </div>
                     </div>
 
+                    <!-- Step 3 Validation Errors -->
+                    <template x-if="stepErrors.length > 0 && currentStep === 3">
+                        <div class="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-sm">
+                            <div class="font-bold mb-1 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                Terjadi kesalahan input:
+                            </div>
+                            <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm font-medium">
+                                <template x-for="(err, idx) in stepErrors" :key="idx">
+                                    <li x-text="err"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+
                     <!-- Notice Box -->
                     <div class="bg-primary-50 border border-primary-100 rounded-xl p-4 flex gap-3">
                         <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -407,14 +551,14 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="full_name" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nama Lengkap (Sesuai KTP) <span class="text-red-500">*</span></label>
-                            <input type="text" id="full_name" name="full_name" value="{{ old('full_name', auth()->user()->name ?? '') }}" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Nama sesuai identitas" required>
+                            <input type="text" id="full_name" name="full_name" x-model="fullName" value="{{ old('full_name', auth()->user()->name ?? '') }}" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Nama sesuai identitas" required>
                             @error('full_name')
                                 <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                             @enderror
                         </div>
                         <div>
                             <label for="identity_number" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nomor KTP / NIK <span class="text-red-500">*</span></label>
-                            <input type="text" id="identity_number" name="identity_number" value="{{ old('identity_number') }}" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="16 digit nomor NIK KTP" required>
+                            <input type="text" id="identity_number" name="identity_number" x-model="identityNumber" value="{{ old('identity_number') }}" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="16 digit nomor NIK KTP" required>
                             @error('identity_number')
                                 <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                             @enderror
@@ -423,7 +567,7 @@
 
                     <div>
                         <label for="identity_address" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Alamat Sesuai KTP <span class="text-red-500">*</span></label>
-                        <textarea id="identity_address" name="identity_address" rows="2" class="w-full border border-gray-200 rounded-xl p-3 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Alamat domisili sesuai KTP..." required>{{ old('identity_address') }}</textarea>
+                        <textarea id="identity_address" name="identity_address" x-model="identityAddress" rows="2" class="w-full border border-gray-200 rounded-xl p-3 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Alamat domisili sesuai KTP..." required>{{ old('identity_address') }}</textarea>
                         @error('identity_address')
                             <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                         @enderror
@@ -435,21 +579,22 @@
                         <div class="border border-dashed border-gray-300 rounded-2xl p-4 text-center bg-gray-50/50">
                             <label class="block text-xs font-bold text-gray-800 mb-2 uppercase">Foto KTP / Dokumen Identitas <span class="text-red-500">*</span></label>
 
-                            <template x-if="!ktpPreview">
-                                <div class="space-y-2 py-3">
-                                    <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                    <label for="identity_document_image" class="cursor-pointer bg-white border border-gray-200 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg inline-block hover:border-primary-500 shadow-2xs">Pilih File KTP</label>
-                                    <input type="file" id="identity_document_image" name="identity_document_image" accept="image/jpeg,image/png,image/jpg" @change="handleFileUpload($event, 'ktp')" class="hidden">
-                                    <p class="text-[11px] text-gray-400">JPG/PNG, Maks. 2MB</p>
-                                </div>
-                            </template>
+                            <!-- Always present in DOM inside form -->
+                            <input type="file" id="identity_document_image" name="identity_document_image" accept="image/jpeg,image/png,image/jpg" @change="handleFileUpload($event, 'ktp')" class="hidden">
 
-                            <template x-if="ktpPreview">
-                                <div class="relative">
-                                    <img :src="ktpPreview" class="h-32 w-full object-cover rounded-xl border border-gray-200 mb-2">
-                                    <button type="button" @click="removeFile('ktp')" class="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-lg hover:bg-red-700 transition">Hapus / Ganti KTP</button>
+                            <div x-show="!ktpPreview" class="space-y-2 py-3">
+                                <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <label for="identity_document_image" class="cursor-pointer bg-white border border-gray-200 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg inline-block hover:border-primary-500 shadow-2xs">Pilih File KTP</label>
+                                <p class="text-[11px] text-gray-400">JPG/PNG, Maks. 2MB</p>
+                            </div>
+
+                            <div x-show="ktpPreview" class="relative">
+                                <img :src="ktpPreview" class="h-32 w-full object-cover rounded-xl border border-gray-200 mb-2">
+                                <div class="flex items-center justify-center gap-2">
+                                    <label for="identity_document_image" class="cursor-pointer bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-900 transition">Ganti KTP</label>
+                                    <button type="button" @click="removeFile('ktp')" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-700 transition">Hapus</button>
                                 </div>
-                            </template>
+                            </div>
 
                             <p x-text="ktpError" class="text-xs text-red-600 mt-1 font-semibold"></p>
                             @error('identity_document_image')
@@ -461,21 +606,22 @@
                         <div class="border border-dashed border-gray-300 rounded-2xl p-4 text-center bg-gray-50/50">
                             <label class="block text-xs font-bold text-gray-800 mb-2 uppercase">Foto Swafoto (Selfie + KTP) <span class="text-red-500">*</span></label>
 
-                            <template x-if="!selfiePreview">
-                                <div class="space-y-2 py-3">
-                                    <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-                                    <label for="face_image" class="cursor-pointer bg-white border border-gray-200 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg inline-block hover:border-primary-500 shadow-2xs">Pilih File Swafoto</label>
-                                    <input type="file" id="face_image" name="face_image" accept="image/jpeg,image/png,image/jpg" @change="handleFileUpload($event, 'selfie')" class="hidden">
-                                    <p class="text-[11px] text-gray-400">JPG/PNG, Maks. 2MB</p>
-                                </div>
-                            </template>
+                            <!-- Always present in DOM inside form -->
+                            <input type="file" id="face_image" name="face_image" accept="image/jpeg,image/png,image/jpg" @change="handleFileUpload($event, 'selfie')" class="hidden">
 
-                            <template x-if="selfiePreview">
-                                <div class="relative">
-                                    <img :src="selfiePreview" class="h-32 w-full object-cover rounded-xl border border-gray-200 mb-2">
-                                    <button type="button" @click="removeFile('selfie')" class="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-lg hover:bg-red-700 transition">Hapus / Ganti Swafoto</button>
+                            <div x-show="!selfiePreview" class="space-y-2 py-3">
+                                <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                                <label for="face_image" class="cursor-pointer bg-white border border-gray-200 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg inline-block hover:border-primary-500 shadow-2xs">Pilih File Swafoto</label>
+                                <p class="text-[11px] text-gray-400">JPG/PNG, Maks. 2MB</p>
+                            </div>
+
+                            <div x-show="selfiePreview" class="relative">
+                                <img :src="selfiePreview" class="h-32 w-full object-cover rounded-xl border border-gray-200 mb-2">
+                                <div class="flex items-center justify-center gap-2">
+                                    <label for="face_image" class="cursor-pointer bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-900 transition">Ganti Swafoto</label>
+                                    <button type="button" @click="removeFile('selfie')" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-700 transition">Hapus</button>
                                 </div>
-                            </template>
+                            </div>
 
                             <p x-text="selfieError" class="text-xs text-red-600 mt-1 font-semibold"></p>
                             @error('face_image')
@@ -485,10 +631,10 @@
                     </div>
 
                     <div class="pt-4 border-t border-gray-100 flex justify-between">
-                        <button type="button" @click="currentStep = 2" class="inline-flex items-center gap-2 rounded-xl font-bold px-5 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                        <button type="button" @click="goToStep(2)" class="inline-flex items-center gap-2 rounded-xl font-bold px-5 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
                             &larr; Kembali
                         </button>
-                        <button type="button" @click="currentStep = 4" class="inline-flex items-center gap-2 rounded-xl font-bold px-6 py-2.5 bg-primary-500 text-white shadow-sm hover:bg-primary-600 transition">
+                        <button type="button" @click="goToStep(4)" class="inline-flex items-center gap-2 rounded-xl font-bold px-6 py-2.5 bg-primary-500 text-white shadow-sm hover:bg-primary-600 transition">
                             Lanjut ke Konfirmasi &rarr;
                         </button>
                     </div>
@@ -551,7 +697,7 @@
                     </div>
 
                     <div class="pt-4 border-t border-gray-100 flex justify-between items-center">
-                        <button type="button" @click="currentStep = 3" class="inline-flex items-center gap-2 rounded-xl font-bold px-5 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                        <button type="button" @click="goToStep(3)" class="inline-flex items-center gap-2 rounded-xl font-bold px-5 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
                             &larr; Kembali
                         </button>
                         <button type="submit" :disabled="!agree" class="inline-flex items-center justify-center gap-2 rounded-xl font-extrabold px-7 py-3 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">

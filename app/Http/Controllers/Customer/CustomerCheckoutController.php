@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CustomerCheckoutController extends Controller
@@ -75,6 +76,7 @@ class CustomerCheckoutController extends Controller
         $cart = session()->get('cart', []);
 
         $cart[$hash] = [
+            'hash' => $hash,
             'product_id' => $product->id,
             'name' => $product->name,
             'price' => $product->rental_price_per_day,
@@ -97,9 +99,9 @@ class CustomerCheckoutController extends Controller
         $client = $this->resolveClient($subdomain);
 
         $request->validate([
-            'selected_hashes' => 'required|array|min:1',
-            'items' => 'required|array|min:1',
-            'items.*.quantity' => 'required|integer|min:1',
+            'selected_hashes' => 'nullable|array',
+            'items' => 'nullable|array',
+            'items.*.quantity' => 'nullable|integer|min:1',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'shipping_address' => 'required|string|min:10',
@@ -122,6 +124,7 @@ class CustomerCheckoutController extends Controller
             'identity_number.required' => 'Nomor KTP / NIK wajib diisi.',
             'identity_number.min' => 'Nomor KTP minimal 8 digit.',
             'identity_address.required' => 'Alamat sesuai KTP wajib diisi.',
+            'identity_address.min' => 'Alamat sesuai KTP minimal 10 karakter.',
             'identity_document_image.required' => 'Foto KTP wajib diunggah.',
             'identity_document_image.image' => 'Foto KTP harus berupa gambar.',
             'face_image.required' => 'Foto swafoto (selfie memegang KTP) wajib diunggah.',
@@ -130,9 +133,26 @@ class CustomerCheckoutController extends Controller
         ]);
 
         $cart = session()->get('cart', []);
-        $selectedHashes = $request->input('selected_hashes');
+        $selectedHashes = $request->input('selected_hashes', []);
+
+        // Filter out empty/null/undefined values
+        $selectedHashes = array_values(array_filter((array) $selectedHashes, fn ($h) => !empty($h) && $h !== 'undefined'));
+
+        if (empty($selectedHashes)) {
+            $selectedHashes = (array) session()->get('checkout_items', []);
+            $selectedHashes = array_values(array_filter($selectedHashes, fn ($h) => !empty($h) && $h !== 'undefined'));
+        }
+
+        if (empty($selectedHashes)) {
+            $selectedHashes = array_keys($cart);
+        }
 
         $selected = $this->resolveItems($cart, $selectedHashes);
+
+        if ($selected->isEmpty() && !empty($cart)) {
+            $selected = collect($cart);
+            $selectedHashes = array_keys($cart);
+        }
 
         if ($selected->isEmpty()) {
             return back()->withErrors(['items' => 'Item tidak cocok dengan keranjang. Harap ulangi checkout dari keranjang.']);
@@ -163,10 +183,11 @@ class CustomerCheckoutController extends Controller
             }
 
             $available = $product->units()->where('status', 'tersedia')->count();
-            $quantity = (int) ($requested[$hash]['quantity'] ?? 0);
+            $itemHash = $item['hash'] ?? $hash;
+            $quantity = (int) ($requested[$hash]['quantity'] ?? $requested[$itemHash]['quantity'] ?? $item['quantity'] ?? 1);
 
             if ($quantity < 1) {
-                return back()->withErrors(['items' => 'Jumlah sewa "'.$item['name'].'" tidak valid.']);
+                $quantity = 1;
             }
 
             if ($quantity > $available) {
@@ -296,16 +317,24 @@ class CustomerCheckoutController extends Controller
 
     protected function decorate(Collection $items, array $period): Collection
     {
-        return $items->values()->map(function ($item) use ($period) {
+        return $items->map(function ($item, $hash) use ($period) {
             $product = Product::where('id', $item['product_id'])->first();
             $available = $product ? $product->units()->where('status', 'tersedia')->count() : 0;
             $quantity = $available < 1 ? 0 : min((int) $item['quantity'], $available);
 
+            $imageUrl = ! empty($item['main_image'])
+                ? Storage::url($item['main_image'])
+                : null;
+
+            $itemHash = ! empty($item['hash']) ? $item['hash'] : (is_string($hash) && strlen($hash) > 10 ? $hash : md5($item['product_id'].$item['start_date'].$item['end_date']));
+
             return array_merge($item, [
+                'hash' => $itemHash,
+                'image_url' => $imageUrl,
                 'available_units' => $available,
                 'quantity' => $quantity,
                 'subtotal' => $item['price'] * $period['days'] * $quantity,
             ]);
-        });
+        })->values();
     }
 }
