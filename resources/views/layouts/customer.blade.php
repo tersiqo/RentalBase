@@ -74,7 +74,7 @@
                         </div>
                     @else
                         <!-- Guest Actions -->
-                        <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 text-[14px] transition-colors">Masuk</a>
+                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="hidden sm:inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 text-[14px] transition-colors">Masuk</a>
                         <a href="{{ route('tenant.register') }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-transparent bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 text-[14px] transition-all">Daftar</a>
                     @endauth
                     
@@ -91,14 +91,27 @@
              x-transition
              class="md:hidden bg-white border-t border-gray-100"
              style="display: none;">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Katalog</a>
+            <div class="px-4 pt-3 pb-3 space-y-2">
+                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Katalog</a>
                 @if(request()->routeIs('customer.checkout*'))
-                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-primary-600 bg-primary-50">Checkout</a>
+                    <a href="#" class="block px-3 py-2 rounded-lg text-base font-medium text-primary-600 bg-primary-50">Checkout</a>
                 @else
-                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
+                    <a href="#katalog" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
                 @endif
-                <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Bantuan</a>
+                <a href="#bantuan" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Bantuan</a>
+                
+                @auth
+                    <div class="border-t border-gray-100 pt-2 mt-2">
+                        <div class="px-3 py-1 text-xs font-bold text-gray-400 uppercase">Akun Saya</div>
+                        <a href="{{ route('customer.orders') }}" class="block px-3 py-2 rounded-lg text-base font-semibold text-primary-600 hover:bg-primary-50">Pesanan Saya</a>
+                        <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50">Log out</a>
+                    </div>
+                @else
+                    <div class="border-t border-gray-100 pt-3 mt-2 flex flex-col gap-2">
+                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="w-full text-center py-2.5 font-bold rounded-xl border border-gray-200 bg-white text-gray-800 hover:bg-gray-50">Masuk</a>
+                        <a href="{{ route('tenant.register') }}" class="w-full text-center py-2.5 font-bold rounded-xl bg-primary-500 text-white hover:bg-primary-600">Daftar</a>
+                    </div>
+                @endauth
             </div>
         </div>
     </header>

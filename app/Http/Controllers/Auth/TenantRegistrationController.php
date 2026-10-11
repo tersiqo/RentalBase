@@ -52,6 +52,20 @@ class TenantRegistrationController extends Controller
 
             $request->session()->regenerate();
 
+            if ($user->role === 'customer') {
+                $redirectUrl = $request->input('redirect');
+                if ($redirectUrl && (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost'))) {
+                    return redirect($redirectUrl);
+                }
+
+                $referer = $request->headers->get('referer');
+                if ($referer && str_contains($referer, '/client/')) {
+                    return redirect($referer);
+                }
+
+                return redirect()->intended('/client/babyrental');
+            }
+
             return redirect()->intended('/admin/dashboard');
         }
 
@@ -60,10 +74,15 @@ class TenantRegistrationController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        $referer = $request->headers->get('referer');
+        if ($referer && ! str_contains($referer, '/checkout')) {
+            return redirect($referer);
+        }
 
         return redirect('/');
     }

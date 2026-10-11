@@ -44,6 +44,7 @@ class AddToCartModal extends Component
                 $cart[$hash]['subtotal'] = $this->product->rental_price_per_day * $cart[$hash]['duration_days'] * $cart[$hash]['quantity'];
             } else {
                 $cart[$hash] = [
+                    'hash' => $hash,
                     'product_id' => $this->product->id,
                     'name' => $this->product->name,
                     'price' => $this->product->rental_price_per_day,
