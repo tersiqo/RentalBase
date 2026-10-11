@@ -6,13 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
+    public const SHIPPING_KURIR = 'kurir';
+
+    public const SHIPPING_AMBIL_TOKO = 'ambil_toko';
+
     protected $guarded = [];
 
     protected $casts = [
         'rental_start_date' => 'datetime',
-        'rental_end_date'   => 'datetime',
-        'total_amount'      => 'decimal:2',
+        'rental_end_date' => 'datetime',
+        'total_amount' => 'decimal:2',
     ];
+
+    public function isPickup(): bool
+    {
+        return $this->shipping_method === self::SHIPPING_AMBIL_TOKO;
+    }
 
     public function client()
     {
