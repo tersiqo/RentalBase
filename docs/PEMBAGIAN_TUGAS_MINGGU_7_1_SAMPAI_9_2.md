@@ -29,10 +29,10 @@ Nama/label penanggung jawab ditulis mengikuti enam dokumen tugas sumber. Nama pa
 
 | Label pada dokumen tugas | Nama formal yang diketahui dari roster tim | Peran umum | Lingkup tugas dalam dokumen sumber |
 |---|---|---|---|
-| **Iqo** | **Tersiqo Alfarezel** | Project Manager | Katalog dan detail produk customer, keranjang, checkout, kategori/produk admin, unit fisik, branding toko, metode pembayaran, profil customer, sebagian integrasi katalog dan checkout. |
-| **Yanuar** | **Yanuar Alda Baran** | Front End Developer | Landing page publik, halaman pesanan customer, status pendaftaran tenant, autentikasi, reset password, halaman error dan tenant suspend, dashboard Owner, persetujuan tenant, integrasi autentikasi. |
-| **Fiza** | **Fiza Rahmatus Sholikha** | Back End Developer | Dashboard Admin, pendaftaran tenant pada dokumen Minggu 7 Bagian 1, login Admin/Owner pada dokumen Minggu 7 Bagian 2, master order, review identitas/pembayaran, laporan, manajemen client/admin Owner, subscription, notifikasi Owner, integrasi order dan alokasi unit. |
-| **Iak** | Nama formal tidak tercantum di enam dokumen sumber; cocokkan dengan roster resmi tim sebelum penyerahan | Anggota ke-4 pada dokumen sumber | Pengiriman, retur, inspeksi kondisi fisik, kasus kerusakan, notifikasi customer/Admin, activity log Admin/Owner, integrasi logistik dan foto kondisi. |
+| **Iqo** | **Tersiqo Alfarezel** | Project Manager | Katalog dan detail produk customer, keranjang, checkout, kategori/produk admin, unit fisik, order admin (daftar & detail pesanan admin: verifikasi identitas, pembayaran, alokasi unit fisik, alur refund), profil customer, serta integrasi transaksi. (10 tugas) |
+| **Yanuar** | **Yanuar Alda Baran** | Front End Developer | Landing page publik, pesanan customer (riwayat & detail), login gate & status verifikasi tenant, profil & branding toko admin (tema/logo), metode pembayaran admin (bank & QRIS), autentikasi customer & reset password, halaman error 403/404 & tenant suspend, serta integrasi UI. (10 tugas) |
+| **Fiza** | **Fiza Rahmatus Sholikha** | Back End Developer | Dashboard Admin, form pendaftaran tenant, login Admin/Owner, laporan transaksi admin, Base Layout Owner, dashboard Owner, manajemen client/admin Owner, antrean persetujuan tenant Owner, subscription Owner, notifikasi Owner, integrasi backend, alokasi unit & scheduled commands. (10 tugas) |
+| **Iak** | Nama formal tidak tercantum di enam dokumen sumber; cocokkan dengan roster resmi tim sebelum penyerahan | Anggota ke-4 pada dokumen sumber | Pengiriman admin, penerimaan & denda retur admin, pengembalian customer, inspeksi kondisi fisik, kasus kerusakan admin & customer, notifikasi customer & admin, activity log admin & owner, serta integrasi logistik & inspeksi. (10 tugas) |
 
 > **Penting untuk penamaan anggota:** roster tim yang tersedia memuat Zaskia Maulidina Mutiara Hati sebagai anggota keempat, sedangkan enam file sumber memakai label **Iak**. Dokumen ini mempertahankan label **Iak** agar penugasan tidak dipindahkan secara diam-diam. Jika Iak adalah nama panggilan Zaskia, samakan label tersebut menjadi **Zaskia Maulidina Mutiara Hati** sebelum dokumen final diserahkan.
 
@@ -51,21 +51,21 @@ RentalBase adalah aplikasi pengelolaan rental berbasis banyak client/tenant. Roo
 
 ### 2.1 Jenis pengguna dan area aplikasi
 
-1. **Pengunjung publik** — melihat landing page RentalBase, informasi produk SaaS, paket, fitur, dan formulir pendaftaran tenant.
-2. **Customer** — melihat katalog pada toko/tenant tertentu, memilih periode sewa, memasukkan barang ke keranjang, checkout, mengirim identitas/jaminan, mengunggah bukti pembayaran, melihat status pesanan, pengiriman, pengembalian, notifikasi, dan profil.
-3. **Admin Rental** — mengelola data satu toko/tenant: pesanan, kategori, produk, unit fisik, pengiriman, retur, pemeriksaan fisik, kasus kerusakan, metode pembayaran, laporan, branding, notifikasi, dan activity log.
-4. **Owner/Super Admin** — mengelola platform dan tenant: pengajuan tenant, client, admin rental lintas tenant, subscription, dashboard, notifikasi Owner, dan activity log tingkat platform. Panel Owner tidak menampilkan detail transaksi customer lintas tenant sebagai data operasional.
+1. **Pengunjung publik** — melihat landing page RentalBase, informasi produk SaaS, paket, fitur, formulir pendaftaran tenant, dan portal autentikasi.
+2. **Customer** — melihat katalog pada toko/tenant tertentu (guest browsing), memilih periode sewa, memasukkan barang ke keranjang / menekan "Sewa Alat", checkout (wajib login), mengirim identitas/jaminan, mengunggah bukti pembayaran, melihat status pesanan, pelacakan refund, pengiriman, pengembalian, notifikasi, dan profil.
+3. **Admin Rental** — mengelola data satu toko/tenant: login admin (dengan pengecekan status toko belum terverifikasi/ditolak/aktif), pesanan, konfirmasi/pembatalan order, verifikasi identitas & pembayaran, kategori, produk, unit fisik, pengiriman, retur, pemeriksaan fisik, kasus kerusakan, metode pembayaran, laporan, branding, notifikasi, dan activity log.
+4. **Owner/Super Admin** — mengelola platform dan tenant: pengajuan tenant, client, admin rental lintas tenant, subscription, dashboard monitoring, notifikasi Owner, dan activity log tingkat platform. Panel Owner tidak menampilkan detail transaksi customer lintas tenant sebagai data operasional.
 
 ### 2.2 Layout dasar yang dibutuhkan
 
 | Layout | Dipakai oleh | Komponen minimum |
 |---|---|---|
-| **Public Layout** | Landing page, pendaftaran tenant, cek status pendaftaran, halaman publik lainnya | Navbar RentalBase, menu Fitur/Harga/Kontak, CTA Login/Daftar, footer dan tautan legal. |
-| **Customer Layout** | Katalog toko, detail produk, cart, checkout, pesanan, retur customer, laporan kerusakan customer, notifikasi, profil | Header toko, logo/nama toko, navigasi Beranda/Produk/Cara Sewa, keranjang dengan badge, menu login/profil, footer kontak/jam operasional/kebijakan. |
-| **Admin Layout** | Dashboard Admin dan seluruh halaman pengelolaan tenant | Sidebar Admin, topbar nama toko, menu profil/logout, area konten, breadcrumb/judul halaman, flash message/alert, responsif pada HP. |
-| **Owner Layout** | Dashboard dan halaman manajemen pusat | Sidebar Owner, topbar profil Super Admin, navigasi dashboard/pendaftaran/client/admin/subscription/activity log/notifikasi, konten terpisah dari panel tenant. |
+| **Public Layout** | Landing page, pendaftaran tenant multi-step, halaman publik lainnya | Navbar RentalBase, menu Fitur/Harga/Kontak, CTA Login/Daftar ("Memulai"), footer dan tautan legal. |
+| **Customer Layout** | Katalog toko, detail produk, cart, checkout, pesanan, retur customer, laporan kerusakan customer, notifikasi, profil | Header toko (logo, Beranda, Produk, Cara Sewa, Cart badge, Pesanan Saya, Notifikasi, Profile/Login), footer kontak/jam operasional/kebijakan. Dibuat oleh Iqo. |
+| **Admin Layout** | Dashboard Admin dan seluruh halaman pengelolaan tenant | Sidebar Admin (Operasional, Katalog, Laporan & Audit, Pengaturan), topbar nama toko, lonceng notifikasi, menu profil/logout, breadcrumb, responsif HP. Dibuat oleh Fiza. |
+| **Owner Layout** | Dashboard dan halaman manajemen pusat | Sidebar Owner (Dashboard, Registrasi, Clients, Admins, Subscriptions, Activity Log, Notifikasi), topbar profil Super Admin, konten terpisah dari panel tenant. Dibuat oleh Fiza. |
 | **Auth Layout** | Login, register, lupa/reset password | Form terpusat tanpa sidebar; validasi per-field, show/hide password bila tersedia, pesan error dan loading. |
-| **Global Error/Suspended Layout** | 403, 404, tenant suspend/nonaktif | Tampilan fokus pada pesan dan aksi yang sesuai, tidak menampilkan menu yang justru dilarang pada halaman suspended. |
+| **Global Error/Suspended Layout** | 403, 404, tenant suspend/nonaktif | Tampilan fokus pada pesan dan aksi yang sesuai, tidak menampilkan menu yang justru dilarang pada halaman suspended. Dibuat oleh Yanuar. |
 
 ### 2.3 Aturan desain dan perilaku global
 
@@ -82,49 +82,49 @@ RentalBase adalah aplikasi pengelolaan rental berbasis banyak client/tenant. Roo
 
 ## 3. PETA 40 HALAMAN UTAMA
 
-Peta berikut mempertahankan kelompok tanggung jawab dari enam dokumen sumber. Total yang dihitung sebagai halaman/alur halaman adalah 40 (10 per anggota). Integrasi khusus pada Minggu 9 Bagian 2 dicatat terpisah sebagai pekerjaan integrasi, bukan halaman baru. Bentuk final route/backend harus dicek pada bagian 11.
+Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (total 40 pekerjaan)**. Pertukaran tugas telah disesuaikan: Fiza mengerjakan seluruh modul Owner (termasuk Dashboard Owner). Modul Order Admin (Daftar & Detail Pesanan Admin) dikerjakan oleh **Iqo** (Project Manager) karena keterikatan kuat dengan ketersediaan unit fisik, transaksi checkout, dan alur refund; sedangkan **Yanuar** (Front End Developer) mengerjakan Profil & Branding Toko Admin serta Metode Pembayaran Admin (murni form UI & styling). Form Pendaftaran Tenant resmi menjadi tanggung jawab Fiza.
 
-| ID | Minggu | Halaman / pekerjaan | Penanggung jawab pada sumber |
+| ID | Minggu | Halaman / pekerjaan | Penanggung jawab definitif |
 |---|---|---|---|
 | 7.1-I1 | 7 Bagian 1 | Katalog Toko Customer | Iqo |
 | 7.1-I2 | 7 Bagian 1 | Detail Produk Customer | Iqo |
 | 7.1-Y1 | 7 Bagian 1 | Landing Page RentalBase | Yanuar |
 | 7.1-Y2 | 7 Bagian 1 | Pesanan Saya Customer | Yanuar |
 | 7.1-F1 | 7 Bagian 1 | Dashboard Admin | Fiza |
-| 7.1-F2 | 7 Bagian 1 | Form Pendaftaran Tenant | Fiza pada dokumen sumber |
+| 7.1-F2 | 7 Bagian 1 | Form Pendaftaran Tenant | Fiza |
 | 7.1-A1 | 7 Bagian 1 | Pengiriman Admin | Iak |
 | 7.1-A2 | 7 Bagian 1 | Penerimaan dan Denda Retur Admin | Iak |
 | 7.2-I1 | 7 Bagian 2 | Keranjang Customer | Iqo |
 | 7.2-I2 | 7 Bagian 2 | Checkout Customer | Iqo |
-| 7.2-Y1 | 7 Bagian 2 | Cek Status Pendaftaran Tenant | Yanuar |
+| 7.2-Y1 | 7 Bagian 2 | Login Gate & Status Verifikasi Tenant | Yanuar |
 | 7.2-Y2 | 7 Bagian 2 | Detail Pesanan Customer | Yanuar |
 | 7.2-F1 | 7 Bagian 2 | Login Admin dan Owner | Fiza |
-| 7.2-F2 | 7 Bagian 2 | Daftar Pesanan Admin | Fiza |
+| 7.2-I3 | 7 Bagian 2 | Daftar Pesanan Admin | Iqo (dialihkan dari Yanuar / 7.2-Y3) |
 | 7.2-A1 | 7 Bagian 2 | Pengembalian Customer | Iak |
 | 7.2-A2 | 7 Bagian 2 | Pemeriksaan Kondisi Fisik Admin | Iak |
 | 8.1-I1 | 8 Bagian 1 | Kategori Admin | Iqo |
 | 8.1-I2 | 8 Bagian 1 | Produk Admin | Iqo |
 | 8.1-Y1 | 8 Bagian 1 | Login/Register Customer | Yanuar |
 | 8.1-Y2 | 8 Bagian 1 | Lupa/Reset Password | Yanuar |
-| 8.1-F1 | 8 Bagian 1 | Detail Pesanan Admin | Fiza |
+| 8.1-I3 | 8 Bagian 1 | Detail Pesanan Admin | Iqo (dialihkan dari Yanuar / 8.1-Y3) |
 | 8.1-F2 | 8 Bagian 1 | Laporan Transaksi Admin | Fiza |
 | 8.1-A1 | 8 Bagian 1 | Daftar dan Detail Kasus Kerusakan Admin | Iak |
 | 8.1-A2 | 8 Bagian 1 | Laporan Kerusakan Customer | Iak |
 | 8.2-I1 | 8 Bagian 2 | Unit Fisik Admin | Iqo |
-| 8.2-I2 | 8 Bagian 2 | Profil/Branding Admin | Iqo |
+| 8.2-Y3 | 8 Bagian 2 | Profil/Branding Admin | Yanuar (dialihkan dari Iqo / 8.2-I2) |
 | 8.2-Y1 | 8 Bagian 2 | Error 403 dan 404 | Yanuar |
 | 8.2-Y2 | 8 Bagian 2 | Halaman Tenant Tidak Aktif/Suspended | Yanuar |
-| 8.2-Y3 | 8 Bagian 2 | Dashboard Owner | Yanuar |
+| 8.2-F3 | 8 Bagian 2 | Dashboard Owner | Fiza (ditukar dari Yanuar / 8.2-Y3) |
 | 8.2-F1 | 8 Bagian 2 | Manajemen Client Owner | Fiza |
 | 8.2-F2 | 8 Bagian 2 | Akun Admin Rental Owner | Fiza |
 | 8.2-A1 | 8 Bagian 2 | Notifikasi Customer | Iak |
 | 8.2-A2 | 8 Bagian 2 | Notifikasi Admin | Iak |
-| 9.1-I1 | 9 Bagian 1 | Metode Pembayaran Admin | Iqo |
-| 9.1-Y1 | 9 Bagian 1 | Antrean Persetujuan Tenant Owner | Yanuar |
+| 9.1-Y1 | 9 Bagian 1 | Metode Pembayaran Admin | Yanuar (dialihkan dari Iqo / 9.1-I1) |
+| 9.1-F2 | 9 Bagian 1 | Antrean Persetujuan Tenant Owner | Fiza (dialihkan dari Yanuar / 9.1-Y1) |
 | 9.1-F1 | 9 Bagian 1 | Subscription Tenant Owner | Fiza |
 | 9.1-A1 | 9 Bagian 1 | Activity Log Admin | Iak |
-| 9.2-I1 | 9 Bagian 2 | Profil Customer dan Integrasi Katalog/Checkout | Iqo |
-| 9.2-F1 | 9 Bagian 2 | Notifikasi Owner dan Integrasi Order | Fiza |
+| 9.2-I1 | 9 Bagian 2 | Profil Customer dan Integrasi Frontend | Iqo |
+| 9.2-F1 | 9 Bagian 2 | Notifikasi Owner, Backend Order & Scheduled Commands | Fiza |
 | 9.2-A1 | 9 Bagian 2 | Activity Log Owner dan Integrasi Logistik | Iak |
 
 ---
@@ -144,104 +144,129 @@ Peta berikut mempertahankan kelompok tanggung jawab dari enam dokumen sumber. To
 Menjadi halaman pertama bagi customer yang mengunjungi sebuah toko rental. Customer dapat menemukan barang, menyaring katalog, menentukan periode sewa, melihat indikasi ketersediaan, lalu membuka detail produk.
 
 ### Bagian dan komponen UI
-1. **Header toko**
-   - Logo dan nama toko.
-   - Menu Beranda, Produk, Cara Sewa.
-   - Ikon keranjang dengan badge jumlah item.
-   - Tombol Login atau Profil sesuai status autentikasi.
-   - Header harus konsisten dipakai di detail produk, keranjang, checkout, pesanan, notifikasi, dan profil.
+1. **Header toko (Customer Layout)**
+   - Logo dan nama toko (branding tenant).
+   - Menu navigasi: Beranda, Produk, Cara Sewa.
+   - Ikon keranjang belanja (Cart) dengan badge jumlah item.
+   - Tombol Pesanan Saya dan Lonceng Notifikasi (jika sudah login).
+   - Tombol Login / Profil sesuai status autentikasi.
+   - Header konsisten dipakai di detail produk, keranjang, checkout, pesanan, notifikasi, dan profil.
 2. **Area pencarian/filter**
    - Input pencarian nama produk.
    - Filter kategori melalui checkbox (kategori sesuai data tenant, bukan daftar hardcoded permanen).
    - Filter rentang harga minimum–maksimum.
    - Tombol reset filter bila filter diterapkan.
 3. **Pemilih tanggal sewa**
-   - Tanggal mulai dan tanggal selesai.
+   - Tanggal mulai dan tanggal selesai (mendukung presisi jam/timestamp).
    - Validasi bahwa tanggal selesai tidak lebih awal daripada tanggal mulai.
-   - Saat periode berubah, ketersediaan produk diperbarui berdasarkan periode itu.
+   - Saat periode berubah, ketersediaan produk diperbarui secara dinamis berdasarkan periode itu.
 4. **Grid kartu produk**
-   - Foto/cover produk.
-   - Nama produk dan kategori.
-   - Harga sewa per hari.
-   - Badge ketersediaan yang jelas.
-   - Tombol Lihat Detail.
+   - Foto/cover produk (rasio seragam 4:3).
+   - Nama produk dan badge kategori.
+   - Harga sewa per hari dan tarif denda per jam.
+   - Badge ketersediaan unit yang jelas.
+   - Tombol **Lihat Detail** dan tombol cepat **Sewa Alat**.
    - Pagination di bagian bawah.
-5. **Footer toko**
+5. **Guest Browsing & Login Gate ("Sewa Alat")**
+   - Pengunjung dapat bebas menjelajahi katalog, mencari produk, dan melihat availability tanpa harus login (*guest browsing*).
+   - Menekan tombol **"Sewa Alat"** memicu login gate: jika customer belum login, munculkan modal/popup login/register yang mengikat produk dan periode sewa yang dipilih, lalu melakukan *intended redirect* ke checkout/cart setelah login berhasil.
+6. **Footer toko**
    - Kontak toko dan tautan media sosial jika ada.
-   - Jam operasional.
+   - Jam operasional dan lokasi toko.
    - Kebijakan pengembalian/retur dan informasi bantuan.
 
 ### Data dan perilaku
-- Katalog dan kategori harus milik tenant yang sedang dibuka.
+- Katalog dan kategori harus milik tenant yang sedang dibuka (`client_id`).
 - Search, kategori, harga, pagination, dan periode sewa harus bekerja bersama; perubahan filter tidak boleh menghapus filter lain secara tidak sengaja.
 - Jika tidak ada produk sesuai filter, tampilkan empty state beserta aksi membersihkan filter.
 - Jika request gagal, tampilkan pesan dan aksi muat ulang; jangan menampilkan seolah-olah stok tersedia.
 
 ### Kriteria selesai
-Header/footer reusable tersedia; filter/search berjalan; kartu menggunakan data produk; tanggal sewa memengaruhi availability; tautan detail membuka produk yang dipilih; layout responsif.
+Header/footer reusable tersedia; filter/search berjalan; kartu menggunakan data produk; tanggal sewa memengaruhi availability; tombol Sewa Alat menerapkan login gate; tautan detail membuka produk yang dipilih; layout responsif.
 
 ## 4.2 — Iqo: Detail Produk Customer
 
 **ID:** 7.1-I2  
 **Nama halaman:** Detail Produk  
 **Route pada sumber:** `/products/{id}`  
+**Route resmi tenant:** `/client/{subdomain}/products/{product}`  
 **Layout:** Base Layout Customer.
 
 ### Tujuan
-Menampilkan informasi lengkap satu jenis produk agar customer dapat memeriksa foto, harga, spesifikasi, aturan sewa, dan memilih jumlah sebelum menambahkan ke keranjang.
+Menampilkan informasi lengkap satu jenis produk agar customer dapat memeriksa foto, harga, spesifikasi, aturan sewa, ketersediaan unit, dan memilih jumlah sebelum menambahkan ke keranjang atau menyewa langsung.
 
 ### Bagian dan komponen UI
 1. **Galeri foto di sisi kiri/atas pada mobile**
    - Foto utama besar.
-   - Carousel/slider untuk foto lainnya.
+   - Carousel/slider untuk foto lainnya (dari array `products.image`).
    - Thumbnail yang dapat diklik untuk mengganti foto utama.
 2. **Informasi inti di sisi kanan/berikutnya pada mobile**
-   - Nama produk.
-   - Kategori.
+   - Nama produk dan kategori.
    - Harga sewa per hari.
-   - Tarif denda keterlambatan per jam.
-   - Ringkasan ketersediaan untuk periode yang dipilih.
+   - Tarif denda keterlambatan per jam (`late_fee_per_hour`).
+   - Ringkasan ketersediaan unit untuk periode yang dipilih.
    - Kontrol jumlah: tombol minus, angka, tombol plus; jumlah minimum 1.
-   - Tombol utama **Tambah ke Keranjang**.
+   - Tombol **Tambah ke Keranjang** dan tombol **Sewa Alat (Direct Checkout)**.
 3. **Tab informasi di bawah**
    - **Deskripsi:** penjelasan barang dan manfaatnya.
-   - **Spesifikasi teknis:** informasi sesuai produk.
-   - **Syarat penyewaan/jaminan:** teks aturan khusus dari pemilik toko.
+   - **Spesifikasi teknis:** informasi spesifik perlengkapan.
+   - **Syarat penyewaan/jaminan:** teks informasi ketentuan jaminan identitas toko (bersifat informasi administratif, bukan uang deposit).
 
 ### Perilaku dan validasi
-- Quantity tidak boleh kurang dari 1 dan harus dibatasi oleh ketersediaan yang diperoleh dari backend.
+- Quantity tidak boleh kurang dari 1 dan harus dibatasi oleh ketersediaan unit fisik yang diperoleh dari backend.
 - Jika periode belum dipilih, arahkan customer memilih periode sebelum memastikan ketersediaan.
 - Tambah ke keranjang memberi feedback berhasil dan mempertahankan tenant serta periode sewa.
-- Jangan mengasumsikan bahwa frasa “deposit” pada contoh lama berarti deposit uang. Aturan RentalBase terkini menggunakan **identitas/jaminan penyewa**, bukan uang deposit; samakan teks persyaratan dengan ketentuan bisnis yang disetujui.
+- Tombol **Sewa Alat** menerapkan *login gate*: jika belum login, arahkan ke login dengan *intended redirect* langsung ke direct checkout `/client/{subdomain}/checkout/{product}`.
+- Ketentuan jaminan identitas pada produk bersifat teks informasi; sistem tidak memungut uang deposit.
 
 ### Kriteria selesai
-Galeri berfungsi, tab dapat berpindah, harga/denda berasal dari data produk, jumlah tervalidasi, tambah ke keranjang memakai data yang dipilih.
+Galeri berfungsi, tab dapat berpindah, harga/denda berasal dari data produk, jumlah tervalidasi ketersediaan unit, tombol Sewa Alat dan Tambah ke Keranjang bekerja sesuai login status.
 
 ## 4.3 — Yanuar: Landing Page Utama RentalBase
 
 **ID:** 7.1-Y1  
-**Nama halaman:** Landing Page SaaS RentalBase  
+**Nama halaman:** Landing Page Platform SaaS RentalBase  
 **Route pada sumber:** `/`  
 **Layout:** Base Layout Public; Yanuar bertanggung jawab membuat navbar dan footer publik.
 
 ### Tujuan
-Memperkenalkan RentalBase kepada calon pelanggan bisnis rental dan mengarahkan mereka untuk mendaftar, melihat fitur, atau mengecek paket layanan.
+Memperkenalkan platform RentalBase kepada calon penyedia rental (calon client), menjelaskan keunggulan sistem SaaS multi-client, menyajikan perbandingan paket subscription, dan mengarahkan calon tenant ke alur pendaftaran.
 
 ### Bagian dan komponen UI
-1. **Navbar publik** — logo RentalBase; menu Fitur, Harga, Kontak; tombol Login Admin/Owner.
-2. **Hero section** — headline utama, deskripsi singkat manfaat, CTA “Mulai Buka Toko Gratis”.
-3. **Section fitur** — grid ikon dan keterangan fitur inti, contoh katalog, pengelolaan rental, order, unit fisik, pembayaran, retur, dan laporan sesuai fitur yang benar-benar disediakan.
-4. **Section harga/paket** — kartu Starter, Business, Professional/Pro; tiap kartu menampilkan harga aktual, batasan paket, dan CTA memilih paket. Angka kuota tidak boleh berupa angka yang berbeda antara landing dan backend.
-5. **Footer publik** — link Terms/Privacy, kontak pengelola/developer, dan informasi umum.
+1. **Navbar publik**
+   - Logo dan nama brand RentalBase.
+   - Navigasi menu: Fitur, Paket & Harga, Kontak/Tentang.
+   - Tombol CTA **Buka Toko / Memulai** dan tombol **Login Admin** (mengarahkan admin ke login panel tenant).
+2. **Hero section**
+   - Headline: *"RentalBase: Equipment Rental System — Kelola Bisnis Rental Lebih Efisien"*.
+   - Subheadline penjelasan sistem manajemen sewa multi-client.
+   - Tombol CTA utama: **"Memulai / Get Started"** mengarah langsung ke Form Pendaftaran Tenant (`/register-tenant`).
+   - Tombol sekunder: **"Pelajari Fitur"** (scroll halus ke section fitur).
+3. **Section platform features (Keunggulan RentalBase)**
+   - Multi-Tenant & Multi-Client Architecture (data terisolasi aman per client).
+   - Dynamic Availability & Timestamp Precision (kalkulasi jam & tanggal sewa akurat).
+   - Hybrid Late Fees Calculation (kalkulasi denda otomatis dengan opsi override admin).
+   - Identity Guarantee Workflow (verifikasi KTP & selfie tanpa deposit uang tunai).
+   - Automated Operations & In-App Notifications (notifikasi real-time dan auto-completion).
+4. **Section harga & paket subskripsi (Pricing Showcase)**
+   - Data paket diambil dari konfigurasi aplikasi (`config/packages.php`):
+     - **Starter:** Durasi 3 bulan, maks 10 produk, maks 50 unit, maks 5 kategori, 1 Admin Rental.
+     - **Business:** Durasi 6 bulan, maks 50 produk, maks 100 unit, maks 20 kategori, 3 Admin Rental, custom warna tema toko.
+     - **Professional:** Durasi 12 bulan, unlimited produk, unit & kategori, maks 10 Admin Rental, custom warna tema toko.
+   - Masing-masing kartu paket dilengkapi tombol **"Pilih Paket & Mulai"** yang membawa parameter paket ke formulir pendaftaran.
+5. **Footer publik**
+   - Link legal: Terms of Service, Privacy Policy.
+   - Link Login Admin (`/login`) untuk masuk dan memeriksa status aktivasi akun toko.
+   - Kontak bantuan, media sosial, dan copyright RentalBase.
 
 ### Perilaku dan validasi
-- CTA pendaftaran diarahkan ke alur pendaftaran tenant.
-- Tombol login membawa pengguna ke halaman login sesuai peran/konteks.
-- Tautan legal dan kontak harus memiliki tujuan valid.
-- Jangan menjanjikan fitur yang belum didukung backend.
+- CTA pendaftaran diarahkan ke alur pendaftaran tenant (`/register-tenant`).
+- Tombol login membawa pengguna ke portal login yang sesuai.
+- Tautan legal, navigasi anchor, dan kontak harus berfungsi dengan baik.
+- Tampilan harus responsif dan profesional, bebas dari dummy hardcoded setelah integrasi.
 
 ### Kriteria selesai
-Navbar/footernya reusable; CTA benar; informasi paket konsisten dengan aturan paket; desain responsif dan tidak memakai data dummy setelah integrasi.
+Navbar/footernya reusable; CTA terhubung ke registrasi; informasi paket selaras dengan `config/packages.php` dan batasan backend; layout responsif dan bersih.
 
 ## 4.4 — Yanuar: Pesanan Saya Customer
 
@@ -281,58 +306,102 @@ Tab filter, kartu, detail link, dan aksi kondisional berfungsi; status konsisten
 **ID:** 7.1-F1  
 **Nama halaman:** Dashboard Admin  
 **Route pada sumber:** `/admin/dashboard`  
-**Layout:** Base Layout Admin; Fiza membuat sidebar Admin dan topbar profil dasar.
+**Layout:** Base Layout Admin; Fiza membuat sidebar Admin, topbar profil, dan layout dasar admin yang reusable.
 
 ### Tujuan
-Memberi gambaran operasional ringkas untuk Admin Rental atas pesanan, verifikasi, rental aktif, pendapatan, dan penggunaan kuota paket.
+Memberi gambaran operasional ringkas untuk Admin Rental atas pesanan masuk, verifikasi pembayaran, unit yang sedang disewa pelanggan, omzet berjalan, serta pemantauan kuota limit paket langganan.
 
-### Navigasi dasar sidebar
-Dashboard, Pesanan, Pengiriman, Pengembalian, Inspeksi Fisik, Kasus Kerusakan, Kategori, Produk, Unit, Laporan. Menu Pengaturan/Metode Pembayaran/Notifikasi dapat ditambahkan sesuai route yang telah disetujui.
+### Struktur navigasi sidebar Admin (Lengkap & Terstruktur)
+1. **Navigasi Utama / Operasional:**
+   - 📊 **Dashboard** (`/admin/dashboard`)
+   - 📦 **Pesanan** (`/admin/orders`)
+   - 🚚 **Pengiriman** (`/admin/shipments`)
+   - 🔄 **Pengembalian** (`/admin/returns`)
+   - 🔍 **Inspeksi Fisik** (`/admin/condition-checks`)
+   - ⚠️ **Kasus Kerusakan** (`/admin/damage-cases`)
+2. **Katalog Peralatan:**
+   - 🏷️ **Kategori** (`/admin/categories`)
+   - 📦 **Produk** (`/admin/products`)
+   - 🔢 **Unit Fisik** (`/admin/units`)
+3. **Laporan & Audit:**
+   - 📈 **Laporan Transaksi** (`/admin/reports`)
+   - 📜 **Activity Log** (`/admin/activity-logs`)
+4. **Pengaturan Usaha:**
+   - 🎨 **Profil & Branding Toko** (`/admin/settings/profile` / `/admin/theme`)
+   - 💳 **Metode Pembayaran** (`/admin/settings/payments`)
+5. **Topbar Admin:**
+   - Tombol hamburger (toggle collapse sidebar).
+   - Nama toko / branding client aktif.
+   - Tanggal operasional hari ini.
+   - Badge status paket subscription (contoh: *Paket: Business (Aktif)*).
+   - Lonceng notifikasi in-app dengan indicator unread badge.
+   - Dropdown profil Admin (Avatar, Nama, Tombol Logout).
 
-### Komponen utama
-1. **Topbar** — tombol hamburger untuk buka/tutup sidebar; nama toko; dropdown profil dengan setelan dan logout.
-2. **Empat kartu metrik** — booking baru; menunggu verifikasi; rental aktif; pendapatan bulan berjalan. Definisi angka harus sama dengan query backend.
-3. **Indikator kuota** — progress bar penggunaan kuota produk/unit sesuai paket tenant.
-4. **Lima pesanan terbaru** — tabel/kartu ringkas berisi nomor order, customer, waktu, status dan tautan ke detail.
-5. **State UI** — loading, data kosong, error pemuatan, dan tampilan mobile.
+### Komponen utama halaman Dashboard
+1. **Empat kartu metrik utama:**
+   - **Order Baru:** Total pesanan baru berstatus `menunggu_konfirmasi` yang perlu ditinjau.
+   - **Verifikasi Pembayaran:** Total pesanan `menunggu_pembayaran` dengan bukti bayar yang diunggah dan butuh verifikasi.
+   - **Unit Sedang Disewa:** Total unit fisik yang sedang aktif disewa customer.
+   - **Pendapatan Bulan Ini:** Total omzet transaksi selesai bulan berjalan (format Rupiah ringkas, misal `Rp 12.5 Juta`).
+2. **Indikator kuota limit paket:**
+   - Progress bar penggunaan kuota Produk (mis. 8 / 10 produk untuk Starter).
+   - Progress bar penggunaan kuota Unit Fisik (mis. 24 / 50 unit untuk Starter).
+   - Indikator peringatan jika kuota mencapai 80% (kuning) atau 100% penuh (merah) beserta tombol upgrade paket.
+3. **Tabel pesanan terbaru (Recent Orders):**
+   - 5 pesanan terkini berisi nomor order, nama customer, jadwal sewa, total tagihan, badge status, dan link langsung ke detail pesanan.
+4. **State UI:**
+   - Loading skeleton, empty state bila belum ada transaksi, error state penanganan request, serta tampilan responsif mobile.
 
-### Perilaku
-- Semua metrik dan daftar hanya dari `client_id` Admin yang sedang masuk.
-- Jangan menampilkan transaksi tenant lain atau metrik Owner di dashboard Admin.
-- Sidebar menjadi komponen reusable untuk semua halaman Admin.
+### Perilaku dan keamanan
+- Seluruh metrik, daftar order, dan kuota terisolasi ketat berdasarkan `client_id` Admin yang sedang login.
+- Tidak membocorkan transaksi toko rental lain.
+- Sidebar dan topbar menjadi komponen master layout untuk seluruh halaman Admin.
 
 ### Kriteria selesai
-Layout Admin reusable; seluruh metrik berasal dari sumber data nyata saat integrasi; menu mengarah ke route valid; dashboard tidak mengandalkan angka hardcoded.
+Layout Admin reusable terpasang; seluruh metrik dan kuota berasal dari query backend riil; navigasi sidebar lengkap dan terarah; tidak ada data dummy hardcoded.
 
-## 4.6 — Fiza pada sumber: Form Pendaftaran Tenant
+## 4.6 — Fiza: Form Pendaftaran Tenant
 
 **ID:** 7.1-F2  
-**Nama halaman:** Pendaftaran Tenant  
+**Nama halaman:** Pendaftaran Tenant (Buka Toko Rental)  
 **Route pada sumber:** `/register-tenant`  
-**Layout:** Public Layout.
-
-> Catatan asal: tugas ini ditempatkan dalam bagian Fiza di file Minggu 7 Bagian 1, meskipun bagian Yanuar juga diberi judul “Pintu Depan Platform SaaS & Pendaftaran”. Pembagian sumber dipertahankan; tim perlu menyepakati pemilik akhir agar tidak ada duplikasi implementasi.
+**Layout:** Base Layout Public (navbar & footer platform RentalBase).
 
 ### Tujuan
-Mengumpulkan data bisnis dan PIC calon tenant, subdomain yang diminta, serta paket yang akan diajukan.
+Mengumpulkan data bisnis, verifikasi ketersediaan subdomain secara real-time, dan akun PIC dari calon pemilik usaha rental untuk diajukan ke Owner platform.
 
-### Form dan komponen
-1. **Step indicator** — langkah 1 Info Usaha, langkah 2 Info Pemilik/PIC.
-2. **Info usaha** — nama usaha/toko, deskripsi singkat, subdomain.
-3. **Validasi subdomain** — preview suffix domain; feedback tersedia/tidak tersedia; karakter diperbolehkan; menangani status sedang dicek dan error request.
-4. **Info PIC** — nama lengkap, email, nomor WhatsApp aktif, password, konfirmasi password.
-5. **Paket** — Starter, Business, Professional/Pro sesuai nama paket final.
-6. **Persetujuan** — checkbox Syarat dan Ketentuan dan tombol submit.
-7. **Feedback** — validasi per field, loading submit, pesan sukses dan petunjuk langkah selanjutnya.
+### Form dan komponen multi-step
+1. **Step Indicator:**
+   - Step 1: Informasi Usaha & Subdomain
+   - Step 2: Akun Admin / PIC Toko
+   - Step 3: Konfirmasi & Pilihan Paket
+2. **Step 1 — Info Usaha:**
+   - Nama usaha / nama toko rental.
+   - Deskripsi singkat layanan sewa.
+   - Input usulan subdomain dengan preview suffix (misal: `[jaya] .rentalbase.com`).
+   - Pengecekan real-time ketersediaan subdomain secara asynchronous (debounce 500ms) dengan feedback visual (tersedia, sudah dipakai, atau format tidak valid).
+3. **Step 2 — Info PIC / Admin:**
+   - Nama lengkap penanggung jawab.
+   - Email aktif (digunakan untuk login dan menerima notifikasi approval).
+   - Nomor WhatsApp aktif (format Indonesia, divalidasi untuk kebutuhan kontak Owner via WhatsApp).
+   - Password dan konfirmasi password akun admin.
+4. **Step 3 — Paket & Persetujuan:**
+   - Pilihan paket subscription (Starter, Business, Professional) dengan ringkasan fitur & limit.
+   - Checkbox persetujuan Syarat & Ketentuan platform RentalBase.
+   - Tombol submit **"Kirim Pengajuan Pendaftaran"**.
+5. **Rate Limiting & Feedback:**
+   - Terapkan rate limit `throttle:5,60` pada submission endpoint untuk mencegah spam bot.
+   - Loading spinner saat pengiriman berlangsung; tombol otomatis disabled mencegah submit ganda.
+   - Layar sukses yang menginformasikan pengajuan berhasil dibuat dengan status `menunggu_verifikasi`, disertai penjelasan bahwa verifikasi sedang diproses oleh Owner, serta tombol CTA utama **"Menuju Halaman Login"** (`/login`). Calon tenant diarahkan langsung untuk mencoba login menggunakan email & password yang baru didaftarkan guna mengetahui status aktivasi tokonya.
 
-### Validasi
-- Subdomain harus unik dan divalidasi backend, tidak cukup hanya pemeriksaan UI.
-- Email dan nomor kontak memiliki format yang dapat diterima.
-- Password dan konfirmasi harus sesuai dengan kebijakan aplikasi.
-- Jangan menganggap status “approved” berarti client dapat diakses sebelum provisioning tenant selesai.
+### Validasi dan aturan backend
+- Subdomain wajib unik pada seluruh database (tidak boleh terpakai di `clients.subdomain` maupun antrean `client_registrations.subdomain`).
+- Subdomain hanya boleh berupa huruf kecil alfanumerik dan tanda hubung minus (`^[a-z0-9-]+$`).
+- Status awal tersimpan di `client_registrations` adalah `menunggu_verifikasi`.
+- Saat disetujui Owner nantinya, sistem secara otomatis mengirimkan email konfirmasi ke email PIC dan membuatkan/mengaktifkan akun admin.
 
 ### Kriteria selesai
-Alur multi-step berjalan, subdomain dicek secara asynchronous, data terkirim ke backend, dan hasilnya menuntun calon tenant ke halaman cek status atau langkah yang disetujui.
+Formulir multi-step berfungsi lancar; validasi subdomain realtime bekerja; proteksi rate limit aktif; data tersimpan di tabel `client_registrations`; pengguna diarahkan ke halaman login untuk verifikasi status autentikasi.
 
 ## 4.7 — Iak: Pengiriman Admin
 
@@ -463,32 +532,47 @@ Memastikan customer meninjau order dan periode, memasukkan alamat, memberikan da
 ### Kriteria selesai
 Form memiliki validasi, preview file, summary akurat, request order berhasil, dan status lanjutan diambil dari backend.
 
-## 5.3 — Yanuar: Cek Status Pendaftaran Tenant
+## 5.3 — Yanuar: Login Gate & Notifikasi Status Verifikasi Tenant
 
 **ID:** 7.2-Y1  
-**Nama halaman:** Status Pendaftaran  
-**Route pada sumber:** `/register-tenant/status`  
-**Layout:** Public Layout.
+**Nama alur/komponen:** Login Gate & Feedback Status Pendaftaran Tenant  
+**Route integrasi:** `/login` (Konteks Autentikasi Admin Tenant)  
+**Layout:** Auth Layout.
 
 ### Tujuan
-Memungkinkan calon tenant mengecek hasil peninjauan pengajuan tanpa harus menghubungi tim pusat untuk setiap pembaruan.
+Menghilangkan ketergantungan pada halaman terpisah dengan kolom input email. Calon tenant langsung menggunakan portal Login (`/login`) untuk menguji status aktivasi tokonya. Sistem secara cerdas memvalidasi kredensial (email & password), lalu memberikan notifikasi kontekstual mengenai status peninjauan akun toko oleh Owner (belum diverifikasi, ditolak, atau aktif).
 
-### Komponen UI
-- Input email PIC yang digunakan saat pendaftaran.
-- Tombol “Cek Status”.
-- State loading ketika sistem mencari pengajuan.
-- **Menunggu verifikasi:** ikon jam/pending, teks bahwa pendaftaran sedang ditinjau; contoh sumber menyebut “1×24 jam”, sehingga copy harus disesuaikan dengan SLA yang benar-benar disepakati.
-- **Disetujui:** ikon centang, pesan subdomain aktif, tombol menuju panel Admin.
-- **Ditolak:** ikon silang dan alasan penolakan yang diberikan backend.
-- State email tidak ditemukan atau request gagal.
+### Alur Kerja & Interaksi UI
+1. **Percobaan Login Calon Tenant:**
+   - Calon tenant memasukkan email PIC dan password yang baru saja didaftarkan di form login.
+   - Sistem memverifikasi kecocokan kredensial akun.
+2. **Kondisi 1 — Akun Belum Diverifikasi Owner (`menunggu_verifikasi`):**
+   - Autentikasi menahan akses masuk ke dashboard.
+   - Form login menampilkan **Alert Notifikasi Khusus (Kuning/Biru Info)**:
+     - Ikon jam / *pending verification*.
+     - Judul: *"Pendaftaran Toko Sedang Ditinjau"*.
+     - Pesan deskriptif: *"Akun toko Anda saat ini sedang dalam proses peninjauan oleh tim Owner/Super Admin RentalBase. Anda belum dapat mengakses panel admin sampai pengajuan disetujui. Silakan tunggu notifikasi email atau hubungi tim dukungan jika membutuhkan bantuan segera."*
+     - Tombol bantuan cepat: link WhatsApp support atau reload status.
+3. **Kondisi 2 — Pendaftaran Ditolak oleh Owner (`ditolak`):**
+   - Form login menampilkan **Alert Notifikasi Penolakan (Merah Error)**:
+     - Ikon silang / *rejected*.
+     - Judul: *"Pengajuan Pendaftaran Toko Ditolak"*.
+     - Pesan deskriptif memuat **catatan alasan penolakan resmi** dari Owner yang tersimpan di database: *"Alasan penolakan: [Alasan Penolakan dari Owner]"*.
+     - Tombol CTA: *"Daftar Ulang"* (mengarahkan kembali ke `/register-tenant`).
+4. **Kondisi 3 — Pendaftaran Telah Disetujui Owner (`disetujui` / `active`):**
+   - Kredensial valid dan tenant aktif.
+   - Muncul feedback toast sukses singkat: *"Login Berhasil! Mengalihkan ke panel toko..."*
+   - Sistem secara otomatis mengarahkan (redirect) ke Dashboard Admin Tenant (`/admin/dashboard`).
+5. **Kondisi 4 — Toko Ditangguhkan (`suspended`):**
+   - Menampilkan alert peringatan bahwa toko dinonaktifkan sementara oleh Owner, mengarahkan ke halaman kontak bantuan platform.
 
-### Validasi/keamanan
-- Jangan membocorkan data pengajuan hanya berdasarkan tebakan email; endpoint harus membatasi data yang ditampilkan.
-- Status pada layar tidak boleh hardcoded.
-- Akses panel Admin diberikan hanya jika tenant/account telah aktif sesuai aturan backend.
+### Validasi & Keamanan
+- Tidak ada form/kolom publik sembarangan untuk menebak-nebak status pendaftaran orang lain tanpa password.
+- Pengecekan status pendaftaran hanya ditampilkan apabila pasangan email dan password yang dimasukkan valid/cocok (mencegah enumerasi akun dan kebocoran informasi penolakan).
+- Status peninjauan dan alasan penolakan ditarik dinamis dari respons backend (`403 Forbidden` atau respons JSON terstruktur dengan detail status), bukan data statis hardcoded.
 
-### Kriteria selesai
-Semua status ditangani; CTA hanya tersedia pada kondisi yang sah; error dan email tidak ditemukan memiliki pesan yang jelas.
+### Kriteria Selesai
+Calon tenant dapat langsung mengetahui status pendaftaran tokonya hanya dengan mencoba login di `/login`; alert peninjauan (`menunggu_verifikasi`) muncul jelas saat belum disetujui; alert penolakan (`ditolak`) menampilkan alasan spesifik dari Owner; dan akun yang telah disetujui langsung sukses masuk ke dashboard admin tanpa hambatan.
 
 ## 5.4 — Yanuar: Detail Pesanan Customer
 
@@ -501,20 +585,21 @@ Semua status ditangani; CTA hanya tersedia pada kondisi yang sah; error dan emai
 Memberi detail penuh satu order: progres status, pembayaran, identitas, pengiriman, dan tindakan customer yang sedang diizinkan.
 
 ### Panel halaman
-1. **Stepper status** — Pesan → Bayar → Verifikasi → Dikirim → Diterima, disesuaikan dengan status backend yang final.
-2. **Detail order** — ID, item, jumlah, periode sewa, alamat, subtotal dan total.
-3. **Panel identitas** — status pemeriksaan dokumen/jaminan; jika ditolak, tampilkan alasan dan jalur unggah ulang jika backend mendukungnya.
-4. **Panel pembayaran** — instruksi rekening atau QRIS aktif dari endpoint payment methods; uploader bukti jika status dan identitas telah memenuhi syarat.
-5. **Panel pengiriman** — metode serah-terima, nama kurir, nomor resi/link tracking jika ada.
-6. **Aksi customer** — menerima barang atau ajukan pengembalian hanya bila diizinkan status/backend.
+1. **Stepper status** — Menunggu Konfirmasi → Dikonfirmasi / Menunggu Pembayaran → Pembayaran Terverifikasi → Siap Kirim / Dikirim → Diterima / Sedang Disewa → Dikembalikan → Selesai (atau Dibatalkan/Ditolak), disesuaikan dengan enum status backend final.
+2. **Detail order** — ID, item, jumlah, periode sewa (presisi tanggal & jam), alamat pengiriman/ambil toko, subtotal dan total.
+3. **Panel identitas** — status pemeriksaan dokumen/jaminan (KTP & selfie); jika ditolak, tampilkan alasan dan opsi unggah ulang.
+4. **Panel pembayaran** — instruksi rekening bank transfer atau QRIS aktif dari endpoint payment methods; uploader bukti transfer jika status identitas telah diverifikasi.
+5. **Panel pengiriman** — metode serah-terima (`kurir` / `ambil_toko`), nama kurir, nomor resi, tautan pelacakan, dan tombol konfirmasi "Terima Barang" saat barang sampai.
+6. **Panel status refund & pembatalan** — jika pesanan dibatalkan atau ditolak setelah customer membayar, tampilkan badge status refund (`tidak_ada`, `menunggu_refund`, `refund_selesai`), catatan refund dari admin, serta preview bukti transfer pengembalian dana (`refund_proof`) saat dana telah dikembalikan.
+7. **Aksi customer** — konfirmasi penerimaan barang atau ajukan pengembalian barang hanya bila diizinkan status/backend.
 
 ### Validasi
-- Customer hanya bisa membuka order miliknya.
-- Informasi resi dan bukti pembayaran tidak boleh diambil dari input URL bebas.
-- Aksi “Terima Barang” harus mengirim request dan memperbarui status berdasarkan respons; jangan hanya mengganti badge di browser.
+- Customer hanya bisa membuka order miliknya dalam konteks tenant yang relevan.
+- Informasi resi, bukti pembayaran, dan bukti refund tidak boleh diambil dari input URL bebas.
+- Aksi “Terima Barang” harus mengirim request ke backend dan memperbarui status berdasarkan respons API; jangan hanya mengganti badge di browser.
 
 ### Kriteria selesai
-Detail lengkap, stepper konsisten, upload bukti dan aksi status terhubung API, akses order diotorisasi.
+Detail lengkap, stepper konsisten, status refund & bukti transfer tampil akurat saat terjadi pembatalan berbayar, upload bukti dan aksi status terhubung API, serta akses order diotorisasi aman.
 
 ## 5.5 — Fiza: Login Admin dan Owner
 
@@ -539,14 +624,14 @@ Menyediakan form masuk dengan tampilan konsisten untuk Admin Rental dan Owner ta
 - Setelah login, backend menentukan role dan redirect ke area yang sesuai.
 - Admin hanya bisa masuk ke tenant yang menjadi wewenangnya; Owner ke panel pusat.
 - UI tidak boleh mengandalkan role dari form yang dikirim pengguna.
-- Yanuar bertanggung jawab membuat Base Layout Owner agar konsisten dengan halaman Owner lainnya.
+- Fiza bertanggung jawab membuat Base Layout Owner agar konsisten di seluruh modul Owner (Dashboard, Registrations, Clients, Admins, Subscriptions, Notifications).
 
 ### Kriteria selesai
 Login tidak mengirim pengguna ke panel yang salah, session/token ditangani dengan benar, logout mengakhiri session sesuai implementasi, dan error tidak membocorkan rincian sensitif.
 
-## 5.6 — Fiza: Daftar Pesanan Admin
+## 5.6 — Iqo: Daftar Pesanan Admin
 
-**ID:** 7.2-F2  
+**ID:** 7.2-I3 (dialihkan dari Yanuar / 7.2-Y3)  
 **Nama halaman:** Master Pesanan Admin  
 **Route pada sumber:** `/admin/orders`  
 **Layout:** Base Layout Admin.
@@ -745,9 +830,9 @@ Login/register terhubung ke backend, error email terdaftar/password benar ditamp
 ### Kriteria selesai
 Flow reset memakai mekanisme Laravel/backend resmi, token tidak hardcoded, password baru tersimpan secara aman, dan setelah sukses pengguna mendapat instruksi masuk kembali.
 
-## 6.5 — Fiza: Detail Pesanan Admin
+## 6.5 — Iqo: Detail Pesanan Admin
 
-**ID:** 8.1-F1  
+**ID:** 8.1-I3 (dialihkan dari Yanuar / 8.1-Y3)  
 **Route pada sumber:** `/admin/orders/{id}`  
 **Layout:** Base Layout Admin.
 
@@ -755,25 +840,30 @@ Flow reset memakai mekanisme Laravel/backend resmi, token tidak hardcoded, passw
 Admin meninjau satu order, memeriksa identitas/jaminan, memverifikasi bukti pembayaran, mengalokasikan unit fisik, serta menangani pembatalan dan refund bila berlaku.
 
 ### Susunan halaman
-1. **Header** — ID order, badge status saat ini, tombol aksi yang memang diizinkan. Sumber lama mencantumkan tombol Batalkan Pesanan berwarna merah.
-2. **Rincian order** — data customer, periode sewa, alamat, item, jumlah, harga dan total.
-3. **Panel review identitas** — preview foto dokumen identitas dan selfie; tombol verifikasi/terima; tombol tolak dengan modal input alasan; status dan catatan review sebelumnya.
-4. **Panel review pembayaran** — preview bukti pembayaran yang dapat diperbesar; tombol verifikasi pembayaran dan tolak bukti disertai alasan.
-5. **Panel alokasi unit** — per baris item/jenis produk, dropdown unit fisik yang siap untuk periode pesanan; mendukung jumlah unit sesuai kuantitas; ringkasan asset code yang terpilih.
-6. **Panel pengiriman/pengembalian** — link ke informasi shipment/return setelah statusnya tersedia.
-7. **Popup pembatalan/refund** — jika order sudah dibayar dan dibatalkan oleh Admin sesuai aturan, input catatan/status refund dan upload bukti refund bila transfer dikembalikan di luar sistem.
-8. **Riwayat aktivitas** — jika API menyediakan, tampilkan timestamp dan perubahan status penting.
+1. **Header & Aksi Cepat**
+   - ID order, tanggal pemesanan, badge status order terkini, dan badge status refund (jika dalam proses refund).
+   - Tombol **Konfirmasi Pesanan** (`menunggu_konfirmasi` → `dikonfirmasi`/`menunggu_pembayaran`) dan tombol **Tolak Pesanan** (`menunggu_konfirmasi` → `ditolak` dengan modal input alasan penolakan).
+   - Tombol bahaya **Batalkan Pesanan** (membuka popup pembatalan & alur refund manual).
+2. **Rincian order** — data kontak customer (nama, email, WhatsApp), periode sewa (presisi tanggal & jam mulai s/d selesai), alamat tujuan / metode ambil di toko, daftar barang, jumlah, tarif sewa, denda per jam, dan total pembayaran.
+3. **Panel review identitas & jaminan** — preview gambar dokumen identitas (KTP) dan foto wajah/selfie yang dapat di-zoom; tombol **Verifikasi Identitas** (`diverifikasi`); tombol **Tolak Identitas** (`ditolak`) dengan modal catatan alasan penolakan jaminan.
+4. **Panel review bukti pembayaran** — preview bukti transfer / resi QRIS yang diunggah customer; rincian rekening tujuan; tombol **Verifikasi Pembayaran** (`pembayaran_terverifikasi`); tombol **Tolak Pembayaran** (`ditolak`) dengan input alasan.
+5. **Panel alokasi unit fisik** — per baris produk pesanan, dropdown pemilihan unit fisik (`equipment_units`) yang berstatus `available` dan bebas konflik jadwal pada periode tersebut; jumlah unit yang dialokasikan harus sama dengan kuantitas yang disewa; ringkasan kode aset / barcode unit terpilih.
+6. **Panel logistik (pengiriman/pengembalian)** — link dan status serah-terima barang, nama ekspedisi/kurir, nomor resi, serta riwayat tanggal penyerahan dan penerimaan unit.
+7. **Popup pembatalan & manajemen refund** — jika pesanan dibatalkan setelah pembayaran diverifikasi:
+   - Input pilihan status refund: `tidak_ada`, `menunggu_refund`, `refund_selesai`.
+   - Textarea catatan alasan pembatalan dan detail rekening/e-wallet pengembalian dana customer.
+   - Uploader file bukti transfer refund manual (`refund_proof`) sebagai bukti resmi pengembalian dana di luar sistem.
+8. **Riwayat aktivitas & audit trail** — linimasa perubahan status pesanan dengan pencatatan timestamp dan pelaku admin.
 
 ### Validasi dan aturan
-- Admin hanya boleh membuka order pada tenant-nya.
-- Verifikasi identitas tidak boleh disamakan dengan verifikasi pembayaran; keduanya langkah berbeda.
-- Upload bukti pembayaran customer hanya diterima jika persyaratan identitas telah diverifikasi.
-- Pemilihan unit harus mengecek benturan periode dan status unit. Setelah sukses disimpan, kontrol alokasi tidak dapat diubah sembarangan.
-- Pembatalan dibatasi status yang diizinkan; refund off-system harus dicatat dan bukti ditautkan ke order.
-- Backend memeriksa semua transisi status, walau tombol tidak terlihat.
+- Admin hanya berhak membuka dan mengubah pesanan pada tenant-nya sendiri (`client_id`).
+- Verifikasi identitas merupakan gerbang utama sebelum customer dapat mengunggah bukti pembayaran.
+- Alokasi unit wajib memvalidasi jadwal agar tidak terjadi double booking (benturan periode).
+- Pembatalan pesanan yang telah dibayar wajib mencatat status refund dan mengunggah bukti transfer pengembalian dana manual jika diselesaikan.
+- Transisi status diverifikasi ketat oleh backend sesuai alur resmi.
 
 ### Kriteria selesai
-Admin dapat membuka detail, review identitas, verifikasi/tolak pembayaran, mengalokasikan unit, membatalkan sesuai aturan, mencatat refund bila ada, dan mendapat feedback yang akurat dari API.
+Admin dapat mengonfirmasi/menolak pesanan baru, meninjau identitas, memverifikasi pembayaran, mengalokasikan unit fisik tanpa tabrakan jadwal, membatalkan pesanan disertai pencatatan refund dan unggah bukti transfer, serta status terbarui secara real-time.
 
 ## 6.6 — Fiza: Laporan Transaksi Admin
 
@@ -894,9 +984,9 @@ Mengelola unit fisik individual yang menjadi stok nyata rental. Satu jenis produ
 ### Kriteria selesai
 Tambah/cari/filter/update unit berfungsi; limit kuota benar; status tidak merusak order berjalan; availability di katalog mengacu pada unit fisik.
 
-## 7.2 — Iqo: Profil dan Branding Admin
+## 7.2 — Yanuar: Profil dan Branding Admin
 
-**ID:** 8.2-I2  
+**ID:** 8.2-Y3 (dialihkan dari Iqo / 8.2-I2)  
 **Route pada sumber:** `/admin/settings/profile`  
 **Route saat ini yang pernah terdaftar pada repository:** `/admin/theme` (perlu diselaraskan; lihat Bagian 11).  
 **Layout:** Base Layout Admin.
@@ -965,9 +1055,9 @@ Memblokir akses ke area tenant jika tenant disuspend/nonaktif sesuai respons bac
 ### Kriteria selesai
 Saat backend menandai client `suspended`, halaman tenant menampilkan layar ini; ketika status kembali active, akses normal pulih.
 
-## 7.5 — Yanuar: Dashboard Owner Pusat
+## 7.5 — Fiza: Dashboard Owner Pusat
 
-**ID:** 8.2-Y3  
+**ID:** 8.2-F3 (ditukar dari Yanuar / 8.2-Y3)  
 **Route pada sumber:** `/owner/dashboard`  
 **Layout:** Base Layout Owner yang reusable.
 
@@ -1108,9 +1198,9 @@ Feed berfungsi, link benar, status baca tersimpan, dan konten terisolasi per ten
 
 # 8. MINGGU 9 BAGIAN 1 — PEMBAYARAN, PERSETUJUAN TENANT, SUBSCRIPTION, ACTIVITY LOG
 
-## 8.1 — Iqo: Metode Pembayaran Admin
+## 8.1 — Yanuar: Metode Pembayaran Admin
 
-**ID:** 9.1-I1  
+**ID:** 9.1-Y1 (dialihkan dari Iqo / 9.1-I1)  
 **Route pada sumber:** `/admin/settings/payments`  
 **Layout:** Base Layout Admin.
 
@@ -1147,36 +1237,36 @@ Mengatur instruksi pembayaran yang ditampilkan kepada customer saat membayar ord
 ### Kriteria selesai
 Admin dapat menambah/mengubah/menonaktifkan metode, file QRIS tervalidasi, halaman customer hanya menunjukkan metode aktif, dan API dipakai sesuai kontrak.
 
-## 8.2 — Yanuar: Antrean Persetujuan Tenant Owner
+## 8.2 — Fiza: Antrean Persetujuan Tenant Owner
 
-**ID:** 9.1-Y1  
+**ID:** 9.1-F2 (dialihkan dari Yanuar / 9.1-Y1)  
 **Route pada sumber:** `/owner/registrations`  
 **Layout:** Base Layout Owner.
 
 ### Tujuan
-Memberi tim pusat kemampuan meninjau pengajuan tenant sebelum toko diaktifkan.
+Memberi tim pusat kemampuan meninjau pengajuan tenant baru (dari Form Pendaftaran Tenant buatan Fiza), memverifikasi data PIC/usaha, menghubungi calon tenant via WhatsApp, dan memproses persetujuan toko.
 
 ### Antrean pendaftaran
-- Tabel tanggal pengajuan, nama calon usaha, subdomain yang diminta, paket.
-- Filter/pencarian status atau calon usaha jika diperlukan.
-- Empty state saat tidak ada pengajuan.
+- Tabel tanggal pengajuan, nama calon usaha, subdomain yang diminta, paket langganan (Starter/Business/Professional), nomor kontak WhatsApp PIC, dan status pengajuan.
+- Filter/pencarian status (`menunggu_verifikasi`, `disetujui`, `ditolak`) atau pencarian nama calon usaha.
+- Empty state saat tidak ada antrean pengajuan baru.
 
 ### Review detail/modal
-- Informasi usaha dan PIC.
-- Email dan nomor kontak.
-- Paket yang diminta.
-- Bukti pembayaran biaya layanan platform hanya jika biaya/flow ini memang berlaku. Sumber lama menyebutnya, tetapi keputusan bisnis/pembayaran harus dipastikan sebelum membangun field ini.
-- Tombol WhatsApp direct bila nomor memang diberikan dan link sudah tervalidasi.
-- Tombol **Tolak** membuka form alasan penolakan.
-- Tombol **Setujui & Buat Toko** menampilkan konfirmasi dan memanggil backend untuk memproses persetujuan/provisioning tenant.
+- Informasi lengkap usaha dan PIC: nama usaha, deskripsi, nama lengkap PIC, email, dan nomor WhatsApp.
+- Subdomain yang diajukan dan paket yang dipilih.
+- Bukti pembayaran biaya platform/langganan jika tenant mengunggahnya pada saat registrasi.
+- **Tombol WhatsApp Direct**: Tautan cepat `https://wa.me/{admin_phone}` dengan template pesan pembuka otomatis untuk verifikasi cepat langsung ke PIC.
+- Tombol **Tolak**: membuka modal input alasan penolakan yang akan dicatat di database dan dapat dibaca calon tenant di halaman cek status.
+- Tombol **Setujui & Buat Toko**: menampilkan konfirmasi, memicu otomatisasi provisioning database tenant, membuat akun Admin Rental awal, dan mengirim email notifikasi resmi berisi instruksi aktivasi dan kredensial login admin.
 
 ### Aturan
-- Tombol tidak boleh membuat tenant hanya di frontend. Semua provisioning dikerjakan backend.
-- Persetujuan harus memeriksa keunikan subdomain, kelengkapan data dan status pengajuan.
-- Jika proses provisioning gagal, status harus tetap jelas dan pengguna diberi pesan bahwa proses belum selesai.
+- Fitur ini merupakan bagian integral dari panel Owner yang dikelola Fiza.
+- Persetujuan wajib memvalidasi kembali keunikan subdomain dan kelengkapan data.
+- Semua alur provisioning tenant, pembuatan akun admin, dan pengiriman email berjalan transaksional di backend (DB transaction).
+- Jika proses provisioning gagal, rollback dilakukan dan UI menampilkan pesan error teknis yang informatif tanpa mengubah status menjadi `disetujui`.
 
 ### Kriteria selesai
-Owner dapat meninjau, menolak dengan alasan, menyetujui pengajuan, melihat feedback backend, dan tenant yang aktif bisa diakses melalui subdomain yang resmi.
+Owner dapat meninjau data pengajuan, menghubungi via WhatsApp direct, menolak dengan alasan tercatat, menyetujui pengajuan dengan pembuatan toko & admin otomatis serta trigger email konfirmasi, dan tenant aktif siap diakses via subdomain.
 
 ## 8.3 — Fiza: Subscription Paket Owner
 
@@ -1270,71 +1360,77 @@ Memberi customer tempat melihat dan mengubah informasi akun dasar serta memperba
 - Tombol “Perbarui Password”.
 - Bila perubahan password langsung tidak tersedia, gunakan flow reset password resmi daripada mengirim password ke endpoint yang tidak ada.
 
-### Integrasi Iqo
+### Integrasi Iqo (Transaksi, Checkout, dan Order Admin)
 - Hapus hardcoded JSON di katalog dan keranjang saat data backend siap.
 - Hubungkan kalender agar mengirim `start_date` dan `end_date` dalam format yang disepakati API.
 - Pastikan identitas/alamat/foto checkout dikirim sebagai payload yang benar, termasuk multipart/form-data untuk file.
+- **Integrasi Lifecycle Order Admin:**
+  1. Hubungkan tabel `/admin/orders` dengan filter tanggal, pencarian nama customer/kode order, dan filter status backend.
+  2. Implementasikan seluruh aksi pada `/admin/orders/{id}`: konfirmasi/tolak pesanan baru, approval/reject jaminan KTP & selfie, verifikasi bukti pembayaran, alokasi unit fisik individual (`equipment_units`) dengan validasi anti-bentrok jadwal, serta popup pembatalan berbayar (input status refund `orders.refund_status` dan upload bukti transfer refund manual `refund_proof`).
 - Selesaikan route profil agar konsisten dengan konteks tenant tanpa mengubah identitas customer menjadi user terpisah per toko.
 
 ### Kriteria selesai
-Profil memuat data API, edit hanya field yang didukung, keamanan akun memakai endpoint resmi, dan route tenant-scoped konsisten.
+Profil memuat data API, edit hanya field yang didukung, keamanan akun memakai endpoint resmi, alur checkout terhubung mulus ke order lifecycle admin, dan alokasi unit fisik terkunci aman di backend.
 
-## 9.2 — Yanuar: Integrasi Auth dan Sistem Registrasi
+## 9.2 — Yanuar: Integrasi Auth, Subdomain, Branding & Payments UI
 
 **ID:** 9.2-Y1  
-**Jenis pekerjaan:** Integrasi; bukan halaman baru pada sumber.
+**Jenis pekerjaan:** Integrasi Frontend & Alur Interaksi.
 
 ### Validasi subdomain asynchronous
-- Form `/register-tenant` memanggil endpoint cek ketersediaan subdomain saat pengguna mengetik.
-- Terapkan debounce sekitar 500 ms seperti yang diusulkan dokumen sumber agar tidak mengirim request pada setiap ketukan tanpa jeda.
-- Tampilkan state sedang dicek, tersedia, sudah dipakai, format tidak valid, dan request gagal.
-- Saat submit, backend tetap melakukan validasi unik final karena keadaan dapat berubah sejak pengecekan UI.
+- Form `/register-tenant` (milik Fiza) memanggil endpoint cek ketersediaan subdomain saat pengguna mengetik.
+- Terapkan debounce 500 ms agar request efisien dan tidak membebani server.
+- Tampilkan visual state: sedang memeriksa (spinner), subdomain tersedia (hijau), sudah dipakai (merah), format tidak valid, dan error koneksi.
 
-### Integrasi autentikasi
-- Pastikan login Admin dan customer menyimpan session/token sesuai pilihan autentikasi Laravel yang benar-benar dipakai project.
-- Verifikasi redirect role: Customer ke area customer; Admin ke panel tenant; Owner ke panel pusat.
-- Pastikan user yang belum login diarahkan ke autentikasi dan dikembalikan ke tujuan yang sah.
-- Pastikan logout menghapus session dan halaman terlindungi tidak tetap terbuka dengan data sensitif dari cache.
-- Uji kasus session kedaluwarsa, kredensial tidak valid, akun nonaktif, dan tenant suspended.
+### Integrasi autentikasi & middleware
+- Pastikan login Admin dan customer menyimpan session/token sesuai mekanisme autentikasi Laravel.
+- Verifikasi redirect role: Customer ke area customer (`/client/{subdomain}` atau intended redirect), Admin ke `/admin/dashboard`, Owner ke `/owner/dashboard`.
+- Pengunjung yang menekan tombol "Sewa Alat" pada katalog diarahkan login gate dan dikembalikan ke checkout secara mulus (*intended redirect*).
+- Hubungkan UI suspended dengan status client `suspended` tanpa memblokir root platform atau tenant lain yang aktif.
 
-### Integrasi middleware tenant suspended
-- Hubungkan UI suspended dengan respons/exception backend yang disepakati.
-- Jangan mengartikan setiap error 403, 404, atau network failure sebagai tenant suspended.
-- Pastikan suspend pada satu tenant tidak memblokir tenant lain yang aktif atau landing page platform.
+### Integrasi Branding & Metode Pembayaran UI
+- Hubungkan form branding toko (`/admin/settings/profile` atau `/admin/theme`) dengan preview logo dan live update warna tema toko (CSS variable / Tailwind token).
+- Hubungkan form tambah rekening bank dan uploader QRIS (`/admin/settings/payments`) dengan validasi tipe file gambar dan preview barcode.
 
 ### Kriteria selesai
-Validasi subdomain memeriksa backend, auth/role redirect tidak tertukar, session bekerja pada refresh dan route terlindungi, dan UI suspended muncul hanya karena status client yang sesuai.
+Validasi subdomain interaktif, login gate & intended redirect bekerja presisi, session auth stabil, live preview tema toko dan uploader QRIS berfungsi lancar.
 
-## 9.3 — Fiza: Notifikasi Owner
+## 9.3 — Fiza: Notifikasi Owner, Backend Order API, dan Scheduled Commands
 
 **ID:** 9.2-F1  
 **Route pada sumber:** `/owner/notifications`  
 **Layout:** Base Layout Owner.
 
 ### Tujuan
-Memusatkan peringatan yang terkait dengan operasi platform dan tindakan yang harus ditangani Owner.
+Memusatkan peringatan operasional tingkat platform untuk Owner, menyediakan endpoint transaksi order yang aman & terkunci, serta mengimplementasikan scheduled console commands background task.
 
-### Jenis notifikasi pada sumber
-- Pengajuan tenant baru menunggu persetujuan.
-- Peringatan kuota keseluruhan platform (misalnya ambang 90%) jika metrik tersebut memang tersedia.
-- Tenant mengunggah bukti pembayaran perpanjangan manual jika flow pembayaran itu diaktifkan.
+### Komponen UI Notifikasi Owner
+- Feed notifikasi platform: pendaftaran tenant baru menunggu persetujuan, upload bukti perpanjangan langganan manual, dan peringatan kuota kapasitas tenant.
+- Badge unread, filter tipe alert, tombol "Tandai Semua Dibaca", dan deep link ke halaman penanganan terkait.
 
-### Komponen UI
-- Feed notifikasi platform.
-- Ikon per jenis alert.
-- Judul, ringkasan pesan, timestamp, status read/unread.
-- Aksi “Tandai Semua Dibaca”.
-- Klik notifikasi langsung menuju pengajuan/tenant/subscription terkait.
-- Loading, empty, error, dan pagination.
+### Backend Order API & Data Consistency
+- Endpoint transaksional untuk konfirmasi/penolakan order, verifikasi identitas, verifikasi pembayaran, alokasi unit fisik (`equipment_units`), pembatalan pesanan, serta pencatatan `refund_status` dan penyimpanan file `refund_proof`.
+- Mengunci data menggunakan database transaction (`DB::transaction`) dan pencegahan benturan jadwal (*double booking lock*).
 
-### Integrasi tambahan Fiza: aksi pada detail order
-- Jadikan aksi “Approve/Verifikasi Identitas”, “Verifikasi Pembayaran”, dan “Batalkan Pesanan” pada `/admin/orders/{id}` sebagai request ke endpoint backend yang sesuai.
-- Tampilkan state sedang mengirim, error, dan hasil sukses dari respons API.
-- Setelah alokasi unit tersimpan, kirim array ID unit fisik (`unit_id`) yang sah ke backend dan nonaktifkan kontrol alokasi jika backend menyatakan alokasi final/tidak dapat diubah.
-- Jangan mengirim array ID dari tenant lain atau unit yang sedang teralokasi pada periode bentrok.
+### 3 Scheduled Console Commands (Background Tasks)
+Sesuai PRD §4.14, Fiza mengimplementasikan tiga perintah konsol terjadwal di Laravel Console Kernel / Scheduler:
+1. **`orders:auto-cancel-unpaid`** (Setiap 15–30 menit):
+   - Membatalkan pesanan secara otomatis yang berstatus `menunggu_pembayaran` jika customer tidak mengunggah bukti pembayaran dalam batas waktu kedaluwarsa (misal 2 jam setelah dikonfirmasi).
+   - Mengubah status menjadi `dibatalkan` dan melepaskan alokasi unit fisik agar kembali `available`.
+2. **`orders:auto-complete`** (Harian / Tiap malam):
+   - Mengubah status pesanan yang telah dikembalikan (`dikembalikan`), inspeksi fisik selesai (`diterima`), dan tidak ada kasus kerusakan atau denda menggantung menjadi `selesai` secara otomatis setelah masa tunggu 24 jam.
+3. **`subscriptions:check-expired`** (Harian pukul 00:01):
+   - Memeriksa tanggal jatuh tempo (`end_date`) seluruh tenant di platform.
+   - Menandai subscription yang telah melewati batas waktu menjadi `expired` dan memicu pengiriman notifikasi peringatan perpanjangan kepada Admin tenant dan Owner.
+
+### 15 In-App Notification Triggers Matrix
+Mengimplementasikan pemanggilan event & listener notifikasi in-app untuk 15 kondisi krusial (PRD §4.13):
+- **Customer (9 alert):** Order dikonfirmasi, Identitas disetujui, Identitas ditolak, Pembayaran diverifikasi, Pembayaran ditolak, Barang dikirim, Pengembalian diterima, Tagihan denda terbit, Kasus kerusakan diterbitkan/diselesaikan.
+- **Admin Rental (4 alert):** Pesanan baru masuk, Bukti identitas baru diunggah, Bukti transfer baru diunggah, Pengajuan pengembalian barang baru diajukan customer.
+- **Owner Platform (2 alert):** Pengajuan tenant baru masuk, Bukti perpanjangan subscription tenant diunggah.
 
 ### Kriteria selesai
-Notifikasi Owner terhubung ke API, status baca tersimpan, link detail benar, dan semua aksi order/alokasi benar-benar mengubah data backend.
+Halaman notifikasi Owner terhubung API, endpoint order aman dari race condition, 3 command artisan terdaftar di scheduler dan berjalan sukses saat diuji, serta seluruh 15 trigger notifikasi memicu record database notification yang tepat.
 
 ## 9.4 — Iak: Activity Log Owner
 
@@ -1399,9 +1495,9 @@ Bagian ini mengubah daftar tugas per halaman menjadi urutan kerja yang bisa dite
 
 1. Calon tenant melihat Landing Page RentalBase dan membuka `/register-tenant`.
 2. Form melakukan pengecekan subdomain asynchronous untuk UX, namun submit tetap divalidasi backend.
-3. Pengajuan disimpan dan calon tenant bisa memeriksa status melalui halaman status.
-4. Owner meninjau antrean di `/owner/registrations`, menolak dengan alasan atau menyetujui sesuai kebijakan.
-5. Setelah disetujui, provisioning tenant dan akun Admin dikerjakan backend.
+3. Pengajuan disimpan dengan status `menunggu_verifikasi`. Calon tenant langsung diarahkan ke form Login (`/login`) untuk menguji status aktivasi. Saat mencoba login, jika akun masih dalam peninjauan, sistem menampilkan notifikasi bahwa pengajuan belum disetujui Owner; jika ditolak, sistem menampilkan alasan penolakan.
+4. Owner meninjau antrean di `/owner/registrations`, dapat menghubungi PIC via WhatsApp direct (`wa.me`), menolak dengan alasan, atau menyetujui pengajuan.
+5. Setelah disetujui, backend memproses provisioning database tenant dan mengaktifkan akun Admin secara otomatis serta mengirimkan email konfirmasi. Calon tenant kini dapat login sukses via `/login` dan langsung diarahkan ke dashboard admin tenant miliknya (`/admin/dashboard`).
 6. Owner melihat tenant di `/owner/clients` dan subscription di `/owner/subscriptions`.
 7. Status `active`, `expired`, atau `suspended` memengaruhi akses tenant sesuai middleware.
 8. Owner mengelola Admin Rental, notifikasi pusat dan activity log lintas tenant.
@@ -1469,6 +1565,7 @@ Status di atas adalah acuan RentalBase terkini. Gunakan hanya nilai yang tercant
 
 ### Status terkait modul
 - Pembayaran: `menunggu_konfirmasi`, `diverifikasi`, `ditolak`.
+- Refund: `tidak_ada`, `menunggu_refund`, `refund_selesai`.
 - Pengiriman: `menunggu`, `diproses`, `dikirim`, `diterima`, `dibatalkan`.
 - Pengembalian: `diajukan`, `diproses`, `dalam_pengembalian`, `diterima`, `selesai`, `dibatalkan`.
 - Denda: `tidak_ada`, `menunggu_pembayaran`, `lunas`.
@@ -1484,6 +1581,7 @@ Status di atas adalah acuan RentalBase terkini. Gunakan hanya nilai yang tercant
 - Denda keterlambatan: berdasarkan selisih waktu aktual dan tenggat sewa serta `late_fee_per_hour`; backend menentukan angka final. Admin dapat override hanya jika aturan bisnis memberi izin dan perubahan dicatat.
 - Kompensasi kerusakan: disimpan terpisah dari denda keterlambatan.
 - Pembayaran: transfer bank atau QRIS dengan bukti yang diverifikasi manual; jangan mengklaim integrasi payment gateway otomatis.
+- Refund manual: pembatalan setelah pembayaran mewajibkan pencatatan `orders.refund_status` dan pengunggahan berkas bukti transfer pengembalian dana `refund_proof`.
 - Identitas: jaminan berbentuk data/dokumen identitas; tidak ada uang deposit yang otomatis dikembalikan.
 
 ---
@@ -1512,7 +1610,8 @@ Bagian ini sengaja dipisahkan agar perubahan tidak dilakukan diam-diam. Enam dok
 | License vs subscription | Salah satu label lama memakai License | Rancangan terkini memakai `subscriptions`; tidak ada license key/token aktivasi | Ganti copy/menu/API ke subscription setelah endpoint dikunci. |
 | Paket Pro/Professional | Nama paket berganti-ganti di beberapa sumber | Nama final yang diketahui: Starter, Business, Professional | Pilih ejaan final konsisten di UI/database/docs. |
 | Login global/tenant | Sumber menyebut login Admin/Owner sama route `/login` | Customer global; Admin tenant; Owner pusat; redirect role dan middleware wajib | Pastikan role/context berasal dari autentikasi backend, bukan parameter URL/form. |
-| Form pendaftaran tenant | Minggu 7 Bagian 1 menempatkan Form Pendaftaran Tenant di daftar Fiza; bagian lain berjudul pendaftaran pada bagian Yanuar | Minggu 9 Bagian 1 Owner approval ditugaskan ke Yanuar; Minggu 9 Bagian 2 integrasi auth oleh Yanuar | Pertahankan penugasan historis untuk dokumentasi, tetapi tunjuk satu pemilik implementasi final agar tidak duplikat. |
+| Cek status pendaftaran tenant | Dokumen awal menyebut form/route terpisah `/register-tenant/status` dengan input email PIC | Alur disederhanakan: calon tenant langsung login di `/login`; jika belum disetujui Owner, muncul notifikasi bahwa akun masih dalam peninjauan; jika ditolak, tampil alasan penolakan | Hapus kebutuhan form mandiri `/register-tenant/status`. Pengecekan status pendaftaran ditangani langsung pada antarmuka autentikasi login admin. |
+| Form pendaftaran tenant | Sempat terdapat keraguan kepemilikan antara Fiza dan Yanuar | Form pendaftaran tenant resmi 100% milik Fiza (7.1-F2); antrean persetujuan tenant di panel Owner juga dipegang Fiza (9.1-F2) | Fiza mengimplementasikan formulir pendaftaran multi-step publik dan panel approval Owner; Yanuar fokus mengintegrasikan debounce async cek subdomain di sisi UI. |
 | Label anggota ke-4 | Enam file menggunakan “Iak” | Roster formal yang diketahui berisi Zaskia Maulidina Mutiara Hati; hubungan nama panggilan belum dinyatakan di file sumber | Konfirmasi bahwa Iak = Zaskia sebelum mengganti nama atau menyerahkan tugas. |
 | Alamat field Shipment/Return | Controller/skema memakai `shipments.status`, `delivery_address`, `shipped_at`, `delivered_at`, dan metode `kurir`/`ambil_toko` | API/database docs sudah disinkronkan ke skema terkini | Gunakan kontrak di API/database docs sebagai acuan final untuk request/response/controller/migration. |
 
@@ -1541,55 +1640,55 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 
 ## 12.1 Iqo / Tersiqo Alfarezel — 10 pekerjaan
 
-- [ ] **Katalog customer:** header/footer reusable, search, filter kategori/harga, periode sewa, grid dan pagination.
-- [ ] **Detail produk:** galeri, deskripsi/spesifikasi/syarat, harga dan denda, quantity, tambah ke cart.
-- [ ] **Keranjang:** kelompok berdasarkan periode, jumlah, hapus, pemilihan item, ringkasan dan checkout satu periode.
-- [ ] **Checkout:** ringkasan, alamat, identitas/jaminan, upload file, total/availability diverifikasi backend.
-- [ ] **Kategori Admin:** CRUD, jumlah produk, validasi kategori, limit paket.
-- [ ] **Produk Admin:** form detail, multi-foto, cover, harga, tarif denda, persyaratan dan status.
-- [ ] **Unit fisik:** kuota total unit, asset code unik, filter/status, unit tidak merusak alokasi aktif.
-- [ ] **Branding toko:** nama/deskripsi/logo, status akses custom color berdasarkan paket, route final.
-- [ ] **Metode pembayaran:** transfer bank/QRIS, uploader QRIS, aktif/nonaktif, data aktif tampil di customer.
-- [ ] **Profil customer/integrasi:** profil dari API, hardcoded data di katalog/cart dibersihkan, periode dan file checkout dikirim benar.
+- [ ] **Katalog customer (7.1-I1):** header/footer reusable, search, filter kategori/harga, periode sewa, grid dan pagination, guest browsing.
+- [ ] **Detail produk (7.1-I2):** galeri foto multi-image, deskripsi/spesifikasi/syarat jaminan, harga dan denda, quantity selector, direct checkout.
+- [ ] **Keranjang (7.2-I1):** kelompok berdasarkan periode, hitung subtotal dinamis, pemilihan item, checkout per kelompok tanggal.
+- [ ] **Checkout (7.2-I2):** ringkasan sewa, alamat, data jaminan KTP & selfie, upload file, validasi ketersediaan unit.
+- [ ] **Daftar Pesanan Admin (7.2-I3):** filter rentang tanggal, filter status, pencarian order/customer, pagination, isolasi data tenant (dialihkan dari Yanuar / 7.2-Y3).
+- [ ] **Kategori Admin (8.1-I1):** CRUD kategori, jumlah produk, validasi unik per tenant, batas kuota kategori paket.
+- [ ] **Produk Admin (8.1-I2):** form detail, multi-foto, cover image, harga per hari, tarif denda per jam, syarat jaminan dan toggle aktif.
+- [ ] **Detail Pesanan Admin (8.1-I3):** konfirmasi/tolak pesanan baru, verifikasi identitas (KTP/selfie), verifikasi pembayaran, alokasi unit fisik, pembatalan & upload bukti refund manual (dialihkan dari Yanuar / 8.1-Y3).
+- [ ] **Unit fisik (8.2-I1):** kuota total unit paket, asset code unik, filter status fisik unit, isolasi jadwal sewa.
+- [ ] **Profil customer & integrasi (9.2-I1):** profil via API, pembersihan data dummy katalog/cart, payload multipart file checkout.
 
-## 12.2 Yanuar Alda Baran — 10 pekerjaan/alur
+## 12.2 Yanuar Alda Baran — 10 pekerjaan
 
-- [ ] Landing Page: Public Layout, fitur/paket/CTA dan footer.
-- [ ] Pesanan Saya: tab status, order card, detail/aksi sesuai status dan tenant.
-- [ ] Cek status pendaftaran: email, pending/approved/rejected, alasan dan CTA yang benar.
-- [ ] Detail pesanan customer: stepper, identitas, pembayaran, shipment, aksi yang diizinkan.
-- [ ] Login/register customer: validasi, global customer account, intended redirect.
-- [ ] Lupa/reset password: token backend, feedback dan validasi.
-- [ ] Error 403/404: UI terpisah, akses aman, tombol kembali berfungsi.
-- [ ] Tenant suspended: muncul hanya ketika client suspended, tidak salah menangani error jaringan.
-- [ ] Dashboard Owner: agregat tenant/paket/status, tidak menunjukkan transaksi customer.
-- [ ] Persetujuan tenant dan integrasi auth: subdomain async, role redirect, session/token, middleware sesuai status.
+- [ ] **Landing Page (7.1-Y1):** Public Layout, Hero CTA "Memulai", showcase fitur SaaS multi-tenant, paket subskripsi (3, 6, 12 bulan), footer legal.
+- [ ] **Pesanan Saya Customer (7.1-Y2):** tab filter status, order cards, badge status terpadu, deep link ke detail pesanan.
+- [ ] **Login Gate & Status Verifikasi Tenant (7.2-Y1):** integrasi pengecekan langsung via form login admin, alert toko masih ditinjau Owner (`menunggu_verifikasi`), alert alasan penolakan (`ditolak`), dan auto-redirect ke dashboard saat disetujui.
+- [ ] **Detail pesanan customer (7.2-Y2):** stepper status lengkap, panel identitas, panel pembayaran, resi pengiriman, panel refund & preview bukti transfer refund.
+- [ ] **Login & Register Customer (8.1-Y1):** form tab masuk/daftar, akun customer global multi-tenant, validasi input, intended redirect setelah login gate.
+- [ ] **Lupa & Reset Password (8.1-Y2):** request reset email, token Laravel resmi, validasi password baru, instruksi login kembali.
+- [ ] **Halaman Error 403 & 404 (8.2-Y1):** visual responsif, pesan jelas tanpa leak informasi sensitif, tombol kembali ke beranda aman.
+- [ ] **Halaman Tenant Suspended (8.2-Y2):** layar blokir toko nonaktif, responsif terhadap middleware client suspended, isolasi per tenant.
+- [ ] **Profil & Branding Admin (8.2-Y3):** form nama/deskripsi/logo toko, live color picker styling tema toko kustom (Business/Pro), named route kanonis (dialihkan dari Iqo / 8.2-I2).
+- [ ] **Metode Pembayaran Admin (9.1-Y1):** bank transfer & QRIS toko, uploader barcode QRIS, toggle status aktif, validasi minimum 1 metode aktif (dialihkan dari Iqo / 9.1-I1).
 
-## 12.3 Fiza Rahmatus Sholikha — 10 pekerjaan/alur
+## 12.3 Fiza Rahmatus Sholikha — 10 pekerjaan
 
-- [ ] Dashboard Admin: Base Layout Admin, metrik dan order terbaru scoped ke tenant.
-- [ ] Form pendaftaran tenant pada tugas sumber: koordinasi pemilik final agar tidak duplikasi dengan Yanuar.
-- [ ] Login Admin/Owner: autentikasi dan redirect role aman.
-- [ ] Daftar pesanan Admin: filter, status, pagination, detail link dan tenant isolation.
-- [ ] Detail pesanan Admin: review identitas/pembayaran, alokasi unit, pembatalan/refund sesuai aturan.
-- [ ] Laporan transaksi: filter tanggal, angka agregat, rincian dan export jika diaktifkan.
-- [ ] Manajemen client Owner: list/edit/suspend/aktifkan dan validasi subdomain.
-- [ ] Manajemen Admin Owner: akun lintas tenant, placement, role dan limit admin paket.
-- [ ] Subscription Owner: masa berlaku, status, perpanjangan dan limit paket.
-- [ ] Notifikasi Owner + integrasi: notifikasi pusat, aksi verifikasi order dan penguncian alokasi setelah tersimpan.
+- [ ] **Dashboard Admin (7.1-F1):** Base Layout Admin reusable, 4 kartu metrik, progres kuota paket produk & unit fisik, tabel 5 pesanan terbaru tenant.
+- [ ] **Form pendaftaran tenant (7.1-F2):** form pendaftaran multi-step publik, pilihan paket, upload logo/dokumen, rate limit `throttle:5,60`, status `menunggu_verifikasi`.
+- [ ] **Login Admin & Owner (7.2-F1):** Auth Layout, isolasi kredensial Admin (tenant) vs Super Admin (Owner), redirect otomatis berdasarkan role.
+- [ ] **Laporan transaksi Admin (8.1-F2):** filter tanggal transaksi, ringkasan pendapatan kotor sewa/denda/ganti rugi, tabel transaksi, export CSV/PDF.
+- [ ] **Dashboard Owner (8.2-F3):** Base Layout Owner reusable, 4 kartu metrik platform (total, aktif, suspended, expiring soon), daftar tenant (ditukar dari Yanuar).
+- [ ] **Manajemen client Owner (8.2-F1):** tabel seluruh tenant, edit profil tenant, validasi perubahan subdomain, aksi suspend/aktifkan dengan input alasan.
+- [ ] **Manajemen Admin Owner (8.2-F2):** tabel akun admin rental lintas tenant, buat akun admin baru, penempatan tenant, penegakan kuota admin paket.
+- [ ] **Antrean persetujuan tenant Owner (9.1-F2):** tabel pengajuan baru, review detail usaha/PIC, tombol WhatsApp direct (`wa.me`), tolak beralasan, persetujuan transaksional & trigger email aktivasi.
+- [ ] **Subscription Owner (9.1-F1):** masa berlaku langganan, indikator jatuh tempo, form perpanjangan manual, pencatatan histori perpanjangan.
+- [ ] **Notifikasi Owner, Backend Order API & Scheduled Commands (9.2-F1):** feed notifikasi pusat, transactional locking order & alokasi unit, 3 scheduled console commands (`orders:auto-cancel-unpaid`, `orders:auto-complete`, `subscriptions:check-expired`), dan 15 in-app notification triggers.
 
-## 12.4 Iak / anggota ke-4 pada dokumen sumber — 10 pekerjaan/alur
+## 12.4 Iak / Anggota ke-4 — 10 pekerjaan
 
-- [ ] Pengiriman Admin: daftar order siap proses, metode pickup/kurir, kurir/resi dan perubahan status backend.
-- [ ] Penerimaan/denda retur Admin: periksa tenggat, preview, perhitungan final backend, override terkontrol.
-- [ ] Pengembalian Customer: instruksi, metode dan resi, denda/bukti jika ada, status retur.
-- [ ] Pemeriksaan kondisi fisik: pilih order/unit/fase, checklist, foto dan catatan.
-- [ ] Kasus kerusakan Admin: buat kasus, foto, nominal, respons dan penyelesaian.
-- [ ] Laporan kerusakan Customer: galeri, nominal, tanggapan dan bukti bayar sesuai kondisi.
-- [ ] Notifikasi Customer: feed, unread/read, link order dan data milik user.
-- [ ] Notifikasi Admin: alert tenant, link detail dan status baca.
-- [ ] Activity Log Admin: read-only, filter waktu/pelaku, tenant scoped.
-- [ ] Activity Log Owner + integrasi: filter lintas tenant, pengiriman API, denda final backend dan upload array foto inspeksi.
+- [ ] **Pengiriman Admin (7.1-A1):** daftar order siap kirim, pemilihan metode pengiriman (`kurir`/`ambil_toko`), input nama kurir & nomor resi, update status pesanan.
+- [ ] **Penerimaan & Denda Retur Admin (7.1-A2):** konfirmasi barang kembali, perhitungan keterlambatan jam presisi, kalkulator tarif denda backend, override denda dengan catatan.
+- [ ] **Pengembalian Customer (7.2-A1):** instruksi retur, pilihan ekspedisi/antar langsung, input nomor resi retur, invoice denda terlambat jika ada, submit bukti bayar denda.
+- [ ] **Pemeriksaan kondisi fisik (7.2-A2):** checklist inspeksi sebelum serah-terima & sesudah pengembalian, multi-upload foto kondisi (maks 5), catatan cacat fisik.
+- [ ] **Kasus kerusakan Admin (8.1-A1):** pembuatan tiket kerusakan barang, unggah 3–5 foto bukti cacat, klaim nominal ganti rugi, verifikasi bukti kompensasi, penutupan kasus.
+- [ ] **Laporan kerusakan Customer (8.1-A2):** galeri foto kerusakan, rincian biaya ganti rugi, textarea tanggapan/negosiasi, uploader bukti transfer pembayaran kompensasi.
+- [ ] **Notifikasi Customer (8.2-A1):** feed notifikasi aktivitas customer, unread badge, filter alert, deep link ke detail order/tiket kerusakan.
+- [ ] **Notifikasi Admin (8.2-A2):** feed alert operasional toko (order baru, unggah KTP, bukti bayar, retur masuk), penanda sudah dibaca, deep link penanganan.
+- [ ] **Activity Log Admin (9.1-A1):** feed audit trail riwayat perubahan data toko, filter waktu & staf admin, format read-only tanpa aksi hapus.
+- [ ] **Activity Log Owner & Integrasi Logistik (9.2-A1):** jejak audit menyeluruh tingkat platform lintas tenant, filter tenant & pelaku, validasi integrasi resi kurir, foto kondisi fisik & kalkulator denda.
 
 ---
 
@@ -1610,17 +1709,66 @@ Satu halaman baru dinyatakan selesai ketika seluruh poin yang relevan berikut lu
 11. **Dokumentasi:** route dan endpoint yang benar dicatat ke `docs/api.md`; perubahan skema dicatat di `docs/database.md`; aturan tampilan di `docs/design_system.md` bila perlu.
 12. **Repository:** perubahan terintegrasi ke branch yang disepakati, konflik diselesaikan, dan tidak ada file konfigurasi/secret sensitif yang ter-commit.
 
-## 14. URUTAN KERJA YANG DIREKOMENDASIKAN
+## 14. URUTAN KERJA YANG DIREKOMENDASIKAN (ROADMAP 6 FASE)
 
-1. **Kunci kontrak**: selaraskan route, nama status, field, dan endpoint pada `docs/api.md`, `docs/database.md`, serta route Laravel aktual.
-2. **Selesaikan layout reusable**: Public, Customer, Admin, Owner dan Auth Layout; pastikan route landing/root tidak berbenturan dengan katalog tenant.
-3. **Bangun katalog dan unit**: categories → products → equipment units → availability.
-4. **Bangun transaksi customer**: cart → checkout → identitas/jaminan → order → payment proof.
-5. **Bangun kontrol Admin**: order list/detail → verifikasi → alokasi unit → shipment → return/inspection.
-6. **Bangun denda/kerusakan**: backend calculation → customer response/payment proof → resolution.
-7. **Bangun Owner**: registrations → clients/admins → subscriptions → owner notifications/activity log.
-8. **Selesaikan halaman akun dan audit**: profil, notifikasi customer/admin, laporan, activity log.
-9. **Integrasi menyeluruh dan QA**: hapus dummy data, uji seluruh alur, route, status, file upload, role, client isolation dan error.
+Untuk meminimalkan blocker dan saling tunggu antar-anggota tim, urutan implementasi dibagi menjadi 6 fase ketergantungan:
+
+### Fase 1: Fondasi Platform, Tata Letak (Layouts), dan Autentikasi Dasar
+1. **Kunci Kontrak Data:** Selaraskan nama status, route, dan relasi tabel pada `docs/api.md` dan `docs/database.md`.
+2. **Bangun 5 Layout Bersama:**
+   - Public Layout (Yanuar)
+   - Customer Base Layout + Header Reusable (Iqo)
+   - Admin Base Layout + Sidebar 5 Grup (Fiza)
+   - Owner Base Layout + Sidebar Platform (Fiza)
+   - Auth Layout (Yanuar / Fiza)
+3. **Halaman Publik Utama:**
+   - Landing Page RentalBase (Yanuar: `7.1-Y1`)
+   - Form Pendaftaran Tenant Multi-step (Fiza: `7.1-F2`)
+   - Login Gate & Status Verifikasi Tenant (Yanuar: `7.2-Y1`)
+   - Login & Register Customer Multi-tenant (Yanuar: `8.1-Y1`)
+   - Login Admin Tenant & Owner Platform (Fiza: `7.2-F1`)
+   - Lupa & Reset Password (Yanuar: `8.1-Y2`)
+
+### Fase 2: Katalog Produk, Kategori, dan Inventaris Unit Fisik
+1. **Modul Kategori Admin:** Kategori Admin CRUD & batas limit paket (Iqo: `8.1-I1`).
+2. **Modul Produk Admin:** Produk Admin form, multi-foto, tarif denda & syarat jaminan (Iqo: `8.1-I2`).
+3. **Modul Unit Fisik Admin:** Input serial number, kode aset unik, status unit (Iqo: `8.2-I1`).
+4. **Katalog & Detail Customer:**
+   - Katalog Toko Customer dengan Guest Browsing & Login Gate "Sewa Alat" (Iqo: `7.1-I1`).
+   - Detail Produk Customer dengan galeri foto & direct checkout (Iqo: `7.1-I2`).
+5. **Kalkulasi Dynamic Availability:** Backend endpoint memeriksa jadwal sewa unit fisik vs tanggal sewa yang dipilih customer.
+
+### Fase 3: Transaksi Customer, Checkout, dan Metode Pembayaran
+1. **Pengaturan Metode Pembayaran:** Admin mengonfigurasi Bank Transfer & QRIS aktif (Yanuar: `9.1-Y1`).
+2. **Profil & Branding Toko:** Konfigurasi logo toko & warna tema kustom tenant (Yanuar: `8.2-Y3`).
+3. **Keranjang Belanja:** Cart customer mengelompokkan item berdasarkan rentang periode sewa (Iqo: `7.2-I1`).
+4. **Checkout & Form Jaminan:** Customer mengisi alamat kirim/ambil toko, unggah foto KTP & selfie jaminan identitas (Iqo: `7.2-I2`).
+5. **Unggah Bukti Bayar:** Customer melihat instruksi transfer/QRIS tenant dan mengunggah struk pembayaran.
+6. **Riwayat Pesanan Customer:** Halaman Pesanan Saya Customer dengan tab status (Yanuar: `7.1-Y2`).
+
+### Fase 4: Operasional Admin, Verifikasi Order, Logistik, dan Retur
+1. **Manajemen Order Admin:**
+   - Daftar Pesanan Admin dengan filter tanggal & status (Iqo: `7.2-I3`).
+   - Detail Pesanan Admin: Konfirmasi/tolak booking, verifikasi KTP, verifikasi bukti bayar, alokasi unit fisik, pembatalan pesanan & pencatatan refund manual (Iqo: `8.1-I3`).
+2. **Detail Pesanan Customer:** Pelacakan progres status, panel identitas, pengiriman, dan panel status refund (Yanuar: `7.2-Y2`).
+3. **Logistik Pengiriman:** Admin memasukkan metode ekspedisi/pickup dan nomor resi kurir (Iak: `7.1-A1`).
+4. **Pemeriksaan Fisik Unit:** Dokumen inspeksi foto unit fisik sebelum serah-terima dan setelah pengembalian (Iak: `7.2-A2`).
+5. **Pengembalian Barang & Denda:** Customer mengajukan retur (Iak: `7.2-A1`), Admin memverifikasi unit kembali & menghitung denda keterlambatan (Iak: `7.1-A2`).
+6. **Kasus Kerusakan:** Admin membuat tiket ganti rugi kerusakan fisik (Iak: `8.1-A1`), Customer meninjau & mengunggah bukti bayar kompensasi (Iak: `8.1-A2`).
+
+### Fase 5: Panel Owner Platform dan Manajemen Tenant
+1. **Dashboard Owner Pusat:** Pemantauan kesehatan platform & 4 kartu metrik agregat (Fiza: `8.2-F3`).
+2. **Antrean Persetujuan Tenant:** Owner meninjau pengajuan toko baru, kontak WhatsApp direct (`wa.me`), tolak atau approve dengan otomatisasi provisioning tenant & email aktivasi (Fiza: `9.1-F2`).
+3. **Manajemen Client & Admin Tenant:** Pengelolaan tenant, penegakan kuota, penambahan staf admin, serta aksi suspend tenant (Fiza: `8.2-F1` & `8.2-F2`).
+4. **Penanganan Tenant Suspended:** Halaman Error 403/404 (Yanuar: `8.2-Y1`) dan halaman Tenant Suspended via middleware (Yanuar: `8.2-Y2`).
+5. **Subscription & Siklus Tagihan:** Pelacakan masa aktif langganan tenant & form perpanjangan manual (Fiza: `9.1-F1`).
+
+### Fase 6: Background Tasks, Notifikasi, Audit Trail, dan Final QA
+1. **Scheduled Console Commands Laravel:** Implementasi 3 background worker cron scheduler untuk auto-cancel pesanan belum dibayar, auto-complete pesanan retur, dan check-expired langganan tenant (Fiza: `9.2-F1`).
+2. **Matriks Notifikasi In-App:** Pemanggilan 15 trigger alert untuk Customer, Admin, dan Owner (Fiza: `9.2-F1`, Iak: `8.2-A1` & `8.2-A2`).
+3. **Audit Trail & Activity Logs:** Pencatatan log aktivitas Admin toko (Iak: `9.1-A1`) dan Owner platform lintas tenant (Iak: `9.2-A1`).
+4. **Profil Akun & Integrasi Akhir:** Halaman profil customer (Iqo: `9.2-I1`), pembersihan seluruh dummy JSON, dan sinkronisasi rute kanonis.
+5. **End-to-End Testing & Bug Fixing:** Uji coba skenario lengkap dari registrasi tenant → katalog → sewa alat → verifikasi KTP/bayar → kirim → retur → denda/kerusakan → laporan transaksi.
 
 ---
 
