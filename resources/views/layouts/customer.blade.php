@@ -33,12 +33,13 @@
 
                 <!-- Center Navigation -->
                 <nav class="hidden md:flex items-center space-x-7 font-semibold text-[14px]">
-                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="{{ !request()->routeIs('customer.checkout*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Katalog</a>
+                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="{{ request()->routeIs('customer.home') || request()->routeIs('customer.product.*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Katalog</a>
                     @if(request()->routeIs('customer.checkout*'))
                         <a href="#" class="text-primary-500 border-b-2 border-primary-500 py-[22px] transition-colors">Checkout</a>
                     @else
-                        <a href="#katalog" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Cara sewa</a>
+                        <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}#katalog" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Cara sewa</a>
                     @endif
+                    <a href="{{ route('customer.orders') }}" class="{{ request()->routeIs('customer.orders*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Pesanan Saya</a>
                     <a href="#bantuan" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Bantuan</a>
                 </nav>
 
@@ -92,12 +93,13 @@
              class="md:hidden bg-white border-t border-gray-100"
              style="display: none;">
             <div class="px-4 pt-3 pb-3 space-y-2">
-                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Katalog</a>
+                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.home') || request()->routeIs('customer.product.*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Katalog</a>
                 @if(request()->routeIs('customer.checkout*'))
                     <a href="#" class="block px-3 py-2 rounded-lg text-base font-medium text-primary-600 bg-primary-50">Checkout</a>
                 @else
-                    <a href="#katalog" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
+                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}#katalog" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
                 @endif
+                <a href="{{ route('customer.orders') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
                 <a href="#bantuan" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Bantuan</a>
                 
                 @auth
