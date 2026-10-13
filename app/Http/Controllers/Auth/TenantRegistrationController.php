@@ -117,7 +117,17 @@ class TenantRegistrationController extends Controller
                     return view('auth.setup-tenant', compact('plan', 'client'));
                 }
 
-                return view('auth.setup-theme', compact('client'));
+                if ($request->query('step') === 'theme' || ! $request->session()->get('registration_theme_selected')) {
+                    return view('auth.setup-theme', compact('client'));
+                }
+
+                $subscription = Subscription::where('client_id', $client->id)->first();
+                $planName = $subscription ? $subscription->plan_name : $plan;
+                $price = $this->getPrice($planName);
+                $planDetails = $this->getPlanDetails($planName);
+                $paymentInfo = $this->getPlatformPaymentInfo();
+
+                return view('auth.setup-payment', compact('client', 'planName', 'price', 'planDetails', 'paymentInfo'));
             }
         }
 
@@ -409,9 +419,40 @@ class TenantRegistrationController extends Controller
         };
     }
 
+    private function getPlanDetails($plan)
+    {
+        return match ($plan) {
+            'business' => [
+                'name' => 'Business',
+                'description' => 'Untuk usaha rental dengan kebutuhan operasional yang lebih lengkap.',
+                'duration' => '1 Bulan',
+            ],
+            'professional' => [
+                'name' => 'Professional',
+                'description' => 'Untuk penggunaan sistem dengan kapasitas dan fitur operasional maksimal.',
+                'duration' => '1 Bulan',
+            ],
+            default => [
+                'name' => 'Starter',
+                'description' => 'Untuk usaha rental yang baru mulai menggunakan sistem.',
+                'duration' => '1 Bulan',
+            ],
+        };
+    }
+
+    private function getPlatformPaymentInfo()
+    {
+        return [
+            'bank_name' => config('services.platform_payment.bank_name', 'BCA (Bank Central Asia)'),
+            'account_number' => config('services.platform_payment.account_number', '8830991122'),
+            'account_holder' => config('services.platform_payment.account_holder', 'RentalBase Indonesia'),
+            'qris_image' => config('services.platform_payment.qris_image', 'images/qris-platform.png'),
+        ];
+    }
+
     public function showThemeSetup()
     {
-        return redirect()->route('tenant.register');
+        return redirect()->route('tenant.register', ['step' => 'theme']);
     }
 
     public function setupTheme(Request $request)
@@ -433,16 +474,79 @@ class TenantRegistrationController extends Controller
             ]);
         }
 
-        $user->update([
-            'status' => 'menunggu_verifikasi',
-        ]);
-
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        $request->session()->put('registration_completed', true);
+        $request->session()->put('registration_theme_selected', true);
 
         return redirect()->route('tenant.register');
+    }
+
+    public function submitPayment(Request $request)
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return redirect()->route('login');
+        }
+
+        if ($user->status !== 'pending_setup') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        $client = Client::where('id', $user->client_id)->first();
+        if (! $client) {
+            return redirect()->route('tenant.register', ['step' => 'info']);
+        }
+
+        $request->validate([
+            'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ], [
+            'payment_proof.required' => 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.',
+            'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
+            'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
+            'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
+        ]);
+
+        $proofPath = $request->file('payment_proof')->store('subscriptions/proofs', 'public');
+
+        DB::beginTransaction();
+
+        try {
+            // Update subscription dengan bukti bayar
+            Subscription::where('client_id', $client->id)->update([
+                'payment_proof' => $proofPath,
+                'payment_status' => 'menunggu',
+                'status' => 'menunggu_verifikasi',
+            ]);
+
+            // Update client_registrations dengan bukti bayar
+            ClientRegistration::where('admin_email', $user->email)->update([
+                'payment_proof' => $proofPath,
+                'payment_status' => 'menunggu',
+                'status' => 'menunggu_verifikasi',
+            ]);
+
+            // Set user dan client ke status menunggu_verifikasi
+            $user->update([
+                'status' => 'menunggu_verifikasi',
+            ]);
+
+            $client->update([
+                'status' => 'menunggu_verifikasi',
+            ]);
+
+            DB::commit();
+
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            $request->session()->put('registration_completed', true);
+
+            return redirect()->route('tenant.register');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            report($e);
+
+            return back()->with('error', 'Terjadi kesalahan saat memproses bukti pembayaran. Silakan coba lagi.');
+        }
     }
 
     public function showWaiting()
@@ -459,6 +563,10 @@ class TenantRegistrationController extends Controller
         $user = Auth::user();
 
         if ($user->status === 'pending_setup') {
+            if ($request->hasFile('payment_proof') || $request->input('action_step') === 'payment') {
+                return $this->submitPayment($request);
+            }
+
             if ($request->filled('theme_color')) {
                 return $this->setupTheme($request);
             }

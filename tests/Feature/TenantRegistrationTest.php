@@ -70,19 +70,53 @@ class TenantRegistrationTest extends TestCase
             'theme_color' => '#FF9F43',
         ]);
 
-        // Must redirect to /register-tenant
+        // Must redirect to /register-tenant (proceeds to payment step)
         $themeResponse->assertRedirect('/register-tenant');
 
-        // User is now logged out and status updated to menunggu_verifikasi
-        $this->assertGuest();
+        // User is still authenticated with status pending_setup
+        $this->assertAuthenticatedAs($user);
         $user->refresh();
-        $this->assertEquals('menunggu_verifikasi', $user->status);
+        $this->assertEquals('pending_setup', $user->status);
 
         // Client theme_color is updated
         $this->assertDatabaseHas('clients', [
             'id' => $user->client_id,
             'theme_color' => '#FF9F43',
         ]);
+
+        // Visiting /register-tenant now shows payment page
+        $paymentPage = $this->actingAs($user)->get('/register-tenant');
+        $paymentPage->assertStatus(200);
+        $paymentPage->assertSee('Konfirmasi Pembayaran');
+        $paymentPage->assertSee('Unggah Bukti Pembayaran');
+
+        // Now submit payment proof
+        $proofFile = \Illuminate\Http\UploadedFile::fake()->image('bukti_transfer.jpg');
+        $paymentResponse = $this->actingAs($user)->post('/register-tenant', [
+            'action_step' => 'payment',
+            'payment_proof' => $proofFile,
+        ]);
+
+        // Must redirect to /register-tenant
+        $paymentResponse->assertRedirect('/register-tenant');
+
+        // User is now logged out and status updated to menunggu_verifikasi
+        $this->assertGuest();
+        $user->refresh();
+        $this->assertEquals('menunggu_verifikasi', $user->status);
+
+        // Subscription and ClientRegistration have payment_proof recorded
+        $subscription = Subscription::where('client_id', $user->client_id)->first();
+        $this->assertNotNull($subscription);
+        $this->assertNotNull($subscription->payment_proof);
+        $this->assertEquals('menunggu', $subscription->payment_status);
+        $this->assertEquals('menunggu_verifikasi', $subscription->status);
+
+        $clientReg = ClientRegistration::where('admin_email', $user->email)->first();
+        $this->assertNotNull($clientReg);
+        $this->assertNotNull($clientReg->payment_proof);
+        $this->assertEquals('menunggu', $clientReg->payment_status);
+        $this->assertEquals('menunggu_verifikasi', $clientReg->status);
 
         // Visiting /register-tenant now shows waiting page
         $waitingPage = $this->get('/register-tenant');

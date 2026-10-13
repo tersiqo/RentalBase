@@ -41,4 +41,11 @@ return [
        'redirect'      => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'platform_payment' => [
+        'bank_name'      => env('PLATFORM_BANK_NAME', 'BCA (Bank Central Asia)'),
+        'account_number' => env('PLATFORM_ACCOUNT_NUMBER', '8830991122'),
+        'account_holder' => env('PLATFORM_ACCOUNT_HOLDER', 'RentalBase Indonesia'),
+        'qris_image'     => env('PLATFORM_QRIS_IMAGE', 'images/qris-platform.png'),
+    ],
+
 ];
