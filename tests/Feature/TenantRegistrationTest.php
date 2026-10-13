@@ -91,7 +91,7 @@ class TenantRegistrationTest extends TestCase
         $paymentPage->assertSee('Unggah Bukti Pembayaran');
 
         // Now submit payment proof
-        $proofFile = \Illuminate\Http\UploadedFile::fake()->image('bukti_transfer.jpg');
+        $proofFile = \Illuminate\Http\UploadedFile::fake()->create('bukti_transfer.jpg', 100, 'image/jpeg');
         $paymentResponse = $this->actingAs($user)->post('/register-tenant', [
             'action_step' => 'payment',
             'payment_proof' => $proofFile,
@@ -235,7 +235,7 @@ class TenantRegistrationTest extends TestCase
             'status' => 'pending_setup',
         ]);
 
-        $file = \Illuminate\Http\UploadedFile::fake()->image('logo.png');
+        $file = \Illuminate\Http\UploadedFile::fake()->create('logo.png', 100, 'image/png');
 
         $response = $this->actingAs($user)->post('/register-tenant', [
             'business_name' => 'Rental Kamera Cepat',
@@ -264,7 +264,7 @@ class TenantRegistrationTest extends TestCase
     {
         \Illuminate\Support\Facades\Storage::fake('public');
 
-        $file = \Illuminate\Http\UploadedFile::fake()->image('logo.png');
+        $file = \Illuminate\Http\UploadedFile::fake()->create('logo.png', 100, 'image/png');
 
         $response = $this->post('/register-tenant', [
             'username' => 'suryaadmin',
