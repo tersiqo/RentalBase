@@ -39,7 +39,7 @@
                     @else
                         <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}#katalog" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Cara sewa</a>
                     @endif
-                    <a href="{{ route('customer.orders') }}" class="{{ request()->routeIs('customer.orders*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Pesanan Saya</a>
+                    <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? null])) }}" class="{{ request()->routeIs('customer.orders*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Pesanan Saya</a>
                     <a href="#bantuan" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Bantuan</a>
                 </nav>
 
@@ -65,7 +65,7 @@
                                 <div class="px-4 py-2 border-b border-gray-100 mb-1">
                                     <p class="text-sm font-bold text-gray-900">Halo, {{ auth()->user()->name }}!</p>
                                 </div>
-                                <a href="{{ route('customer.orders') }}" class="block px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 transition">Pesanan Saya</a>
+                                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? null])) }}" class="block px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 transition">Pesanan Saya</a>
                                 <div class="border-t border-gray-100 mt-1"></div>
                                 <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</a>
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
@@ -99,13 +99,13 @@
                 @else
                     <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}#katalog" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
                 @endif
-                <a href="{{ route('customer.orders') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
+                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? null])) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
                 <a href="#bantuan" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Bantuan</a>
                 
                 @auth
                     <div class="border-t border-gray-100 pt-2 mt-2">
                         <div class="px-3 py-1 text-xs font-bold text-gray-400 uppercase">Akun Saya</div>
-                        <a href="{{ route('customer.orders') }}" class="block px-3 py-2 rounded-lg text-base font-semibold text-primary-600 hover:bg-primary-50">Pesanan Saya</a>
+                        <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? null])) }}" class="block px-3 py-2 rounded-lg text-base font-semibold text-primary-600 hover:bg-primary-50">Pesanan Saya</a>
                         <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50">Log out</a>
                     </div>
                 @else
