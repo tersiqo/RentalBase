@@ -58,7 +58,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('tenant.theme.setup') }}" novalidate>
+    <form method="POST" action="{{ route('tenant.register') }}" novalidate>
         @csrf
         
         <div x-data="themeSetup()" class="theme-setup-container" style="display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start;">
@@ -167,10 +167,10 @@
         </div>
 
         <div style="display: flex; gap: 16px; margin-top: 24px;">
-            <button type="button" class="btn btn-primary" style="flex: 1; margin-top: 0;" onclick="history.back()">
+            <a href="{{ route('tenant.register', ['step' => 'info']) }}" class="btn btn-primary" style="flex: 1; margin-top: 0; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; width: 18px; height: 18px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 Kembali
-            </button>
+            </a>
             <button type="submit" class="btn btn-primary" style="flex: 1; margin-top: 0;">
                 Terapkan dan Lanjutkan
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px; width: 18px; height: 18px;"><polyline points="9 18 15 12 9 6"></polyline></svg>

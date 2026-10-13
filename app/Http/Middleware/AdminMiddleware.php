@@ -21,11 +21,13 @@ class AdminMiddleware
         $user = Auth::user();
 
         if ($user->status === 'menunggu_verifikasi') {
-            return redirect()->route('tenant.waiting');
+            Auth::logout();
+
+            return redirect()->route('login')->with('info', 'Pendaftaran berhasil diajukan. Silakan tunggu verifikasi dari Owner. Informasi persetujuan akan dikirimkan melalui email Anda.');
         }
 
         if ($user->status === 'pending_setup') {
-            return redirect()->route('tenant.setup');
+            return redirect()->route('tenant.register');
         }
 
         if ($user->status !== 'aktif') {

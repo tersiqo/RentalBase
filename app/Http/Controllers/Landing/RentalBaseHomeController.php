@@ -8,6 +8,8 @@ class RentalBaseHomeController extends Controller
 {
     public function index()
     {
+        session()->forget('registration_completed');
+
         $packages = [
             [
                 'name' => 'Starter',

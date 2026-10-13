@@ -23,27 +23,28 @@ Route::get('/my-orders', [PageController::class, 'myOrders'])
     ->middleware('auth')
     ->name('customer.orders');
 
-Route::get('/register-tenant', function () {
-    return view('landing.register-tenant');
-})->name('landing.register');
-Route::get('/login', [TenantRegistrationController::class, 'showLogin'])->name('login');
-Route::post('/login', [TenantRegistrationController::class, 'login']);
-Route::post('/logout', [TenantRegistrationController::class, 'logout'])->name('logout');
+Route::get('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showRegister'])->name('tenant.register');
+Route::post('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'handleRegistration']);
 
-Route::get('/register', [TenantRegistrationController::class, 'showRegister'])->name('tenant.register');
-Route::post('/register', [TenantRegistrationController::class, 'register']);
+Route::get('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showLogin'])->name('login');
+Route::post('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'login']);
+Route::post('/logout', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'logout'])->name('logout');
+
+Route::get('/register', fn () => redirect()->route('tenant.register'));
+Route::post('/register', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'handleRegistration']);
 
 Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
 Route::post('/forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
 Route::get('/reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
 Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 
+Route::get('/waiting-verification', fn () => redirect()->route('login'))->name('tenant.waiting');
+
 Route::middleware('auth')->group(function () {
-    Route::get('/setup-tenant', [TenantRegistrationController::class, 'showSetup'])->name('tenant.setup');
-    Route::post('/setup-tenant', [TenantRegistrationController::class, 'setup']);
-    Route::get('/setup-theme', [TenantRegistrationController::class, 'showThemeSetup'])->name('tenant.theme.setup');
-    Route::post('/setup-theme', [TenantRegistrationController::class, 'setupTheme']);
-    Route::get('/waiting-verification', [TenantRegistrationController::class, 'showWaiting'])->name('tenant.waiting');
+    Route::get('/setup-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showSetup'])->name('tenant.setup.get');
+    Route::post('/setup-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'setup'])->name('tenant.setup');
+    Route::get('/setup-theme', fn () => redirect()->route('login'))->name('tenant.theme.setup.get');
+    Route::post('/setup-theme', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'setupTheme'])->name('tenant.theme.setup');
 });
 
 Route::get('/client/{subdomain}', [CustomerHomeController::class, 'index'])
