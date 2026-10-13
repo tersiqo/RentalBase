@@ -409,6 +409,18 @@
             margin-bottom: 20px;
         }
 
+        .alert-success {
+            background-color: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-info {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
         @media (max-width: 480px) {
             .grid-2 {
                 grid-template-columns: 1fr;

@@ -37,9 +37,14 @@ class GoogleController extends Controller
 
         Auth::login($user, true);
 
-        // Arahkan ke setup jika baru mendaftar atau status masih pending_setup
+        if ($user->status === 'menunggu_verifikasi') {
+            Auth::logout();
+
+            return redirect()->route('login')->with('info', 'Pendaftaran berhasil diajukan. Silakan tunggu verifikasi dari Owner. Informasi persetujuan akan dikirimkan melalui email Anda.');
+        }
+
         if ($user->status === 'pending_setup') {
-            return redirect()->route('tenant.setup');
+            return redirect()->route('tenant.register');
         }
 
         return redirect()->intended('/admin/dashboard');

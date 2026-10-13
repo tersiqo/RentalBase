@@ -18,6 +18,28 @@
 
     <div class="divider">atau masuk dengan email</div>
 
+    @if (session('success'))
+        <div class="alert alert-success" role="alert" style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session('status'))
+        <div class="alert alert-success" role="alert" style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+            {{ session('status') }}
+        </div>
+    @endif
+
+    @if (session('info'))
+        <div class="alert alert-info" role="alert" style="background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;">
+            {{ session('info') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="alert" role="alert">{{ session('error') }}</div>
+    @endif
+
     @if ($errors->any())
         <div class="alert" role="alert">{{ $errors->first() }}</div>
     @endif

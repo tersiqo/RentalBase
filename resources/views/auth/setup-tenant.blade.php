@@ -3,11 +3,6 @@
 @section('title', 'Setup Toko')
 @section('container-class', 'auth-container-wide')
 
-@section('nav-link')
-    <a href="{{ route('admin.logout') }}" class="nav-link" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Keluar</a>
-    <form id="logout-form" action="{{ route('admin.logout') }}" method="POST" style="display: none;">
-        @csrf
-    </form>
 @section('before-content')
     <!-- Step Indicator -->
     <div style="display: flex; justify-content: center; margin-bottom: 32px; width: 100%;">
@@ -52,17 +47,13 @@
         <p style="font-size: 14px; color: var(--slate-500);">Lengkapi informasi toko untuk menyelesaikan pendaftaran.</p>
     </div>
 
-    @if ($errors->any())
+    @if (session('error'))
         <div class="alert" role="alert">
-            <ul style="padding-left: 16px; margin: 0;">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+            {{ session('error') }}
         </div>
     @endif
 
-    <form method="POST" action="{{ route('tenant.setup') }}" enctype="multipart/form-data" novalidate>
+    <form method="POST" action="{{ route('tenant.register') }}" enctype="multipart/form-data" novalidate>
         @csrf
         
         <h2 style="font-size: 18px; font-weight: 800; color: var(--slate-900); margin-top: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--slate-200); padding-bottom: 8px;">1. Info Usaha</h2>
@@ -73,29 +64,43 @@
                     <div class="icon-left">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                     </div>
-                    <input id="business_name" name="business_name" type="text" class="input @error('business_name') is-invalid @enderror" value="{{ old('business_name') }}" placeholder="Contoh: Kamera Sewa Jakarta" required autofocus>
+                    <input id="business_name" name="business_name" type="text" class="input @error('business_name') is-invalid @enderror" value="{{ old('business_name', $client->business_name ?? '') }}" placeholder="Contoh: Kamera Sewa Jakarta" required autofocus>
                 </div>
+                @error('business_name')
+                    <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
+                @enderror
             </div>
 
             <div class="field">
                 <label for="subdomain">Subdomain Toko <i>*</i></label>
                 <div style="display: flex; position: relative;">
-                    <input id="subdomain" name="subdomain" type="text" class="input @error('subdomain') is-invalid @enderror" value="{{ old('subdomain') }}" placeholder="namatoko" style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none;" required>
+                    <input id="subdomain" name="subdomain" type="text" class="input @error('subdomain') is-invalid @enderror" value="{{ old('subdomain', $client->subdomain ?? '') }}" placeholder="namatoko" style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none;" required>
                     <div style="display: flex; align-items: center; justify-content: center; padding: 0 16px; background-color: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 0 var(--radius-lg) var(--radius-lg) 0; color: var(--slate-500); font-size: 14px; font-weight: 600;">
                         .rentalbase.com
                     </div>
                 </div>
+                @error('subdomain')
+                    <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
+                @enderror
             </div>
         </div>
 
         <div class="field">
             <label for="description">Deskripsi Usaha <i>*</i></label>
-            <textarea id="description" name="description" class="input @error('description') is-invalid @enderror" rows="3" placeholder="Jelaskan secara singkat barang yang disewakan" required style="resize: vertical; padding-left: 16px;">{{ old('description') }}</textarea>
+            <textarea id="description" name="description" class="input @error('description') is-invalid @enderror" rows="3" placeholder="Jelaskan secara singkat barang yang disewakan" required style="resize: vertical; padding-left: 16px;">{{ old('description', $client->description ?? '') }}</textarea>
+            @error('description')
+                <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
+            @enderror
         </div>
 
         <div class="field" style="margin-top: 4px;">
             <label for="logo">Logo Bisnis</label>
-            <input type="file" id="logo" name="logo" accept="image/*" class="input @error('logo') is-invalid @enderror" style="padding: 10px 16px;">
+            <input type="file" id="logo" name="logo" accept="image/png,image/jpeg,image/jpg,image/gif" class="input @error('logo') is-invalid @enderror" style="padding: 10px 16px;">
+            <span style="font-size: 12px; color: var(--slate-500); margin-top: 4px; display: block;">Format: PNG, JPG, JPEG, GIF (Maks. 2MB)</span>
+            <span id="logo-error" style="display: none; color: var(--red-500); font-size: 12px; margin-top: 4px; font-weight: 500;"></span>
+            @error('logo')
+                <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
+            @enderror
         </div>
 
         <h2 style="font-size: 18px; font-weight: 800; color: var(--slate-900); margin-top: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--slate-200); padding-bottom: 8px;">2. Info PIC (Pemilik)</h2>
@@ -108,6 +113,9 @@
                     </div>
                     <input id="owner_name" name="owner_name" type="text" class="input @error('owner_name') is-invalid @enderror" value="{{ old('owner_name', auth()->user()->name) }}" placeholder="Nama Lengkap" required>
                 </div>
+                @error('owner_name')
+                    <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
+                @enderror
             </div>
 
             <div class="field">
@@ -116,14 +124,20 @@
                     <div class="icon-left">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                     </div>
-                    <input id="phone" name="phone" type="tel" class="input @error('phone') is-invalid @enderror" value="{{ old('phone') }}" placeholder="081234567890" required>
+                    <input id="phone" name="phone" type="tel" class="input @error('phone') is-invalid @enderror" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="081234567890" required>
                 </div>
+                @error('phone')
+                    <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
+                @enderror
             </div>
         </div>
 
         <div class="field">
             <label for="address">Alamat Lengkap <i>*</i></label>
-            <textarea id="address" name="address" class="input @error('address') is-invalid @enderror" rows="2" placeholder="Alamat rumah/kantor" required style="resize: vertical; padding-left: 16px;">{{ old('address') }}</textarea>
+            <textarea id="address" name="address" class="input @error('address') is-invalid @enderror" rows="2" placeholder="Alamat rumah/kantor" required style="resize: vertical; padding-left: 16px;">{{ old('address', auth()->user()->address ?? '') }}</textarea>
+            @error('address')
+                <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
+            @enderror
         </div>
 
         <style>
@@ -214,6 +228,9 @@
                     </div>
                 </label>
             </div>
+            @error('plan_name')
+                <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
+            @enderror
         </div>
 
         <div class="field" style="margin-top: 16px;">
@@ -223,6 +240,9 @@
                     Saya setuju dengan <a href="#" class="link" target="_blank">Syarat dan Ketentuan</a> serta <a href="#" class="link" target="_blank">Kebijakan Privasi</a> yang berlaku.
                 </span>
             </label>
+            @error('terms')
+                <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
+            @enderror
         </div>
 
         <button type="submit" class="btn btn-primary" style="margin-top: 8px;">
@@ -230,4 +250,58 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </button>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const logoInput = document.getElementById('logo');
+            const logoError = document.getElementById('logo-error');
+
+            if (logoInput) {
+                const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+                logoInput.addEventListener('change', function () {
+                    const file = this.files[0];
+                    if (file) {
+                        if (file.size > MAX_FILE_SIZE) {
+                            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                            if (logoError) {
+                                logoError.textContent = `Ukuran file logo (${sizeMB}MB) melebihi batas maksimal 2MB. Silakan pilih file yang lebih kecil.`;
+                                logoError.style.display = 'block';
+                            }
+                            this.classList.add('is-invalid');
+                            this.value = ''; // Reset file input
+                        } else {
+                            if (logoError) {
+                                logoError.textContent = '';
+                                logoError.style.display = 'none';
+                            }
+                            this.classList.remove('is-invalid');
+                        }
+                    } else {
+                        if (logoError) {
+                            logoError.textContent = '';
+                            logoError.style.display = 'none';
+                        }
+                        this.classList.remove('is-invalid');
+                    }
+                });
+
+                const form = logoInput.closest('form');
+                if (form) {
+                    form.addEventListener('submit', function (e) {
+                        const file = logoInput.files[0];
+                        if (file && file.size > MAX_FILE_SIZE) {
+                            e.preventDefault();
+                            if (logoError) {
+                                logoError.textContent = 'Ukuran file logo tidak boleh lebih dari 2MB.';
+                                logoError.style.display = 'block';
+                            }
+                            logoInput.classList.add('is-invalid');
+                            logoInput.focus();
+                        }
+                    });
+                }
+            }
+        });
+    </script>
 @endsection
