@@ -22,8 +22,9 @@ class AdminThemeController extends Controller
         $subscription = $client->activeSubscription;
         $plan = $subscription ? strtolower($subscription->plan_name) : 'starter';
 
-        // Aturan Starter: jika sudah memiliki warna, tolak perubahan.
-        if ($plan === 'starter' && !empty($client->theme_color)) {
+        // Aturan paket: tolak perubahan jika paket tidak mendukung fitur custom_theme (mis. Starter)
+        $allowsCustomTheme = config("packages.{$plan}.features.custom_theme", false);
+        if (! $allowsCustomTheme && !empty($client->theme_color)) {
             return back()->with('error', 'Perubahan tema tidak tersedia pada subscription Starter. Silakan upgrade ke subscription Business atau Professional untuk mengubah tema.');
         }
 

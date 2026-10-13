@@ -411,12 +411,12 @@ class TenantRegistrationController extends Controller
 
     private function getPrice($plan)
     {
-        return match ($plan) {
+        return config("packages.{$plan}.price", match ($plan) {
             'starter' => 0,
             'business' => 99000,
             'professional' => 249000,
             default => 0,
-        };
+        });
     }
 
     private function getPlanDetails($plan)
