@@ -8,6 +8,11 @@ class Client extends Model
 {
     protected $guarded = [];
 
+    public function getNamaUsahaAttribute(): string
+    {
+        return $this->attributes['nama_usaha'] ?? $this->attributes['business_name'] ?? 'RentalBase Tenant';
+    }
+
     public function users()
     {
         return $this->hasMany(User::class);
