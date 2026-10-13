@@ -20,6 +20,8 @@ class CustomerHomeController extends Controller
             ->orderBy('name')
             ->get();
 
+        session()->put('active_client_id', $client->id);
+
         return view()->file(
             resource_path('views/customer/customer.home.blade.php'),
             compact('client', 'categories')
