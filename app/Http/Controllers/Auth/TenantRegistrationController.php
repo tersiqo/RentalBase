@@ -17,6 +17,20 @@ class TenantRegistrationController extends Controller
 {
     public function showLogin()
     {
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            if ($user->role === 'owner') {
+                return redirect()->route('owner.dashboard');
+            }
+
+            if ($user->role === 'admin_rental') {
+                return redirect()->route('admin.dashboard');
+            }
+
+            return redirect('/');
+        }
+
         return view('auth.login');
     }
 
@@ -25,6 +39,9 @@ class TenantRegistrationController extends Controller
         $request->validate([
             'email' => 'required|string',
             'password' => 'required|string',
+        ], [
+            'email.required' => 'Email atau username wajib diisi.',
+            'password.required' => 'Password wajib diisi.',
         ]);
 
         $loginField = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
@@ -55,6 +72,14 @@ class TenantRegistrationController extends Controller
 
             $request->session()->regenerate();
 
+            if ($user->role === 'owner') {
+                return redirect()->intended(route('owner.dashboard'));
+            }
+
+            if ($user->role === 'admin_rental') {
+                return redirect()->intended(route('admin.dashboard'));
+            }
+
             if ($user->role === 'customer') {
                 $redirectUrl = $request->input('redirect');
                 if ($redirectUrl && (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost'))) {
@@ -69,10 +94,10 @@ class TenantRegistrationController extends Controller
                 return redirect()->intended('/client/babyrental');
             }
 
-            return redirect()->intended('/admin/dashboard');
+            return redirect('/');
         }
 
-        return back()->withInput()->withErrors(['email' => 'Username/Email atau password salah.']);
+        return back()->withInput()->withErrors(['email' => 'Email atau password yang Anda masukkan salah.']);
     }
 
     public function logout(Request $request)
@@ -83,11 +108,11 @@ class TenantRegistrationController extends Controller
         $request->session()->regenerateToken();
 
         $referer = $request->headers->get('referer');
-        if ($referer && ! str_contains($referer, '/checkout')) {
+        if ($referer && ! str_contains($referer, '/checkout') && ! str_contains($referer, '/admin') && ! str_contains($referer, '/owner')) {
             return redirect($referer);
         }
 
-        return redirect('/');
+        return redirect()->route('login')->with('success', 'Anda telah berhasil keluar.');
     }
 
     public function showRegister(Request $request)

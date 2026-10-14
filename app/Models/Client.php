@@ -25,7 +25,17 @@ class Client extends Model
 
     public function activeSubscription()
     {
-        return $this->hasOne(Subscription::class)->where('status', 'aktif')->latest();
+        return $this->hasOne(Subscription::class)->where('status', 'aktif')->latestOfMany();
+    }
+
+    public function latestSubscription()
+    {
+        return $this->hasOne(Subscription::class)->latestOfMany();
+    }
+
+    public function adminUser()
+    {
+        return $this->hasOne(User::class)->where('role', 'admin_rental');
     }
 
     public function products()

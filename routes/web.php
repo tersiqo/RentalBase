@@ -12,6 +12,9 @@ use App\Http\Controllers\Customer\CustomerCheckoutController;
 use App\Http\Controllers\Customer\CustomerHomeController;
 use App\Http\Controllers\Customer\CustomerProductController;
 use App\Http\Controllers\Landing\RentalBaseHomeController;
+use App\Http\Controllers\Owner\OwnerDashboardController;
+use App\Http\Controllers\Owner\OwnerRegistrationController;
+use App\Http\Controllers\Owner\OwnerTenantController;
 use App\Http\Controllers\PageController;
 use App\Livewire\Customer\CartPage;
 use Illuminate\Support\Facades\Route;
@@ -82,6 +85,20 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::get('/theme', [AdminThemeController::class, 'index'])->name('theme.index');
     Route::post('/theme', [AdminThemeController::class, 'update'])->name('theme.update');
     Route::get('/settings', fn () => back())->name('settings.index');
+});
+
+Route::prefix('owner')->middleware(['owner'])->name('owner.')->group(function () {
+    Route::get('/dashboard', [OwnerDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/logout', [OwnerDashboardController::class, 'logout'])->name('logout');
+
+    Route::get('/registrations', [OwnerRegistrationController::class, 'index'])->name('registrations.index');
+    Route::post('/registrations/{id}/verify', [OwnerRegistrationController::class, 'verify'])->name('registrations.verify');
+    Route::post('/registrations/{id}/reject', [OwnerRegistrationController::class, 'reject'])->name('registrations.reject');
+
+    Route::get('/tenants', [OwnerTenantController::class, 'index'])->name('tenants.index');
+    Route::put('/tenants/{client}', [OwnerTenantController::class, 'update'])->name('tenants.update');
+    Route::post('/tenants/{client}/status', [OwnerTenantController::class, 'updateStatus'])->name('tenants.status');
+    Route::put('/tenants/{client}/subscription', [OwnerTenantController::class, 'updateSubscription'])->name('tenants.subscription');
 });
 
 Route::get('/client/{subdomain}/cart', CartPage::class)

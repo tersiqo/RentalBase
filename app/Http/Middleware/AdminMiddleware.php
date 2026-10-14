@@ -35,8 +35,12 @@ class AdminMiddleware
             return redirect('/')->with('error', 'Akun tidak aktif.');
         }
 
-        if (! in_array($user->role, ['admin_rental', 'owner'], true)) {
-            return redirect('/')->with('error', 'Akses ditolak. Halaman tersebut hanya dapat diakses oleh pengelola toko.');
+        if ($user->role === 'owner') {
+            return redirect()->route('owner.dashboard')->with('error', 'Akses ditolak. Halaman tersebut khusus untuk pengelola toko (Admin Rental).');
+        }
+
+        if ($user->role !== 'admin_rental') {
+            return redirect()->route('login')->with('error', 'Akses ditolak. Halaman tersebut hanya dapat diakses oleh pengelola toko.');
         }
 
         return $next($request);
