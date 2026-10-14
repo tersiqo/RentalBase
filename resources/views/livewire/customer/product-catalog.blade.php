@@ -3,41 +3,49 @@
     <section class="relative overflow-hidden border-b border-gray-100 bg-white" style="background: radial-gradient(circle at 8% 0%, rgba(253,186,116,0.28), transparent 42%), radial-gradient(circle at 95% 10%, rgba(251,146,60,0.2), transparent 45%), #fff;">
         <div class="max-w-[1260px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-12 items-center pt-14 pb-16">
             <div>
-                <span class="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-gray-800 shadow-[0_6px_16px_-8px_rgba(0,0,0,0.15)] mb-5">
-                    <span class="w-2 h-2 rounded-full bg-primary-500 shadow-[0_0_0_4px_#FFEDD5]"></span>
-                    {{ $client->subdomain }}.rentalbase.id
-                </span>
-                <h1 class="text-[clamp(34px,4.6vw,52px)] leading-[1.1] font-extrabold tracking-tight text-gray-900 mb-4 max-w-[15ch]">
+                <div class="animate-fade-in-up" style="animation-delay: 60ms;">
+                    <span class="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-gray-800 shadow-[0_6px_16px_-8px_rgba(0,0,0,0.15)] mb-5 hover:border-primary-200 transition-colors">
+                        <span class="w-2 h-2 rounded-full bg-primary-500 shadow-[0_0_0_4px_#FFEDD5]"></span>
+                        {{ $client->subdomain }}.rentalbase.id
+                    </span>
+                </div>
+                
+                <h1 class="text-[clamp(34px,4.6vw,52px)] leading-[1.1] font-extrabold tracking-tight text-gray-900 mb-4 max-w-[15ch] animate-fade-in-up" style="animation-delay: 140ms;">
                     Perlengkapan bayi, sewa tanpa deposit tunai
                 </h1>
-                <p class="text-[18px] max-w-[46ch] mb-7 text-gray-600">
+                
+                <p class="text-[18px] max-w-[46ch] mb-7 text-gray-600 animate-fade-in-up" style="animation-delay: 220ms;">
                     Eksplorasi koleksi peralatan kami dan cek ketersediaannya secara real-time. Bebas repot, bebas deposit tunai.
                 </p>
                 
                 <!-- Search Component -->
-                <div class="bg-white border border-gray-100 rounded-2xl shadow-[0_16px_32px_-14px_rgba(249,115,22,0.25)] p-2 flex items-center max-w-[680px]">
+                <div class="bg-white border border-gray-100 rounded-2xl shadow-[0_16px_32px_-14px_rgba(249,115,22,0.25)] p-2 flex items-center max-w-[680px] transition-all duration-300 focus-within:shadow-[0_20px_38px_-12px_rgba(249,115,22,0.35)] focus-within:border-primary-300 animate-fade-in-up" style="animation-delay: 300ms;">
                     <div class="flex items-center px-3.5 py-1.5 flex-1 min-w-0">
                         <input id="q" wire:model.live.debounce.300ms="search" placeholder="Cari perlengkapan..." class="border-0 bg-transparent outline-none w-full font-medium text-[15px] p-0 focus:ring-0 placeholder-gray-400">
                     </div>
                     <button class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-6 py-2.5 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition flex-none ml-1 cursor-pointer" onclick="document.getElementById('katalog').scrollIntoView()">Cari</button>
                 </div>
 
-                <div class="flex flex-wrap gap-2 mt-4 items-center text-[13px]">
+                <div class="flex flex-wrap gap-2 mt-4 items-center text-[13px] animate-fade-in-up" style="animation-delay: 380ms;">
                     <span class="text-gray-600 mr-1 font-medium">Sering dicari:</span>
                     @foreach($categories->take(4) as $cat)
-                        <button type="button" wire:click="$set('search', '{{ addslashes($cat->name) }}')" class="border border-gray-200 bg-white rounded-full px-3.5 py-1.5 font-semibold hover:border-primary-500 hover:text-primary-500 transition cursor-pointer">{{ $cat->name }}</button>
+                        <button type="button" wire:click="$set('search', '{{ addslashes($cat->name) }}')" class="border border-gray-200 bg-white rounded-full px-3.5 py-1.5 font-semibold hover:border-primary-500 hover:text-primary-500 hover:scale-105 active:scale-95 transition cursor-pointer">{{ $cat->name }}</button>
                     @endforeach
                 </div>
             </div>
             
-            <div class="relative h-[400px] hidden lg:block" aria-hidden="true">
-                <div class="absolute inset-0 right-[30px] bottom-[40px] rounded-[28px] overflow-hidden flex items-center justify-center shadow-[0_30px_60px_-20px_rgba(234,88,12,0.45)]" style="background: linear-gradient(150deg, #FED7AA, #FDBA74 55%, #FB923C);">
-                    <div class="absolute w-[340px] h-[340px] rounded-full bg-white/25 -top-[90px] -right-[90px]"></div>
-                    <div class="absolute w-[220px] h-[220px] rounded-full bg-white/20 -bottom-[70px] -left-[50px]"></div>
-                    <svg width="230" height="230" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 filter drop-shadow-[0_18px_20px_rgba(124,45,18,0.3)]"><path d="M14 30h14l8 42h46" /><path d="M30 44h60c0 18-12 28-30 28H36"/><path d="M60 44V30c14 0 24 6 28 14"/><circle cx="42" cy="90" r="9" fill="#FFEDD5"/><circle cx="82" cy="90" r="9" fill="#FFEDD5"/></svg>
-                </div>
-                <div class="absolute -right-1.5 top-5 bg-white/90 backdrop-blur border border-gray-100 rounded-full px-4 py-2 text-[13px] font-bold text-gray-800 shadow-[0_14px_28px_-10px_rgba(0,0,0,0.25)] flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-primary-500 shadow-[0_0_0_4px_#FFEDD5]"></span>Unit siap antar
+            <div class="relative h-[400px] hidden lg:block animate-fade-in-up" style="animation-delay: 180ms;" aria-hidden="true">
+                <div class="animate-float h-full w-full relative">
+                    <div class="absolute inset-0 right-[30px] bottom-[40px] rounded-[28px] overflow-hidden flex items-center justify-center shadow-[0_30px_60px_-20px_rgba(234,88,12,0.45)] group cursor-pointer transition-all duration-500 hover:shadow-[0_36px_70px_-18px_rgba(234,88,12,0.55)] hover:scale-[1.01]" style="background: linear-gradient(150deg, #FED7AA, #FDBA74 55%, #FB923C);">
+                        <div class="absolute w-[340px] h-[340px] rounded-full bg-white/25 -top-[90px] -right-[90px] transition-transform duration-700 ease-out group-hover:scale-110"></div>
+                        <div class="absolute w-[220px] h-[220px] rounded-full bg-white/20 -bottom-[70px] -left-[50px] transition-transform duration-700 ease-out group-hover:scale-110"></div>
+                        <svg width="230" height="230" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 filter drop-shadow-[0_18px_20px_rgba(124,45,18,0.3)] transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-rotate-2"><path d="M14 30h14l8 42h46" /><path d="M30 44h60c0 18-12 28-30 28H36"/><path d="M60 44V30c14 0 24 6 28 14"/><circle cx="42" cy="90" r="9" fill="#FFEDD5"/><circle cx="82" cy="90" r="9" fill="#FFEDD5"/></svg>
+                    </div>
+                    <div class="absolute -right-1.5 top-5 animate-float-slow">
+                        <div class="bg-white/95 backdrop-blur-md border border-gray-100 rounded-full px-4 py-2 text-[13px] font-bold text-gray-800 shadow-[0_14px_28px_-10px_rgba(0,0,0,0.25)] flex items-center gap-2 hover:scale-105 transition-transform">
+                            <span class="w-2 h-2 rounded-full bg-primary-500 shadow-[0_0_0_4px_#FFEDD5] animate-pulse"></span>Unit siap antar
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -55,7 +63,7 @@
         </div>
 
         <!-- Sidebar -->
-        <aside class="space-y-6 lg:sticky lg:top-[92px] lg:self-start" :class="showFilters ? 'block' : 'hidden lg:block'">
+        <aside class="space-y-6 lg:sticky lg:top-[92px] lg:self-start animate-fade-in-up" :class="showFilters ? 'block' : 'hidden lg:block'">
             
             <!-- Category -->
             <div>
@@ -164,11 +172,15 @@
                 @else
                     @foreach($this->products as $index => $item)
                         <!-- Card -->
-                        <article wire:key="product-{{ $item->id }}" class="bg-white border border-gray-100 rounded-[24px] overflow-hidden flex flex-col shadow-[0_10px_30px_-14px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_26px_44px_-18px_rgba(249,115,22,0.28)] {{ $item->available_units_count > 0 ? '' : 'opacity-60 grayscale-[0.2]' }} group animate-fade-in-up" style="animation-delay: {{ $index * 40 }}ms">
+                        <article wire:key="product-{{ $item->id }}" class="bg-white border border-gray-100 rounded-[24px] overflow-hidden flex flex-col shadow-[0_10px_30px_-14px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_26px_44px_-18px_rgba(249,115,22,0.28)] {{ $item->available_units_count > 0 ? '' : 'opacity-60 grayscale-[0.2]' }} group animate-fade-in-up" style="animation-delay: {{ $index * 130 }}ms">
                             
                             <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="relative h-[190px] flex items-center justify-center overflow-hidden bg-gray-100">
                                 @if($item->main_image)
-                                    <img src="{{ Storage::url($item->main_image) }}" alt="{{ $item->name }}" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                                    <img src="{{ Storage::url($item->main_image) }}" 
+                                         alt="{{ $item->name }}" 
+                                         class="object-cover w-full h-full opacity-0 scale-95 transition-all duration-700 ease-out group-hover:scale-110"
+                                         onload="this.classList.remove('opacity-0', 'scale-95'); this.classList.add('opacity-100', 'scale-100');"
+                                         x-init="if ($el.complete) { $el.classList.remove('opacity-0', 'scale-95'); $el.classList.add('opacity-100', 'scale-100'); }">
                                 @else
                                     <div class="absolute inset-0 bg-gradient-to-br from-orange-200 to-primary-400">
                                         <div class="absolute w-[180px] h-[180px] rounded-full bg-white/35 -top-[60px] -right-[40px]"></div>

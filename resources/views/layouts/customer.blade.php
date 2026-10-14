@@ -24,22 +24,22 @@
         <div class="max-w-[1260px] mx-auto px-6">
             <div class="flex justify-between items-center h-[68px]">
                 <!-- Logo & Name -->
-                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="flex items-center gap-3 font-extrabold text-gray-900 text-[17px]">
+                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="flex items-center gap-3 font-extrabold text-gray-900 text-[17px]">
                     <div class="w-[38px] h-[38px] bg-primary-500 rounded-xl text-white flex items-center justify-center font-bold shadow-[0_8px_16px_-6px_rgba(249,115,22,0.5)]">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M3 4h3l2 11h10M6 8h13l-2 6H8"/></svg>
                     </div>
-                    <span>{{ $client->nama_usaha ?? 'RentalBase Tenant' }}</span>
+                    <span>{{ $client->nama_usaha ?? ($client->name ?? 'RentalBase Tenant') }}</span>
                 </a>
 
                 <!-- Center Navigation -->
                 <nav class="hidden md:flex items-center space-x-7 font-semibold text-[14px]">
-                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="{{ request()->routeIs('customer.home') || request()->routeIs('customer.product.*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Katalog</a>
+                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="{{ (request()->routeIs('customer.home*') || request()->routeIs('customer.product.*')) ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Katalog</a>
                     @if(request()->routeIs('customer.checkout*'))
                         <a href="#" class="text-primary-500 border-b-2 border-primary-500 py-[22px] transition-colors">Checkout</a>
                     @else
-                        <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}#katalog" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Cara sewa</a>
+                        <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}#katalog" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Cara sewa</a>
                     @endif
-                    <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? null])) }}" class="{{ request()->routeIs('customer.orders*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Pesanan Saya</a>
+                    <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="{{ request()->routeIs('customer.orders*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Pesanan Saya</a>
                     <a href="#bantuan" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Bantuan</a>
                 </nav>
 
@@ -65,7 +65,7 @@
                                 <div class="px-4 py-2 border-b border-gray-100 mb-1">
                                     <p class="text-sm font-bold text-gray-900">Halo, {{ auth()->user()->name }}!</p>
                                 </div>
-                                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? null])) }}" class="block px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 transition">Pesanan Saya</a>
+                                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 transition">Pesanan Saya</a>
                                 <div class="border-t border-gray-100 mt-1"></div>
                                 <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</a>
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
@@ -92,20 +92,19 @@
              x-transition
              class="md:hidden bg-white border-t border-gray-100"
              style="display: none;">
-            <div class="px-4 pt-3 pb-3 space-y-2">
-                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.home') || request()->routeIs('customer.product.*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Katalog</a>
+                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ (request()->routeIs('customer.home*') || request()->routeIs('customer.product.*')) ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Katalog</a>
                 @if(request()->routeIs('customer.checkout*'))
                     <a href="#" class="block px-3 py-2 rounded-lg text-base font-medium text-primary-600 bg-primary-50">Checkout</a>
                 @else
-                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? '']) }}#katalog" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
+                    <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}#katalog" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
                 @endif
-                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? null])) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
+                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
                 <a href="#bantuan" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Bantuan</a>
                 
                 @auth
                     <div class="border-t border-gray-100 pt-2 mt-2">
                         <div class="px-3 py-1 text-xs font-bold text-gray-400 uppercase">Akun Saya</div>
-                        <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? null])) }}" class="block px-3 py-2 rounded-lg text-base font-semibold text-primary-600 hover:bg-primary-50">Pesanan Saya</a>
+                        <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-semibold text-primary-600 hover:bg-primary-50">Pesanan Saya</a>
                         <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50">Log out</a>
                     </div>
                 @else

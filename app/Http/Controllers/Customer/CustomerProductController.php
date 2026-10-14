@@ -23,6 +23,7 @@ class CustomerProductController extends Controller
             ->firstOrFail();
 
         session()->put('active_client_id', $client->id);
+        session()->put('active_client_subdomain', $client->subdomain);
 
         // Pass 'client' and 'product' to the view.
         return view('customer.product', compact('client', 'product'));

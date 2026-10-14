@@ -49,30 +49,48 @@ class PageController extends Controller
 
             if ($client) {
                 session()->put('active_client_id', $client->id);
+                session()->put('active_client_subdomain', $client->subdomain);
             }
         }
 
-        // Priority 2: session active_client_id
+        // Priority 2: session active_client_id or active_client_subdomain
         if (! $client && session()->has('active_client_id')) {
             $client = Client::find(session('active_client_id'));
         }
+        if (! $client && session()->has('active_client_subdomain')) {
+            $client = Client::where('subdomain', session('active_client_subdomain'))->first();
+        }
 
-        // Priority 3: the authenticated user's own client
+        // Priority 3: inspect HTTP referer URL (e.g. navigated from /client/{subdomain})
+        if (! $client && ($referer = $request->headers->get('referer'))) {
+            if (preg_match('#/client/([^/?#]+)#', $referer, $matches)) {
+                $client = Client::where('subdomain', $matches[1])->first();
+                if ($client) {
+                    session()->put('active_client_id', $client->id);
+                    session()->put('active_client_subdomain', $client->subdomain);
+                }
+            }
+        }
+
+        // Priority 4: the authenticated user's own client
         if (! $client && Auth::check() && Auth::user()->client_id) {
             $client = Auth::user()->client;
         }
 
-        // Priority 4: first active client (fallback, keeps automated tests green)
+        // Priority 5: first active client (fallback, keeps automated tests green)
         if (! $client) {
             $client = Client::where('status', 'aktif')->first() ?? Client::first();
         }
 
-        // Priority 5: anonymous object so the view never crashes
+        // Priority 6: anonymous object so the view never crashes
+        $activeSubdomain = session('active_client_subdomain') ?? ($client?->subdomain ?? 'babyrental');
+        $activeNamaUsaha = $client?->nama_usaha ?? ($client?->name ?? 'BabyRent Malang');
         $client ??= (object) [
             'id'                => 1,
-            'nama_usaha'        => 'RentalBase',
-            'subdomain'         => 'kamerakita',
-            'address'           => 'Jl. Borobudur No. 88 Malang',
+            'name'              => $activeNamaUsaha,
+            'nama_usaha'        => $activeNamaUsaha,
+            'subdomain'         => $activeSubdomain,
+            'address'           => 'Jl. Contoh No. 12, Malang',
             'phone'             => '08123456789',
             'operational_hours' => '08:00 - 20:00',
         ];
