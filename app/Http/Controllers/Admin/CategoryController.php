@@ -152,22 +152,22 @@ class CategoryController extends Controller
         $plan = mb_strtolower((string) $planName);
 
         if ($plan === '') {
-            return 20;
+            return config('packages.business.limits.categories', 20);
         }
 
         if (str_contains($plan, 'starter')) {
-            return 5;
+            return config('packages.starter.limits.categories', 5);
         }
 
         if (str_contains($plan, 'business')) {
-            return 20;
+            return config('packages.business.limits.categories', 20);
         }
 
         if (str_contains($plan, 'professional') || str_contains($plan, 'pro') || str_contains($plan, 'enterprise')) {
-            return null;
+            return config('packages.professional.limits.categories', null);
         }
 
-        return 20;
+        return config('packages.business.limits.categories', 20);
     }
 
     private function resolveClient(): Client

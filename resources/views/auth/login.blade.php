@@ -1,10 +1,10 @@
 @extends('auth.layout')
 
-@section('title', 'Login Admin')
+@section('title', 'Masuk ke Akun — RentalBase')
 
 @section('content')
-    <h1>Masuk ke akun Anda</h1>
-    <p class="sub">Kelola toko rental Anda dari dashboard admin.</p>
+    <h1>Masuk ke Akun Anda</h1>
+    <p class="sub">Akses Dashboard Admin Rental atau Panel Owner Pusat RentalBase.</p>
 
     <a href="{{ route('auth.google') }}" class="btn btn-google">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -18,27 +18,55 @@
 
     <div class="divider">atau masuk dengan email</div>
 
-    @if ($errors->any())
-        <div class="alert" role="alert">{{ $errors->first() }}</div>
+    {{-- Flash Notifications --}}
+    @if (session('success'))
+        <div class="alert alert-success" role="alert" style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+            {{ session('success') }}
+        </div>
     @endif
 
-    <form method="POST" action="{{ route('login') }}" novalidate>
+    @if (session('status'))
+        <div class="alert alert-success" role="alert" style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+            {{ session('status') }}
+        </div>
+    @endif
+
+    @if (session('info'))
+        <div class="alert alert-info" role="alert" style="background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;">
+            {{ session('info') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="alert" role="alert" style="background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('login') }}" x-data="{ submitting: false }" @submit="submitting = true" novalidate>
         @csrf
         @if(request()->filled('redirect'))
             <input type="hidden" name="redirect" value="{{ request('redirect') }}">
         @endif
 
+        {{-- Input Email / Username --}}
         <div class="field">
-            <label for="email">Alamat email <i>*</i></label>
+            <label for="email">Alamat Email atau Username <i>*</i></label>
             <div class="input-wrapper">
                 <div class="icon-left">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                 </div>
-                <input id="email" name="email" type="email" class="input @error('email') is-invalid @enderror"
-                       value="{{ old('email') }}" placeholder="nama@email.com" autocomplete="email" required autofocus>
+                <input id="email" name="email" type="text" class="input @error('email') is-invalid @enderror"
+                       value="{{ old('email') }}" placeholder="admin@rental.com atau nama_user" autocomplete="username" required autofocus>
             </div>
+            @error('email')
+                <div style="color: #ef4444; font-size: 12px; margin-top: 6px; font-weight: 500;">
+                    {{ $message }}
+                </div>
+            @enderror
         </div>
 
+        {{-- Input Password --}}
         <div class="field">
             <label for="password">Password <i>*</i></label>
             <div class="pw">
@@ -51,18 +79,34 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
             </div>
+            @error('password')
+                <div style="color: #ef4444; font-size: 12px; margin-top: 6px; font-weight: 500;">
+                    {{ $message }}
+                </div>
+            @enderror
         </div>
 
+        {{-- Remember & Forgot Password --}}
         <div class="row">
-            <label class="remember"><input type="checkbox" name="remember"> Ingat saya</label>
+            <label class="remember"><input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }}> Ingat saya</label>
             <a href="{{ route('password.request') }}" class="link">Lupa password?</a>
         </div>
 
-        <button type="submit" class="btn btn-primary">
-            Masuk 
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        {{-- Submit Button --}}
+        <button type="submit" class="btn btn-primary" :disabled="submitting" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px;">
+            <span x-show="!submitting" class="inline-flex items-center justify-center gap-2" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>Masuk</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; flex-shrink: 0; display: inline-block; vertical-align: middle;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </span>
+            <span x-show="submitting" x-cloak class="inline-flex items-center justify-center gap-2" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg class="animate-spin" style="width: 16px; height: 16px; flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-opacity="0.25"></circle>
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor"></path>
+                </svg>
+                <span>Memproses...</span>
+            </span>
         </button>
     </form>
 
-    <p class="switch">Belum punya akun? <a href="{{ route('tenant.register') }}" class="link">Daftar di sini</a></p>
+    <p class="switch">Ingin mendaftarkan toko rental baru? <a href="{{ route('tenant.register') }}" class="link">Daftar Tenant</a></p>
 @endsection

@@ -272,9 +272,13 @@ class CustomerCheckoutController extends Controller
 
     protected function resolveClient(string $subdomain): Client
     {
-        return Client::where('subdomain', $subdomain)
+        $client = Client::where('subdomain', $subdomain)
             ->where('status', 'aktif')
             ->firstOrFail();
+
+        session()->put('active_client_id', $client->id);
+
+        return $client;
     }
 
     protected function resolveSelectedHashes(array $cart, $requestedHashes): array

@@ -1,0 +1,752 @@
+@extends('layouts.owner')
+
+@section('title', 'Dashboard Owner Pusat')
+@section('page-title', 'Dashboard Owner')
+
+@section('content')
+<div class="space-y-8 max-w-7xl mx-auto"
+     x-data="{
+        showModal: false,
+        activeTenant: null,
+        showRejectModal: false,
+        rejectId: null,
+        rejectName: '',
+        rejectUrl: '',
+        showVerifyModal: false,
+        verifyId: null,
+        verifyName: '',
+        verifyUrl: ''
+     }">
+
+    {{-- Flash Notifications --}}
+    @if(session('success'))
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm shadow-sm">
+            <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="font-medium">{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm shadow-sm">
+            <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span class="font-medium">{{ session('error') }}</span>
+        </div>
+    @endif
+
+    @if(session('info'))
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-sm shadow-sm">
+            <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="font-medium">{{ session('info') }}</span>
+        </div>
+    @endif
+
+    {{-- Header Section --}}
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-slate-200/60">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight sm:text-3xl">
+                Dashboard Owner Pusat
+            </h1>
+            <p class="mt-1 text-sm text-slate-500">
+                Ringkasan metrik platform RentalBase, pemantauan tenant rental, dan status langganan.
+            </p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Sistem Normal
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Per {{ now('Asia/Jakarta')->format('H:i') }} WIB
+            </span>
+        </div>
+    </div>
+
+    {{-- 4 Kartu Metrik Utama --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+        {{-- Kartu 1: Pendaftaran Menunggu Verifikasi --}}
+        <a href="{{ route('owner.registrations.index') }}"
+           class="stat-card relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all block group">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-bold uppercase tracking-wider text-orange-600 group-hover:text-orange-700 transition-colors">Menunggu Verifikasi</p>
+                <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 group-hover:bg-orange-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight group-hover:text-orange-600 transition-colors">
+                    {{ number_format($pendaftaranMenunggu) }}
+                </h3>
+                <p class="mt-1 text-xs text-slate-500 font-medium flex items-center justify-between">
+                    <span>Pendaftaran baru perlu ditinjau</span>
+                    <span class="text-orange-600 font-bold group-hover:underline text-[11px]">&rarr;</span>
+                </p>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-orange-500"></div>
+        </a>
+
+        {{-- Kartu 2: Tenant Aktif --}}
+        <div class="stat-card relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-bold uppercase tracking-wider text-emerald-600">Tenant Aktif</p>
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+                    {{ number_format($tenantAktif) }}
+                </h3>
+                <p class="mt-1 text-xs text-emerald-600 font-medium">
+                    Operasional & toko aktif
+                </p>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
+        </div>
+
+        {{-- Kartu 3: Tenant Suspended --}}
+        <div class="stat-card relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-bold uppercase tracking-wider text-rose-600">Tenant Suspended</p>
+                <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+                    {{ number_format($tenantSuspended) }}
+                </h3>
+                <p class="mt-1 text-xs text-rose-600 font-medium">
+                    Ditangguhkan / dinonaktifkan
+                </p>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-rose-500"></div>
+        </div>
+
+        {{-- Kartu 4: Langganan Segera Berakhir --}}
+        <div class="stat-card relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-bold uppercase tracking-wider text-amber-600">Segera Berakhir</p>
+                <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+                    {{ number_format($subscriptionSegera) }}
+                </h3>
+                <p class="mt-1 text-xs text-amber-600 font-medium">
+                    Jatuh tempo dlm rentang 7 hari
+                </p>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-amber-500"></div>
+        </div>
+
+    </div>
+
+    {{-- Section Pendaftaran Menunggu Verifikasi --}}
+    @if(isset($pendingRegistrations) && $pendingRegistrations->count() > 0)
+        <div id="pendaftaran" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            {{-- Header --}}
+            <div class="px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 leading-snug">Pendaftaran Tenant Baru Menunggu Verifikasi</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Tenant telah menyelesaikan pembayaran manual dan menunggu persetujuan Owner</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2.5 self-start sm:self-auto">
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#FEF3C7] text-[#92400E]">
+                        Perlu Tindakan
+                    </span>
+                </div>
+            </div>
+
+            {{-- Table --}}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-t border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            <th scope="col" class="py-3.5 px-6">Tenant</th>
+                            <th scope="col" class="py-3.5 px-6">Pemohon</th>
+                            <th scope="col" class="py-3.5 px-6">Telepon</th>
+                            <th scope="col" class="py-3.5 px-6">Paket</th>
+                            <th scope="col" class="py-3.5 px-6">Status</th>
+                            <th scope="col" class="py-3.5 px-6">Diajukan</th>
+                            <th scope="col" class="py-3.5 px-6 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100/80 text-sm">
+                        @foreach($pendingRegistrations as $reg)
+                            @php
+                                $logo = $reg->client?->logo;
+                                $logoUrl = $logo ? asset('storage/' . $logo) : null;
+                                $words = array_values(array_filter(explode(' ', trim($reg->business_name))));
+                                if (count($words) >= 2) {
+                                    $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+                                } else {
+                                    $initials = strtoupper(substr($reg->business_name, 0, 2));
+                                }
+                            @endphp
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                {{-- Tenant --}}
+                                <td class="py-4 px-6 align-middle">
+                                    <div class="flex items-center gap-3">
+                                        @if($logoUrl)
+                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}"
+                                                 class="w-10 h-10 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
+                                        @else
+                                            <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200/70 text-orange-600 font-extrabold text-xs flex items-center justify-center shrink-0">
+                                                {{ $initials }}
+                                            </div>
+                                        @endif
+                                        <div>
+                                            <span class="block font-bold text-slate-900 leading-snug">{{ $reg->business_name }}</span>
+                                            <span class="text-xs text-slate-400 leading-normal">{{ $reg->subdomain }}.rentalbase.id</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                {{-- Pemohon --}}
+                                <td class="py-4 px-6 align-middle">
+                                    <span class="block font-semibold text-slate-800 leading-snug">{{ $reg->admin_name }}</span>
+                                    <span class="block text-xs text-slate-400 leading-normal">{{ $reg->admin_email }}</span>
+                                    @if($reg->description)
+                                        <span class="block text-xs italic text-slate-400 mt-0.5" title="{{ $reg->description }}">
+                                            "{{ \Illuminate\Support\Str::words($reg->description, 3, '...') }}"
+                                        </span>
+                                    @endif
+                                </td>
+
+                                {{-- Telepon --}}
+                                <td class="py-4 px-6 align-middle text-xs font-medium text-slate-600 whitespace-nowrap">
+                                    {{ $reg->admin_phone ?: '-' }}
+                                </td>
+
+                                {{-- Paket --}}
+                                <td class="py-4 px-6 align-middle whitespace-nowrap">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-200/60 capitalize">
+                                        {{ $reg->plan_name }}
+                                    </span>
+                                </td>
+
+                                {{-- Status --}}
+                                <td class="py-4 px-6 align-middle whitespace-nowrap">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF3C7] text-[#92400E]">
+                                        Menunggu Verifikasi
+                                    </span>
+                                </td>
+
+                                {{-- Diajukan --}}
+                                <td class="py-4 px-6 align-middle text-xs text-slate-500 whitespace-nowrap">
+                                    {{ $reg->created_at ? $reg->created_at->diffForHumans() : '-' }}
+                                </td>
+
+                                {{-- Aksi --}}
+                                <td class="py-4 px-6 align-middle text-right whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-2">
+                                        {{-- Tinjau --}}
+                                        <button type="button"
+                                                @click="activeTenant = {
+                                                    id: {{ $reg->id }},
+                                                    business_name: '{{ addslashes($reg->business_name) }}',
+                                                    subdomain: '{{ $reg->subdomain }}',
+                                                    admin_name: '{{ addslashes($reg->admin_name) }}',
+                                                    admin_email: '{{ $reg->admin_email }}',
+                                                    admin_phone: '{{ $reg->admin_phone }}',
+                                                    plan_name: '{{ $reg->plan_name }}',
+                                                    status: '{{ $reg->status }}',
+                                                    description: '{{ addslashes($reg->description ?? '') }}',
+                                                    rejection_reason: '{{ addslashes($reg->rejection_reason ?? '') }}',
+                                                    payment_proof: '{{ $reg->payment_proof ? asset('storage/' . $reg->payment_proof) : '' }}',
+                                                    logo_url: '{{ $logoUrl ?: '' }}',
+                                                    created_at: '{{ $reg->created_at ? $reg->created_at->translatedFormat('d F Y, H:i') : '-' }}',
+                                                    verify_url: '{{ route('owner.registrations.verify', $reg->id) }}',
+                                                    reject_url: '{{ route('owner.registrations.reject', $reg->id) }}'
+                                                }; showModal = true"
+                                                class="px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            Tinjau
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Footer --}}
+            <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
+                <span>Menampilkan {{ $pendingRegistrations->count() }} dari {{ $pendaftaranMenunggu }} pendaftaran menunggu verifikasi</span>
+                <a href="{{ route('owner.registrations.index') }}" class="font-semibold text-orange-600 hover:underline">
+                    Kelola Semua Pendaftaran &rarr;
+                </a>
+            </div>
+        </div>
+    @endif
+
+    {{-- Tabel Ringkasan Tenant --}}
+    <div id="tabel-tenant" class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="text-base font-bold text-slate-900">Daftar Tenant Aktif</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Pemantauan nama usaha, subdomain, paket langganan, dan status tenant terverifikasi.</p>
+            </div>
+        </div>
+
+        @if($tenants->isEmpty())
+            {{-- Empty State --}}
+            <div class="py-16 px-6 text-center">
+                <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                    <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-bold text-slate-900">Belum Ada Data Tenant Terverifikasi</h3>
+                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    Saat ini belum ada tenant rental yang terverifikasi di platform RentalBase.
+                </p>
+                <div class="mt-4">
+                    <a href="{{ route('owner.registrations.index') }}"
+                       class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition-colors">
+                        Lihat Pendaftaran Baru
+                    </a>
+                </div>
+            </div>
+        @else
+            {{-- Table --}}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                            <th scope="col" class="py-3.5 px-6">Nama Tenant</th>
+                            <th scope="col" class="py-3.5 px-6">Subdomain</th>
+                            <th scope="col" class="py-3.5 px-6">Paket</th>
+                            <th scope="col" class="py-3.5 px-6">Status</th>
+                            <th scope="col" class="py-3.5 px-6 text-right">Terdaftar Sejak</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        @foreach($tenants as $tenant)
+                            @php
+                                $sub = $tenant->latestSubscription ?: $tenant->activeSubscription;
+                                $logoUrl = $tenant->logo ? asset('storage/' . $tenant->logo) : null;
+                                $initials = strtoupper(substr($tenant->business_name ?: ($tenant->nama_usaha ?: 'R'), 0, 1));
+                            @endphp
+                            <tr class="hover:bg-slate-50/70 transition-colors group">
+                                {{-- Kolom 1: Nama Tenant --}}
+                                <td class="py-4 px-6 font-semibold text-slate-900">
+                                    <a href="{{ route('owner.tenants.index', ['search' => $tenant->business_name]) }}"
+                                       class="flex items-center gap-3 group-hover:text-orange-600 transition-colors"
+                                       title="Buka detail di halaman Client/Tenant">
+                                        @if($logoUrl)
+                                            <img src="{{ $logoUrl }}" alt="{{ $tenant->business_name }}"
+                                                 class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
+                                        @else
+                                            <div class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-xs shrink-0 border border-orange-100">
+                                                {{ $initials }}
+                                            </div>
+                                        @endif
+                                        <div>
+                                            <span class="block font-bold text-slate-900 group-hover:text-orange-600 transition-colors">
+                                                {{ $tenant->business_name ?: ($tenant->nama_usaha ?: 'RentalBase Tenant') }}
+                                            </span>
+                                            <span class="text-[11px] text-slate-400 font-normal">ID: #{{ $tenant->id }} &bull; Kelola di Menu Tenant &rarr;</span>
+                                        </div>
+                                    </a>
+                                </td>
+
+                                {{-- Kolom 2: Subdomain --}}
+                                <td class="py-4 px-6 text-slate-600">
+                                    @if($tenant->subdomain)
+                                        <a href="{{ route('owner.tenants.index', ['search' => $tenant->subdomain]) }}"
+                                           class="inline-flex items-center gap-1 font-mono text-xs text-slate-700 bg-slate-100 hover:bg-orange-50 hover:text-orange-700 px-2.5 py-1 rounded-lg border border-slate-200/60 transition-colors"
+                                           title="Filter di halaman Client/Tenant">
+                                            <span>{{ $tenant->subdomain }}.rentalbase.id</span>
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-slate-400 italic">Belum tersedia</span>
+                                    @endif
+                                </td>
+
+                                {{-- Kolom 3: Paket --}}
+                                <td class="py-4 px-6">
+                                    @if($sub && $sub->plan_name)
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold capitalize
+                                                {{ $sub->plan_name === 'professional' ? 'bg-purple-50 text-purple-700 ring-1 ring-purple-600/20' : '' }}
+                                                {{ $sub->plan_name === 'business' ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20' : '' }}
+                                                {{ $sub->plan_name === 'starter' ? 'bg-slate-100 text-slate-700 ring-1 ring-slate-600/20' : '' }}">
+                                                {{ $sub->plan_name }}
+                                            </span>
+                                            <span class="text-[11px] font-semibold text-slate-500">
+                                                Rp {{ number_format($sub->price, 0, ',', '.') }}/bln
+                                            </span>
+                                        </div>
+                                    @else
+                                        <span class="text-xs text-slate-400 italic">Belum ada paket</span>
+                                    @endif
+                                </td>
+
+                                {{-- Kolom 4: Status --}}
+                                <td class="py-4 px-6">
+                                    @if($tenant->status === 'aktif')
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 shadow-2xs">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            Aktif
+                                        </span>
+                                    @elseif($tenant->status === 'suspended')
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-600/20 shadow-2xs">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                            Suspended
+                                        </span>
+                                    @elseif($tenant->status === 'nonaktif')
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 shadow-2xs">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                            Nonaktif
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                            {{ ucfirst($tenant->status ?: 'Draft') }}
+                                        </span>
+                                    @endif
+                                </td>
+
+                                {{-- Kolom 5: Terdaftar Sejak --}}
+                                <td class="py-4 px-6 text-right">
+                                    <div class="flex flex-col items-end gap-1">
+                                        <span class="text-xs text-slate-500 font-medium">
+                                            {{ $tenant->created_at ? $tenant->created_at->translatedFormat('d M Y') : '-' }}
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Footer --}}
+            <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
+                <span>Menampilkan {{ $tenants->count() }} dari {{ $totalTenant }} tenant</span>
+                <a href="{{ route('owner.tenants.index') }}" class="font-semibold text-orange-600 hover:underline">
+                    Kelola Semua Tenant &rarr;
+                </a>
+            </div>
+            @if($tenants->hasPages())
+                <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-xs text-slate-500">
+                        Menampilkan halaman {{ $tenants->currentPage() }} dari {{ $tenants->lastPage() }}
+                    </span>
+                    {{ $tenants->links() }}
+                </div>
+            @endif
+        @endif
+    </div>
+
+    {{-- MODAL POPUP TINJAU DETAIL & BUKTI BAYAR --}}
+    <div x-show="showModal"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5"
+         aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        {{-- Backdrop --}}
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+             @click="showModal = false"></div>
+
+        {{-- Modal Dialog --}}
+        <div x-show="showModal"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="relative z-10 w-full max-w-3xl max-h-[92vh] flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 text-left">
+
+            {{-- Modal Header (Fixed top) --}}
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+                <div class="flex items-center gap-3">
+                    <template x-if="activeTenant?.logo_url">
+                        <img :src="activeTenant?.logo_url" :alt="activeTenant?.business_name"
+                             class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
+                    </template>
+                    <template x-if="!activeTenant?.logo_url">
+                        <div class="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                    </template>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 leading-tight" x-text="activeTenant?.business_name"></h3>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            Subdomain: <span class="font-mono font-semibold text-slate-700" x-text="activeTenant?.subdomain + '.rentalbase.id'"></span>
+                        </p>
+                    </div>
+                </div>
+                <button type="button" @click="showModal = false"
+                        class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Modal Body (Scrollable inside if needed, fits screen nicely) --}}
+            <div class="p-6 overflow-y-auto space-y-5 flex-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+
+                    {{-- Left Column: Data Detail Tenant & Pemohon --}}
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Informasi Usaha</h4>
+                            <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100 space-y-2">
+                                <div>
+                                    <span class="block text-[11px] font-medium text-slate-400">Nama Usaha/Toko</span>
+                                    <span class="text-sm font-bold text-slate-900" x-text="activeTenant?.business_name"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[11px] font-medium text-slate-400">Pilihan Paket Langganan</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 capitalize mt-0.5" x-text="activeTenant?.plan_name"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[11px] font-medium text-slate-400">Deskripsi Lengkap</span>
+                                    <p class="text-xs text-slate-700 mt-1 italic whitespace-pre-line bg-white p-2.5 rounded-lg border border-slate-200/60 max-h-28 overflow-y-auto"
+                                       x-text="activeTenant?.description || 'Tidak ada deskripsi usaha.'"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Data Pemohon / Admin</h4>
+                            <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100 space-y-2">
+                                <div>
+                                    <span class="block text-[11px] font-medium text-slate-400">Nama Lengkap</span>
+                                    <span class="text-xs font-semibold text-slate-900" x-text="activeTenant?.admin_name"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[11px] font-medium text-slate-400">Alamat Email</span>
+                                    <span class="text-xs text-slate-700 font-medium" x-text="activeTenant?.admin_email"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[11px] font-medium text-slate-400">Nomor WhatsApp / Telepon</span>
+                                    <span class="text-xs text-slate-700 font-medium" x-text="activeTenant?.admin_phone || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="block text-[11px] font-medium text-slate-400">Waktu Pengajuan</span>
+                                    <span class="text-xs text-slate-500" x-text="activeTenant?.created_at"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Right Column: Bukti Pembayaran --}}
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Bukti Pembayaran Manual</h4>
+                        <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
+                            <template x-if="activeTenant?.payment_proof">
+                                <div class="space-y-2.5">
+                                    <div class="relative rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs flex items-center justify-center">
+                                        <img :src="activeTenant.payment_proof"
+                                             :alt="'Bukti Bayar ' + activeTenant.business_name"
+                                             class="w-full h-56 sm:h-64 object-contain bg-slate-900/5">
+                                    </div>
+                                    <div class="flex items-center justify-between text-xs px-0.5">
+                                        <span class="text-emerald-600 font-semibold flex items-center gap-1">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Foto Bukti Terunggah
+                                        </span>
+                                        <a :href="activeTenant.payment_proof" target="_blank"
+                                           class="font-semibold text-orange-600 hover:underline flex items-center gap-1">
+                                            Buka Ukuran Penuh &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template x-if="!activeTenant?.payment_proof">
+                                <div class="py-12 px-4 text-center">
+                                    <div class="w-12 h-12 mx-auto rounded-xl bg-slate-200/80 flex items-center justify-center text-slate-400 mb-3">
+                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <h5 class="text-xs font-bold text-slate-700">Tidak Ada Bukti Pembayaran</h5>
+                                    <p class="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                                        Pendaftar belum mengunggah gambar bukti transfer untuk pengajuan ini.
+                                    </p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            {{-- Modal Footer (Fixed bottom) --}}
+            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <button type="button" @click="showModal = false"
+                        class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                    Tutup
+                </button>
+
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            @click="rejectId = activeTenant.id; rejectName = activeTenant.business_name; rejectUrl = activeTenant.reject_url; showModal = false; showRejectModal = true"
+                            class="px-4 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-semibold transition-colors">
+                        Tolak Pengajuan
+                    </button>
+
+                    <button type="button"
+                            @click="verifyId = activeTenant.id; verifyName = activeTenant.business_name; verifyUrl = activeTenant.verify_url; showModal = false; showVerifyModal = true"
+                            class="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-colors flex items-center gap-1.5 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Verifikasi & Aktifkan
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {{-- MODAL KONFIRMASI VERIFIKASI PENDAFTARAN --}}
+    <div x-show="showVerifyModal"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         aria-labelledby="modal-verify-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+             @click="showVerifyModal = false"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div x-show="showVerifyModal"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md">
+
+                <form method="POST" :action="verifyUrl">
+                    @csrf
+                    <div class="p-6 space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 border border-orange-200/60 flex items-center justify-center shadow-xs">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Konfirmasi Verifikasi Tenant</h3>
+                            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                Anda akan memverifikasi dan mengaktifkan operasional toko untuk <strong class="text-slate-800" x-text="verifyName"></strong>. Akun admin tenant dan langganan akan segera diaktifkan.
+                            </p>
+                        </div>
+
+                        <div class="bg-orange-50/70 border border-orange-200/60 rounded-xl p-3 text-[11px] text-orange-900 flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-orange-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>Pastikan bukti transfer dan data pemohon telah sesuai sebelum menyetujui.</span>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                        <button type="button" @click="showVerifyModal = false; showModal = true"
+                                class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                            Batal
+                        </button>
+                        <button type="submit"
+                                class="px-5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-colors flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Ya, Verifikasi & Aktifkan
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    {{-- MODAL TOLAK PENDAFTARAN --}}
+    <div x-show="showRejectModal"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         aria-labelledby="modal-reject-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+             @click="showRejectModal = false"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div x-show="showRejectModal"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md">
+
+                <form method="POST" :action="rejectUrl">
+                    @csrf
+                    <div class="p-6 space-y-4">
+                        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Tolak Pendaftaran Tenant</h3>
+                            <p class="text-xs text-slate-500 mt-1">
+                                Anda akan menolak pengajuan untuk <strong class="text-slate-800" x-text="rejectName"></strong>.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Alasan Penolakan (akan dicatat di sistem):</label>
+                            <textarea name="rejection_reason" rows="3" required
+                                      placeholder="Contoh: Bukti pembayaran buram / nominal transfer tidak sesuai..."
+                                      class="w-full text-xs rounded-xl border border-slate-200 p-3 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                        <button type="button" @click="showRejectModal = false; showModal = true"
+                                class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                            Batal
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors">
+                            Ya, Tolak Pengajuan
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+@endsection

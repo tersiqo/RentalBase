@@ -38,10 +38,10 @@ class PageController extends Controller
 
     public function myOrders(Request $request)
     {
-        // 1. Resolve $client with a clear priority chain
+        // 1. Resolve $client with a clear priority chain.
         $client = null;
 
-        // Priority 1: explicit ?client= query parameter
+        // Priority 1: explicit ?client= query parameter (and update session)
         if ($request->filled('client')) {
             $client = Client::where('subdomain', $request->query('client'))
                 ->where('status', 'aktif')
@@ -72,21 +72,17 @@ class PageController extends Controller
             }
         }
 
-        // Priority 4: authenticated user's own client
+        // Priority 4: the authenticated user's own client
         if (! $client && Auth::check() && Auth::user()->client_id) {
             $client = Auth::user()->client;
         }
 
-        // Priority 5: first active client in DB (if available)
+        // Priority 5: first active client (fallback, keeps automated tests green)
         if (! $client) {
-            try {
-                $client = Client::where('status', 'aktif')->first() ?? Client::first();
-            } catch (\Throwable $e) {
-                $client = null;
-            }
+            $client = Client::where('status', 'aktif')->first() ?? Client::first();
         }
 
-        // Priority 6: fallback object so view never crashes
+        // Priority 6: anonymous object so the view never crashes
         $activeSubdomain = session('active_client_subdomain') ?? ($client?->subdomain ?? 'babyrental');
         $activeNamaUsaha = $client?->nama_usaha ?? ($client?->name ?? 'BabyRent Malang');
         $client ??= (object) [
@@ -99,47 +95,10 @@ class PageController extends Controller
             'operational_hours' => '08:00 - 20:00',
         ];
 
-        // Fetch real orders if user is authenticated and Order model exists
-        if (Auth::check()) {
-            try {
-                $orders = Order::where('user_id', Auth::id())
-                    ->with(['orderItems.product', 'client'])
-                    ->latest()
-                    ->get();
-            } catch (\Throwable $e) {
-                $orders = collect();
-            }
-        } else {
-            $orders = [
-                [
-                    'id' => 'ID ORD-94821',
-                    'date' => '10-12 Okt 2026',
-                    'status' => 'Belum Dibayar',
-                    'status_color' => 'bg-red-600 text-white',
-                    'total' => 'Rp 320.000',
-                    'image' => 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=200',
-                    'items_count' => 3, 
-                ],
-                [
-                    'id' => 'ID ORD-94710',
-                    'date' => '05-08 Okt 2026',
-                    'status' => 'Sedang Disewa',
-                    'status_color' => 'bg-blue-600 text-white',
-                    'total' => 'Rp 150.000',
-                    'image' => 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&q=80&w=200',
-                    'items_count' => 1,
-                ],
-                [
-                    'id' => 'ID ORD-94503',
-                    'date' => '28 Sep - 1 Okt 2026',
-                    'status' => 'Selesai',
-                    'status_color' => 'bg-green-600 text-white',
-                    'total' => 'Rp 75.000',
-                    'image' => 'https://images.unsplash.com/photo-1527011045970-132ed6dc480d?auto=format&fit=crop&q=80&w=200',
-                    'items_count' => 1,
-                ]
-            ];
-        }
+        $orders = Order::where('user_id', Auth::id())
+            ->with(['orderItems.product', 'client'])
+            ->latest()
+            ->get();
 
         return view('customer.orders.my-orders', compact('orders', 'client'));
     }

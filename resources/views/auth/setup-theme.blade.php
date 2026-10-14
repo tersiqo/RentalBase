@@ -5,9 +5,9 @@
 @section('container-class', 'auth-container-wide')
 
 @section('before-content')
-    <!-- Step Indicator -->
+    <!-- Step Indicator (4 Steps) -->
     <div style="display: flex; justify-content: center; margin-bottom: 32px; width: 100%;">
-        <div style="display: flex; align-items: center; width: 100%; max-width: 400px;">
+        <div style="display: flex; align-items: center; width: 100%; max-width: 520px;">
             <!-- Step 1 (Completed) -->
             <div style="display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2;">
                 <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; background-color: var(--orange-500); color: white; box-shadow: 0 0 0 4px #fffaf5;">
@@ -35,6 +35,17 @@
                 <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; background-color: var(--slate-200); color: var(--slate-500); box-shadow: 0 0 0 4px #fffaf5;">
                     3
                 </div>
+                <span style="font-size: 12px; font-weight: 600; color: var(--slate-500); margin-top: 8px; position: absolute; top: 32px; white-space: nowrap;">Pembayaran</span>
+            </div>
+
+            <!-- Line 3 -->
+            <div style="flex: 1; height: 3px; background-color: var(--slate-200); position: relative; margin: 0 8px;"></div>
+            
+            <!-- Step 4 (Inactive) -->
+            <div style="display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; background-color: var(--slate-200); color: var(--slate-500); box-shadow: 0 0 0 4px #fffaf5;">
+                    4
+                </div>
                 <span style="font-size: 12px; font-weight: 600; color: var(--slate-500); margin-top: 8px; position: absolute; top: 32px; white-space: nowrap;">Verifikasi</span>
             </div>
         </div>
@@ -58,7 +69,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('tenant.theme.setup') }}" novalidate>
+    <form method="POST" action="{{ route('tenant.register') }}" novalidate>
         @csrf
         
         <div x-data="themeSetup()" class="theme-setup-container" style="display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start;">
@@ -167,10 +178,10 @@
         </div>
 
         <div style="display: flex; gap: 16px; margin-top: 24px;">
-            <button type="button" class="btn btn-primary" style="flex: 1; margin-top: 0;" onclick="history.back()">
+            <a href="{{ route('tenant.register', ['step' => 'info']) }}" class="btn btn-primary" style="flex: 1; margin-top: 0; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; width: 18px; height: 18px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 Kembali
-            </button>
+            </a>
             <button type="submit" class="btn btn-primary" style="flex: 1; margin-top: 0;">
                 Terapkan dan Lanjutkan
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px; width: 18px; height: 18px;"><polyline points="9 18 15 12 9 6"></polyline></svg>
