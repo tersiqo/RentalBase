@@ -20,6 +20,9 @@ class CustomerHomeController extends Controller
             ->orderBy('name')
             ->get();
 
+        session()->put('active_client_id', $client->id);
+        session()->put('active_client_subdomain', $client->subdomain);
+
         return view()->file(
             resource_path('views/customer/customer.home.blade.php'),
             compact('client', 'categories')

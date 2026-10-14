@@ -21,6 +21,9 @@ class CartPage extends Component
             ->where('status', 'aktif')
             ->firstOrFail();
 
+        session()->put('active_client_id', $this->client->id);
+        session()->put('active_client_subdomain', $this->client->subdomain);
+
         $this->loadCart();
     }
 
