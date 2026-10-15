@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminThemeController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\ShipmentController;
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\TenantRegistrationController;
@@ -68,7 +69,9 @@ Route::middleware(['auth'])->group(function () {
 Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AdminDashboardController::class, 'logout'])->name('logout');
-    Route::get('/orders', fn () => back())->name('orders.index');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::post('/orders/{order}/confirm', [OrderController::class, 'confirm'])->name('orders.confirm');
+    Route::post('/orders/{order}/reject', [OrderController::class, 'reject'])->name('orders.reject');
     Route::get('/shipments', [ShipmentController::class, 'index'])->name('shipments.index');
     Route::post('/shipments/{order}/process', [ShipmentController::class, 'process'])->name('shipments.process');
     Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
