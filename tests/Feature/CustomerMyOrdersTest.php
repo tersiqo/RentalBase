@@ -134,4 +134,46 @@ class CustomerMyOrdersTest extends TestCase
         $response->assertSee('Sedang Disewa');
         $response->assertSee('Rp 500.000');
     }
+
+    public function test_logout_from_my_orders_redirects_to_customer_catalog(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $user = User::factory()->create([
+            'client_id' => $client->id,
+            'role' => 'customer',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->from('/my-orders?client=kamerakita')
+            ->post('/logout');
+
+        $response->assertRedirect('/client/kamerakita');
+        $this->assertGuest();
+    }
+
+    public function test_logout_from_catalog_redirects_back_to_catalog(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $user = User::factory()->create([
+            'client_id' => $client->id,
+            'role' => 'customer',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->from('/client/kamerakita')
+            ->post('/logout');
+
+        $response->assertRedirect('/client/kamerakita');
+        $this->assertGuest();
+    }
 }

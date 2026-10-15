@@ -39,7 +39,9 @@
                     @else
                         <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}#katalog" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Cara sewa</a>
                     @endif
-                    <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="{{ request()->routeIs('customer.orders*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Pesanan Saya</a>
+                    @auth
+                        <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="{{ request()->routeIs('customer.orders*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Pesanan Saya</a>
+                    @endauth
                     <a href="#bantuan" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors">Bantuan</a>
                 </nav>
 
@@ -70,6 +72,9 @@
                                 <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</a>
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                                     @csrf
+                                    @if(request()->routeIs('customer.orders'))
+                                        <input type="hidden" name="redirect" value="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}">
+                                    @endif
                                 </form>
                             </div>
                         </div>
@@ -98,7 +103,9 @@
                 @else
                     <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}#katalog" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
                 @endif
-                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
+                @auth
+                    <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
+                @endauth
                 <a href="#bantuan" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Bantuan</a>
                 
                 @auth

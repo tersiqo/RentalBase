@@ -102,13 +102,38 @@ class TenantRegistrationController extends Controller
 
     public function logout(Request $request)
     {
+        $referer = $request->headers->get('referer');
+        $activeSubdomain = session('active_client_subdomain');
+        $user = Auth::user();
+
+        if (! $activeSubdomain && $user && $user->client_id) {
+            $client = Client::find($user->client_id);
+            $activeSubdomain = $client?->subdomain;
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        $referer = $request->headers->get('referer');
-        if ($referer && ! str_contains($referer, '/checkout') && ! str_contains($referer, '/admin') && ! str_contains($referer, '/owner')) {
+        if ($request->filled('redirect')) {
+            return redirect($request->input('redirect'));
+        }
+
+        if ($referer && (str_contains($referer, '/my-orders') || str_contains($referer, '/checkout'))) {
+            $query = parse_url($referer, PHP_URL_QUERY);
+            if ($query) {
+                parse_str($query, $queryParams);
+                if (! empty($queryParams['client'])) {
+                    $activeSubdomain = $queryParams['client'];
+                }
+            }
+            $targetSubdomain = $activeSubdomain ?: 'babyrental';
+
+            return redirect()->route('customer.home', ['subdomain' => $targetSubdomain]);
+        }
+
+        if ($referer && ! str_contains($referer, '/admin') && ! str_contains($referer, '/owner')) {
             return redirect($referer);
         }
 

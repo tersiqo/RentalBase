@@ -40,7 +40,7 @@ class AdminMiddleware
         }
 
         if ($user->role !== 'admin_rental') {
-            return redirect()->route('login')->with('error', 'Akses ditolak. Halaman tersebut hanya dapat diakses oleh pengelola toko.');
+            return redirect('/')->with('error', 'Akses ditolak. Halaman tersebut hanya dapat diakses oleh pengelola toko.');
         }
 
         return $next($request);
