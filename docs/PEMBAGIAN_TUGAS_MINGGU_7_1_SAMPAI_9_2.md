@@ -29,10 +29,10 @@ Nama/label penanggung jawab ditulis mengikuti enam dokumen tugas sumber. Nama pa
 
 | Label pada dokumen tugas | Nama formal yang diketahui dari roster tim | Peran umum | Lingkup tugas dalam dokumen sumber |
 |---|---|---|---|
-| **Iqo** | **Tersiqo Alfarezel** | Project Manager | Katalog dan detail produk customer, keranjang, checkout, kategori/produk admin, unit fisik, order admin (daftar & detail pesanan admin: verifikasi identitas, pembayaran, alokasi unit fisik, alur refund), profil customer, serta integrasi transaksi. (10 tugas) |
-| **Yanuar** | **Yanuar Alda Baran** | Front End Developer | Landing page publik, pesanan customer (riwayat & detail), login gate & status verifikasi tenant, profil & branding toko admin (tema/logo), metode pembayaran admin (bank & QRIS), autentikasi customer & reset password, halaman error 403/404 & tenant suspend, serta integrasi UI. (10 tugas) |
+| **Iqo** | **Tersiqo Alfarezel** | Project Manager | Katalog dan detail produk customer, keranjang, checkout, laporan kerusakan customer, kategori/produk admin, unit fisik, kasus kerusakan admin, profil customer, serta integrasi transaksi. (10 tugas) |
+| **Yanuar** | **Yanuar Alda Baran** | Front End Developer | Landing page publik, pesanan customer (riwayat), login gate & status verifikasi tenant, detail pesanan customer, profil & branding toko admin (tema/logo), metode pembayaran admin (bank & QRIS), autentikasi customer & reset password, halaman error 403/404 & tenant suspend, serta integrasi UI. (10 tugas) |
 | **Fiza** | **Fiza Rahmatus Sholikha** | Back End Developer | Dashboard Admin, form pendaftaran tenant, login Admin/Owner, laporan transaksi admin, Base Layout Owner, dashboard Owner, manajemen client/admin Owner, antrean persetujuan tenant Owner, subscription Owner, notifikasi Owner, integrasi backend, alokasi unit & scheduled commands. (10 tugas) |
-| **Iak** | Nama formal tidak tercantum di enam dokumen sumber; cocokkan dengan roster resmi tim sebelum penyerahan | Anggota ke-4 pada dokumen sumber | Pengiriman admin, penerimaan & denda retur admin, pengembalian customer, inspeksi kondisi fisik, kasus kerusakan admin & customer, notifikasi customer & admin, activity log admin & owner, serta integrasi logistik & inspeksi. (10 tugas) |
+| **Iak** | Nama formal tidak tercantum di enam dokumen sumber; cocokkan dengan roster resmi tim sebelum penyerahan | Anggota ke-4 pada dokumen sumber | Pengiriman admin, penerimaan & denda retur admin, pengembalian customer, inspeksi kondisi fisik, order admin (daftar & detail pesanan admin: verifikasi identitas, pembayaran, alokasi unit fisik, alur refund), notifikasi customer & admin, activity log admin & owner, serta integrasi logistik & operasional toko. (10 tugas) |
 
 > **Penting untuk penamaan anggota:** roster tim yang tersedia memuat Zaskia Maulidina Mutiara Hati sebagai anggota keempat, sedangkan enam file sumber memakai label **Iak**. Dokumen ini mempertahankan label **Iak** agar penugasan tidak dipindahkan secara diam-diam. Jika Iak adalah nama panggilan Zaskia, samakan label tersebut menjadi **Zaskia Maulidina Mutiara Hati** sebelum dokumen final diserahkan.
 
@@ -82,7 +82,7 @@ RentalBase adalah aplikasi pengelolaan rental berbasis banyak client/tenant. Roo
 
 ## 3. PETA 40 HALAMAN UTAMA
 
-Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (total 40 pekerjaan)**. Pertukaran tugas telah disesuaikan: Fiza mengerjakan seluruh modul Owner (termasuk Dashboard Owner). Modul Order Admin (Daftar & Detail Pesanan Admin) dikerjakan oleh **Iqo** (Project Manager) karena keterikatan kuat dengan ketersediaan unit fisik, transaksi checkout, dan alur refund; sedangkan **Yanuar** (Front End Developer) mengerjakan Profil & Branding Toko Admin serta Metode Pembayaran Admin (murni form UI & styling). Form Pendaftaran Tenant resmi menjadi tanggung jawab Fiza.
+Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (total 40 pekerjaan)**. Pertukaran tugas telah disesuaikan: Fiza mengerjakan seluruh modul Owner (termasuk Dashboard Owner). Modul Order Admin (Daftar & Detail Pesanan Admin) dikerjakan oleh **Iak** (Zaskia) agar seluruh siklus operasional fisik toko terpusat; modul Detail Pesanan Customer & Pembayaran dikerjakan oleh **Iqo** (Project Manager) menyambung alur Checkout; sedangkan **Yanuar** (Front End Developer) mengerjakan Laporan Kerusakan Customer, Profil & Branding Toko Admin serta Metode Pembayaran Admin. Form Pendaftaran Tenant resmi menjadi tanggung jawab Fiza.
 
 | ID | Minggu | Halaman / pekerjaan | Penanggung jawab definitif |
 |---|---|---|---|
@@ -99,17 +99,17 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 7.2-Y1 | 7 Bagian 2 | Login Gate & Status Verifikasi Tenant | Yanuar |
 | 7.2-Y2 | 7 Bagian 2 | Detail Pesanan Customer | Yanuar |
 | 7.2-F1 | 7 Bagian 2 | Login Admin dan Owner | Fiza |
-| 7.2-I3 | 7 Bagian 2 | Daftar Pesanan Admin | Iqo (dialihkan dari Yanuar / 7.2-Y3) |
+| 7.2-A3 | 7 Bagian 2 | Daftar Pesanan Admin | Iak (dialihkan dari Iqo / 7.2-I3) |
 | 7.2-A1 | 7 Bagian 2 | Pengembalian Customer | Iak |
 | 7.2-A2 | 7 Bagian 2 | Pemeriksaan Kondisi Fisik Admin | Iak |
 | 8.1-I1 | 8 Bagian 1 | Kategori Admin | Iqo |
 | 8.1-I2 | 8 Bagian 1 | Produk Admin | Iqo |
 | 8.1-Y1 | 8 Bagian 1 | Login/Register Customer | Yanuar |
 | 8.1-Y2 | 8 Bagian 1 | Lupa/Reset Password | Yanuar |
-| 8.1-I3 | 8 Bagian 1 | Detail Pesanan Admin | Iqo (dialihkan dari Yanuar / 8.1-Y3) |
+| 8.1-A3 | 8 Bagian 1 | Detail Pesanan Admin | Iak (dialihkan dari Iqo / 8.1-I3) |
 | 8.1-F2 | 8 Bagian 1 | Laporan Transaksi Admin | Fiza |
-| 8.1-A1 | 8 Bagian 1 | Daftar dan Detail Kasus Kerusakan Admin | Iak |
-| 8.1-A2 | 8 Bagian 1 | Laporan Kerusakan Customer | Iak |
+| 8.1-I3 | 8 Bagian 1 | Daftar dan Detail Kasus Kerusakan Admin | Iqo (dialihkan dari Iak / 8.1-A1) |
+| 8.1-I4 | 8 Bagian 1 | Laporan Kerusakan Customer | Iqo (dialihkan dari Iak / 8.1-A2) |
 | 8.2-I1 | 8 Bagian 2 | Unit Fisik Admin | Iqo |
 | 8.2-Y3 | 8 Bagian 2 | Profil/Branding Admin | Yanuar (dialihkan dari Iqo / 8.2-I2) |
 | 8.2-Y1 | 8 Bagian 2 | Error 403 dan 404 | Yanuar |
@@ -577,7 +577,7 @@ Calon tenant dapat langsung mengetahui status pendaftaran tokonya hanya dengan m
 ## 5.4 — Yanuar: Detail Pesanan Customer
 
 **ID:** 7.2-Y2  
-**Nama halaman:** Detail Pesanan  
+**Nama halaman:** Detail Pesanan Customer  
 **Route pada sumber:** `/my-orders/{id}`  
 **Layout:** Base Layout Customer.
 
@@ -629,9 +629,9 @@ Menyediakan form masuk dengan tampilan konsisten untuk Admin Rental dan Owner ta
 ### Kriteria selesai
 Login tidak mengirim pengguna ke panel yang salah, session/token ditangani dengan benar, logout mengakhiri session sesuai implementasi, dan error tidak membocorkan rincian sensitif.
 
-## 5.6 — Iqo: Daftar Pesanan Admin
+## 5.6 — Iak: Daftar Pesanan Admin
 
-**ID:** 7.2-I3 (dialihkan dari Yanuar / 7.2-Y3)  
+**ID:** 7.2-A3 (dialihkan dari Iqo / 7.2-I3)  
 **Nama halaman:** Master Pesanan Admin  
 **Route pada sumber:** `/admin/orders`  
 **Layout:** Base Layout Admin.
@@ -830,9 +830,9 @@ Login/register terhubung ke backend, error email terdaftar/password benar ditamp
 ### Kriteria selesai
 Flow reset memakai mekanisme Laravel/backend resmi, token tidak hardcoded, password baru tersimpan secara aman, dan setelah sukses pengguna mendapat instruksi masuk kembali.
 
-## 6.5 — Iqo: Detail Pesanan Admin
+## 6.5 — Iak: Detail Pesanan Admin
 
-**ID:** 8.1-I3 (dialihkan dari Yanuar / 8.1-Y3)  
+**ID:** 8.1-A3 (dialihkan dari Iqo / 8.1-I3)  
 **Route pada sumber:** `/admin/orders/{id}`  
 **Layout:** Base Layout Admin.
 
@@ -890,9 +890,9 @@ Memberi laporan kinerja transaksi tenant dalam rentang waktu yang dipilih.
 ### Kriteria selesai
 Ringkasan dan baris tabel sesuai data transaksi; filter mengubah hasil; download (jika diaktifkan) memakai filter yang sama dan tidak bocor data tenant lain.
 
-## 6.7 — Iak: Daftar dan Detail Kasus Kerusakan Admin
+## 6.7 — Iqo: Daftar dan Detail Kasus Kerusakan Admin
 
-**ID:** 8.1-A1  
+**ID:** 8.1-I3 (dialihkan dari Iak / 8.1-A1)  
 **Route pada sumber:** `/admin/damage-cases`  
 **Layout:** Base Layout Admin.
 
@@ -927,9 +927,9 @@ Mencatat kerusakan setelah barang kembali, mengomunikasikan penilaian kepada cus
 ### Kriteria selesai
 Kasus dapat dibuat, dilihat, direspons, pembayaran dapat diverifikasi, bukti disimpan, dan status penutupan tercatat.
 
-## 6.8 — Iak: Laporan Kerusakan Customer
+## 6.8 — Iqo: Laporan Kerusakan Customer
 
-**ID:** 8.1-A2  
+**ID:** 8.1-I4 (dialihkan dari Iak / 8.1-A2)  
 **Route pada sumber:** `/my-orders/{id}/damage`  
 **Layout:** Base Layout Customer.
 
@@ -1644,10 +1644,10 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 - [ ] **Detail produk (7.1-I2):** galeri foto multi-image, deskripsi/spesifikasi/syarat jaminan, harga dan denda, quantity selector, direct checkout.
 - [ ] **Keranjang (7.2-I1):** kelompok berdasarkan periode, hitung subtotal dinamis, pemilihan item, checkout per kelompok tanggal.
 - [ ] **Checkout (7.2-I2):** ringkasan sewa, alamat, data jaminan KTP & selfie, upload file, validasi ketersediaan unit.
-- [ ] **Daftar Pesanan Admin (7.2-I3):** filter rentang tanggal, filter status, pencarian order/customer, pagination, isolasi data tenant (dialihkan dari Yanuar / 7.2-Y3).
+- [ ] **Kasus Kerusakan Admin (8.1-I3):** pembuatan tiket kerusakan barang, unggah 3–5 foto bukti cacat, klaim nominal ganti rugi, update status unit menjadi rusak/perawatan, verifikasi bukti kompensasi, penutupan kasus (dialihkan dari Iak / 8.1-A1).
+- [ ] **Laporan Kerusakan Customer (8.1-I4):** galeri foto kerusakan, rincian biaya ganti rugi, textarea tanggapan/negosiasi, uploader bukti transfer pembayaran kompensasi (dialihkan dari Iak / 8.1-A2).
 - [ ] **Kategori Admin (8.1-I1):** CRUD kategori, jumlah produk, validasi unik per tenant, batas kuota kategori paket.
 - [ ] **Produk Admin (8.1-I2):** form detail, multi-foto, cover image, harga per hari, tarif denda per jam, syarat jaminan dan toggle aktif.
-- [ ] **Detail Pesanan Admin (8.1-I3):** konfirmasi/tolak pesanan baru, verifikasi identitas (KTP/selfie), verifikasi pembayaran, alokasi unit fisik, pembatalan & upload bukti refund manual (dialihkan dari Yanuar / 8.1-Y3).
 - [ ] **Unit fisik (8.2-I1):** kuota total unit paket, asset code unik, filter status fisik unit, isolasi jadwal sewa.
 - [ ] **Profil customer & integrasi (9.2-I1):** profil via API, pembersihan data dummy katalog/cart, payload multipart file checkout.
 
@@ -1681,10 +1681,10 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 
 - [ ] **Pengiriman Admin (7.1-A1):** daftar order siap kirim, pemilihan metode pengiriman (`kurir`/`ambil_toko`), input nama kurir & nomor resi, update status pesanan.
 - [ ] **Penerimaan & Denda Retur Admin (7.1-A2):** konfirmasi barang kembali, perhitungan keterlambatan jam presisi, kalkulator tarif denda backend, override denda dengan catatan.
+- [ ] **Daftar Pesanan Admin (7.2-A3):** filter rentang tanggal sewa, filter status operasional, pencarian order/customer, pagination, isolasi data tenant (dialihkan dari Iqo / 7.2-I3).
+- [ ] **Detail Pesanan Admin (8.1-A3):** konfirmasi/tolak pesanan baru, verifikasi identitas (KTP/selfie), verifikasi pembayaran bank/QRIS, alokasi unit fisik, pembatalan & upload bukti refund manual (dialihkan dari Iqo / 8.1-I3).
 - [ ] **Pengembalian Customer (7.2-A1):** instruksi retur, pilihan ekspedisi/antar langsung, input nomor resi retur, invoice denda terlambat jika ada, submit bukti bayar denda.
 - [ ] **Pemeriksaan kondisi fisik (7.2-A2):** checklist inspeksi sebelum serah-terima & sesudah pengembalian, multi-upload foto kondisi (maks 5), catatan cacat fisik.
-- [ ] **Kasus kerusakan Admin (8.1-A1):** pembuatan tiket kerusakan barang, unggah 3–5 foto bukti cacat, klaim nominal ganti rugi, verifikasi bukti kompensasi, penutupan kasus.
-- [ ] **Laporan kerusakan Customer (8.1-A2):** galeri foto kerusakan, rincian biaya ganti rugi, textarea tanggapan/negosiasi, uploader bukti transfer pembayaran kompensasi.
 - [ ] **Notifikasi Customer (8.2-A1):** feed notifikasi aktivitas customer, unread badge, filter alert, deep link ke detail order/tiket kerusakan.
 - [ ] **Notifikasi Admin (8.2-A2):** feed alert operasional toko (order baru, unggah KTP, bukti bayar, retur masuk), penanda sudah dibaca, deep link penanganan.
 - [ ] **Activity Log Admin (9.1-A1):** feed audit trail riwayat perubahan data toko, filter waktu & staf admin, format read-only tanpa aksi hapus.
@@ -1748,13 +1748,13 @@ Untuk meminimalkan blocker dan saling tunggu antar-anggota tim, urutan implement
 
 ### Fase 4: Operasional Admin, Verifikasi Order, Logistik, dan Retur
 1. **Manajemen Order Admin:**
-   - Daftar Pesanan Admin dengan filter tanggal & status (Iqo: `7.2-I3`).
-   - Detail Pesanan Admin: Konfirmasi/tolak booking, verifikasi KTP, verifikasi bukti bayar, alokasi unit fisik, pembatalan pesanan & pencatatan refund manual (Iqo: `8.1-I3`).
+   - Daftar Pesanan Admin dengan filter tanggal & status (Iak: `7.2-A3`).
+   - Detail Pesanan Admin: Konfirmasi/tolak booking, verifikasi KTP, verifikasi bukti bayar, alokasi unit fisik, pembatalan pesanan & pencatatan refund manual (Iak: `8.1-A3`).
 2. **Detail Pesanan Customer:** Pelacakan progres status, panel identitas, pengiriman, dan panel status refund (Yanuar: `7.2-Y2`).
 3. **Logistik Pengiriman:** Admin memasukkan metode ekspedisi/pickup dan nomor resi kurir (Iak: `7.1-A1`).
 4. **Pemeriksaan Fisik Unit:** Dokumen inspeksi foto unit fisik sebelum serah-terima dan setelah pengembalian (Iak: `7.2-A2`).
 5. **Pengembalian Barang & Denda:** Customer mengajukan retur (Iak: `7.2-A1`), Admin memverifikasi unit kembali & menghitung denda keterlambatan (Iak: `7.1-A2`).
-6. **Kasus Kerusakan:** Admin membuat tiket ganti rugi kerusakan fisik (Iak: `8.1-A1`), Customer meninjau & mengunggah bukti bayar kompensasi (Iak: `8.1-A2`).
+6. **Kasus Kerusakan:** Admin membuat tiket ganti rugi kerusakan fisik (Iqo: `8.1-I3`), Customer meninjau & mengunggah bukti bayar kompensasi (Iqo: `8.1-I4`).
 
 ### Fase 5: Panel Owner Platform dan Manajemen Tenant
 1. **Dashboard Owner Pusat:** Pemantauan kesehatan platform & 4 kartu metrik agregat (Fiza: `8.2-F3`).
