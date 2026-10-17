@@ -226,9 +226,15 @@
                                 @if($item->main_image)
                                     <img src="{{ Storage::url($item->main_image) }}" 
                                          alt="{{ $item->name }}" 
-                                         class="object-cover w-full h-full opacity-0 scale-95 transition-all duration-700 ease-out group-hover:scale-110"
-                                         onload="this.classList.remove('opacity-0', 'scale-95'); this.classList.add('opacity-100', 'scale-100');"
-                                         x-init="if ($el.complete) { $el.classList.remove('opacity-0', 'scale-95'); $el.classList.add('opacity-100', 'scale-100'); }">
+                                         loading="lazy"
+                                         class="object-cover w-full h-full transition-transform duration-500 ease-out group-hover:scale-110"
+                                         onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                                    <div class="hidden absolute inset-0 bg-gradient-to-br from-orange-200 to-primary-400">
+                                        <div class="absolute w-[180px] h-[180px] rounded-full bg-white/35 -top-[60px] -right-[40px]"></div>
+                                        <div class="h-full w-full flex items-center justify-center">
+                                            <svg width="120" height="120" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="relative filter drop-shadow-[0_12px_12px_rgba(0,0,0,0.18)] transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-2"><path d="M14 30h14l8 42h46"/><path d="M30 44h60c0 18-12 28-30 28H36"/><circle cx="42" cy="90" r="9"/><circle cx="82" cy="90" r="9"/></svg>
+                                        </div>
+                                    </div>
                                 @else
                                     <div class="absolute inset-0 bg-gradient-to-br from-orange-200 to-primary-400">
                                         <div class="absolute w-[180px] h-[180px] rounded-full bg-white/35 -top-[60px] -right-[40px]"></div>
