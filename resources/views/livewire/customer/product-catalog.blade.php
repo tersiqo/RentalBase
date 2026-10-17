@@ -10,12 +10,12 @@
                     </span>
                 </div>
                 
-                <h1 class="text-[clamp(34px,4.6vw,52px)] leading-[1.1] font-extrabold tracking-tight text-gray-900 mb-4 max-w-[15ch] animate-fade-in-up" style="animation-delay: 140ms;">
-                    Perlengkapan bayi, sewa tanpa deposit tunai
+                <h1 class="text-[clamp(34px,4.6vw,52px)] leading-[1.1] font-extrabold tracking-tight text-gray-900 mb-4 max-w-[18ch] animate-fade-in-up" style="animation-delay: 140ms;">
+                    {{ $client->description ?: 'Perlengkapan bayi, sewa tanpa deposit tunai' }}
                 </h1>
                 
                 <p class="text-[18px] max-w-[46ch] mb-7 text-gray-600 animate-fade-in-up" style="animation-delay: 220ms;">
-                    Eksplorasi koleksi peralatan kami dan cek ketersediaannya secara real-time. Bebas repot, bebas deposit tunai.
+                    Eksplorasi koleksi peralatan {{ $client->business_name }} dan cek ketersediaannya secara real-time. Perlengkapan bayi, sewa tanpa deposit tunai.
                 </p>
                 
                 <!-- Search Component -->
@@ -69,7 +69,7 @@
             <div>
                 <h3 class="text-[15px] font-bold text-gray-900 mb-3 flex justify-between items-center">
                     Kategori
-                    @if($search || $selectedCategory || $availableOnly || $minPrice > 0 || $maxPrice < $absoluteMaxPrice)
+                    @if($search || $selectedCategory || $availableOnly || $minPrice > 0 || $maxPrice < $absoluteMaxPrice || $startDate || $endDate)
                         <button type="button" wire:click="resetFilters" class="text-primary-500 text-[12px] font-bold hover:underline">Reset</button>
                     @endif
                 </h3>
@@ -84,6 +84,41 @@
                             <small class="text-[12px] font-semibold {{ $selectedCategory === $cat->id ? 'bg-white text-primary-500 px-2 py-[1px] rounded-full' : 'text-gray-400' }}">{{ $categoryCounts[$cat->id] ?? 0 }}</small>
                         </button>
                     @endforeach
+                </div>
+            </div>
+
+            <!-- Periode Sewa (Cek Stok Tanggal) -->
+            <div class="pb-2">
+                <h3 class="text-[15px] font-bold text-gray-900 mb-2.5 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        Periode Sewa
+                    </span>
+                    @if($startDate || $endDate)
+                        <button type="button" wire:click="$set('startDate', ''); $set('endDate', '');" class="text-primary-500 text-[11px] font-bold hover:underline">Hapus</button>
+                    @endif
+                </h3>
+                <div class="space-y-2">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Mulai</label>
+                        <input type="date" 
+                               wire:model.live="startDate" 
+                               min="{{ date('Y-m-d') }}"
+                               class="w-full border border-gray-200 rounded-xl px-3 py-2 text-[13px] font-semibold text-gray-800 focus:border-primary-500 focus:ring-0 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Selesai</label>
+                        <input type="date" 
+                               wire:model.live="endDate" 
+                               min="{{ $startDate ?: date('Y-m-d') }}"
+                               class="w-full border border-gray-200 rounded-xl px-3 py-2 text-[13px] font-semibold text-gray-800 focus:border-primary-500 focus:ring-0 transition-colors">
+                    </div>
+                    @if($startDate && $endDate)
+                        <div class="p-2 bg-orange-50 border border-orange-100 rounded-lg text-[11.5px] text-orange-800 font-medium flex items-center justify-between">
+                            <span>Filter stok aktif per tanggal</span>
+                            <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -147,8 +182,21 @@
                 </div>
             </div>
 
+            <!-- Flash notification if item added to cart -->
+            @if(session()->has('cart_success'))
+                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" class="mb-5 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-sm animate-fade-in-up">
+                    <div class="flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span class="text-sm font-semibold">{{ session('cart_success') }}</span>
+                    </div>
+                    <a href="{{ route('customer.cart', ['subdomain' => $client->subdomain]) }}" wire:navigate class="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition shrink-0 ml-2">
+                        Buka Keranjang &rarr;
+                    </a>
+                </div>
+            @endif
+
             <!-- Loading State overlay -->
-            <div wire:loading.delay.shortest wire:target="search,selectedCategory,availableOnly,minPrice,maxPrice,sort,resetFilters" class="absolute inset-0 z-30 bg-white/70 backdrop-blur-sm rounded-2xl flex items-start justify-center pt-24 transition-all">
+            <div wire:loading.delay.shortest wire:target="search,selectedCategory,availableOnly,minPrice,maxPrice,sort,startDate,endDate,resetFilters" class="absolute inset-0 z-30 bg-white/70 backdrop-blur-sm rounded-2xl flex items-start justify-center pt-24 transition-all">
                 <div class="bg-white px-6 py-4 rounded-full shadow-xl border border-gray-200 flex items-center gap-3.5">
                     <svg class="animate-spin h-6 w-6 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -158,14 +206,14 @@
                 </div>
             </div>
 
-            <div wire:loading.class="opacity-30 pointer-events-none" wire:target="search,selectedCategory,availableOnly,minPrice,maxPrice,sort,resetFilters" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[22px] min-h-[420px]">
+            <div wire:loading.class="opacity-30 pointer-events-none" wire:target="search,selectedCategory,availableOnly,minPrice,maxPrice,sort,startDate,endDate,resetFilters" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[22px] min-h-[420px]">
                 
                 @if($this->products->isEmpty())
                     <div class="col-span-full text-center p-[70px_20px] border-2 border-dashed border-gray-200 rounded-[28px] self-start mt-8">
                         <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#FB923C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
                         <h3 class="text-gray-900 text-[20px] font-bold mb-[6px]">Belum ada alat yang cocok</h3>
                         <p class="max-w-[36ch] mx-auto mb-5 text-gray-500">Coba kata kunci lain, perluas rentang harga, atau matikan filter unit tersedia.</p>
-                        @if($search || $selectedCategory || $availableOnly || $minPrice > 0 || $maxPrice < $absoluteMaxPrice)
+                        @if($search || $selectedCategory || $availableOnly || $minPrice > 0 || $maxPrice < $absoluteMaxPrice || $startDate || $endDate)
                             <button type="button" wire:click="resetFilters" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-[22px] py-3 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 transition">Reset filter</button>
                         @endif
                     </div>
@@ -202,6 +250,13 @@
                             </a>
                             
                             <div class="p-[20px_22px_22px] flex flex-col flex-1">
+                                <!-- Category Badge -->
+                                <div class="mb-1.5">
+                                    <span class="inline-block bg-orange-50 text-orange-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-orange-200/60 uppercase tracking-wider">
+                                        {{ $item->category->name ?? 'Peralatan' }}
+                                    </span>
+                                </div>
+
                                 <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate>
                                     <h3 class="text-gray-900 text-[17px] font-bold leading-[1.3] line-clamp-2 hover:text-primary-600 transition-colors">{{ $item->name }}</h3>
                                 </a>
@@ -212,16 +267,36 @@
                                     <span class="text-[13px] text-gray-400 font-semibold">per hari</span>
                                 </div>
                                 
+                                <!-- Card Action Buttons -->
                                 <div class="flex gap-2 mt-2">
-                                    <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="flex-1 inline-flex justify-center items-center rounded-xl bg-primary-500 text-white font-bold py-2.5 shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition-all text-[14px]">
+                                    <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="flex-1 inline-flex justify-center items-center rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 transition-all text-[13px]">
                                         Lihat detail
                                     </a>
+                                    @if($item->available_units_count > 0)
+                                        <button type="button" 
+                                                wire:click="quickAddToCart({{ $item->id }})" 
+                                                class="flex-1 inline-flex justify-center items-center gap-1.5 rounded-xl bg-primary-500 text-white font-bold py-2.5 shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition-all text-[13px] cursor-pointer">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
+                                            <span>+ Keranjang</span>
+                                        </button>
+                                    @else
+                                        <button disabled class="flex-1 inline-flex justify-center items-center rounded-xl bg-gray-100 text-gray-400 font-bold py-2.5 text-[13px] cursor-not-allowed">
+                                            Habis
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         </article>
                     @endforeach
                 @endif
             </div>
+
+            <!-- Pagination Section -->
+            @if($this->products->hasPages())
+                <div class="mt-8 pt-6 border-t border-gray-100">
+                    {{ $this->products->links() }}
+                </div>
+            @endif
         </section>
     </main>
 </div>
