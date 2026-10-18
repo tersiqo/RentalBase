@@ -144,11 +144,11 @@
             for (const it of this.items) {
                 const avail = (it.available_units !== undefined && it.available_units !== null) ? it.available_units : 99;
                 if (avail <= 0) {
-                    errs.push(`Stok "${it.name}" habis pada periode sewa ini (0 unit tersedia). Silakan pilih tanggal sewa lain.`);
+                    errs.push('Stok ' + it.name + ' habis pada periode sewa ini (0 unit tersedia). Silakan pilih tanggal sewa lain.');
                 } else if (it.quantity > avail) {
-                    errs.push(`Jumlah sewa "${it.name}" (${it.quantity} unit) melebihi stok yang tersedia (${avail} unit).`);
+                    errs.push('Jumlah sewa ' + it.name + ' (' + it.quantity + ' unit) melebihi stok yang tersedia (' + avail + ' unit).');
                 } else if (it.quantity < 1) {
-                    errs.push(`Jumlah sewa "${it.name}" minimal 1 unit.`);
+                    errs.push('Jumlah sewa ' + it.name + ' minimal 1 unit.');
                 }
             }
         } else if (step === 2) {
