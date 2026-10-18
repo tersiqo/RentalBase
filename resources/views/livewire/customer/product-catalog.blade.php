@@ -226,9 +226,15 @@
                                 @if($item->main_image)
                                     <img src="{{ Storage::url($item->main_image) }}" 
                                          alt="{{ $item->name }}" 
-                                         class="object-cover w-full h-full opacity-0 scale-95 transition-all duration-700 ease-out group-hover:scale-110"
-                                         onload="this.classList.remove('opacity-0', 'scale-95'); this.classList.add('opacity-100', 'scale-100');"
-                                         x-init="if ($el.complete) { $el.classList.remove('opacity-0', 'scale-95'); $el.classList.add('opacity-100', 'scale-100'); }">
+                                         loading="lazy"
+                                         class="object-cover w-full h-full transition-transform duration-500 ease-out group-hover:scale-110"
+                                         onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                                    <div class="hidden absolute inset-0 bg-gradient-to-br from-orange-200 to-primary-400">
+                                        <div class="absolute w-[180px] h-[180px] rounded-full bg-white/35 -top-[60px] -right-[40px]"></div>
+                                        <div class="h-full w-full flex items-center justify-center">
+                                            <svg width="120" height="120" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="relative filter drop-shadow-[0_12px_12px_rgba(0,0,0,0.18)] transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-2"><path d="M14 30h14l8 42h46"/><path d="M30 44h60c0 18-12 28-30 28H36"/><circle cx="42" cy="90" r="9"/><circle cx="82" cy="90" r="9"/></svg>
+                                        </div>
+                                    </div>
                                 @else
                                     <div class="absolute inset-0 bg-gradient-to-br from-orange-200 to-primary-400">
                                         <div class="absolute w-[180px] h-[180px] rounded-full bg-white/35 -top-[60px] -right-[40px]"></div>
@@ -268,20 +274,25 @@
                                 </div>
                                 
                                 <!-- Card Action Buttons -->
-                                <div class="flex gap-2 mt-2">
+                                <div class="flex items-center gap-2 mt-2">
                                     <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="flex-1 inline-flex justify-center items-center rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 transition-all text-[13px]">
                                         Lihat detail
                                     </a>
                                     @if($item->available_units_count > 0)
                                         <button type="button" 
                                                 wire:click="quickAddToCart({{ $item->id }})" 
-                                                class="flex-1 inline-flex justify-center items-center gap-1.5 rounded-xl bg-primary-500 text-white font-bold py-2.5 shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition-all text-[13px] cursor-pointer">
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
-                                            <span>+ Keranjang</span>
+                                                title="Tambah ke Keranjang"
+                                                aria-label="Tambah ke Keranjang"
+                                                class="flex-none inline-flex justify-center items-center gap-1 rounded-xl bg-primary-500 text-white font-bold px-3 py-2.5 shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition-all cursor-pointer">
+                                            <span class="text-[14px] font-black leading-none">+</span>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
                                         </button>
                                     @else
-                                        <button disabled class="flex-1 inline-flex justify-center items-center rounded-xl bg-gray-100 text-gray-400 font-bold py-2.5 text-[13px] cursor-not-allowed">
-                                            Habis
+                                        <button disabled 
+                                                title="Stok Habis"
+                                                class="flex-none inline-flex justify-center items-center gap-1 rounded-xl bg-gray-100 text-gray-400 font-bold px-3 py-2.5 cursor-not-allowed">
+                                            <span class="text-[14px] font-black leading-none">+</span>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
                                         </button>
                                     @endif
                                 </div>
