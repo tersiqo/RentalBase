@@ -63,15 +63,15 @@ class CustomerCheckoutController extends Controller
             abort(404);
         }
 
-        $available = $product->units()->where('status', 'tersedia')->count();
+        $start = now()->addDay()->startOfDay();
+        $end = $start->copy()->addDays(1);
+        $available = $product->getAvailableUnitsForPeriod($start, $end);
 
         if ($available < 1) {
             return redirect()->route('customer.product.show', ['subdomain' => $subdomain, 'product' => $product->id])
-                ->with('error', 'Maaf, saat ini tidak ada unit yang tersedia untuk disewa.');
+                ->with('error', 'Maaf, unit untuk produk ini penuh dipesan pada tanggal sewa terdekat.');
         }
 
-        $start = now()->addDay()->startOfDay();
-        $end = $start->copy()->addDays(1);
         $hash = md5($product->id.$start->format('Y-m-d').$end->format('Y-m-d'));
 
         $cart = session()->get('cart', []);
