@@ -68,8 +68,22 @@ class CustomerCheckoutController extends Controller
         $available = $product->getAvailableUnitsForPeriod($start, $end);
 
         if ($available < 1) {
-            return redirect()->route('customer.product.show', ['subdomain' => $subdomain, 'product' => $product->id])
-                ->with('error', 'Maaf, unit untuk produk ini penuh dipesan pada tanggal sewa terdekat.');
+            $found = false;
+            for ($i = 1; $i <= 30; $i++) {
+                $testStart = now()->addDays($i)->startOfDay();
+                $testEnd = $testStart->copy()->addDays(1);
+                if ($product->getAvailableUnitsForPeriod($testStart, $testEnd) >= 1) {
+                    $start = $testStart;
+                    $end = $testEnd;
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (! $found) {
+                return redirect()->route('customer.product.show', ['subdomain' => $subdomain, 'product' => $product->id])
+                    ->with('error', 'Maaf, seluruh unit produk ini sedang penuh disewa untuk 30 hari ke depan.');
+            }
         }
 
         $hash = md5($product->id.$start->format('Y-m-d').$end->format('Y-m-d'));
@@ -91,6 +105,7 @@ class CustomerCheckoutController extends Controller
         ];
 
         session()->put('cart', $cart);
+        session()->put('checkout_items', [$hash]);
 
         return redirect()->route('customer.checkout', ['subdomain' => $subdomain]);
     }
