@@ -280,7 +280,7 @@
                                     </a>
                                     @if($item->available_units_count > 0)
                                         <button type="button" 
-                                                wire:click="quickAddToCart({{ $item->id }})" 
+                                                wire:click="openAddToCartModal({{ $item->id }})" 
                                                 title="Tambah ke Keranjang"
                                                 aria-label="Tambah ke Keranjang"
                                                 class="flex-none inline-flex justify-center items-center gap-1 rounded-xl bg-primary-500 text-white font-bold px-3 py-2.5 shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition-all cursor-pointer">
@@ -310,4 +310,120 @@
             @endif
         </section>
     </main>
+
+    <!-- Add To Cart Modal -->
+    @if($showModal && $modalProduct)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="catalog-modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-900/75 transition-opacity backdrop-blur-sm z-0" wire:click="closeAddToCartModal"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <div class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="flex justify-between items-start mb-5">
+                            <h3 class="text-xl leading-6 font-bold text-gray-900" id="catalog-modal-title">Tambah ke Keranjang</h3>
+                            <button type="button" wire:click="closeAddToCartModal" class="text-gray-400 hover:text-gray-500 transition-colors">
+                                <span class="sr-only">Tutup</span>
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Product Summary -->
+                        <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
+                            <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden shrink-0">
+                                <img src="{{ $modalProduct->main_image ? Storage::url($modalProduct->main_image) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 line-clamp-1">{{ $modalProduct->name }}</h4>
+                                <p class="text-sm text-primary-600 font-medium">Rp {{ number_format($modalProduct->rental_price_per_day, 0, ',', '.') }} <span class="text-gray-500 text-xs">/ hari</span></p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Date Pickers -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
+                                    <input type="date" wire:model.live="modalStartDate" wire:change="checkModalAvailability" min="{{ date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
+                                    <input type="date" wire:model.live="modalEndDate" wire:change="checkModalAvailability" min="{{ $modalStartDate ?: date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                </div>
+                            </div>
+
+                            <!-- Availability Banner -->
+                            <div>
+                                @if($modalAvailableUnits > 0)
+                                    <div class="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                        <span>Tersedia <strong>{{ $modalAvailableUnits }} unit</strong> pada periode tanggal ini.</span>
+                                    </div>
+                                @else
+                                    <div class="flex items-center gap-2 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                        <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                                        <span>Semua unit penuh dipesan pada tanggal ini. Silakan pilih tanggal lain.</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if($modalErrorMessage)
+                                <div class="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                    {{ $modalErrorMessage }}
+                                </div>
+                            @endif
+
+                            <!-- Quantity -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah Unit (Maks: {{ $modalAvailableUnits }})</label>
+                                <input type="number" wire:model.live="modalQuantity" min="1" max="{{ max(1, $modalAvailableUnits) }}" class="w-full sm:w-1/3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                            </div>
+
+                            @php
+                                $mStart = $modalStartDate ? \Carbon\Carbon::parse($modalStartDate) : null;
+                                $mEnd = $modalEndDate ? \Carbon\Carbon::parse($modalEndDate) : null;
+                                $mDur = ($mStart && $mEnd && $mEnd->gte($mStart)) ? $mStart->diffInDays($mEnd) + 1 : 0;
+                                $mTotal = $mDur * $modalProduct->rental_price_per_day * max(1, (int)$modalQuantity);
+                            @endphp
+
+                            <!-- Calculation Auto-Update -->
+                            <div class="bg-primary-50 border border-primary-100 p-4 rounded-xl mt-6">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-primary-800">Durasi Sewa:</span>
+                                    <span class="font-bold text-primary-900">{{ $mDur }} Hari</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-primary-800">Kuantitas:</span>
+                                    <span class="font-bold text-primary-900">{{ $modalQuantity }} Unit</span>
+                                </div>
+                                <hr class="border-primary-200 my-2">
+                                <div class="flex justify-between items-end">
+                                    <span class="text-sm font-bold text-primary-900">Estimasi Total Biaya:</span>
+                                    <span class="text-2xl font-black text-primary-600">Rp {{ number_format($mTotal, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 px-4 py-4 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100">
+                        <button type="button" wire:click="closeAddToCartModal" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm transition-colors">
+                            Batal
+                        </button>
+                        <button type="button" wire:click="confirmModalAddToCart" 
+                                @if($modalAvailableUnits < 1 || $mDur < 1) disabled @endif
+                                class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none sm:w-auto sm:text-sm transition-colors @if($modalAvailableUnits < 1 || $mDur < 1) opacity-50 cursor-not-allowed @endif">
+                            <span wire:loading.remove wire:target="confirmModalAddToCart">Tambahkan ke Keranjang</span>
+                            <span wire:loading wire:target="confirmModalAddToCart" class="flex items-center gap-2">
+                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Memproses...
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

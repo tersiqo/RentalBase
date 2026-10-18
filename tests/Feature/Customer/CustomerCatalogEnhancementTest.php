@@ -361,4 +361,108 @@ class CustomerCatalogEnhancementTest extends TestCase
             ->call('confirm', '2026-12-16', '2026-12-17', 1)
             ->assertDispatched('cart-updated');
     }
+
+    public function test_catalog_opens_add_to_cart_modal_and_confirms_item()
+    {
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Sony FX3 Cinema Line',
+            'slug' => 'sony-fx3-cinema-line',
+            'rental_price_per_day' => 450000,
+            'status' => 'aktif',
+        ]);
+
+        EquipmentUnit::create([
+            'client_id' => $this->client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'FX3-01',
+            'status' => 'tersedia',
+        ]);
+
+        $categories = Category::where('client_id', $this->client->id)->get();
+
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->call('openAddToCartModal', $product->id)
+            ->assertSet('showModal', true)
+            ->assertSet('modalProduct.id', $product->id)
+            ->assertSet('modalAvailableUnits', 1)
+            ->set('modalStartDate', '2026-12-20')
+            ->set('modalEndDate', '2026-12-22')
+            ->set('modalQuantity', 1)
+            ->call('confirmModalAddToCart')
+            ->assertSet('showModal', false)
+            ->assertDispatched('cart-updated');
+
+        $cart = session()->get('cart', []);
+        $this->assertNotEmpty($cart);
+        $cartItem = array_values($cart)[0];
+        $this->assertEquals($product->id, $cartItem['product_id']);
+        $this->assertEquals('2026-12-20', $cartItem['start_date']);
+        $this->assertEquals('2026-12-22', $cartItem['end_date']);
+        $this->assertEquals(3, $cartItem['duration_days']);
+        $this->assertEquals(1350000, $cartItem['subtotal']);
+    }
+
+    public function test_cart_page_can_edit_rental_dates_and_updates_period()
+    {
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Sony A7S III',
+            'slug' => 'sony-a7s-iii',
+            'rental_price_per_day' => 350000,
+            'status' => 'aktif',
+        ]);
+
+        EquipmentUnit::create([
+            'client_id' => $this->client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'A7S-01',
+            'status' => 'tersedia',
+        ]);
+
+        $oldStart = '2026-12-01';
+        $oldEnd = '2026-12-02';
+        $oldHash = md5($product->id . $oldStart . $oldEnd);
+
+        session()->put('cart', [
+            $oldHash => [
+                'hash' => $oldHash,
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->rental_price_per_day,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => $oldStart,
+                'end_date' => $oldEnd,
+                'duration_days' => 2,
+                'quantity' => 1,
+                'subtotal' => 700000,
+            ],
+        ]);
+
+        $newStart = '2026-12-05';
+        $newEnd = '2026-12-08'; // 4 days
+        $newHash = md5($product->id . $newStart . $newEnd);
+
+        Livewire::test(\App\Livewire\Customer\CartPage::class, ['subdomain' => $this->client->subdomain])
+            ->call('openEditDateModal', $oldHash)
+            ->assertSet('showEditDateModal', true)
+            ->assertSet('editingStartDate', $oldStart)
+            ->assertSet('editingEndDate', $oldEnd)
+            ->set('editingStartDate', $newStart)
+            ->set('editingEndDate', $newEnd)
+            ->call('saveEditedDate')
+            ->assertSet('showEditDateModal', false)
+            ->assertDispatched('cart-updated');
+
+        $cart = session()->get('cart', []);
+        $this->assertArrayNotHasKey($oldHash, $cart);
+        $this->assertArrayHasKey($newHash, $cart);
+        $this->assertEquals(4, $cart[$newHash]['duration_days']);
+        $this->assertEquals(1400000, $cart[$newHash]['subtotal']);
+        $this->assertEquals($newStart, $cart[$newHash]['start_date']);
+        $this->assertEquals($newEnd, $cart[$newHash]['end_date']);
+    }
 }

@@ -30,6 +30,14 @@ class ProductCatalog extends Component
     public $allProductsCount = 0;
     public $categoryCounts = [];
 
+    public $showModal = false;
+    public $modalProduct = null;
+    public $modalStartDate = '';
+    public $modalEndDate = '';
+    public $modalQuantity = 1;
+    public $modalAvailableUnits = 0;
+    public $modalErrorMessage = null;
+
     public function mount($client, $categories)
     {
         $this->client = $client;
@@ -79,6 +87,106 @@ class ProductCatalog extends Component
         $this->reset(['availableOnly', 'selectedCategory', 'search', 'sort', 'minPrice', 'maxPrice', 'startDate', 'endDate']);
         $this->maxPrice = $this->absoluteMaxPrice;
         $this->resetPage();
+    }
+
+    public function openAddToCartModal($productId)
+    {
+        $product = Product::where('id', $productId)
+            ->where('client_id', $this->client->id)
+            ->where('status', 'aktif')
+            ->first();
+
+        if (! $product) {
+            return;
+        }
+
+        $this->modalProduct = $product;
+        $this->modalStartDate = $this->startDate ?: Carbon::now()->addDay()->format('Y-m-d');
+        $this->modalEndDate = $this->endDate ?: Carbon::now()->addDays(3)->format('Y-m-d');
+        $this->modalErrorMessage = null;
+
+        $this->modalAvailableUnits = $product->getAvailableUnitsForPeriod($this->modalStartDate, $this->modalEndDate);
+        $this->modalQuantity = $this->modalAvailableUnits > 0 ? 1 : 1;
+        $this->showModal = true;
+    }
+
+    public function checkModalAvailability()
+    {
+        $this->modalErrorMessage = null;
+        if ($this->modalProduct && $this->modalStartDate && $this->modalEndDate) {
+            $this->modalAvailableUnits = $this->modalProduct->getAvailableUnitsForPeriod($this->modalStartDate, $this->modalEndDate);
+            if ($this->modalQuantity > $this->modalAvailableUnits && $this->modalAvailableUnits > 0) {
+                $this->modalQuantity = $this->modalAvailableUnits;
+            }
+        }
+    }
+
+    public function closeAddToCartModal()
+    {
+        $this->showModal = false;
+        $this->modalProduct = null;
+        $this->modalErrorMessage = null;
+    }
+
+    public function confirmModalAddToCart()
+    {
+        if (! $this->modalProduct || ! $this->modalStartDate || ! $this->modalEndDate) {
+            return;
+        }
+
+        $start = Carbon::parse($this->modalStartDate);
+        $end = Carbon::parse($this->modalEndDate);
+
+        if ($end->lt($start)) {
+            $this->modalErrorMessage = 'Tanggal selesai harus setelah tanggal mulai.';
+            return;
+        }
+
+        $maxUnits = $this->modalProduct->getAvailableUnitsForPeriod($start, $end);
+        $this->modalAvailableUnits = $maxUnits;
+
+        $cart = session()->get('cart', []);
+        $hash = md5($this->modalProduct->id . $start->format('Y-m-d') . $end->format('Y-m-d'));
+        $existingQty = isset($cart[$hash]) ? (int) $cart[$hash]['quantity'] : 0;
+
+        if ($maxUnits < 1) {
+            $this->modalErrorMessage = 'Stok penuh pada rentang tanggal yang dipilih. Silakan pilih tanggal lain.';
+            return;
+        }
+
+        if ($this->modalQuantity < 1 || ($existingQty + $this->modalQuantity) > $maxUnits) {
+            $this->modalErrorMessage = "Jumlah unit melebihi stok tersedia pada tanggal tersebut (tersisa {$maxUnits} unit).";
+            return;
+        }
+
+        $durationDays = $start->diffInDays($end) + 1;
+        $subtotal = $this->modalProduct->rental_price_per_day * $durationDays * $this->modalQuantity;
+
+        if (isset($cart[$hash])) {
+            $cart[$hash]['quantity'] += $this->modalQuantity;
+            $cart[$hash]['subtotal'] = $this->modalProduct->rental_price_per_day * $cart[$hash]['duration_days'] * $cart[$hash]['quantity'];
+        } else {
+            $cart[$hash] = [
+                'hash' => $hash,
+                'product_id' => $this->modalProduct->id,
+                'name' => $this->modalProduct->name,
+                'price' => $this->modalProduct->rental_price_per_day,
+                'deposit_fee' => $this->modalProduct->deposit_fee,
+                'main_image' => $this->modalProduct->main_image,
+                'start_date' => $start->format('Y-m-d'),
+                'end_date' => $end->format('Y-m-d'),
+                'duration_days' => $durationDays,
+                'quantity' => $this->modalQuantity,
+                'subtotal' => $subtotal,
+            ];
+        }
+
+        session()->put('cart', $cart);
+        $this->dispatch('cart-updated');
+        $this->showModal = false;
+
+        $periodStr = $start->translatedFormat('d M') . ' - ' . $end->translatedFormat('d M Y');
+        session()->flash('cart_success', "{$this->modalProduct->name} berhasil ditambahkan ke keranjang ({$periodStr})!");
     }
 
     public function quickAddToCart($productId)

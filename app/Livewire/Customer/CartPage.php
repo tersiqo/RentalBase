@@ -3,6 +3,8 @@
 namespace App\Livewire\Customer;
 
 use App\Models\Client;
+use App\Models\Product;
+use Carbon\Carbon;
 use Livewire\Component;
 
 class CartPage extends Component
@@ -14,6 +16,14 @@ class CartPage extends Component
     public $selectedItems = [];
 
     public $selectAll = false;
+
+    public $showEditDateModal = false;
+    public $editingHash = null;
+    public $editingItem = null;
+    public $editingStartDate = '';
+    public $editingEndDate = '';
+    public $editingAvailableUnits = 0;
+    public $editingErrorMessage = null;
 
     public function mount($subdomain)
     {
@@ -92,6 +102,123 @@ class CartPage extends Component
         }
         $this->loadCart();
         $this->dispatch('cart-updated');
+    }
+
+    public function openEditDateModal($hash)
+    {
+        $cart = session()->get('cart', []);
+        if (! isset($cart[$hash])) {
+            return;
+        }
+
+        $this->editingHash = $hash;
+        $this->editingItem = $cart[$hash];
+        $this->editingStartDate = $this->editingItem['start_date'];
+        $this->editingEndDate = $this->editingItem['end_date'];
+        $this->editingErrorMessage = null;
+
+        $product = Product::find($this->editingItem['product_id']);
+        $this->editingAvailableUnits = $product
+            ? $product->getAvailableUnitsForPeriod($this->editingStartDate, $this->editingEndDate)
+            : 0;
+
+        $this->showEditDateModal = true;
+    }
+
+    public function checkEditingAvailability()
+    {
+        $this->editingErrorMessage = null;
+        if (! $this->editingItem || ! $this->editingStartDate || ! $this->editingEndDate) {
+            return;
+        }
+
+        $product = Product::find($this->editingItem['product_id']);
+        if ($product) {
+            $this->editingAvailableUnits = $product->getAvailableUnitsForPeriod($this->editingStartDate, $this->editingEndDate);
+        }
+    }
+
+    public function closeEditDateModal()
+    {
+        $this->showEditDateModal = false;
+        $this->editingHash = null;
+        $this->editingItem = null;
+        $this->editingErrorMessage = null;
+    }
+
+    public function saveEditedDate()
+    {
+        if (! $this->editingHash || ! $this->editingItem || ! $this->editingStartDate || ! $this->editingEndDate) {
+            return;
+        }
+
+        $cart = session()->get('cart', []);
+        if (! isset($cart[$this->editingHash])) {
+            $this->closeEditDateModal();
+            return;
+        }
+
+        $start = Carbon::parse($this->editingStartDate);
+        $end = Carbon::parse($this->editingEndDate);
+
+        if ($end->lt($start)) {
+            $this->editingErrorMessage = 'Tanggal selesai harus setelah tanggal mulai.';
+            return;
+        }
+
+        $product = Product::find($this->editingItem['product_id']);
+        if (! $product) {
+            $this->editingErrorMessage = 'Produk tidak ditemukan.';
+            return;
+        }
+
+        $available = $product->getAvailableUnitsForPeriod($start, $end);
+        $this->editingAvailableUnits = $available;
+        $qty = (int) $this->editingItem['quantity'];
+
+        if ($qty > $available) {
+            $this->editingErrorMessage = "Stok unit tidak mencukupi untuk rentang tanggal tersebut (sisa {$available} unit).";
+            return;
+        }
+
+        $newDuration = max(1, $start->diffInDays($end) + 1);
+        $newHash = md5($product->id . $start->format('Y-m-d') . $end->format('Y-m-d'));
+
+        // If changed to dates that already exist for this product in cart
+        if ($newHash !== $this->editingHash && isset($cart[$newHash])) {
+            $mergedQty = $cart[$newHash]['quantity'] + $qty;
+            if ($mergedQty > $available) {
+                $this->editingErrorMessage = "Penggabungan dengan item di tanggal yang sama melebihi stok tersedia (tersisa {$available} unit).";
+                return;
+            }
+            $cart[$newHash]['quantity'] = $mergedQty;
+            $cart[$newHash]['subtotal'] = $product->rental_price_per_day * $newDuration * $mergedQty;
+            unset($cart[$this->editingHash]);
+        } else {
+            $updatedItem = $cart[$this->editingHash];
+            $updatedItem['hash'] = $newHash;
+            $updatedItem['start_date'] = $start->format('Y-m-d');
+            $updatedItem['end_date'] = $end->format('Y-m-d');
+            $updatedItem['duration_days'] = $newDuration;
+            $updatedItem['subtotal'] = $product->rental_price_per_day * $newDuration * $qty;
+
+            unset($cart[$this->editingHash]);
+            $cart[$newHash] = $updatedItem;
+        }
+
+        // Update selectedItems array if old hash was selected
+        if (in_array($this->editingHash, $this->selectedItems)) {
+            $this->selectedItems = array_values(array_unique(array_map(
+                fn($h) => $h === $this->editingHash ? $newHash : $h,
+                $this->selectedItems
+            )));
+        }
+
+        session()->put('cart', $cart);
+        $this->loadCart();
+        $this->dispatch('cart-updated');
+        $this->closeEditDateModal();
+        session()->flash('success', 'Tanggal sewa berhasil diperbarui!');
     }
 
     public function proceedToCheckout()
