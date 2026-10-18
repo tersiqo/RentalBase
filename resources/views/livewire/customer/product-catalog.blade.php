@@ -274,20 +274,25 @@
                                 </div>
                                 
                                 <!-- Card Action Buttons -->
-                                <div class="flex gap-2 mt-2">
+                                <div class="flex items-center gap-2 mt-2">
                                     <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="flex-1 inline-flex justify-center items-center rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 transition-all text-[13px]">
                                         Lihat detail
                                     </a>
                                     @if($item->available_units_count > 0)
                                         <button type="button" 
                                                 wire:click="quickAddToCart({{ $item->id }})" 
-                                                class="flex-1 inline-flex justify-center items-center gap-1.5 rounded-xl bg-primary-500 text-white font-bold py-2.5 shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition-all text-[13px] cursor-pointer">
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
-                                            <span>+ Keranjang</span>
+                                                title="Tambah ke Keranjang"
+                                                aria-label="Tambah ke Keranjang"
+                                                class="flex-none inline-flex justify-center items-center gap-1 rounded-xl bg-primary-500 text-white font-bold px-3 py-2.5 shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition-all cursor-pointer">
+                                            <span class="text-[14px] font-black leading-none">+</span>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
                                         </button>
                                     @else
-                                        <button disabled class="flex-1 inline-flex justify-center items-center rounded-xl bg-gray-100 text-gray-400 font-bold py-2.5 text-[13px] cursor-not-allowed">
-                                            Habis
+                                        <button disabled 
+                                                title="Stok Habis"
+                                                class="flex-none inline-flex justify-center items-center gap-1 rounded-xl bg-gray-100 text-gray-400 font-bold px-3 py-2.5 cursor-not-allowed">
+                                            <span class="text-[14px] font-black leading-none">+</span>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
                                         </button>
                                     @endif
                                 </div>
