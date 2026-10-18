@@ -90,18 +90,39 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
-                                <input type="date" x-model="startDate" min="{{ date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                <input type="date" x-model="startDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" min="{{ date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
-                                <input type="date" x-model="endDate" :min="startDate || '{{ date('Y-m-d') }}'" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                <input type="date" x-model="endDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" :min="startDate || '{{ date('Y-m-d') }}'" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
                             </div>
                         </div>
 
+                        <!-- Dynamic Period Availability Banner -->
+                        <div x-show="duration > 0" style="display: none;">
+                            @if($availableUnits > 0)
+                                <div class="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <span>Tersedia <strong>{{ $availableUnits }} unit</strong> pada periode tanggal yang dipilih.</span>
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                    <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                                    <span>Semua unit penuh dipesan pada rentang tanggal ini. Silakan pilih tanggal lain.</span>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if($errorMessage)
+                            <div class="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                {{ $errorMessage }}
+                            </div>
+                        @endif
+
                         <!-- Quantity -->
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah Unit (Maks: {{ $product->units->count() }})</label>
-                            <input type="number" x-model="quantity" min="1" max="{{ $product->units->count() }}" class="w-full sm:w-1/3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah Unit (Maks: {{ $availableUnits }})</label>
+                            <input type="number" x-model="quantity" min="1" max="{{ max(1, $availableUnits) }}" class="w-full sm:w-1/3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
                         </div>
 
                         <!-- Calculation Auto-Update -->
@@ -129,8 +150,8 @@
                     </button>
                     <!-- Loading Indicator on button -->
                     <button type="button" @click="submit" 
-                            :disabled="duration === 0"
-                            :class="duration === 0 ? 'opacity-50 cursor-not-allowed' : ''"
+                            :disabled="duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}"
+                            :class="(duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}) ? 'opacity-50 cursor-not-allowed' : ''"
                             class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none sm:w-auto sm:text-sm transition-colors relative">
                         <span wire:loading.remove wire:target="confirm">Tambahkan ke Keranjang</span>
                         <span wire:loading wire:target="confirm" class="flex items-center gap-2">

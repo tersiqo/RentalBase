@@ -9,9 +9,31 @@ use Carbon\Carbon;
 class AddToCartModal extends Component
 {
     public Product $product;
+    public int $availableUnits = 0;
+    public ?string $errorMessage = null;
+
+    public function mount(Product $product)
+    {
+        $this->product = $product;
+        $this->availableUnits = $this->product->getAvailableUnitsForPeriod();
+    }
+
+    public function checkAvailability($startDate, $endDate)
+    {
+        $this->errorMessage = null;
+
+        if (! $startDate || ! $endDate) {
+            $this->availableUnits = $this->product->getAvailableUnitsForPeriod();
+            return;
+        }
+
+        $this->availableUnits = $this->product->getAvailableUnitsForPeriod($startDate, $endDate);
+    }
 
     public function confirm($startDate, $endDate, $quantity)
     {
+        $this->errorMessage = null;
+
         if (!$startDate || !$endDate) {
             return;
         }
@@ -28,16 +50,25 @@ class AddToCartModal extends Component
                 return;
             }
 
-            $maxUnits = $this->product->units->count();
-            if ($quantity < 1 || $quantity > $maxUnits) {
+            $maxUnits = $this->product->getAvailableUnitsForPeriod($start, $end);
+            $this->availableUnits = $maxUnits;
+
+            $cart = session()->get('cart', []);
+            $hash = md5($this->product->id . $start->format('Y-m-d') . $end->format('Y-m-d'));
+            $existingQty = isset($cart[$hash]) ? (int) $cart[$hash]['quantity'] : 0;
+
+            if ($maxUnits < 1) {
+                $this->errorMessage = 'Stok penuh pada rentang tanggal yang dipilih. Silakan pilih tanggal lain.';
+                return;
+            }
+
+            if ($quantity < 1 || ($existingQty + $quantity) > $maxUnits) {
+                $this->errorMessage = "Jumlah unit melebihi stok tersedia pada tanggal tersebut (tersisa {$maxUnits} unit).";
                 return;
             }
 
             $durationDays = $start->diffInDays($end) + 1;
             $subtotal = $this->product->rental_price_per_day * $durationDays * $quantity;
-            
-            $cart = session()->get('cart', []);
-            $hash = md5($this->product->id . $start->format('Y-m-d') . $end->format('Y-m-d'));
             
             if (isset($cart[$hash])) {
                 $cart[$hash]['quantity'] += $quantity;

@@ -337,7 +337,7 @@
                                 <!-- Middle Details -->
                                 <div class="min-w-0">
                                     <h4 class="text-[15px] font-bold text-gray-900 truncate leading-snug" x-text="item.name"></h4>
-                                    <div class="text-xs font-semibold text-gray-400 mt-0.5" x-text="rp(item.price) + ' / hari · unit tersedia'"></div>
+                                    <div class="text-xs font-semibold text-gray-400 mt-0.5" x-text="rp(item.price) + ' / hari · ' + (item.available_units ?? 0) + ' unit tersedia'"></div>
                                     <!-- Qty buttons -->
                                     <div class="inline-flex items-center gap-1 border border-gray-200/80 rounded-xl p-1 mt-2 bg-white">
                                         <button type="button" @click="changeQty(item, -1)" aria-label="Kurangi" class="w-7 h-7 rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary-600 text-gray-800 font-extrabold flex items-center justify-center transition-colors text-sm">-</button>

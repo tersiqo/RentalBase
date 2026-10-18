@@ -186,7 +186,7 @@ class CustomerCheckoutController extends Controller
                 return back()->withErrors(['items' => 'Produk "'.$item['name'].'" tidak tersedia lagi.']);
             }
 
-            $available = $product->units()->where('status', 'tersedia')->count();
+            $available = $product->getAvailableUnitsForPeriod($startDate, $endDate);
             $itemHash = $item['hash'] ?? $hash;
             $quantity = (int) ($requested[$hash]['quantity'] ?? $requested[$itemHash]['quantity'] ?? $item['quantity'] ?? 1);
 
@@ -196,7 +196,7 @@ class CustomerCheckoutController extends Controller
 
             if ($quantity > $available) {
                 return back()->withErrors([
-                    'items' => 'Stok "'.$item['name'].'" tidak mencukupi. Sisa unit tersedia: '.$available.'.',
+                    'items' => 'Stok "'.$item['name'].'" pada periode tanggal tersebut tidak mencukupi. Sisa unit tersedia: '.$available.'.',
                 ]);
             }
 
@@ -328,7 +328,7 @@ class CustomerCheckoutController extends Controller
     {
         return $items->map(function ($item, $hash) use ($period) {
             $product = Product::where('id', $item['product_id'])->first();
-            $available = $product ? $product->units()->where('status', 'tersedia')->count() : 0;
+            $available = $product ? $product->getAvailableUnitsForPeriod($period['start_date'], $period['end_date']) : 0;
             $quantity = $available < 1 ? 0 : min((int) $item['quantity'], $available);
 
             $imageUrl = ! empty($item['main_image'])

@@ -103,8 +103,15 @@ class ProductCatalog extends Component
         $durationDays = max(1, $start->diffInDays($end) + 1);
         $subtotal = $product->rental_price_per_day * $durationDays;
 
+        $availableUnits = $product->getAvailableUnitsForPeriod($start, $end);
         $cart = session()->get('cart', []);
         $hash = md5($product->id . $start->format('Y-m-d') . $end->format('Y-m-d'));
+        $currentQty = isset($cart[$hash]) ? (int) $cart[$hash]['quantity'] : 0;
+
+        if ($availableUnits < 1 || ($currentQty + 1) > $availableUnits) {
+            session()->flash('error', "Stok {$product->name} tidak mencukupi untuk periode tanggal tersebut (tersisa {$availableUnits} unit).");
+            return;
+        }
 
         if (isset($cart[$hash])) {
             $cart[$hash]['quantity'] += 1;
@@ -153,7 +160,7 @@ class ProductCatalog extends Component
                     JOIN orders o ON o.id = oi.order_id
                     WHERE oi.product_id = products.id
                       AND o.client_id = products.client_id
-                      AND o.status NOT IN (\'batal\', \'dibatalkan\', \'ditolak\')
+                      AND o.status NOT IN (\'batal\', \'dibatalkan\', \'ditolak\', \'selesai\')
                       AND o.rental_start_date <= ?
                       AND o.rental_end_date >= ?
                 ) as booked_units_count', [$end, $start]);
@@ -162,7 +169,7 @@ class ProductCatalog extends Component
                 $productsQuery->havingRaw('(
                     (SELECT COUNT(*) FROM equipment_units eu WHERE eu.product_id = products.id AND eu.status != \'rusak\')
                     -
-                    (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_id = products.id AND o.client_id = products.client_id AND o.status NOT IN (\'batal\', \'dibatalkan\', \'ditolak\') AND o.rental_start_date <= ? AND o.rental_end_date >= ?)
+                    (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_id = products.id AND o.client_id = products.client_id AND o.status NOT IN (\'batal\', \'dibatalkan\', \'ditolak\', \'selesai\') AND o.rental_start_date <= ? AND o.rental_end_date >= ?)
                 ) > 0', [$end, $start]);
             }
         } else {
