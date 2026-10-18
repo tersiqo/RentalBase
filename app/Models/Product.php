@@ -22,4 +22,35 @@ class Product extends Model
     {
         return $this->hasMany(EquipmentUnit::class);
     }
+
+    public function getAvailableUnitsForPeriod($startDate = null, $endDate = null): int
+    {
+        if (! $startDate || ! $endDate) {
+            return $this->units()->where('status', 'tersedia')->count();
+        }
+
+        try {
+            $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+            $end = \Carbon\Carbon::parse($endDate)->endOfDay();
+
+            if ($end->lt($start)) {
+                return 0;
+            }
+
+            $totalUnits = $this->units()->where('status', '!=', 'rusak')->count();
+
+            $bookedUnits = OrderItem::where('product_id', $this->id)
+                ->whereHas('order', function ($query) use ($start, $end) {
+                    $query->where('client_id', $this->client_id)
+                        ->whereNotIn('status', ['batal', 'dibatalkan', 'ditolak', 'selesai'])
+                        ->where('rental_start_date', '<=', $end)
+                        ->where('rental_end_date', '>=', $start);
+                })
+                ->sum('quantity');
+
+            return max(0, (int) $totalUnits - (int) $bookedUnits);
+        } catch (\Exception $e) {
+            return $this->units()->where('status', 'tersedia')->count();
+        }
+    }
 }

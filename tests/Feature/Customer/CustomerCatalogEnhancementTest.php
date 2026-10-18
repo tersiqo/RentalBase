@@ -215,4 +215,254 @@ class CustomerCatalogEnhancementTest extends TestCase
             ->assertDontSee('opacity-0')
             ->assertSee('products/sample.jpg');
     }
+
+    public function test_product_period_availability_handles_multi_unit_and_order_statuses()
+    {
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Stroller Joie Pact',
+            'slug' => 'stroller-joie-pact',
+            'rental_price_per_day' => 80000,
+            'status' => 'aktif',
+        ]);
+
+        // Create 3 operational units + 1 damaged unit
+        for ($i = 1; $i <= 3; $i++) {
+            EquipmentUnit::create([
+                'client_id' => $this->client->id,
+                'product_id' => $product->id,
+                'unit_code' => "STR-0{$i}",
+                'status' => 'tersedia',
+            ]);
+        }
+        EquipmentUnit::create([
+            'client_id' => $this->client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'STR-04',
+            'status' => 'rusak',
+        ]);
+
+        $user = User::create([
+            'name' => 'Siti Customer',
+            'email' => 'siti@test.com',
+            'password' => bcrypt('secret123'),
+            'role' => 'customer',
+        ]);
+
+        // Active order booking 2 units from 2026-12-01 to 2026-12-05
+        $activeOrder = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-ACT-01',
+            'rental_start_date' => '2026-12-01',
+            'rental_end_date' => '2026-12-05',
+            'duration_days' => 5,
+            'shipping_address' => 'Jl. Soekarno Hatta, Malang',
+            'total_amount' => 800000,
+            'status' => 'menunggu_konfirmasi',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $activeOrder->id,
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'price_per_day' => 80000,
+            'subtotal' => 800000,
+        ]);
+
+        // Cancelled order booking 1 unit on same dates (should be ignored)
+        $cancelledOrder = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-CAN-01',
+            'rental_start_date' => '2026-12-01',
+            'rental_end_date' => '2026-12-05',
+            'duration_days' => 5,
+            'shipping_address' => 'Jl. Soekarno Hatta, Malang',
+            'total_amount' => 400000,
+            'status' => 'batal',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $cancelledOrder->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price_per_day' => 80000,
+            'subtotal' => 400000,
+        ]);
+
+        // Overlapping period: 3 operational - 2 booked = 1 available
+        $this->assertEquals(1, $product->getAvailableUnitsForPeriod('2026-12-02', '2026-12-04'));
+
+        // Non-overlapping period: all 3 operational units available
+        $this->assertEquals(3, $product->getAvailableUnitsForPeriod('2026-12-10', '2026-12-12'));
+    }
+
+    public function test_add_to_cart_modal_validates_period_availability()
+    {
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Baby Box Nuna',
+            'slug' => 'baby-box-nuna',
+            'rental_price_per_day' => 120000,
+            'status' => 'aktif',
+        ]);
+
+        // 2 operational units
+        for ($i = 1; $i <= 2; $i++) {
+            EquipmentUnit::create([
+                'client_id' => $this->client->id,
+                'product_id' => $product->id,
+                'unit_code' => "BBX-0{$i}",
+                'status' => 'tersedia',
+            ]);
+        }
+
+        $user = User::create([
+            'name' => 'Andi Customer',
+            'email' => 'andi@test.com',
+            'password' => bcrypt('secret123'),
+            'role' => 'customer',
+        ]);
+
+        // Book 1 unit on 2026-12-15 to 2026-12-18
+        $order = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-BBX-01',
+            'rental_start_date' => '2026-12-15',
+            'rental_end_date' => '2026-12-18',
+            'duration_days' => 4,
+            'shipping_address' => 'Malang',
+            'total_amount' => 480000,
+            'status' => 'siap_kirim',
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price_per_day' => 120000,
+            'subtotal' => 480000,
+        ]);
+
+        // Requesting 2 units on overlapping dates should fail because only 1 is left
+        Livewire::test(\App\Livewire\Customer\AddToCartModal::class, ['product' => $product])
+            ->call('checkAvailability', '2026-12-16', '2026-12-17')
+            ->assertSet('availableUnits', 1)
+            ->call('confirm', '2026-12-16', '2026-12-17', 2)
+            ->assertNotDispatched('cart-updated')
+            ->assertSee('Jumlah unit melebihi stok tersedia pada tanggal tersebut (tersisa 1 unit).');
+
+        // Requesting 1 unit on overlapping dates should succeed
+        Livewire::test(\App\Livewire\Customer\AddToCartModal::class, ['product' => $product])
+            ->call('confirm', '2026-12-16', '2026-12-17', 1)
+            ->assertDispatched('cart-updated');
+    }
+
+    public function test_catalog_opens_add_to_cart_modal_and_confirms_item()
+    {
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Sony FX3 Cinema Line',
+            'slug' => 'sony-fx3-cinema-line',
+            'rental_price_per_day' => 450000,
+            'status' => 'aktif',
+        ]);
+
+        EquipmentUnit::create([
+            'client_id' => $this->client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'FX3-01',
+            'status' => 'tersedia',
+        ]);
+
+        $categories = Category::where('client_id', $this->client->id)->get();
+
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->call('openAddToCartModal', $product->id)
+            ->assertSet('showModal', true)
+            ->assertSet('modalProduct.id', $product->id)
+            ->assertSet('modalAvailableUnits', 1)
+            ->set('modalStartDate', '2026-12-20')
+            ->set('modalEndDate', '2026-12-22')
+            ->set('modalQuantity', 1)
+            ->call('confirmModalAddToCart')
+            ->assertSet('showModal', false)
+            ->assertDispatched('cart-updated');
+
+        $cart = session()->get('cart', []);
+        $this->assertNotEmpty($cart);
+        $cartItem = array_values($cart)[0];
+        $this->assertEquals($product->id, $cartItem['product_id']);
+        $this->assertEquals('2026-12-20', $cartItem['start_date']);
+        $this->assertEquals('2026-12-22', $cartItem['end_date']);
+        $this->assertEquals(3, $cartItem['duration_days']);
+        $this->assertEquals(1350000, $cartItem['subtotal']);
+    }
+
+    public function test_cart_page_can_edit_rental_dates_and_updates_period()
+    {
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Sony A7S III',
+            'slug' => 'sony-a7s-iii',
+            'rental_price_per_day' => 350000,
+            'status' => 'aktif',
+        ]);
+
+        EquipmentUnit::create([
+            'client_id' => $this->client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'A7S-01',
+            'status' => 'tersedia',
+        ]);
+
+        $oldStart = '2026-12-01';
+        $oldEnd = '2026-12-02';
+        $oldHash = md5($product->id . $oldStart . $oldEnd);
+
+        session()->put('cart', [
+            $oldHash => [
+                'hash' => $oldHash,
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->rental_price_per_day,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => $oldStart,
+                'end_date' => $oldEnd,
+                'duration_days' => 2,
+                'quantity' => 1,
+                'subtotal' => 700000,
+            ],
+        ]);
+
+        $newStart = '2026-12-05';
+        $newEnd = '2026-12-08'; // 4 days
+        $newHash = md5($product->id . $newStart . $newEnd);
+
+        Livewire::test(\App\Livewire\Customer\CartPage::class, ['subdomain' => $this->client->subdomain])
+            ->call('openEditDateModal', $oldHash)
+            ->assertSet('showEditDateModal', true)
+            ->assertSet('editingStartDate', $oldStart)
+            ->assertSet('editingEndDate', $oldEnd)
+            ->set('editingStartDate', $newStart)
+            ->set('editingEndDate', $newEnd)
+            ->call('saveEditedDate')
+            ->assertSet('showEditDateModal', false)
+            ->assertDispatched('cart-updated');
+
+        $cart = session()->get('cart', []);
+        $this->assertArrayNotHasKey($oldHash, $cart);
+        $this->assertArrayHasKey($newHash, $cart);
+        $this->assertEquals(4, $cart[$newHash]['duration_days']);
+        $this->assertEquals(1400000, $cart[$newHash]['subtotal']);
+        $this->assertEquals($newStart, $cart[$newHash]['start_date']);
+        $this->assertEquals($newEnd, $cart[$newHash]['end_date']);
+    }
 }

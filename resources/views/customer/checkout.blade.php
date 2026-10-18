@@ -52,7 +52,21 @@
         return 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
     },
 
+    init() {
+        this.items.forEach(it => {
+            const avail = (it.available_units !== undefined && it.available_units !== null) ? it.available_units : 99;
+            if (avail <= 0) {
+                it.quantity = 0;
+            } else if (it.quantity > avail) {
+                it.quantity = avail;
+            }
+        });
+    },
+
     itemSubtotal(item) {
+        if ((item.available_units !== undefined && item.available_units !== null && item.available_units <= 0) || item.quantity <= 0) {
+            return 0;
+        }
         return item.price * this.durationDays * item.quantity;
     },
 
@@ -60,8 +74,16 @@
         return this.items.reduce((sum, item) => sum + this.itemSubtotal(item), 0);
     },
 
+    get hasOutOfStock() {
+        return this.items.some(it => (it.available_units !== undefined && it.available_units !== null && it.available_units <= 0) || it.quantity > (it.available_units ?? 99) || it.quantity < 1);
+    },
+
     changeQty(item, delta) {
-        const max = item.available_units || 99;
+        const max = (item.available_units !== undefined && item.available_units !== null) ? item.available_units : 99;
+        if (max <= 0) {
+            item.quantity = 0;
+            return;
+        }
         item.quantity = Math.min(max, Math.max(1, item.quantity + delta));
     },
 
@@ -118,6 +140,16 @@
             }
             if (!this.items || this.items.length === 0) {
                 errs.push('Keranjang sewa tidak boleh kosong.');
+            }
+            for (const it of this.items) {
+                const avail = (it.available_units !== undefined && it.available_units !== null) ? it.available_units : 99;
+                if (avail <= 0) {
+                    errs.push('Stok ' + it.name + ' habis pada periode sewa ini (0 unit tersedia). Silakan pilih tanggal sewa lain.');
+                } else if (it.quantity > avail) {
+                    errs.push('Jumlah sewa ' + it.name + ' (' + it.quantity + ' unit) melebihi stok yang tersedia (' + avail + ' unit).');
+                } else if (it.quantity < 1) {
+                    errs.push('Jumlah sewa ' + it.name + ' minimal 1 unit.');
+                }
             }
         } else if (step === 2) {
             if (this.ship === 'antar') {
@@ -320,10 +352,22 @@
                         </div>
                     </template>
 
+                    <!-- Out of stock alert banner -->
+                    <template x-if="hasOutOfStock">
+                        <div class="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-sm flex gap-3 items-center">
+                            <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <div>
+                                <b class="block font-bold">Stok Unit Penuh pada Periode Ini</b>
+                                <p class="text-xs text-red-600 mt-0.5">Terdapat produk yang stok unitnya habis pada rentang tanggal sewa yang dipilih. Anda harus mengganti tanggal sewa sebelum melanjutkan checkout.</p>
+                            </div>
+                        </div>
+                    </template>
+
                     <!-- Item list -->
                     <div class="space-y-4">
                         <template x-for="(item, idx) in items" :key="item.hash">
-                            <div class="grid grid-cols-[78px_1fr_auto] gap-4 items-center border border-gray-100 rounded-2xl p-3.5 bg-gray-50/50">
+                            <div class="grid grid-cols-[78px_1fr_auto] gap-4 items-center border rounded-2xl p-3.5 transition-colors"
+                                 :class="(item.available_units ?? 0) <= 0 ? 'border-red-200 bg-red-50/30' : 'border-gray-100 bg-gray-50/50'">
                                 <div class="w-[78px] h-[78px] rounded-xl bg-white border border-gray-200/80 overflow-hidden flex-none flex items-center justify-center relative">
                                     <template x-if="item.image_url || item.main_image">
                                         <div class="w-full h-full relative">
@@ -337,18 +381,39 @@
                                 <!-- Middle Details -->
                                 <div class="min-w-0">
                                     <h4 class="text-[15px] font-bold text-gray-900 truncate leading-snug" x-text="item.name"></h4>
-                                    <div class="text-xs font-semibold text-gray-400 mt-0.5" x-text="rp(item.price) + ' / hari · unit tersedia'"></div>
+                                    
+                                    <template x-if="(item.available_units ?? 0) > 0">
+                                        <div class="text-xs font-semibold text-emerald-600 mt-0.5" x-text="rp(item.price) + ' / hari · ' + item.available_units + ' unit tersedia'"></div>
+                                    </template>
+                                    <template x-if="(item.available_units ?? 0) <= 0">
+                                        <div class="inline-flex items-center gap-1.5 text-xs font-bold text-red-700 bg-red-100 border border-red-300 px-2 py-0.5 rounded-lg mt-0.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
+                                            <span>Stok Habis (0 unit tersedia)</span>
+                                        </div>
+                                    </template>
+
                                     <!-- Qty buttons -->
-                                    <div class="inline-flex items-center gap-1 border border-gray-200/80 rounded-xl p-1 mt-2 bg-white">
-                                        <button type="button" @click="changeQty(item, -1)" aria-label="Kurangi" class="w-7 h-7 rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary-600 text-gray-800 font-extrabold flex items-center justify-center transition-colors text-sm">-</button>
+                                    <div class="inline-flex items-center gap-1 border border-gray-200/80 rounded-xl p-1 mt-2"
+                                         :class="(item.available_units ?? 0) <= 0 ? 'opacity-40 pointer-events-none bg-gray-100' : 'bg-white'">
+                                        <button type="button" @click="changeQty(item, -1)" :disabled="(item.available_units ?? 0) <= 0 || item.quantity <= 1" aria-label="Kurangi" class="w-7 h-7 rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary-600 text-gray-800 font-extrabold flex items-center justify-center transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">-</button>
                                         <span class="min-w-[32px] text-center font-bold text-gray-900 text-sm" x-text="item.quantity"></span>
-                                        <button type="button" @click="changeQty(item, 1)" aria-label="Tambah" class="w-7 h-7 rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary-600 text-gray-800 font-extrabold flex items-center justify-center transition-colors text-sm">+</button>
+                                        <button type="button" @click="changeQty(item, 1)" :disabled="(item.available_units ?? 0) <= 0 || item.quantity >= (item.available_units ?? 0)" aria-label="Tambah" class="w-7 h-7 rounded-lg bg-gray-50 hover:bg-primary-50 hover:text-primary-600 text-gray-800 font-extrabold flex items-center justify-center transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">+</button>
                                     </div>
                                 </div>
                                 <!-- Right Price -->
                                 <div class="text-right">
-                                    <b class="text-[15px] font-extrabold text-gray-900 block" x-text="rp(itemSubtotal(item))"></b>
-                                    <span class="text-xs font-semibold text-gray-400 block mt-0.5" x-text="item.quantity + ' unit × ' + durationDays + ' hari'"></span>
+                                    <template x-if="(item.available_units ?? 0) > 0">
+                                        <div>
+                                            <b class="text-[15px] font-extrabold text-gray-900 block" x-text="rp(itemSubtotal(item))"></b>
+                                            <span class="text-xs font-semibold text-gray-400 block mt-0.5" x-text="item.quantity + ' unit × ' + durationDays + ' hari'"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="(item.available_units ?? 0) <= 0">
+                                        <div>
+                                            <b class="text-[14px] font-bold text-red-500 block">Tidak Tersedia</b>
+                                            <span class="text-xs font-semibold text-gray-400 block mt-0.5">0 unit sewa</span>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </template>
@@ -392,7 +457,10 @@
 
                     <!-- Footer Navigation -->
                     <div class="pt-4 border-t border-gray-100 flex justify-end">
-                        <button type="button" @click="goToStep(2)" class="inline-flex items-center gap-2 rounded-xl font-bold px-6 py-3 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition text-sm cursor-pointer">
+                        <button type="button" @click="goToStep(2)" 
+                                :disabled="hasOutOfStock"
+                                :class="hasOutOfStock ? 'opacity-50 cursor-not-allowed bg-gray-400 shadow-none' : 'bg-primary-500 hover:bg-primary-600 active:scale-95 shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] cursor-pointer'"
+                                class="inline-flex items-center gap-2 rounded-xl font-bold px-6 py-3 text-white transition text-sm">
                             Lanjut ke Pengiriman
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M13 6l6 6-6 6"/></svg>
                         </button>
@@ -703,7 +771,7 @@
                         <button type="button" @click="goToStep(3)" class="inline-flex items-center gap-2 rounded-xl font-bold px-5 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
                             &larr; Kembali
                         </button>
-                        <button type="submit" :disabled="!agree" class="inline-flex items-center justify-center gap-2 rounded-xl font-extrabold px-7 py-3 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button type="submit" :disabled="!agree || hasOutOfStock" class="inline-flex items-center justify-center gap-2 rounded-xl font-extrabold px-7 py-3 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                             Buat Pesanan & Kirim Verifikasi &rarr;
                         </button>
                     </div>

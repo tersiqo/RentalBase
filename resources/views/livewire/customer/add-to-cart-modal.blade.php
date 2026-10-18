@@ -27,8 +27,14 @@
         submit() {
             if (this.duration === 0) return;
             $wire.confirm(this.startDate, this.endDate, this.quantity);
+        },
+
+        submitDirect() {
+            if (this.duration === 0) return;
+            $wire.confirmAndCheckout(this.startDate, this.endDate, this.quantity);
         }
     }"
+    @open-cart-modal.window="isOpen = true"
     @close-cart-modal.window="isOpen = false"
     @keydown.escape.window="isOpen = false">
     
@@ -65,7 +71,7 @@
                  class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="flex justify-between items-start mb-5">
-                        <h3 class="text-xl leading-6 font-bold text-gray-900" id="modal-title">Tambah ke Keranjang</h3>
+                        <h3 class="text-xl leading-6 font-bold text-gray-900" id="modal-title">Pilih Jadwal Sewa</h3>
                         <button @click="isOpen = false" class="text-gray-400 hover:text-gray-500 transition-colors">
                             <span class="sr-only">Tutup</span>
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -90,18 +96,39 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
-                                <input type="date" x-model="startDate" min="{{ date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                <input type="date" x-model="startDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" min="{{ date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
-                                <input type="date" x-model="endDate" :min="startDate || '{{ date('Y-m-d') }}'" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                <input type="date" x-model="endDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" :min="startDate || '{{ date('Y-m-d') }}'" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
                             </div>
                         </div>
 
+                        <!-- Dynamic Period Availability Banner -->
+                        <div x-show="duration > 0" style="display: none;">
+                            @if($availableUnits > 0)
+                                <div class="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <span>Tersedia <strong>{{ $availableUnits }} unit</strong> pada periode tanggal yang dipilih.</span>
+                                </div>
+                            @else
+                                <div class="flex items-center gap-2 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                    <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                                    <span>Semua unit penuh dipesan pada rentang tanggal ini. Silakan pilih tanggal lain.</span>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if($errorMessage)
+                            <div class="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                {{ $errorMessage }}
+                            </div>
+                        @endif
+
                         <!-- Quantity -->
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah Unit (Maks: {{ $product->units->count() }})</label>
-                            <input type="number" x-model="quantity" min="1" max="{{ $product->units->count() }}" class="w-full sm:w-1/3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah Unit (Maks: {{ $availableUnits }})</label>
+                            <input type="number" x-model="quantity" min="1" max="{{ max(1, $availableUnits) }}" class="w-full sm:w-1/3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
                         </div>
 
                         <!-- Calculation Auto-Update -->
@@ -127,13 +154,24 @@
                     <button type="button" @click="isOpen = false" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm transition-colors">
                         Batal
                     </button>
-                    <!-- Loading Indicator on button -->
+                    <!-- Tambah ke Keranjang -->
                     <button type="button" @click="submit" 
-                            :disabled="duration === 0"
-                            :class="duration === 0 ? 'opacity-50 cursor-not-allowed' : ''"
-                            class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none sm:w-auto sm:text-sm transition-colors relative">
-                        <span wire:loading.remove wire:target="confirm">Tambahkan ke Keranjang</span>
+                            :disabled="duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}"
+                            :class="(duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}) ? 'opacity-50 cursor-not-allowed' : ''"
+                            class="w-full inline-flex justify-center items-center rounded-lg border border-primary-200 shadow-sm px-4 py-2.5 bg-primary-50 text-base font-semibold text-primary-700 hover:bg-primary-100 focus:outline-none sm:w-auto sm:text-sm transition-colors relative">
+                        <span wire:loading.remove wire:target="confirm">Tambah ke Keranjang</span>
                         <span wire:loading wire:target="confirm" class="flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            Memproses...
+                        </span>
+                    </button>
+                    <!-- Sewa Sekarang (Langsung ke Checkout) -->
+                    <button type="button" @click="submitDirect" 
+                            :disabled="duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}"
+                            :class="(duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}) ? 'opacity-50 cursor-not-allowed' : ''"
+                            class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-base font-bold text-white hover:bg-primary-700 focus:outline-none sm:w-auto sm:text-sm transition-colors relative shadow-sm">
+                        <span wire:loading.remove wire:target="confirmAndCheckout">Sewa Sekarang</span>
+                        <span wire:loading wire:target="confirmAndCheckout" class="flex items-center gap-2">
                             <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             Memproses...
                         </span>

@@ -79,6 +79,13 @@
         </div>
     @endif
 
+    @if (session('success'))
+        <div class="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-emerald-800 text-sm flex gap-3 items-center">
+            <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span class="font-medium">{{ session('success') }}</span>
+        </div>
+    @endif
+
     @if(empty($cart))
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -163,8 +170,12 @@
                                         <div class="flex-grow flex flex-col justify-between">
                                             <div class="pr-8">
                                                 <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight"><a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item['product_id']]) }}" wire:navigate class="hover:text-primary-600">{{ $item['name'] }}</a></h3>
-                                                <div class="text-sm text-gray-500 mb-3">
-                                                    Biaya per hari: Rp {{ number_format($item['price'], 0, ',', '.') }}
+                                                <div class="text-sm text-gray-500 mb-3 flex items-center justify-between flex-wrap gap-2">
+                                                    <span>Biaya per hari: Rp {{ number_format($item['price'], 0, ',', '.') }}</span>
+                                                    <button type="button" wire:click="openEditDateModal('{{ $hash }}')" class="inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200/60 px-2.5 py-1 rounded-lg transition-colors cursor-pointer">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                                        <span>Ubah Tanggal</span>
+                                                    </button>
                                                 </div>
                                             </div>
                                             
@@ -252,6 +263,116 @@
                     x-bind:disabled="$wire.selectedItems.length === 0">
                     <span>Checkout <span x-show="$wire.selectedItems.length > 0" x-text="'(' + $wire.selectedItems.length + ')'"></span></span>
                 </button>
+            </div>
+        </div>
+    @endif
+
+    <!-- Edit Rental Date Modal -->
+    @if($showEditDateModal && $editingItem)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="edit-date-modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-900/75 transition-opacity backdrop-blur-sm z-0" wire:click="closeEditDateModal"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <div class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="flex justify-between items-start mb-5">
+                            <h3 class="text-xl leading-6 font-bold text-gray-900" id="edit-date-modal-title">Ubah Tanggal Sewa</h3>
+                            <button type="button" wire:click="closeEditDateModal" class="text-gray-400 hover:text-gray-500 transition-colors">
+                                <span class="sr-only">Tutup</span>
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Product Summary -->
+                        <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
+                            <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden shrink-0">
+                                <img src="{{ $editingItem['main_image'] ? Storage::url($editingItem['main_image']) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 line-clamp-1">{{ $editingItem['name'] }}</h4>
+                                <p class="text-sm text-primary-600 font-medium">Rp {{ number_format($editingItem['price'], 0, ',', '.') }} <span class="text-gray-500 text-xs">/ hari · Jumlah: {{ $editingItem['quantity'] }} unit</span></p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Date Pickers -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
+                                    <input type="date" wire:model.live="editingStartDate" wire:change="checkEditingAvailability" min="{{ date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
+                                    <input type="date" wire:model.live="editingEndDate" wire:change="checkEditingAvailability" min="{{ $editingStartDate ?: date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                </div>
+                            </div>
+
+                            <!-- Availability Banner -->
+                            <div>
+                                @if($editingAvailableUnits >= $editingItem['quantity'])
+                                    <div class="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                        <span>Tersedia <strong>{{ $editingAvailableUnits }} unit</strong> pada rentang tanggal baru ini.</span>
+                                    </div>
+                                @else
+                                    <div class="flex items-center gap-2 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                        <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                                        <span>Stok tidak mencukupi untuk {{ $editingItem['quantity'] }} unit (tersisa {{ $editingAvailableUnits }} unit).</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if($editingErrorMessage)
+                                <div class="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                    {{ $editingErrorMessage }}
+                                </div>
+                            @endif
+
+                            @php
+                                $eStart = $editingStartDate ? \Carbon\Carbon::parse($editingStartDate) : null;
+                                $eEnd = $editingEndDate ? \Carbon\Carbon::parse($editingEndDate) : null;
+                                $eDur = ($eStart && $eEnd && $eEnd->gte($eStart)) ? $eStart->diffInDays($eEnd) + 1 : 0;
+                                $eSubtotal = $eDur * $editingItem['price'] * $editingItem['quantity'];
+                            @endphp
+
+                            <!-- Calculation Auto-Update -->
+                            <div class="bg-primary-50 border border-primary-100 p-4 rounded-xl mt-6">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm text-primary-800">Durasi Baru:</span>
+                                    <span class="font-bold text-primary-900">{{ $eDur }} Hari</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-primary-800">Kuantitas:</span>
+                                    <span class="font-bold text-primary-900">{{ $editingItem['quantity'] }} Unit</span>
+                                </div>
+                                <hr class="border-primary-200 my-2">
+                                <div class="flex justify-between items-end">
+                                    <span class="text-sm font-bold text-primary-900">Subtotal Baru:</span>
+                                    <span class="text-2xl font-black text-primary-600">Rp {{ number_format($eSubtotal, 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 px-4 py-4 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100">
+                        <button type="button" wire:click="closeEditDateModal" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm transition-colors">
+                            Batal
+                        </button>
+                        <button type="button" wire:click="saveEditedDate" 
+                                @if($editingAvailableUnits < $editingItem['quantity'] || $eDur < 1) disabled @endif
+                                class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none sm:w-auto sm:text-sm transition-colors @if($editingAvailableUnits < $editingItem['quantity'] || $eDur < 1) opacity-50 cursor-not-allowed @endif">
+                            <span wire:loading.remove wire:target="saveEditedDate">Simpan Perubahan</span>
+                            <span wire:loading wire:target="saveEditedDate" class="flex items-center gap-2">
+                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Memproses...
+                            </span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     @endif
