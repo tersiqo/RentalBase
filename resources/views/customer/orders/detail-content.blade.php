@@ -77,7 +77,7 @@
                             @click="closeDetail()" 
                             class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition shadow-sm">
                         <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                        <span>Tutup</span>
+                        <span>Kembali ke Pesanan Saya</span>
                     </button>
                 @endif
             </div>
@@ -500,8 +500,15 @@
 
                 @php
                     $payStatus = strtolower($payment?->status ?? 'belum');
-                    $isPaidVerified = in_array($payStatus, ['terverifikasi', 'sukses', 'lunas', 'berhasil']);
-                    $isPaidWaiting = in_array($payStatus, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'pending']);
+                    $isOrderAdvanced = in_array(strtolower($order->status), [
+                        'diproses', 'dikonfirmasi', 'siap_kirim', 'dikirim', 'sedang_disewa', 'selesai', 'dikembalikan'
+                    ]);
+                    $isPaidVerified = $isOrderAdvanced || in_array($payStatus, [
+                        'terverifikasi', 'dikonfirmasi', 'sukses', 'lunas', 'berhasil'
+                    ]);
+                    $isPaidWaiting = !$isPaidVerified && in_array($payStatus, [
+                        'menunggu_konfirmasi', 'menunggu_verifikasi', 'pending'
+                    ]);
                 @endphp
 
                 @if($isPaidVerified)
