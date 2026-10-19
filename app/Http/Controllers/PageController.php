@@ -95,7 +95,7 @@ class PageController extends Controller
             'operational_hours' => '08:00 - 20:00',
         ];
 
-        $orders = Order::where('user_id', Auth::id())
+        $ordersQuery = Order::where('user_id', Auth::id())
             ->with([
                 'orderItems.product',
                 'client.paymentMethods',
@@ -103,9 +103,13 @@ class PageController extends Controller
                 'shipment',
                 'payments',
                 'returnModel',
-            ])
-            ->latest()
-            ->get();
+            ]);
+
+        if ($client && isset($client->id)) {
+            $ordersQuery->where('client_id', $client->id);
+        }
+
+        $orders = $ordersQuery->latest()->get();
 
         return view('customer.orders.my-orders', compact('orders', 'client'));
     }
@@ -143,9 +147,11 @@ class PageController extends Controller
             return back()->with('error', 'Pesanan ini tidak dapat dibatalkan.');
         }
 
+        $hasPayment = $order->payments()->exists();
         $order->update([
             'status' => 'batal',
             'cancellation_reason' => $request->input('reason', 'Dibatalkan oleh pelanggan.'),
+            'refund_status' => $hasPayment ? 'menunggu_refund' : 'tidak_ada',
         ]);
 
         return back()->with('success', 'Pesanan #' . $order->order_number . ' berhasil dibatalkan.');
@@ -200,6 +206,10 @@ class PageController extends Controller
             ]
         );
 
+        $order->update([
+            'status' => 'dikembalikan',
+        ]);
+
         return back()->with('success', 'Pengajuan pengembalian barang pesanan #' . $order->order_number . ' berhasil dikirim ke toko.');
     }
 
@@ -220,10 +230,9 @@ class PageController extends Controller
 
         $path = $request->file('payment_proof')->store('payments', 'public');
 
-        $paymentMethodId = $request->input('client_payment_method_id');
-        if (! $paymentMethodId) {
-            $paymentMethodId = $order->client?->paymentMethods()->first()?->id ?? 1;
-        }
+        $paymentMethodId = $request->input('client_payment_method_id') 
+            ?? $order->client?->paymentMethods()->where('is_active', true)->value('id')
+            ?? $order->client?->paymentMethods()->first()?->id;
 
         \App\Models\Payment::create([
             'order_id' => $order->id,

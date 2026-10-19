@@ -4,9 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Client;
+use App\Models\ClientPaymentMethod;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
+use App\Models\ReturnModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -296,5 +299,191 @@ class CustomerMyOrdersTest extends TestCase
 
         $response->assertSessionHas('success');
         $this->assertEquals('sedang_disewa', $order->fresh()->status);
+    }
+
+    public function test_orders_are_scoped_to_active_client(): void
+    {
+        $clientA = Client::create([
+            'business_name' => 'Toko A',
+            'subdomain' => 'tokoa',
+            'status' => 'aktif',
+        ]);
+
+        $clientB = Client::create([
+            'business_name' => 'Toko B',
+            'subdomain' => 'tokob',
+            'status' => 'aktif',
+        ]);
+
+        $user = User::factory()->create([
+            'client_id' => $clientA->id,
+            'role' => 'customer',
+        ]);
+
+        $orderA = Order::create([
+            'client_id' => $clientA->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-TOKO-A-001',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 2,
+            'total_amount' => 200000,
+            'shipping_address' => 'Jl. A',
+            'status' => 'menunggu_pembayaran',
+        ]);
+
+        $orderB = Order::create([
+            'client_id' => $clientB->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-TOKO-B-002',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 2,
+            'total_amount' => 300000,
+            'shipping_address' => 'Jl. B',
+            'status' => 'menunggu_pembayaran',
+        ]);
+
+        // Visit toko A: should see order A but NOT order B
+        $responseA = $this->actingAs($user)->get('/my-orders?client=tokoa');
+        $responseA->assertStatus(200);
+        $responseA->assertSee('ORD-TOKO-A-001');
+        $responseA->assertDontSee('ORD-TOKO-B-002');
+
+        // Visit toko B: should see order B but NOT order A
+        $responseB = $this->actingAs($user)->get('/my-orders?client=tokob');
+        $responseB->assertStatus(200);
+        $responseB->assertSee('ORD-TOKO-B-002');
+        $responseB->assertDontSee('ORD-TOKO-A-001');
+    }
+
+    public function test_customer_return_order_updates_order_status_to_dikembalikan(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $user = User::factory()->create(['client_id' => $client->id, 'role' => 'customer']);
+
+        $order = Order::create([
+            'client_id' => $client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-RETURN-001',
+            'rental_start_date' => now()->subDays(3),
+            'rental_end_date' => now(),
+            'duration_days' => 3,
+            'total_amount' => 300000,
+            'shipping_address' => 'Jl. Return',
+            'status' => 'sedang_disewa',
+        ]);
+
+        $response = $this->actingAs($user)->post('/my-orders/' . $order->id . '/return', [
+            'return_method' => 'ambil_toko',
+            'notes' => 'Barang selesai dipakai dalam kondisi baik.',
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertEquals('dikembalikan', $order->fresh()->status);
+        $this->assertDatabaseHas('returns', [
+            'order_id' => $order->id,
+            'return_status' => 'diajukan',
+        ]);
+    }
+
+    public function test_cancel_order_with_payment_sets_refund_status(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $payMethod = ClientPaymentMethod::create([
+            'client_id' => $client->id,
+            'bank_name' => 'BCA',
+            'account_number' => '12345678',
+            'account_holder' => 'Kamera Kita',
+            'is_active' => true,
+        ]);
+
+        $user = User::factory()->create(['client_id' => $client->id, 'role' => 'customer']);
+
+        $order = Order::create([
+            'client_id' => $client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-CANCEL-PAY',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 2,
+            'total_amount' => 200000,
+            'shipping_address' => 'Jl. Batal',
+            'status' => 'menunggu_pembayaran',
+        ]);
+
+        Payment::create([
+            'order_id' => $order->id,
+            'client_payment_method_id' => $payMethod->id,
+            'amount' => 200000,
+            'payment_proof' => 'payments/sample.jpg',
+            'status' => 'pending',
+            'paid_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->post('/my-orders/' . $order->id . '/cancel', [
+            'reason' => 'Perubahan jadwal',
+        ]);
+
+        $response->assertSessionHas('success');
+        $order = $order->fresh();
+        $this->assertEquals('batal', $order->status);
+        $this->assertEquals('menunggu_refund', $order->refund_status);
+    }
+
+    public function test_processed_order_shows_verified_payment_card_and_no_warning(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $payMethod = ClientPaymentMethod::create([
+            'client_id' => $client->id,
+            'bank_name' => 'BCA',
+            'account_number' => '12345678',
+            'account_holder' => 'Kamera Kita',
+            'is_active' => true,
+        ]);
+
+        $user = User::factory()->create(['client_id' => $client->id, 'role' => 'customer']);
+
+        $order = Order::create([
+            'client_id' => $client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-PROCESSED-001',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 2,
+            'total_amount' => 250000,
+            'shipping_address' => 'Jl. Diproses',
+            'status' => 'diproses',
+        ]);
+
+        Payment::create([
+            'order_id' => $order->id,
+            'client_payment_method_id' => $payMethod->id,
+            'amount' => 250000,
+            'payment_proof' => 'payments/sample.jpg',
+            'status' => 'dikonfirmasi',
+            'paid_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->get('/my-orders/' . $order->id);
+
+        $response->assertStatus(200);
+        $response->assertSee('Pembayaran Terverifikasi');
+        $response->assertDontSee('Pembayaran Belum Dibuka');
     }
 }
