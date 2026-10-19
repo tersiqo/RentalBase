@@ -52,4 +52,9 @@ class Client extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function paymentMethods()
+    {
+        return $this->hasMany(ClientPaymentMethod::class)->where('is_active', true);
+    }
 }

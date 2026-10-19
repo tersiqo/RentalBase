@@ -96,10 +96,177 @@ class PageController extends Controller
         ];
 
         $orders = Order::where('user_id', Auth::id())
-            ->with(['orderItems.product', 'client'])
+            ->with([
+                'orderItems.product',
+                'client.paymentMethods',
+                'identityGuarantee',
+                'shipment',
+                'payments',
+                'returnModel',
+            ])
             ->latest()
             ->get();
 
         return view('customer.orders.my-orders', compact('orders', 'client'));
+    }
+
+    public function orderDetail(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(404, 'Pesanan tidak ditemukan.');
+        }
+
+        $order->loadMissing([
+            'orderItems.product',
+            'client.paymentMethods',
+            'identityGuarantee',
+            'shipment',
+            'payments',
+            'returnModel',
+        ]);
+
+        $client = $order->client;
+        if (! $client) {
+            $client = Client::find($order->client_id) ?? Client::where('status', 'aktif')->first();
+        }
+
+        return view('customer.orders.show', compact('order', 'client'));
+    }
+
+    public function cancelOrder(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if (! $order->can_cancel) {
+            return back()->with('error', 'Pesanan ini tidak dapat dibatalkan.');
+        }
+
+        $order->update([
+            'status' => 'batal',
+            'cancellation_reason' => $request->input('reason', 'Dibatalkan oleh pelanggan.'),
+        ]);
+
+        return back()->with('success', 'Pesanan #' . $order->order_number . ' berhasil dibatalkan.');
+    }
+
+    public function receiveOrder(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if (! $order->can_receive) {
+            return back()->with('error', 'Penerimaan barang belum dapat dikonfirmasi.');
+        }
+
+        $order->update([
+            'status' => 'sedang_disewa',
+        ]);
+
+        if ($order->shipment) {
+            $order->shipment->update([
+                'status' => 'diterima',
+                'delivered_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', 'Penerimaan barang pesanan #' . $order->order_number . ' berhasil dikonfirmasi. Masa sewa sedang berjalan.');
+    }
+
+    public function returnOrder(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if (! $order->can_return) {
+            return back()->with('error', 'Pengajuan pengembalian tidak diizinkan untuk pesanan ini.');
+        }
+
+        $request->validate([
+            'return_method' => 'nullable|string',
+            'notes' => 'nullable|string|min:5',
+        ]);
+
+        \App\Models\ReturnModel::updateOrCreate(
+            ['order_id' => $order->id],
+            [
+                'return_method' => $request->input('return_method', 'ambil_toko'),
+                'return_date' => now(),
+                'return_status' => 'diajukan',
+                'notes' => $request->input('notes'),
+            ]
+        );
+
+        return back()->with('success', 'Pengajuan pengembalian barang pesanan #' . $order->order_number . ' berhasil dikirim ke toko.');
+    }
+
+    public function uploadPayment(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if (! $order->can_upload_payment) {
+            return back()->with('error', 'Unggah bukti pembayaran belum diizinkan. Pastikan verifikasi identitas telah disetujui.');
+        }
+
+        $request->validate([
+            'payment_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            'client_payment_method_id' => 'nullable|exists:client_payment_methods,id',
+        ]);
+
+        $path = $request->file('payment_proof')->store('payments', 'public');
+
+        $paymentMethodId = $request->input('client_payment_method_id');
+        if (! $paymentMethodId) {
+            $paymentMethodId = $order->client?->paymentMethods()->first()?->id ?? 1;
+        }
+
+        \App\Models\Payment::create([
+            'order_id' => $order->id,
+            'client_payment_method_id' => $paymentMethodId,
+            'amount' => $order->total_amount,
+            'payment_proof' => $path,
+            'status' => 'menunggu_konfirmasi',
+            'paid_at' => now(),
+        ]);
+
+        $order->update([
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        return back()->with('success', 'Bukti pembayaran pesanan #' . $order->order_number . ' berhasil diunggah. Toko akan segera memverifikasinya.');
+    }
+
+    public function reuploadIdentity(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if (! $order->can_reupload_identity) {
+            return back()->with('error', 'Unggah ulang identitas tidak diizinkan.');
+        }
+
+        $request->validate([
+            'identity_document_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'face_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $docPath = $request->file('identity_document_image')->store('identity_guarantees', 'public');
+        $facePath = $request->file('face_image')->store('identity_guarantees', 'public');
+
+        if ($order->identityGuarantee) {
+            $order->identityGuarantee->update([
+                'identity_document_image' => $docPath,
+                'face_image' => $facePath,
+                'status' => 'menunggu',
+            ]);
+        }
+
+        return back()->with('success', 'Dokumen identitas berhasil diunggah ulang dan sedang ditinjau kembali oleh toko.');
     }
 }

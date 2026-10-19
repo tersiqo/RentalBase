@@ -27,6 +27,15 @@ Route::get('/my-orders', [PageController::class, 'myOrders'])
     ->middleware('auth')
     ->name('customer.orders');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/my-orders/{order}', [PageController::class, 'orderDetail'])->name('customer.orders.show');
+    Route::post('/my-orders/{order}/cancel', [PageController::class, 'cancelOrder'])->name('customer.orders.cancel');
+    Route::post('/my-orders/{order}/receive', [PageController::class, 'receiveOrder'])->name('customer.orders.receive');
+    Route::post('/my-orders/{order}/return', [PageController::class, 'returnOrder'])->name('customer.orders.return');
+    Route::post('/my-orders/{order}/payment', [PageController::class, 'uploadPayment'])->name('customer.orders.payment');
+    Route::post('/my-orders/{order}/identity', [PageController::class, 'reuploadIdentity'])->name('customer.orders.identity');
+});
+
 Route::get('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showRegister'])->name('tenant.register');
 Route::post('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'handleRegistration']);
 
