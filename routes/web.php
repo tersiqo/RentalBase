@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminThemeController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\ShipmentController;
+use App\Http\Controllers\Admin\ConditionCheckController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -76,7 +77,11 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::post('/shipments/{order}/process', [ShipmentController::class, 'process'])->name('shipments.process');
     Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
     Route::post('/returns/{order}/process', [ReturnController::class, 'process'])->name('returns.process');
-    Route::get('/condition-checks', fn () => back())->name('condition-checks.index');
+    
+    Route::get('/condition-checks', [ConditionCheckController::class, 'index'])->name('condition-checks.index');
+    Route::post('/condition-checks', [ConditionCheckController::class, 'store'])->name('condition-checks.store');
+    Route::get('/condition-checks/units', [ConditionCheckController::class, 'getUnits'])->name('condition-checks.units');
+
     Route::get('/damage-cases', fn () => back())->name('damage-cases.index');
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
