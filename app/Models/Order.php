@@ -44,6 +44,31 @@ class Order extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function latestPayment()
+    {
+        return $this->hasOne(Payment::class)->latestOfMany();
+    }
+
+    public function identityGuarantee()
+    {
+        return $this->hasOne(IdentityGuarantee::class);
+    }
+
+    public function shipment()
+    {
+        return $this->hasOne(Shipment::class);
+    }
+
+    public function returnModel()
+    {
+        return $this->hasOne(ReturnModel::class);
+    }
+
+    public function returns()
+    {
+        return $this->hasMany(ReturnModel::class);
+    }
+
     public function getStatusLabelAttribute(): string
     {
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
@@ -117,5 +142,103 @@ class Order extends Model
         $count = $this->orderItems->sum('quantity');
 
         return $count > 0 ? (int) $count : max(1, $this->orderItems->count());
+    }
+
+    public function getStepIndexAttribute(): int
+    {
+        $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        return match ($status) {
+            'menunggu_konfirmasi' => ($this->identityGuarantee?->status === 'diverifikasi' ? 1 : 0),
+            'menunggu_pembayaran', 'belum_dibayar' => 1,
+            'menunggu_verifikasi', 'verifikasi' => 2,
+            'siap_kirim', 'diproses', 'dikonfirmasi' => 3,
+            'dikirim' => 3,
+            'sedang_disewa' => 4,
+            'dikembalikan' => 5,
+            'selesai' => 6,
+            'batal', 'dibatalkan', 'ditolak' => 1,
+            default => 0,
+        };
+    }
+
+    public function getStatusNoteAttribute(): string
+    {
+        $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        return match ($status) {
+            'menunggu_pembayaran', 'belum_dibayar' => 'Selesaikan pembayaran agar pesanan dapat diproses oleh toko rental.',
+            'menunggu_konfirmasi' => 'Toko sedang memeriksa data pesanan dan verifikasi jaminan identitas Anda.',
+            'menunggu_verifikasi', 'verifikasi' => 'Toko sedang memverifikasi bukti pembayaran yang Anda kirimkan.',
+            'siap_kirim', 'diproses', 'dikonfirmasi' => 'Pembayaran terverifikasi! Toko sedang mempersiapkan unit barang pesanan Anda.',
+            'dikirim' => 'Pesanan dalam perjalanan pengiriman. Tekan tombol “Terima Barang” setelah paket sampai di tujuan.',
+            'sedang_disewa' => 'Masa sewa sedang berjalan. Harap gunakan barang dengan baik dan kembalikan tepat waktu sebelum masa sewa berakhir.',
+            'selesai' => 'Terima kasih telah menyewa di toko kami! Pesanan ini telah selesai sepenuhnya.',
+            'batal', 'dibatalkan', 'ditolak' => 'Pesanan ini telah dibatalkan / ditolak.',
+            default => 'Status pesanan Anda sedang diproses oleh sistem.',
+        };
+    }
+
+    public function getCanCancelAttribute(): bool
+    {
+        $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        if (in_array($status, ['menunggu_pembayaran', 'belum_dibayar'])) {
+            return true;
+        }
+
+        if ($status === 'menunggu_konfirmasi') {
+            $hasVerifiedPayment = $this->payments()->where('status', 'terverifikasi')->exists();
+            return ! $hasVerifiedPayment;
+        }
+
+        return false;
+    }
+
+    public function getCanReturnAttribute(): bool
+    {
+        $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        if ($status !== 'sedang_disewa') {
+            return false;
+        }
+
+        return ! ($this->returnModel && in_array($this->returnModel->return_status, ['diajukan', 'diterima']));
+    }
+
+    public function getCanReceiveAttribute(): bool
+    {
+        $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        return $status === 'dikirim';
+    }
+
+    public function getCanUploadPaymentAttribute(): bool
+    {
+        $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        if (! in_array($status, ['menunggu_pembayaran', 'belum_dibayar', 'menunggu_konfirmasi'])) {
+            return false;
+        }
+
+        // Jika ada verifikasi identitas, pastikan sudah diverifikasi (atau belum ada jaminan identitas)
+        if ($this->identityGuarantee && $this->identityGuarantee->status !== 'diverifikasi') {
+            return false;
+        }
+
+        $hasVerifiedPayment = $this->payments()->where('status', 'terverifikasi')->exists();
+
+        return ! $hasVerifiedPayment;
+    }
+
+    public function getCanReuploadIdentityAttribute(): bool
+    {
+        $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        if (in_array($status, ['selesai', 'batal', 'dibatalkan', 'ditolak'])) {
+            return false;
+        }
+
+        return $this->identityGuarantee && $this->identityGuarantee->status === 'ditolak';
     }
 }

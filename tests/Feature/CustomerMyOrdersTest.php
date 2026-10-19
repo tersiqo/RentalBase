@@ -176,4 +176,125 @@ class CustomerMyOrdersTest extends TestCase
         $response->assertRedirect('/client/kamerakita');
         $this->assertGuest();
     }
+
+    public function test_customer_can_view_order_detail(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $user = User::factory()->create([
+            'client_id' => $client->id,
+            'role' => 'customer',
+        ]);
+
+        $order = Order::create([
+            'client_id' => $client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-DETAIL-999',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 2,
+            'total_amount' => 350000,
+            'shipping_address' => 'Jl. Ijen No. 12 Malang',
+            'status' => 'menunggu_pembayaran',
+        ]);
+
+        $response = $this->actingAs($user)->get('/my-orders/' . $order->id);
+
+        $response->assertStatus(200);
+        $response->assertViewIs('customer.orders.show');
+        $response->assertSee('Detail Pesanan');
+        $response->assertSee('ORD-DETAIL-999');
+        $response->assertSee('Rp 350.000');
+    }
+
+    public function test_customer_cannot_view_another_customer_order(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $user1 = User::factory()->create(['client_id' => $client->id, 'role' => 'customer']);
+        $user2 = User::factory()->create(['client_id' => $client->id, 'role' => 'customer']);
+
+        $order = Order::create([
+            'client_id' => $client->id,
+            'user_id' => $user1->id,
+            'order_number' => 'ORD-SECRET-123',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 2,
+            'total_amount' => 350000,
+            'shipping_address' => 'Jl. Rahasia',
+            'status' => 'menunggu_pembayaran',
+        ]);
+
+        $response = $this->actingAs($user2)->get('/my-orders/' . $order->id);
+
+        $response->assertStatus(404);
+    }
+
+    public function test_customer_can_cancel_unpaid_order(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $user = User::factory()->create(['client_id' => $client->id, 'role' => 'customer']);
+
+        $order = Order::create([
+            'client_id' => $client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-CANCEL-123',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 2,
+            'total_amount' => 350000,
+            'shipping_address' => 'Jl. Batal',
+            'status' => 'menunggu_pembayaran',
+        ]);
+
+        $response = $this->actingAs($user)->post('/my-orders/' . $order->id . '/cancel', [
+            'reason' => 'Salah pilih tanggal',
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertEquals('batal', $order->fresh()->status);
+        $this->assertEquals('Salah pilih tanggal', $order->fresh()->cancellation_reason);
+    }
+
+    public function test_customer_can_confirm_receive_shipped_order(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $user = User::factory()->create(['client_id' => $client->id, 'role' => 'customer']);
+
+        $order = Order::create([
+            'client_id' => $client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-RECEIVE-123',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 2,
+            'total_amount' => 350000,
+            'shipping_address' => 'Jl. Penerima',
+            'status' => 'dikirim',
+        ]);
+
+        $response = $this->actingAs($user)->post('/my-orders/' . $order->id . '/receive');
+
+        $response->assertSessionHas('success');
+        $this->assertEquals('sedang_disewa', $order->fresh()->status);
+    }
 }
