@@ -111,7 +111,7 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 8.1-I4 | 8 Bagian 1 | Laporan Kerusakan Customer | Iqo (dialihkan dari Iak / 8.1-A2) |
 | 8.2-I1 | 8 Bagian 2 | Unit Fisik Admin | Iqo |
 | 8.2-Y3 | 8 Bagian 2 | Profil/Branding Admin | Yanuar (dialihkan dari Iqo / 8.2-I2) |
-| 8.2-Y1 | 8 Bagian 2 | Error 403 dan 404 | Yanuar |
+| 8.2-Y1 | 8 Bagian 2 | Metode Pembayaran Admin | Yanuar (dimajukan ke Minggu 8.2) |
 | 8.2-Y2 | 8 Bagian 2 | Halaman Tenant Tidak Aktif/Suspended | Yanuar |
 | 8.2-F3 | 8 Bagian 2 | Dashboard Owner | Fiza (ditukar dari Yanuar / 8.2-Y3) | ✔
 | 8.2-F1 | 8 Bagian 2 | Manajemen Client Owner | Fiza | ✔
@@ -120,7 +120,7 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 8.2-A3 | 8 Bagian 2 | Pengembalian Customer | Iak (dialihkan ke Minggu 8.2) |
 | 8.2-A1 | 8 Bagian 2 | Notifikasi Customer | Iak |
 | 8.2-A2 | 8 Bagian 2 | Notifikasi Admin | Iak |
-| 9.1-Y1 | 9 Bagian 1 | Metode Pembayaran Admin | Yanuar (dialihkan dari Iqo / 9.1-I1) |
+| 9.1-Y1 | 9 Bagian 1 | Error 403 dan 404 | Yanuar (dialihkan ke Minggu 9.1) |
 | 9.1-F1 | 9 Bagian 1 | Subscription Tenant Owner | Fiza |
 | 9.1-A1 | 9 Bagian 1 | Activity Log Admin | Iak |
 | 9.2-I1 | 9 Bagian 2 | Profil Customer dan Integrasi Frontend | Iqo |
@@ -982,28 +982,44 @@ Mengubah informasi identitas dan tampilan dasar toko yang terlihat customer.
 ### Kriteria selesai
 Nama, deskripsi, dan logo dapat disimpan; warna sesuai kelayakan paket; preview cocok dengan halaman customer; route dan API selaras.
 
-## 7.3 — Yanuar: Global Error 403 dan 404
+## 7.3 — Yanuar: Metode Pembayaran Admin
 
-**ID:** 8.2-Y1  
-**Tipe halaman:** Global Error UI; tidak memakai sidebar/navbar utama.
+**ID:** 8.2-Y1 (dimajukan dari Minggu 9.1 / sebelumnya 9.1-Y1)  
+**Route pada sumber:** `/admin/settings/payments`  
+**Layout:** Base Layout Admin.
 
 ### Tujuan
-Menampilkan umpan balik yang mudah dipahami saat route tidak ditemukan atau pengguna tidak punya izin mengaksesnya.
+Mengatur instruksi pembayaran yang ditampilkan kepada customer saat membayar order.
 
-### UI
-- Ilustrasi SVG sederhana atau visual standar.
-- Headline untuk “404 — Halaman Tidak Ditemukan” atau “403 — Akses Ditolak”.
-- Deskripsi singkat sesuai jenis error.
-- Tombol “Kembali ke Beranda” yang mengarah ke root/area yang sesuai konteks.
-- Tidak menampilkan stack trace, SQL, token, nama kelas internal, atau rincian sensitif.
+### Daftar metode pembayaran
+- Jenis/nama metode.
+- Untuk transfer bank: nama bank, nomor rekening, nama pemilik rekening.
+- Untuk QRIS: nama/label QRIS dan preview gambar barcode.
+- Status aktif/nonaktif.
+- Aksi tambah/edit/nonaktifkan/hapus sesuai aturan backend.
+- Empty state jika belum ada metode aktif.
 
-### Perilaku
-- 404 digunakan untuk halaman/resource yang tidak tersedia.
-- 403 digunakan saat resource ada tetapi akses ditolak.
-- Tombol kembali harus memiliki tujuan aman dan bukan melakukan redirect loop.
+### Form transfer bank
+- Pilih jenis bank dari daftar yang disetujui.
+- Nomor rekening.
+- Nama pemilik rekening.
+- Label instruksi bila perlu.
+- Toggle aktif.
+
+### Form QRIS
+- Label usaha/metode.
+- Uploader gambar QRIS.
+- Preview gambar dan validasi tipe/ukuran.
+- Toggle aktif.
+
+### Perilaku dan aturan
+- Rancangan API RentalBase terkini membatasi tipe metode menjadi **`bank_transfer`** dan **`qris`**. Daftar E-Wallet seperti OVO/Gopay yang disebut di sumber lama jangan ditawarkan sebagai jenis mandiri kecuali spesifikasi backend diubah terlebih dahulu.
+- Customer melihat metode pembayaran aktif tenant saat ini.
+- Perubahan metode tidak boleh mengubah bukti pembayaran order lama tanpa aturan eksplisit.
+- Aksi hapus/nonaktif harus mempertimbangkan apakah metode sudah direferensikan transaksi; pilihan nonaktif biasanya lebih aman daripada menghapus sejarah.
 
 ### Kriteria selesai
-403 dan 404 berbeda dengan benar, responsif, aman, dan mudah dipahami.
+Admin dapat menambah/mengubah/menonaktifkan metode, file QRIS tervalidasi, halaman customer hanya menunjukkan metode aktif, dan API dipakai sesuai kontrak.
 
 ## 7.4 — Yanuar: Halaman Tenant Tidak Aktif/Suspended
 
@@ -1239,44 +1255,29 @@ Form pengembalian terkirim sukses, data resi dan bukti bayar denda (jika ada) te
 
 # 8. MINGGU 9 BAGIAN 1 — PEMBAYARAN, SUBSCRIPTION, ACTIVITY LOG
 
-## 8.1 — Yanuar: Metode Pembayaran Admin
+## 8.1 — Yanuar: Global Error 403 dan 404
 
-**ID:** 9.1-Y1 (dialihkan dari Iqo / 9.1-I1)  
-**Route pada sumber:** `/admin/settings/payments`  
-**Layout:** Base Layout Admin.
+**ID:** 9.1-Y1 (dialihkan dari Minggu 8.2 / sebelumnya 8.2-Y1)  
+**Tipe halaman:** Global Error UI; tidak memakai sidebar/navbar utama.
+**File Target:** `resources/views/errors/403.blade.php`, `resources/views/errors/404.blade.php`
 
 ### Tujuan
-Mengatur instruksi pembayaran yang ditampilkan kepada customer saat membayar order.
+Menampilkan umpan balik yang mudah dipahami saat route tidak ditemukan atau pengguna tidak punya izin mengaksesnya.
 
-### Daftar metode pembayaran
-- Jenis/nama metode.
-- Untuk transfer bank: nama bank, nomor rekening, nama pemilik rekening.
-- Untuk QRIS: nama/label QRIS dan preview gambar barcode.
-- Status aktif/nonaktif.
-- Aksi tambah/edit/nonaktifkan/hapus sesuai aturan backend.
-- Empty state jika belum ada metode aktif.
+### UI
+- Ilustrasi SVG sederhana atau visual standar.
+- Headline untuk “404 — Halaman Tidak Ditemukan” atau “403 — Akses Ditolak”.
+- Deskripsi singkat sesuai jenis error.
+- Tombol “Kembali ke Beranda” yang mengarah ke root/area yang sesuai konteks.
+- Tidak menampilkan stack trace, SQL, token, nama kelas internal, atau rincian sensitif.
 
-### Form transfer bank
-- Pilih jenis bank dari daftar yang disetujui.
-- Nomor rekening.
-- Nama pemilik rekening.
-- Label instruksi bila perlu.
-- Toggle aktif.
-
-### Form QRIS
-- Label usaha/metode.
-- Uploader gambar QRIS.
-- Preview gambar dan validasi tipe/ukuran.
-- Toggle aktif.
-
-### Perilaku dan aturan
-- Rancangan API RentalBase terkini membatasi tipe metode menjadi **`bank_transfer`** dan **`qris`**. Daftar E-Wallet seperti OVO/Gopay yang disebut di sumber lama jangan ditawarkan sebagai jenis mandiri kecuali spesifikasi backend diubah terlebih dahulu.
-- Customer melihat metode pembayaran aktif tenant saat ini.
-- Perubahan metode tidak boleh mengubah bukti pembayaran order lama tanpa aturan eksplisit.
-- Aksi hapus/nonaktif harus mempertimbangkan apakah metode sudah direferensikan transaksi; pilihan nonaktif biasanya lebih aman daripada menghapus sejarah.
+### Perilaku
+- 404 digunakan untuk halaman/resource yang tidak tersedia.
+- 403 digunakan saat resource ada tetapi akses ditolak.
+- Tombol kembali harus memiliki tujuan aman dan bukan melakukan redirect loop.
 
 ### Kriteria selesai
-Admin dapat menambah/mengubah/menonaktifkan metode, file QRIS tervalidasi, halaman customer hanya menunjukkan metode aktif, dan API dipakai sesuai kontrak.
+403 dan 404 berbeda dengan benar, responsif, aman, dan mudah dipahami.
 
 ## 8.2 — Fiza: Subscription Paket Owner
 
@@ -1669,10 +1670,10 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 - [ ] **Detail pesanan customer (7.2-Y2):** stepper status lengkap, panel identitas, panel pembayaran, resi pengiriman, panel refund & preview bukti transfer refund.
 - [ ] **Login & Register Customer (8.1-Y1):** form tab masuk/daftar, akun customer global multi-tenant, validasi input, intended redirect setelah login gate.
 - [ ] **Lupa & Reset Password (8.1-Y2):** request reset email, token Laravel resmi, validasi password baru, instruksi login kembali.
-- [ ] **Halaman Error 403 & 404 (8.2-Y1):** visual responsif, pesan jelas tanpa leak informasi sensitif, tombol kembali ke beranda aman.
+- [ ] **Metode Pembayaran Admin (8.2-Y1):** bank transfer & QRIS toko, uploader barcode QRIS, toggle status aktif, validasi minimum 1 metode aktif (dimajukan ke Minggu 8.2).
 - [ ] **Halaman Tenant Suspended (8.2-Y2):** layar blokir toko nonaktif, responsif terhadap middleware client suspended, isolasi per tenant.
 - [ ] **Profil & Branding Admin (8.2-Y3):** form nama/deskripsi/logo toko, live color picker styling tema toko kustom (Business/Pro), named route kanonis (dialihkan dari Iqo / 8.2-I2).
-- [ ] **Metode Pembayaran Admin (9.1-Y1):** bank transfer & QRIS toko, uploader barcode QRIS, toggle status aktif, validasi minimum 1 metode aktif (dialihkan dari Iqo / 9.1-I1).
+- [ ] **Halaman Error 403 & 404 (9.1-Y1):** visual responsif, pesan jelas tanpa leak informasi sensitif, tombol kembali ke beranda aman (dialihkan ke Minggu 9.1).
 
 ## 12.3 Fiza Rahmatus Sholikha — 10 pekerjaan
 
@@ -1749,7 +1750,7 @@ Untuk meminimalkan blocker dan saling tunggu antar-anggota tim, urutan implement
 5. **Kalkulasi Dynamic Availability:** Backend endpoint memeriksa jadwal sewa unit fisik vs tanggal sewa yang dipilih customer.
 
 ### Fase 3: Transaksi Customer, Checkout, dan Metode Pembayaran
-1. **Pengaturan Metode Pembayaran:** Admin mengonfigurasi Bank Transfer & QRIS aktif (Yanuar: `9.1-Y1`).
+1. **Pengaturan Metode Pembayaran:** Admin mengonfigurasi Bank Transfer & QRIS aktif (Yanuar: `8.2-Y1`).
 2. **Profil & Branding Toko:** Konfigurasi logo toko & warna tema kustom tenant (Yanuar: `8.2-Y3`).
 3. **Keranjang Belanja:** Cart customer mengelompokkan item berdasarkan rentang periode sewa (Iqo: `7.2-I1`).
 4. **Checkout & Form Jaminan:** Customer mengisi alamat kirim/ambil toko, unggah foto KTP & selfie jaminan identitas (Iqo: `7.2-I2`).
@@ -1770,7 +1771,7 @@ Untuk meminimalkan blocker dan saling tunggu antar-anggota tim, urutan implement
 1. **Dashboard Owner Pusat:** Pemantauan kesehatan platform & 4 kartu metrik agregat (Fiza: `8.2-F3`).
 2. **Antrean Persetujuan Tenant:** Owner meninjau pengajuan toko baru, kontak WhatsApp direct (`wa.me`), tolak atau approve dengan otomatisasi provisioning tenant & akun Admin utama (Fiza: `8.2-F4`).
 3. **Manajemen Client Owner & Manajemen Akun Admin Toko:** Pengelolaan status/suspend tenant oleh Owner (Fiza: `8.2-F1`) serta fitur *self-service* pembuatan/pengelolaan akun Admin tambahan oleh Admin Rental melalui menu Profil sesuai kuota paket (Fiza: `8.2-F2`).
-4. **Penanganan Tenant Suspended:** Halaman Error 403/404 (Yanuar: `8.2-Y1`) dan halaman Tenant Suspended via middleware (Yanuar: `8.2-Y2`).
+4. **Penanganan Tenant Suspended:** Halaman Error 403/404 (Yanuar: `9.1-Y1`) dan halaman Tenant Suspended via middleware (Yanuar: `8.2-Y2`).
 5. **Subscription & Siklus Tagihan:** Pelacakan masa aktif langganan tenant & form perpanjangan manual (Fiza: `9.1-F1`).
 
 ### Fase 6: Background Tasks, Notifikasi, Audit Trail, dan Final QA
