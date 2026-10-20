@@ -17,4 +17,10 @@ class EquipmentUnit extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    // Tambahkan relasi ini:
+    public function orderItemUnits()
+    {
+        return $this->hasMany(OrderItemUnit::class);
+    }
 }

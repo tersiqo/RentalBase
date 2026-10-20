@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
+
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ConditionCheckRequest;
 use App\Models\ConditionCheck;
@@ -29,9 +31,10 @@ class ConditionCheckController extends Controller
         }
 
         // Ambil daftar rekaman kondisi milik toko ini
-        // Jalur: condition_check → equipment_unit → client
-        $conditionChecks = ConditionCheck::with([
+        // Eager load: order & customernya, equipmentUnit & produknya, dan checker (petugas)
+            $conditionChecks = ConditionCheck::with([
                 'equipmentUnit.product',
+                'equipmentUnit.orderItemUnits.orderItem.order.user',
                 'checker',
             ])
             ->whereHas('equipmentUnit', function ($query) use ($client) {
