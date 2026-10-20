@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
 
 class TenantRegistrationController extends Controller
 {
-    public function showLogin()
+    public function showLogin(Request $request)
     {
         if (Auth::check()) {
             $user = Auth::user();
@@ -31,7 +31,48 @@ class TenantRegistrationController extends Controller
             return redirect('/');
         }
 
-        return view('auth.login');
+        $activeTab = $request->query('tab', 'login');
+
+        return view('auth.login', compact('activeTab'));
+    }
+
+    public function registerCustomer(Request $request)
+    {
+        if ($request->filled('business_name')) {
+            return $this->handleRegistration($request);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'phone' => 'required|string|max:20',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Alamat email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'phone.required' => 'Nomor WhatsApp aktif wajib diisi.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal terdiri dari 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+        ]);
+
+        // Security rule: DO NOT accept role, status, or client_id from request
+        $user = User::create([
+            'client_id' => null,
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+            'role' => 'customer',
+            'status' => 'aktif',
+        ]);
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->intended('/client/babyrental')->with('success', 'Pendaftaran akun berhasil! Anda kini dapat bertransaksi di seluruh toko RentalBase.');
     }
 
     public function login(Request $request)
@@ -53,6 +94,25 @@ class TenantRegistrationController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::user();
+
+            // Validasi kesesuaian role yang dipilih pada UI (Customer vs Admin)
+            $loginType = $request->input('login_type');
+
+            if ($loginType === 'customer' && $user->role !== 'customer') {
+                Auth::logout();
+
+                return back()->withInput()->withErrors([
+                    'email' => 'Akun ini terdaftar sebagai Pengelola/Admin Toko. Silakan klik tab "Admin" di atas untuk masuk.',
+                ]);
+            }
+
+            if (in_array($loginType, ['admin', 'tenant'], true) && $user->role === 'customer') {
+                Auth::logout();
+
+                return back()->withInput()->withErrors([
+                    'email' => 'Akun ini terdaftar sebagai Customer. Silakan klik tab "Customer" di atas untuk masuk.',
+                ]);
+            }
 
             if ($user->status === 'menunggu_verifikasi') {
                 Auth::logout();

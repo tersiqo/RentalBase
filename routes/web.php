@@ -43,8 +43,8 @@ Route::get('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::c
 Route::post('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'login']);
 Route::post('/logout', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'logout'])->name('logout');
 
-Route::get('/register', fn () => redirect()->route('tenant.register'));
-Route::post('/register', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'handleRegistration']);
+Route::get('/register', fn () => redirect()->route('login', ['tab' => 'register']))->name('register');
+Route::post('/register', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'registerCustomer'])->name('register.submit');
 
 Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
 Route::post('/forgot-password', [PasswordResetController::class, 'email'])->name('password.email');
