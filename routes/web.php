@@ -44,7 +44,7 @@ Route::get('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::c
 Route::post('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'login']);
 Route::post('/logout', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'logout'])->name('logout');
 
-Route::get('/register', fn () => redirect()->route('login', ['tab' => 'register']))->name('register');
+Route::get('/register', fn (\Illuminate\Http\Request $request) => redirect()->route('login', array_merge(['tab' => 'register'], $request->query())))->name('register');
 Route::post('/register', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'registerCustomer'])->name('register.submit');
 
 Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');

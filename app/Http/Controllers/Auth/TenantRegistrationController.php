@@ -72,6 +72,13 @@ class TenantRegistrationController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        if ($request->filled('redirect')) {
+            $redirectUrl = $request->input('redirect');
+            if (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost')) {
+                return redirect($redirectUrl)->with('success', 'Pendaftaran akun berhasil! Anda kini dapat bertransaksi di seluruh toko RentalBase.');
+            }
+        }
+
         return redirect()->intended('/client/babyrental')->with('success', 'Pendaftaran akun berhasil! Anda kini dapat bertransaksi di seluruh toko RentalBase.');
     }
 
@@ -364,7 +371,7 @@ class TenantRegistrationController extends Controller
         ]);
 
         Auth::login($user);
-        $request->session()->put('registration_plan', $request->query('plan', 'starter'));
+        $request->session()->put('registration_plan', $request->input('plan', $request->query('plan', 'starter')));
 
         return redirect()->route('tenant.register');
     }
