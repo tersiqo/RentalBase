@@ -102,7 +102,7 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 7.2-A3 | 7 Bagian 2 | Daftar Pesanan Admin | Iak (dialihkan dari Iqo / 7.2-I3) | ✔
 | 7.2-A1 | 7 Bagian 2 | Detail Pesanan Admin | Iak (dialokasikan di Minggu 7.2) |
 | 8.1-I1 | 8 Bagian 1 | Kategori Admin | Iqo | ✔
-| 8.1-I2 | 8 Bagian 1 | Produk Admin | Iqo |
+| 8.1-I2 | 8 Bagian 1 | Produk Admin | Iqo | ✔
 | 8.1-Y1 | 8 Bagian 1 | Login/Register Customer | Yanuar | ✔
 | 8.1-Y2 | 8 Bagian 1 | Lupa/Reset Password | Yanuar | ✔
 | 8.1-A1 | 8 Bagian 1 | Pemeriksaan Kondisi Fisik Admin | Iak (dialokasikan di Minggu 8.1) | ✔
