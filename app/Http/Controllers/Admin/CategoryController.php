@@ -31,6 +31,10 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
+        if (! Auth::user()?->isPrimaryAdmin()) {
+            abort(403, 'Akses ditolak: Hanya Admin Utama yang berwenang menambah kategori.');
+        }
+
         $client = $this->resolveClient();
 
         $data = $this->validated($request);
@@ -60,6 +64,10 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
+        if (! Auth::user()?->isPrimaryAdmin()) {
+            abort(403, 'Akses ditolak: Hanya Admin Utama yang berwenang mengubah kategori.');
+        }
+
         $client = $this->resolveClient();
         $this->authorizeCategory($client, $category);
 
@@ -81,6 +89,10 @@ class CategoryController extends Controller
 
     public function destroy(Category $category)
     {
+        if (! Auth::user()?->isPrimaryAdmin()) {
+            abort(403, 'Akses ditolak: Hanya Admin Utama yang berwenang menghapus kategori.');
+        }
+
         $client = $this->resolveClient();
         $this->authorizeCategory($client, $category);
 

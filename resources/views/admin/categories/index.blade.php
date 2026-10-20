@@ -32,6 +32,7 @@
         'oldDesc' => old('description', ''),
         'formError' => $errors->first('name'),
         'flashes' => $flashes->all(),
+        'canManage' => (bool) (Auth::user()?->isPrimaryAdmin()),
     ];
 @endphp
 
@@ -160,11 +161,19 @@
             <h1>Kategori</h1>
             <p class="sub">Kelompokkan produk rental agar mudah ditemukan pelanggan.</p>
         </div>
-        <button class="btn primary lg" type="button" @click="openCreate()" :disabled="isFull"
-                :title="isFull ? ('Limit paket ' + planLabel + ' tercapai (' + limit + ' kategori)') : ''">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Tambah Kategori Baru
-        </button>
+        <template x-if="canManage">
+            <button class="btn primary lg" type="button" @click="openCreate()" :disabled="isFull"
+                    :title="isFull ? ('Limit paket ' + planLabel + ' tercapai (' + limit + ' kategori)') : ''">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Tambah Kategori Baru
+            </button>
+        </template>
+        <template x-if="!canManage">
+            <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
+                <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span>Akses Admin Staf (Hanya Lihat)</span>
+            </div>
+        </template>
     </div>
 
     <section class="card quota" :class="isFull ? 'full' : (isWarn ? 'warn' : '')" aria-live="polite">
@@ -196,7 +205,7 @@
         <div x-show="filtered.length > 0">
             <table>
                 <thead>
-                    <tr><th>Nama Kategori</th><th>Deskripsi</th><th>Jumlah Produk</th><th>Aksi</th></tr>
+                    <tr><th>Nama Kategori</th><th>Deskripsi</th><th>Jumlah Produk</th><th x-show="canManage">Aksi</th></tr>
                 </thead>
                 <tbody>
                     <template x-for="cat in filtered" :key="cat.id">
@@ -212,7 +221,7 @@
                                 <template x-if="!cat.description"><span style="color:var(--g300)">&mdash;</span></template>
                             </td>
                             <td><span class="pill" :class="cat.products_count ? '' : 'zero'" x-text="cat.products_count + ' produk'"></span></td>
-                            <td>
+                            <td x-show="canManage">
                                 <div class="act">
                                     <button type="button" class="ib" title="Edit" :aria-label="'Edit ' + cat.name" @click="openEdit(cat)">
                                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -244,7 +253,9 @@
                     <div class="eb"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg></div>
                     <h3>Belum ada kategori</h3>
                     <p>Buat kategori pertama untuk mengelompokkan produk Anda.</p>
-                    <button class="btn primary" type="button" @click="openCreate()">Tambah Kategori Baru</button>
+                    <template x-if="canManage">
+                        <button class="btn primary" type="button" @click="openCreate()">Tambah Kategori Baru</button>
+                    </template>
                 </div>
             </template>
         </div>
@@ -345,6 +356,7 @@
             storeUrl: config.storeUrl,
             updateUrl: config.updateUrl,
             deleteUrl: config.deleteUrl,
+            canManage: Boolean(config.canManage),
             search: '',
             showForm: config.showForm,
             editId: config.editId,
@@ -384,6 +396,10 @@
             },
 
             openCreate() {
+                if (!this.canManage) {
+                    this.pushToast('error', 'Akses Ditolak', 'Hanya Admin Utama yang berwenang menambah kategori.');
+                    return;
+                }
                 if (this.isFull) {
                     this.pushToast('error', 'Limit tercapai', 'Paket ' + this.planLabel + ' maksimal ' + this.limit + ' kategori.');
                     return;
@@ -396,6 +412,10 @@
             },
 
             openEdit(cat) {
+                if (!this.canManage) {
+                    this.pushToast('error', 'Akses Ditolak', 'Hanya Admin Utama yang berwenang mengubah kategori.');
+                    return;
+                }
                 this.editId = cat.id;
                 this.form = { name: cat.name, desc: cat.description || '' };
                 this.formError = '';
@@ -404,6 +424,11 @@
             },
 
             guardSubmit(e) {
+                if (!this.canManage) {
+                    e.preventDefault();
+                    this.pushToast('error', 'Akses Ditolak', 'Hanya Admin Utama yang berwenang menyimpan kategori.');
+                    return;
+                }
                 this.formError = '';
                 if (!this.form.name.trim()) {
                     e.preventDefault();
@@ -412,6 +437,10 @@
             },
 
             askDelete(cat) {
+                if (!this.canManage) {
+                    this.pushToast('error', 'Akses Ditolak', 'Hanya Admin Utama yang berwenang menghapus kategori.');
+                    return;
+                }
                 this.deleteTarget = cat;
                 this.deleteBlocked = cat.products_count > 0;
                 this.showDelete = true;

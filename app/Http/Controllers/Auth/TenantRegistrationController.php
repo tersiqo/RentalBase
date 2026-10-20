@@ -306,6 +306,7 @@ class TenantRegistrationController extends Controller
                     'logo' => $logoPath,
                     'subdomain' => strtolower($request->subdomain),
                     'status' => 'menunggu_verifikasi',
+                    'primary_admin_id' => $user->id,
                 ]);
 
                 $user->update(['client_id' => $client->id]);
@@ -442,9 +443,13 @@ class TenantRegistrationController extends Controller
             ];
 
             if ($user->client_id && ($existingClient = Client::find($user->client_id))) {
+                if (! $existingClient->primary_admin_id) {
+                    $clientData['primary_admin_id'] = $user->id;
+                }
                 $existingClient->update($clientData);
                 $client = $existingClient;
             } else {
+                $clientData['primary_admin_id'] = $user->id;
                 $client = Client::create($clientData);
             }
 
