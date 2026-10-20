@@ -137,6 +137,12 @@
                         {{-- Kolom Aksi --}}
                         <td class="px-6 py-4 text-center" x-data="{ openModal: false }">
 
+                            {{-- Tombol Lihat Detail: selalu tampil --}}
+                            <a href="{{ route('admin.orders.show', $order->id) }}"
+                               class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-md transition mr-1">
+                                Detail
+                            </a>
+
                             {{-- Tombol Verifikasi: muncul hanya jika status menunggu konfirmasi --}}
                             @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi']))
                                 <button @click="openModal = true"
