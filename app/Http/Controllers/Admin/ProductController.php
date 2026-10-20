@@ -28,26 +28,7 @@ class ProductController extends Controller
             }])
             ->where('client_id', $client->id);
 
-        // Filter: Pencarian Nama atau Deskripsi
-        if ($request->filled('search')) {
-            $search = trim($request->query('search'));
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('description', 'ilike', "%{$search}%");
-            });
-        }
-
-        // Filter: Kategori
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->query('category_id'));
-        }
-
-        // Filter: Status (aktif / nonaktif)
-        if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
-        }
-
-        $products = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
+        $products = $query->orderBy('created_at', 'desc')->get();
 
         $categories = Category::where('client_id', $client->id)
             ->orderBy('name')

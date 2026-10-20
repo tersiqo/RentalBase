@@ -319,7 +319,7 @@
             </div>
 
             {{-- PAGINATION --}}
-            @if($products->hasPages())
+            @if($products instanceof \Illuminate\Pagination\LengthAwarePaginator && $products->hasPages())
                 <div x-show="!hasActiveFilters" class="p-4 border-t border-slate-100 bg-slate-50/40">
                     {{ $products->links() }}
                 </div>
@@ -800,22 +800,18 @@
 <script>
     function productManagement() {
         return {
-            searchQuery: '{{ request('search', '') }}',
-            selectedCategory: '{{ request('category_id', '') }}',
-            selectedStatus: '{{ request('status', '') }}',
+            searchQuery: {!! json_encode((string) request('search', '')) !!},
+            selectedCategory: {!! json_encode((string) request('category_id', '')) !!},
+            selectedStatus: {!! json_encode((string) request('status', '')) !!},
 
-            productsData: [
-                @foreach($products as $p)
-                {
-                    id: {{ $p->id }},
-                    name: {{ json_encode($p->name) }},
-                    category_id: {{ json_encode((string) $p->category_id) }},
-                    status: {{ json_encode($p->status) }},
-                    description: {{ json_encode($p->description ?? '') }},
-                    slug: {{ json_encode($p->slug ?? '') }}
-                },
-                @endforeach
-            ],
+            productsData: {!! json_encode($products->map(fn($p) => [
+                'id' => (int) $p->id,
+                'name' => (string) $p->name,
+                'category_id' => (string) ($p->category_id ?? ''),
+                'status' => (string) $p->status,
+                'description' => (string) ($p->description ?? ''),
+                'slug' => (string) ($p->slug ?? ''),
+            ])->values()) !!},
 
             matchesFilter(productId) {
                 const p = this.productsData.find(item => item.id === productId);
