@@ -180,17 +180,16 @@
         </a>
 
         {{-- Kasus Kerusakan --}}
-        <a href="{{ route('admin.damage-cases.index') }}"
-           title="Mengelola entri pada tabel damage_reports dan damage_cases. Digunakan untuk mencatat rincian kerusakan fisik jika ditemukan masalah saat inspeksi pengembalian, melampirkan bukti foto kerusakan, serta menentukan dan memantau status penyelesaian nominal ganti rugi (fine amount) yang dibebankan kepada Customer."
-           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
-                  {{ request()->routeIs('admin.damage-cases.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
-            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.damage-cases.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
+        <div title="Fitur Kasus Kerusakan sedang dalam tahap pengembangan (Segera Hadir)."
+             class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed select-none">
+            <span class="shrink-0 w-5 h-5 text-slate-400">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
             </span>
             <span x-show="!collapsed || mobileOpen" class="truncate">Kasus Kerusakan</span>
-        </a>
+            <span x-show="!collapsed || mobileOpen" class="ml-auto text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Segera</span>
+        </div>
 
         <hr class="my-3 border-gray-100" x-show="!collapsed || mobileOpen">
 
@@ -226,32 +225,30 @@
         </a>
 
         {{-- Unit --}}
-        <a href="{{ route('admin.units.index') }}"
-           title="Mengelola tabel equipment_units. Menu untuk mendata kuantitas fisik spesifik dari sebuah produk melalui pengisian unit_code, serial_number, dan ketersediaan individual setiap unit perlengkapan bayi."
-           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
-                  {{ request()->routeIs('admin.units.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
-            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.units.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
+        <div title="Fitur Manajemen Unit fisik sedang dalam tahap pengembangan (Segera Hadir)."
+             class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed select-none">
+            <span class="shrink-0 w-5 h-5 text-slate-400">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
                 </svg>
             </span>
             <span x-show="!collapsed || mobileOpen" class="truncate">Unit</span>
-        </a>
+            <span x-show="!collapsed || mobileOpen" class="ml-auto text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Segera</span>
+        </div>
 
         <hr class="my-3 border-gray-100" x-show="!collapsed || mobileOpen">
 
         {{-- Laporan --}}
-        <a href="{{ route('admin.reports.index') }}"
-           title="Mengakses ringkasan informasi yang diekstraksi dari aktivitas operasional rental perlengkapan bayi. Berfungsi menyajikan laporan transaksi, riwayat pelaporan kondisi unit, serta kompilasi kasus kerusakan yang telah diinput Admin."
-           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
-                  {{ request()->routeIs('admin.reports.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
-            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.reports.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
+        <div title="Fitur Laporan Operasional sedang dalam tahap pengembangan (Segera Hadir)."
+             class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed select-none">
+            <span class="shrink-0 w-5 h-5 text-slate-400">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
             </span>
             <span x-show="!collapsed || mobileOpen" class="truncate">Laporan</span>
-        </a>
+            <span x-show="!collapsed || mobileOpen" class="ml-auto text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Segera</span>
+        </div>
 
         @if(Auth::user()?->isPrimaryAdmin())
         <hr class="my-3 border-gray-100" x-show="!collapsed || mobileOpen">
@@ -392,14 +389,15 @@
 
             {{-- Main Links --}}
             <div class="py-1.5">
-                <a href="{{ route('admin.settings.index') }}"
-                   class="flex items-center gap-2.5 px-4 py-2.5 text-gray-700 hover:bg-stone-50 hover:text-gray-900 transition-colors">
-                    <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <div title="Fitur Setelan Toko sedang dalam tahap pengembangan (Segera Hadir)."
+                     class="flex items-center gap-2.5 px-4 py-2.5 text-slate-400 cursor-not-allowed select-none">
+                    <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span>Setelan</span>
-                </a>
+                    <span class="ml-auto text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Segera</span>
+                </div>
             </div>
 
             {{-- Logout Action --}}

@@ -23,4 +23,14 @@ class EquipmentUnit extends Model
     {
         return $this->hasMany(OrderItemUnit::class);
     }
+
+    public function damageReports()
+    {
+        return $this->hasMany(DamageReport::class);
+    }
+
+    public function getAssetCodeAttribute(): ?string
+    {
+        return $this->unit_code ?? $this->attributes['asset_code'] ?? null;
+    }
 }

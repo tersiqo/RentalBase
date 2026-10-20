@@ -178,6 +178,23 @@ class OrderController extends Controller
 
         $order->update(['status' => 'siap_kirim']);
 
+        // Sinkronisasi status jaminan identitas agar tidak tertinggal 'menunggu' jika pesanan sudah disetujui
+        if ($order->identityGuarantee && $order->identityGuarantee->status !== 'diverifikasi') {
+            $order->identityGuarantee->update([
+                'status' => 'diverifikasi',
+                'reviewed_by' => $user?->id,
+            ]);
+        }
+
+        // Sinkronisasi status pembayaran jika ada pembayaran yang menunggu verifikasi
+        if ($order->payments()->exists()) {
+            $order->payments()->whereIn('status', ['menunggu_konfirmasi', 'pending', 'menunggu_verifikasi'])->update([
+                'status' => 'terverifikasi',
+                'verified_by' => $user?->id,
+                'verified_at' => now(),
+            ]);
+        }
+
         return redirect()->route('admin.orders.index')
             ->with('success', 'Pesanan #' . $order->order_number . ' berhasil dikonfirmasi dan masuk antrian pengiriman!');
     }

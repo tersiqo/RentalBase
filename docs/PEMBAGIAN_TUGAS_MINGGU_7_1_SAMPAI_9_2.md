@@ -100,27 +100,27 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 7.2-Y2 | 7 Bagian 2 | Detail Pesanan Customer | Yanuar | ✔
 | 7.2-F1 | 7 Bagian 2 | Login Admin dan Owner | Fiza | ✔
 | 7.2-A3 | 7 Bagian 2 | Daftar Pesanan Admin | Iak (dialihkan dari Iqo / 7.2-I3) | ✔
-| 7.2-A1 | 7 Bagian 2 | Pengembalian Customer | Iak |
+| 7.2-A1 | 7 Bagian 2 | Detail Pesanan Admin | Iak (dialokasikan di Minggu 7.2) | ✔
 | 8.1-I1 | 8 Bagian 1 | Kategori Admin | Iqo | ✔
-| 8.1-I2 | 8 Bagian 1 | Produk Admin | Iqo |
-| 8.1-Y1 | 8 Bagian 1 | Login/Register Customer | Yanuar |
+| 8.1-I2 | 8 Bagian 1 | Produk Admin | Iqo | ✔
+| 8.1-Y1 | 8 Bagian 1 | Login/Register Customer | Yanuar | ✔
 | 8.1-Y2 | 8 Bagian 1 | Lupa/Reset Password | Yanuar | ✔
 | 8.1-A1 | 8 Bagian 1 | Pemeriksaan Kondisi Fisik Admin | Iak (dialokasikan di Minggu 8.1) | ✔
 | 8.1-F2 | 8 Bagian 1 | Laporan Transaksi Admin | Fiza |
 | 8.1-I3 | 8 Bagian 1 | Daftar dan Detail Kasus Kerusakan Admin | Iqo (dialihkan dari Iak / 8.1-A1) |
-| 8.1-I4 | 8 Bagian 1 | Laporan Kerusakan Customer | Iqo (dialihkan dari Iak / 8.1-A2) |
+| 8.1-I4 | 8 Bagian 1 | Laporan Kerusakan Customer | Iqo (dialihkan dari Iak / 8.1-A2) | ✔
 | 8.2-I1 | 8 Bagian 2 | Unit Fisik Admin | Iqo |
-| 8.2-Y3 | 8 Bagian 2 | Profil/Branding Admin | Yanuar (dialihkan dari Iqo / 8.2-I2) |
-| 8.2-Y1 | 8 Bagian 2 | Error 403 dan 404 | Yanuar |
+| 8.2-Y3 | 8 Bagian 2 | Profil/Branding Admin | Yanuar (dialihkan dari Iqo / 8.2-I2) | ✔
+| 8.2-Y1 | 8 Bagian 2 | Metode Pembayaran Admin | Yanuar (dimajukan ke Minggu 8.2) |
 | 8.2-Y2 | 8 Bagian 2 | Halaman Tenant Tidak Aktif/Suspended | Yanuar |
 | 8.2-F3 | 8 Bagian 2 | Dashboard Owner | Fiza (ditukar dari Yanuar / 8.2-Y3) | ✔
 | 8.2-F1 | 8 Bagian 2 | Manajemen Client Owner | Fiza | ✔
-| 8.2-F2 | 8 Bagian 2 | Manajemen Akun Admin Toko (Via Profil Admin) | Fiza |
+| 8.2-F2 | 8 Bagian 2 | Manajemen Akun Admin Toko (Via Profil Admin) | Fiza | ✔
 | 8.2-F4 | 8 Bagian 2 | Antrean Persetujuan Tenant Owner | Fiza (dimajukan dari 9.1 / dialihkan dari Yanuar) | ✔
-| 8.2-A3 | 8 Bagian 2 | Detail Pesanan Admin | Iak (dialokasikan di Minggu 8.2) |
+| 8.2-A3 | 8 Bagian 2 | Pengembalian Customer | Iak (dialihkan ke Minggu 8.2) |
 | 8.2-A1 | 8 Bagian 2 | Notifikasi Customer | Iak |
 | 8.2-A2 | 8 Bagian 2 | Notifikasi Admin | Iak |
-| 9.1-Y1 | 9 Bagian 1 | Metode Pembayaran Admin | Yanuar (dialihkan dari Iqo / 9.1-I1) |
+| 9.1-Y1 | 9 Bagian 1 | Error 403 dan 404 | Yanuar (dialihkan ke Minggu 9.1) |
 | 9.1-F1 | 9 Bagian 1 | Subscription Tenant Owner | Fiza |
 | 9.1-A1 | 9 Bagian 1 | Activity Log Admin | Iak |
 | 9.2-I1 | 9 Bagian 2 | Profil Customer dan Integrasi Frontend | Iqo |
@@ -657,33 +657,40 @@ Memberi Admin Rental satu daftar order untuk memantau pesanan, mencari customer,
 ### Kriteria selesai
 List/filter/pagination bekerja, tautan detail benar, data tenant terisolasi, export (jika diaktifkan) sesuai filter.
 
-## 5.7 — Iak: Pengembalian Customer
+## 5.7 — Iak: Detail Pesanan Admin
 
-**ID:** 7.2-A1  
-**Nama halaman:** Form Pengembalian Customer  
-**Route pada sumber:** `/my-orders/{id}/return`  
-**Layout:** Base Layout Customer.
+**ID:** 7.2-A1 (dialokasikan di Minggu 7.2 / sebelumnya 8.2-A3)  
+**Route pada sumber:** `/admin/orders/{id}` (dan Modal Verifikasi di `/admin/orders`)  
+**Layout:** Base Layout Admin.
 
 ### Tujuan
-Membantu customer mengajukan pengembalian dan mengirim informasi resi retur bila barang dikirim kembali melalui kurir.
+Admin meninjau satu order, memeriksa identitas/jaminan, memverifikasi bukti pembayaran, mengalokasikan unit fisik, serta menangani pembatalan dan refund bila berlaku.
 
-### Komponen UI
-- Detail order dan ringkasan barang yang akan dikembalikan.
-- Instruksi pengembalian berdasarkan kebijakan tenant.
-- Pilihan cara pengembalian: kurir/ekspedisi atau dikembalikan langsung jika opsi itu tersedia.
-- Input nama ekspedisi dan nomor resi retur (opsional ketika pengembalian langsung ke toko).
-- Panel denda kondisional jika backend menyatakan terlambat: nominal, dasar/perhitungan singkat, instruksi pembayaran.
-- Uploader bukti pembayaran denda jika ada tagihan dan pembayaran manual disetujui.
-- Tombol “Konfirmasi Pengembalian Barang”.
+### Susunan halaman
+1. **Header & Aksi Cepat**
+   - ID order, tanggal pemesanan, badge status order terkini, dan badge status refund (jika dalam proses refund).
+   - Tombol **Konfirmasi Pesanan** (`menunggu_konfirmasi` → `dikonfirmasi`/`menunggu_pembayaran`) dan tombol **Tolak Pesanan** (`menunggu_konfirmasi` → `ditolak` dengan modal input alasan penolakan).
+   - Tombol bahaya **Batalkan Pesanan** (membuka popup pembatalan & alur refund manual).
+2. **Rincian order** — data kontak customer (nama, email, WhatsApp), periode sewa (presisi tanggal & jam mulai s/d selesai), alamat tujuan / metode ambil di toko, daftar barang, jumlah, tarif sewa, denda per jam, dan total pembayaran.
+3. **Panel review identitas & jaminan** — preview gambar dokumen identitas (KTP) dan foto wajah/selfie yang dapat di-zoom; tombol **Verifikasi Identitas** (`diverifikasi`); tombol **Tolak Identitas** (`ditolak`) dengan modal catatan alasan penolakan jaminan.
+4. **Panel review bukti pembayaran** — preview bukti transfer / resi QRIS yang diunggah customer; rincian rekening tujuan; tombol **Verifikasi Pembayaran** (`pembayaran_terverifikasi`); tombol **Tolak Pembayaran** (`ditolak`) dengan input alasan.
+5. **Panel alokasi unit fisik** — per baris produk pesanan, dropdown pemilihan unit fisik (`equipment_units`) yang berstatus `available` dan bebas konflik jadwal pada periode tersebut; jumlah unit yang dialokasikan harus sama dengan kuantitas yang disewa; ringkasan kode aset / barcode unit terpilih.
+6. **Panel logistik (pengiriman/pengembalian)** — link dan status serah-terima barang, nama ekspedisi/kurir, nomor resi, serta riwayat tanggal penyerahan dan penerimaan unit.
+7. **Popup pembatalan & manajemen refund** — jika pesanan dibatalkan setelah pembayaran diverifikasi:
+   - Input pilihan status refund: `tidak_ada`, `menunggu_refund`, `refund_selesai`.
+   - Textarea catatan alasan pembatalan dan detail rekening/e-wallet pengembalian dana customer.
+   - Uploader file bukti transfer refund manual (`refund_proof`) sebagai bukti resmi pengembalian dana di luar sistem.
+8. **Riwayat aktivitas & audit trail** — linimasa perubahan status pesanan dengan pencatatan timestamp dan pelaku admin.
 
-### Validasi
-- Customer hanya dapat mengajukan pengembalian atas order miliknya dan dalam status yang sesuai.
-- Resi diwajibkan hanya untuk metode yang menggunakan kurir.
-- Tagihan denda harus berasal dari backend; UI tidak boleh menetapkan nominal final sendiri.
-- Tampilkan status request setelah submit dan cegah pengajuan ganda.
+### Validasi dan aturan
+- Admin hanya berhak membuka dan mengubah pesanan pada tenant-nya sendiri (`client_id`).
+- Verifikasi identitas merupakan gerbang utama sebelum customer dapat mengunggah bukti pembayaran.
+- Alokasi unit wajib memvalidasi jadwal agar tidak terjadi double booking (benturan periode).
+- Pembatalan pesanan yang telah dibayar wajib mencatat status refund dan mengunggah bukti transfer pengembalian dana manual jika diselesaikan.
+- Transisi status diverifikasi ketat oleh backend sesuai alur resmi.
 
 ### Kriteria selesai
-Form pengembalian terkirim, file bukti bila diperlukan valid, status retur tampil dari backend, dan halaman dapat menangani gagal submit.
+Admin dapat mengonfirmasi/menolak pesanan baru, meninjau identitas, memverifikasi pembayaran, mengalokasikan unit fisik tanpa tabrakan jadwal, membatalkan pesanan disertai pencatatan refund dan unggah bukti transfer, serta status terbarui secara real-time.
 
 ---
 
@@ -975,28 +982,44 @@ Mengubah informasi identitas dan tampilan dasar toko yang terlihat customer.
 ### Kriteria selesai
 Nama, deskripsi, dan logo dapat disimpan; warna sesuai kelayakan paket; preview cocok dengan halaman customer; route dan API selaras.
 
-## 7.3 — Yanuar: Global Error 403 dan 404
+## 7.3 — Yanuar: Metode Pembayaran Admin
 
-**ID:** 8.2-Y1  
-**Tipe halaman:** Global Error UI; tidak memakai sidebar/navbar utama.
+**ID:** 8.2-Y1 (dimajukan dari Minggu 9.1 / sebelumnya 9.1-Y1)  
+**Route pada sumber:** `/admin/settings/payments`  
+**Layout:** Base Layout Admin.
 
 ### Tujuan
-Menampilkan umpan balik yang mudah dipahami saat route tidak ditemukan atau pengguna tidak punya izin mengaksesnya.
+Mengatur instruksi pembayaran yang ditampilkan kepada customer saat membayar order.
 
-### UI
-- Ilustrasi SVG sederhana atau visual standar.
-- Headline untuk “404 — Halaman Tidak Ditemukan” atau “403 — Akses Ditolak”.
-- Deskripsi singkat sesuai jenis error.
-- Tombol “Kembali ke Beranda” yang mengarah ke root/area yang sesuai konteks.
-- Tidak menampilkan stack trace, SQL, token, nama kelas internal, atau rincian sensitif.
+### Daftar metode pembayaran
+- Jenis/nama metode.
+- Untuk transfer bank: nama bank, nomor rekening, nama pemilik rekening.
+- Untuk QRIS: nama/label QRIS dan preview gambar barcode.
+- Status aktif/nonaktif.
+- Aksi tambah/edit/nonaktifkan/hapus sesuai aturan backend.
+- Empty state jika belum ada metode aktif.
 
-### Perilaku
-- 404 digunakan untuk halaman/resource yang tidak tersedia.
-- 403 digunakan saat resource ada tetapi akses ditolak.
-- Tombol kembali harus memiliki tujuan aman dan bukan melakukan redirect loop.
+### Form transfer bank
+- Pilih jenis bank dari daftar yang disetujui.
+- Nomor rekening.
+- Nama pemilik rekening.
+- Label instruksi bila perlu.
+- Toggle aktif.
+
+### Form QRIS
+- Label usaha/metode.
+- Uploader gambar QRIS.
+- Preview gambar dan validasi tipe/ukuran.
+- Toggle aktif.
+
+### Perilaku dan aturan
+- Rancangan API RentalBase terkini membatasi tipe metode menjadi **`bank_transfer`** dan **`qris`**. Daftar E-Wallet seperti OVO/Gopay yang disebut di sumber lama jangan ditawarkan sebagai jenis mandiri kecuali spesifikasi backend diubah terlebih dahulu.
+- Customer melihat metode pembayaran aktif tenant saat ini.
+- Perubahan metode tidak boleh mengubah bukti pembayaran order lama tanpa aturan eksplisit.
+- Aksi hapus/nonaktif harus mempertimbangkan apakah metode sudah direferensikan transaksi; pilihan nonaktif biasanya lebih aman daripada menghapus sejarah.
 
 ### Kriteria selesai
-403 dan 404 berbeda dengan benar, responsif, aman, dan mudah dipahami.
+Admin dapat menambah/mengubah/menonaktifkan metode, file QRIS tervalidasi, halaman customer hanya menunjukkan metode aktif, dan API dipakai sesuai kontrak.
 
 ## 7.4 — Yanuar: Halaman Tenant Tidak Aktif/Suspended
 
@@ -1200,83 +1223,61 @@ Memperlihatkan kejadian yang perlu ditindaklanjuti Admin Rental di tenant-nya.
 ### Kriteria selesai
 Feed berfungsi, link benar, status baca tersimpan, dan konten terisolasi per tenant.
 
-## 7.11 — Iak: Detail Pesanan Admin
+## 7.11 — Iak: Pengembalian Customer
 
-**ID:** 8.2-A3 (dialihkan dari Minggu 8.1 / sebelumnya 8.1-A3)  
-**Route pada sumber:** `/admin/orders/{id}` (dan Modal Verifikasi di `/admin/orders`)  
-**Layout:** Base Layout Admin.
+**ID:** 8.2-A3 (dialihkan dari Minggu 7.2 / sebelumnya 7.2-A1)  
+**Nama halaman:** Form Pengembalian Customer  
+**Route pada sumber:** `/my-orders/{id}/return`  
+**Layout:** Base Layout Customer.
 
 ### Tujuan
-Admin meninjau satu order, memeriksa identitas/jaminan, memverifikasi bukti pembayaran, mengalokasikan unit fisik, serta menangani pembatalan dan refund bila berlaku.
+Membantu customer mengajukan pengembalian barang sewa, memilih opsi kurir atau antar langsung, mengirimkan informasi nomor resi retur, serta menyelesaikan tagihan denda keterlambatan jika ada.
 
-### Susunan halaman
-1. **Header & Aksi Cepat**
-   - ID order, tanggal pemesanan, badge status order terkini, dan badge status refund (jika dalam proses refund).
-   - Tombol **Konfirmasi Pesanan** (`menunggu_konfirmasi` → `dikonfirmasi`/`menunggu_pembayaran`) dan tombol **Tolak Pesanan** (`menunggu_konfirmasi` → `ditolak` dengan modal input alasan penolakan).
-   - Tombol bahaya **Batalkan Pesanan** (membuka popup pembatalan & alur refund manual).
-2. **Rincian order** — data kontak customer (nama, email, WhatsApp), periode sewa (presisi tanggal & jam mulai s/d selesai), alamat tujuan / metode ambil di toko, daftar barang, jumlah, tarif sewa, denda per jam, dan total pembayaran.
-3. **Panel review identitas & jaminan** — preview gambar dokumen identitas (KTP) dan foto wajah/selfie yang dapat di-zoom; tombol **Verifikasi Identitas** (`diverifikasi`); tombol **Tolak Identitas** (`ditolak`) dengan modal catatan alasan penolakan jaminan.
-4. **Panel review bukti pembayaran** — preview bukti transfer / resi QRIS yang diunggah customer; rincian rekening tujuan; tombol **Verifikasi Pembayaran** (`pembayaran_terverifikasi`); tombol **Tolak Pembayaran** (`ditolak`) dengan input alasan.
-5. **Panel alokasi unit fisik** — per baris produk pesanan, dropdown pemilihan unit fisik (`equipment_units`) yang berstatus `available` dan bebas konflik jadwal pada periode tersebut; jumlah unit yang dialokasikan harus sama dengan kuantitas yang disewa; ringkasan kode aset / barcode unit terpilih.
-6. **Panel logistik (pengiriman/pengembalian)** — link dan status serah-terima barang, nama ekspedisi/kurir, nomor resi, serta riwayat tanggal penyerahan dan penerimaan unit.
-7. **Popup pembatalan & manajemen refund** — jika pesanan dibatalkan setelah pembayaran diverifikasi:
-   - Input pilihan status refund: `tidak_ada`, `menunggu_refund`, `refund_selesai`.
-   - Textarea catatan alasan pembatalan dan detail rekening/e-wallet pengembalian dana customer.
-   - Uploader file bukti transfer refund manual (`refund_proof`) sebagai bukti resmi pengembalian dana di luar sistem.
-8. **Riwayat aktivitas & audit trail** — linimasa perubahan status pesanan dengan pencatatan timestamp dan pelaku admin.
+### Komponen UI
+- Detail order dan ringkasan barang yang akan dikembalikan.
+- Instruksi pengembalian barang berdasarkan kebijakan tenant toko.
+- Pilihan metode pengembalian: kirim via kurir/ekspedisi atau dikembalikan langsung ke toko fisik.
+- Input nama ekspedisi dan nomor resi retur (wajib diisi bila memilih opsi ekspedisi kurir).
+- Panel denda keterlambatan kondisional jika sistem mendeteksi keterlambatan dari jadwal sewa: rincian jam keterlambatan, tarif denda per jam, total nominal denda, serta instruksi nomor rekening/QRIS pembayaran denda toko.
+- Uploader bukti pembayaran denda jika terdapat denda keterlambatan yang harus dibayar.
+- Tombol “Konfirmasi Pengembalian Barang”.
 
-### Validasi dan aturan
-- Admin hanya berhak membuka dan mengubah pesanan pada tenant-nya sendiri (`client_id`).
-- Verifikasi identitas merupakan gerbang utama sebelum customer dapat mengunggah bukti pembayaran.
-- Alokasi unit wajib memvalidasi jadwal agar tidak terjadi double booking (benturan periode).
-- Pembatalan pesanan yang telah dibayar wajib mencatat status refund dan mengunggah bukti transfer pengembalian dana manual jika diselesaikan.
-- Transisi status diverifikasi ketat oleh backend sesuai alur resmi.
+### Validasi
+- Customer hanya dapat mengajukan pengembalian atas order miliknya sendiri (`user_id`) dan pada pesanan yang sedang aktif/dalam masa sewa (`sedang_disewa` / `siap_kembali`).
+- Nomor resi diwajibkan untuk metode pengembalian yang menggunakan kurir.
+- Tagihan denda harus berasal dari kalkulasi backend presisi per jam; UI tidak boleh menetapkan nominal denda sendiri secara lokal.
+- Tampilkan status request setelah submit dan cegah pengajuan retur ganda pada pesanan yang sama.
 
 ### Kriteria selesai
-Admin dapat mengonfirmasi/menolak pesanan baru, meninjau identitas, memverifikasi pembayaran, mengalokasikan unit fisik tanpa tabrakan jadwal, membatalkan pesanan disertai pencatatan refund dan unggah bukti transfer, serta status terbarui secara real-time.
+Form pengembalian terkirim sukses, data resi dan bukti bayar denda (jika ada) tersimpan ke storage dan database, status order terbarui menjadi menunggu konfirmasi retur di sisi Admin, dan penanganan error tertangani dengan baik.
 
 ---
 
 # 8. MINGGU 9 BAGIAN 1 — PEMBAYARAN, SUBSCRIPTION, ACTIVITY LOG
 
-## 8.1 — Yanuar: Metode Pembayaran Admin
+## 8.1 — Yanuar: Global Error 403 dan 404
 
-**ID:** 9.1-Y1 (dialihkan dari Iqo / 9.1-I1)  
-**Route pada sumber:** `/admin/settings/payments`  
-**Layout:** Base Layout Admin.
+**ID:** 9.1-Y1 (dialihkan dari Minggu 8.2 / sebelumnya 8.2-Y1)  
+**Tipe halaman:** Global Error UI; tidak memakai sidebar/navbar utama.
+**File Target:** `resources/views/errors/403.blade.php`, `resources/views/errors/404.blade.php`
 
 ### Tujuan
-Mengatur instruksi pembayaran yang ditampilkan kepada customer saat membayar order.
+Menampilkan umpan balik yang mudah dipahami saat route tidak ditemukan atau pengguna tidak punya izin mengaksesnya.
 
-### Daftar metode pembayaran
-- Jenis/nama metode.
-- Untuk transfer bank: nama bank, nomor rekening, nama pemilik rekening.
-- Untuk QRIS: nama/label QRIS dan preview gambar barcode.
-- Status aktif/nonaktif.
-- Aksi tambah/edit/nonaktifkan/hapus sesuai aturan backend.
-- Empty state jika belum ada metode aktif.
+### UI
+- Ilustrasi SVG sederhana atau visual standar.
+- Headline untuk “404 — Halaman Tidak Ditemukan” atau “403 — Akses Ditolak”.
+- Deskripsi singkat sesuai jenis error.
+- Tombol “Kembali ke Beranda” yang mengarah ke root/area yang sesuai konteks.
+- Tidak menampilkan stack trace, SQL, token, nama kelas internal, atau rincian sensitif.
 
-### Form transfer bank
-- Pilih jenis bank dari daftar yang disetujui.
-- Nomor rekening.
-- Nama pemilik rekening.
-- Label instruksi bila perlu.
-- Toggle aktif.
-
-### Form QRIS
-- Label usaha/metode.
-- Uploader gambar QRIS.
-- Preview gambar dan validasi tipe/ukuran.
-- Toggle aktif.
-
-### Perilaku dan aturan
-- Rancangan API RentalBase terkini membatasi tipe metode menjadi **`bank_transfer`** dan **`qris`**. Daftar E-Wallet seperti OVO/Gopay yang disebut di sumber lama jangan ditawarkan sebagai jenis mandiri kecuali spesifikasi backend diubah terlebih dahulu.
-- Customer melihat metode pembayaran aktif tenant saat ini.
-- Perubahan metode tidak boleh mengubah bukti pembayaran order lama tanpa aturan eksplisit.
-- Aksi hapus/nonaktif harus mempertimbangkan apakah metode sudah direferensikan transaksi; pilihan nonaktif biasanya lebih aman daripada menghapus sejarah.
+### Perilaku
+- 404 digunakan untuk halaman/resource yang tidak tersedia.
+- 403 digunakan saat resource ada tetapi akses ditolak.
+- Tombol kembali harus memiliki tujuan aman dan bukan melakukan redirect loop.
 
 ### Kriteria selesai
-Admin dapat menambah/mengubah/menonaktifkan metode, file QRIS tervalidasi, halaman customer hanya menunjukkan metode aktif, dan API dipakai sesuai kontrak.
+403 dan 404 berbeda dengan benar, responsif, aman, dan mudah dipahami.
 
 ## 8.2 — Fiza: Subscription Paket Owner
 
@@ -1650,14 +1651,14 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 
 ## 12.1 Iqo / Tersiqo Alfarezel — 10 pekerjaan
 
-- [ ] **Katalog customer (7.1-I1):** header/footer reusable, search, filter kategori/harga, periode sewa, grid dan pagination, guest browsing.
-- [ ] **Detail produk (7.1-I2):** galeri foto multi-image, deskripsi/spesifikasi/syarat jaminan, harga dan denda, quantity selector, direct checkout.
-- [ ] **Keranjang (7.2-I1):** kelompok berdasarkan periode, hitung subtotal dinamis, pemilihan item, checkout per kelompok tanggal.
-- [ ] **Checkout (7.2-I2):** ringkasan sewa, alamat, data jaminan KTP & selfie, upload file, validasi ketersediaan unit.
+- [x] **Katalog customer (7.1-I1):** header/footer reusable, search, filter kategori/harga, periode sewa, grid dan pagination, guest browsing.
+- [x] **Detail produk (7.1-I2):** galeri foto multi-image, deskripsi/spesifikasi/syarat jaminan, harga dan denda, quantity selector, direct checkout.
+- [x] **Keranjang (7.2-I1):** kelompok berdasarkan periode, hitung subtotal dinamis, pemilihan item, checkout per kelompok tanggal.
+- [x] **Checkout (7.2-I2):** ringkasan sewa, alamat, data jaminan KTP & selfie, upload file, validasi ketersediaan unit.
 - [ ] **Kasus Kerusakan Admin (8.1-I3):** pembuatan tiket kerusakan barang, unggah 3–5 foto bukti cacat, klaim nominal ganti rugi, update status unit menjadi rusak/perawatan, verifikasi bukti kompensasi, penutupan kasus (dialihkan dari Iak / 8.1-A1).
-- [ ] **Laporan Kerusakan Customer (8.1-I4):** galeri foto kerusakan, rincian biaya ganti rugi, textarea tanggapan/negosiasi, uploader bukti transfer pembayaran kompensasi (dialihkan dari Iak / 8.1-A2).
-- [ ] **Kategori Admin (8.1-I1):** CRUD kategori, jumlah produk, validasi unik per tenant, batas kuota kategori paket.
-- [ ] **Produk Admin (8.1-I2):** form detail, multi-foto, cover image, harga per hari, tarif denda per jam, syarat jaminan dan toggle aktif.
+- [x] **Laporan Kerusakan Customer (8.1-I4):** galeri foto kerusakan, rincian biaya ganti rugi, textarea tanggapan/negosiasi, uploader bukti transfer pembayaran kompensasi (dialihkan dari Iak / 8.1-A2).
+- [x] **Kategori Admin (8.1-I1):** CRUD kategori, jumlah produk, validasi unik per tenant, batas kuota kategori paket.
+- [x] **Produk Admin (8.1-I2):** form detail, multi-foto, cover image, harga per hari, tarif denda per jam, syarat jaminan dan toggle aktif.
 - [ ] **Unit fisik (8.2-I1):** kuota total unit paket, asset code unik, filter status fisik unit, isolasi jadwal sewa.
 - [ ] **Profil customer & integrasi (9.2-I1):** profil via API, pembersihan data dummy katalog/cart, payload multipart file checkout.
 
@@ -1669,10 +1670,10 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 - [ ] **Detail pesanan customer (7.2-Y2):** stepper status lengkap, panel identitas, panel pembayaran, resi pengiriman, panel refund & preview bukti transfer refund.
 - [ ] **Login & Register Customer (8.1-Y1):** form tab masuk/daftar, akun customer global multi-tenant, validasi input, intended redirect setelah login gate.
 - [ ] **Lupa & Reset Password (8.1-Y2):** request reset email, token Laravel resmi, validasi password baru, instruksi login kembali.
-- [ ] **Halaman Error 403 & 404 (8.2-Y1):** visual responsif, pesan jelas tanpa leak informasi sensitif, tombol kembali ke beranda aman.
+- [ ] **Metode Pembayaran Admin (8.2-Y1):** bank transfer & QRIS toko, uploader barcode QRIS, toggle status aktif, validasi minimum 1 metode aktif (dimajukan ke Minggu 8.2).
 - [ ] **Halaman Tenant Suspended (8.2-Y2):** layar blokir toko nonaktif, responsif terhadap middleware client suspended, isolasi per tenant.
 - [ ] **Profil & Branding Admin (8.2-Y3):** form nama/deskripsi/logo toko, live color picker styling tema toko kustom (Business/Pro), named route kanonis (dialihkan dari Iqo / 8.2-I2).
-- [ ] **Metode Pembayaran Admin (9.1-Y1):** bank transfer & QRIS toko, uploader barcode QRIS, toggle status aktif, validasi minimum 1 metode aktif (dialihkan dari Iqo / 9.1-I1).
+- [ ] **Halaman Error 403 & 404 (9.1-Y1):** visual responsif, pesan jelas tanpa leak informasi sensitif, tombol kembali ke beranda aman (dialihkan ke Minggu 9.1).
 
 ## 12.3 Fiza Rahmatus Sholikha — 10 pekerjaan
 
@@ -1692,11 +1693,11 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 - [ ] **Pengiriman Admin (7.1-A1):** daftar order siap kirim, pemilihan metode pengiriman (`kurir`/`ambil_toko`), input nama kurir & nomor resi, update status pesanan.
 - [ ] **Penerimaan & Denda Retur Admin (7.1-A2):** konfirmasi barang kembali, perhitungan keterlambatan jam presisi, kalkulator tarif denda backend, override denda dengan catatan.
 - [ ] **Daftar Pesanan Admin (7.2-A3):** filter rentang tanggal sewa, filter status operasional, pencarian order/customer, pagination, isolasi data tenant (dialihkan dari Iqo / 7.2-I3).
-- [ ] **Pengembalian Customer (7.2-A1):** instruksi retur, pilihan ekspedisi/antar langsung, input nomor resi retur, invoice denda terlambat jika ada, submit bukti bayar denda.
+- [ ] **Detail Pesanan Admin (7.2-A1):** konfirmasi/tolak pesanan baru, verifikasi identitas (KTP/selfie), verifikasi pembayaran bank/QRIS, alokasi unit fisik, pembatalan & upload bukti refund manual (dialokasikan di Minggu 7.2).
 - [ ] **Pemeriksaan kondisi fisik (8.1-A1):** checklist inspeksi sebelum serah-terima & sesudah pengembalian, multi-upload foto kondisi (maks 5), catatan cacat fisik (dialokasikan di Minggu 8.1).
-- [ ] **Detail Pesanan Admin (8.2-A3):** konfirmasi/tolak pesanan baru, verifikasi identitas (KTP/selfie), verifikasi pembayaran bank/QRIS, alokasi unit fisik, pembatalan & upload bukti refund manual (dialokasikan di Minggu 8.2).
 - [ ] **Notifikasi Customer (8.2-A1):** feed notifikasi aktivitas customer, unread badge, filter alert, deep link ke detail order/tiket kerusakan.
 - [ ] **Notifikasi Admin (8.2-A2):** feed alert operasional toko (order baru, unggah KTP, bukti bayar, retur masuk), penanda sudah dibaca, deep link penanganan.
+- [ ] **Pengembalian Customer (8.2-A3):** instruksi retur, pilihan ekspedisi/antar langsung, input nomor resi retur, invoice denda terlambat jika ada, submit bukti bayar denda (dialihkan ke Minggu 8.2).
 - [ ] **Activity Log Admin (9.1-A1):** feed audit trail riwayat perubahan data toko, filter waktu & staf admin, format read-only tanpa aksi hapus.
 - [ ] **Activity Log Owner & Integrasi Logistik (9.2-A1):** jejak audit menyeluruh tingkat platform lintas tenant, filter tenant & pelaku, validasi integrasi resi kurir, foto kondisi fisik & kalkulator denda.
 
@@ -1749,7 +1750,7 @@ Untuk meminimalkan blocker dan saling tunggu antar-anggota tim, urutan implement
 5. **Kalkulasi Dynamic Availability:** Backend endpoint memeriksa jadwal sewa unit fisik vs tanggal sewa yang dipilih customer.
 
 ### Fase 3: Transaksi Customer, Checkout, dan Metode Pembayaran
-1. **Pengaturan Metode Pembayaran:** Admin mengonfigurasi Bank Transfer & QRIS aktif (Yanuar: `9.1-Y1`).
+1. **Pengaturan Metode Pembayaran:** Admin mengonfigurasi Bank Transfer & QRIS aktif (Yanuar: `8.2-Y1`).
 2. **Profil & Branding Toko:** Konfigurasi logo toko & warna tema kustom tenant (Yanuar: `8.2-Y3`).
 3. **Keranjang Belanja:** Cart customer mengelompokkan item berdasarkan rentang periode sewa (Iqo: `7.2-I1`).
 4. **Checkout & Form Jaminan:** Customer mengisi alamat kirim/ambil toko, unggah foto KTP & selfie jaminan identitas (Iqo: `7.2-I2`).
@@ -1759,18 +1760,18 @@ Untuk meminimalkan blocker dan saling tunggu antar-anggota tim, urutan implement
 ### Fase 4: Operasional Admin, Verifikasi Order, Logistik, dan Retur
 1. **Manajemen Order Admin:**
    - Daftar Pesanan Admin dengan filter tanggal & status (Iak: `7.2-A3`).
-   - Detail Pesanan Admin: Konfirmasi/tolak booking, verifikasi KTP, verifikasi bukti bayar, alokasi unit fisik, pembatalan pesanan & pencatatan refund manual (Iak: `8.2-A3`).
+   - Detail Pesanan Admin: Konfirmasi/tolak booking, verifikasi KTP, verifikasi bukti bayar, alokasi unit fisik, pembatalan pesanan & pencatatan refund manual (Iak: `7.2-A1`).
 2. **Detail Pesanan Customer:** Pelacakan progres status, panel identitas, pengiriman, dan panel status refund (Yanuar: `7.2-Y2`).
 3. **Logistik Pengiriman:** Admin memasukkan metode ekspedisi/pickup dan nomor resi kurir (Iak: `7.1-A1`).
 4. **Pemeriksaan Fisik Unit:** Dokumen inspeksi foto unit fisik sebelum serah-terima dan setelah pengembalian (Iak: `8.1-A1`).
-5. **Pengembalian Barang & Denda:** Customer mengajukan retur (Iak: `7.2-A1`), Admin memverifikasi unit kembali & menghitung denda keterlambatan (Iak: `7.1-A2`).
+5. **Pengembalian Barang & Denda:** Customer mengajukan retur (Iak: `8.2-A3`), Admin memverifikasi unit kembali & menghitung denda keterlambatan (Iak: `7.1-A2`).
 6. **Kasus Kerusakan:** Admin membuat tiket ganti rugi kerusakan fisik (Iqo: `8.1-I3`), Customer meninjau & mengunggah bukti bayar kompensasi (Iqo: `8.1-I4`).
 
 ### Fase 5: Panel Owner Platform, Manajemen Tenant, dan Manajemen Staf Admin Toko
 1. **Dashboard Owner Pusat:** Pemantauan kesehatan platform & 4 kartu metrik agregat (Fiza: `8.2-F3`).
 2. **Antrean Persetujuan Tenant:** Owner meninjau pengajuan toko baru, kontak WhatsApp direct (`wa.me`), tolak atau approve dengan otomatisasi provisioning tenant & akun Admin utama (Fiza: `8.2-F4`).
 3. **Manajemen Client Owner & Manajemen Akun Admin Toko:** Pengelolaan status/suspend tenant oleh Owner (Fiza: `8.2-F1`) serta fitur *self-service* pembuatan/pengelolaan akun Admin tambahan oleh Admin Rental melalui menu Profil sesuai kuota paket (Fiza: `8.2-F2`).
-4. **Penanganan Tenant Suspended:** Halaman Error 403/404 (Yanuar: `8.2-Y1`) dan halaman Tenant Suspended via middleware (Yanuar: `8.2-Y2`).
+4. **Penanganan Tenant Suspended:** Halaman Error 403/404 (Yanuar: `9.1-Y1`) dan halaman Tenant Suspended via middleware (Yanuar: `8.2-Y2`).
 5. **Subscription & Siklus Tagihan:** Pelacakan masa aktif langganan tenant & form perpanjangan manual (Fiza: `9.1-F1`).
 
 ### Fase 6: Background Tasks, Notifikasi, Audit Trail, dan Final QA

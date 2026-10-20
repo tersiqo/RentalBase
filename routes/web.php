@@ -15,6 +15,7 @@ use App\Http\Controllers\Auth\TenantRegistrationController;
 use App\Http\Controllers\Customer\CustomerCheckoutController;
 use App\Http\Controllers\Customer\CustomerHomeController;
 use App\Http\Controllers\Customer\CustomerProductController;
+use App\Http\Controllers\Customer\DamageReportController;
 use App\Http\Controllers\Landing\RentalBaseHomeController;
 use App\Http\Controllers\Owner\OwnerAuthController;
 use App\Http\Controllers\Owner\OwnerDashboardController;
@@ -38,6 +39,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/my-orders/{order}/return', [PageController::class, 'returnOrder'])->name('customer.orders.return');
     Route::post('/my-orders/{order}/payment', [PageController::class, 'uploadPayment'])->name('customer.orders.payment');
     Route::post('/my-orders/{order}/identity', [PageController::class, 'reuploadIdentity'])->name('customer.orders.identity');
+    Route::get('/my-orders/{order}/damage', [DamageReportController::class, 'show'])->name('customer.orders.damage');
+    Route::post('/my-orders/{order}/damage/respond', [DamageReportController::class, 'respond'])->name('customer.orders.damage.respond');
+    Route::post('/my-orders/{order}/damage/pay', [DamageReportController::class, 'pay'])->name('customer.orders.damage.pay');
 });
 
 Route::get('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showRegister'])->name('tenant.register');

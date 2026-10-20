@@ -84,6 +84,32 @@
         </div>
     </div>
 
+    {{-- Alert Kasus Kerusakan jika ada --}}
+    @if($order->damageReports()->exists())
+        @php
+            $latestDamage = $order->damageReports()->with('damageCase')->latest()->first();
+            $dCase = $latestDamage?->damageCase;
+        @endphp
+        <div class="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">⚠️</span>
+                <div>
+                    <h4 class="text-sm font-bold text-rose-900">Ada Laporan Kerusakan untuk Pesanan Ini</h4>
+                    <p class="text-xs text-rose-700 mt-0.5">
+                        Toko telah mengajukan klaim kerusakan fisik alat sewa. Status: <strong class="font-bold">{{ $dCase?->status_label ?? 'Menunggu Tanggapan' }}</strong>
+                        @if($dCase && $dCase->total_amount > 0)
+                            &bull; Total Kompensasi: <strong class="font-bold">{{ $dCase->formatted_total }}</strong>
+                        @endif
+                    </p>
+                </div>
+            </div>
+            <a href="{{ route('customer.orders.damage', $order->id) }}"
+               class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-sm whitespace-nowrap">
+                Lihat & Tanggapi Klaim &rarr;
+            </a>
+        </div>
+    @endif
+
     <!-- Main Grid: 2 Columns on desktop, 1 on mobile -->
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
         
@@ -246,7 +272,13 @@
 
                 @if($identity)
                     @php
-                        $idStatus = strtolower($identity->status ?? 'menunggu');
+                        $rawIdStatus = strtolower($identity->status ?? 'menunggu');
+                        $orderStatusNormalized = strtolower(trim(str_replace(['-', ' '], '_', $order->status ?? '')));
+                        $isOrderApproved = in_array($orderStatusNormalized, ['siap_kirim', 'diproses', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan', 'selesai']);
+                        
+                        // Jika pesanan sudah disetujui toko dan jaminan tidak ditolak, jaminan otomatis dianggap diverifikasi
+                        $idStatus = ($isOrderApproved && $rawIdStatus !== 'ditolak') ? 'diverifikasi' : $rawIdStatus;
+                        
                         $docImg = $identity->identity_document_image ? (str_starts_with($identity->identity_document_image, 'http') ? $identity->identity_document_image : Storage::url($identity->identity_document_image)) : null;
                         $faceImg = $identity->face_image ? (str_starts_with($identity->face_image, 'http') ? $identity->face_image : Storage::url($identity->face_image)) : null;
                     @endphp
@@ -256,7 +288,12 @@
                             <span class="text-lg shrink-0 mt-0.5">✅</span>
                             <div>
                                 <strong class="font-bold text-emerald-950 block">Identitas Terverifikasi</strong>
-                                <span class="text-xs sm:text-sm text-emerald-800">Dokumen KTP & selfie Anda telah diverifikasi oleh admin toko. Pembayaran dapat dilanjutkan.</span>
+                                <span class="text-xs sm:text-sm text-emerald-800">
+                                    Dokumen KTP & selfie Anda telah diverifikasi oleh admin toko.
+                                    @if(in_array($orderStatusNormalized, ['menunggu_pembayaran', 'belum_dibayar']))
+                                        Pembayaran dapat dilanjutkan.
+                                    @endif
+                                </span>
                             </div>
                         </div>
                     @elseif($idStatus === 'ditolak')
@@ -299,7 +336,7 @@
                                 @if($docImg)
                                     <div class="flex flex-col items-start gap-1">
                                         <button type="button" @click="openLightbox('{{ $docImg }}', 'Foto KTP')" class="group relative rounded-lg overflow-hidden border border-gray-200 bg-white hover:opacity-95 transition shadow-2xs">
-                                            <img src="{{ $docImg }}" alt="KTP" class="w-28 h-20 object-cover">
+                                            <img src="{{ $docImg }}" alt="KTP" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><span class=\'text-base\'>📄</span><span>Foto KTP</span></div>';">
                                             <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold">🔍 Lihat</span>
                                         </button>
                                         <span class="text-[11px] text-gray-500 font-medium">Foto KTP</span>
@@ -309,7 +346,7 @@
                                 @if($faceImg)
                                     <div class="flex flex-col items-start gap-1">
                                         <button type="button" @click="openLightbox('{{ $faceImg }}', 'Foto Selfie memegang KTP')" class="group relative rounded-lg overflow-hidden border border-gray-200 bg-white hover:opacity-95 transition shadow-2xs">
-                                            <img src="{{ $faceImg }}" alt="Selfie" class="w-28 h-20 object-cover">
+                                            <img src="{{ $faceImg }}" alt="Selfie" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><span class=\'text-base\'>🤳</span><span>Selfie KTP</span></div>';">
                                             <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold">🔍 Lihat</span>
                                         </button>
                                         <span class="text-[11px] text-gray-500 font-medium">Selfie KTP</span>
