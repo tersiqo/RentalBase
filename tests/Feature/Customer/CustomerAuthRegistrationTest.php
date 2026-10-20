@@ -97,4 +97,97 @@ class CustomerAuthRegistrationTest extends TestCase
         $response->assertRedirect('/register-tenant');
         $this->assertEquals('business', session('registration_plan'));
     }
+
+    public function test_user_abandoning_tenant_step_1_can_open_customer_register_form_without_being_redirected()
+    {
+        // 1. User melakukan pendaftaran tenant tahap 1 (Pendekatan 1: simpan di session, belum ke DB)
+        $this->post('/register-tenant', [
+            'username' => 'calontenant',
+            'email' => 'calon@rental.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        // User tetap guest, data belum masuk database users
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['email' => 'calon@rental.com']);
+        $this->assertTrue(session()->has('tenant_registration.account'));
+
+        // 2. User kembali ke landing page dan memilih daftar sebagai customer (/login?tab=register)
+        $response = $this->get('/login?tab=register');
+
+        // Pastikan form registrasi customer dapat dibuka normal tanpa ter-redirect/mental
+        $response->assertStatus(200);
+        $response->assertSee('Daftar Akun Baru');
+        $response->assertSee('Buat akun universal untuk bertransaksi di semua toko');
+        $this->assertGuest();
+
+        // 3. User mendaftar sebagai customer (bahkan bisa memakai email yang sama karena belum tersimpan di DB)
+        $registerCustomerResponse = $this->post('/register', [
+            'name' => 'Calon Tenant Jadi Customer',
+            'email' => 'calon@rental.com',
+            'phone' => '089876543210',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $registerCustomerResponse->assertRedirect('/client/babyrental');
+        $this->assertAuthenticated();
+        $this->assertEquals('customer', auth()->user()->role);
+        $this->assertEquals('aktif', auth()->user()->status);
+        $this->assertEquals('calon@rental.com', auth()->user()->email);
+    }
+
+    public function test_tenant_step_1_followed_by_step_2_creates_user_and_client_in_db()
+    {
+        $this->withoutVite();
+
+        // 1. Tahap 1: Simpan di session
+        $this->post('/register-tenant', [
+            'username' => 'petualang',
+            'email' => 'petualang@outdoor.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'plan' => 'business',
+        ])->assertRedirect('/register-tenant');
+
+        $this->assertGuest();
+        $this->assertTrue(session()->has('tenant_registration.account'));
+
+        // 2. Tahap 2: Kirim Info Toko
+        $response = $this->post('/register-tenant', [
+            'business_name' => 'Outdoor Adventure',
+            'subdomain' => 'outdooradv',
+            'description' => 'Sewa alat gunung dan camping terlengkap',
+            'owner_name' => 'Budi Petualang',
+            'phone' => '081234567899',
+            'address' => 'Jl. Rinjani No. 5',
+            'plan_name' => 'business',
+            'terms' => '1',
+        ]);
+
+        $response->assertRedirect('/register-tenant');
+        $this->assertAuthenticated();
+
+        // Verifikasi User dibuat di database
+        $this->assertDatabaseHas('users', [
+            'email' => 'petualang@outdoor.com',
+            'name' => 'Budi Petualang',
+            'status' => 'pending_setup',
+        ]);
+
+        // Verifikasi Client dibuat di database
+        $this->assertDatabaseHas('clients', [
+            'business_name' => 'Outdoor Adventure',
+            'subdomain' => 'outdooradv',
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        // Verifikasi Subscription dibuat
+        $this->assertDatabaseHas('subscriptions', [
+            'plan_name' => 'business',
+            'status' => 'menunggu_verifikasi',
+        ]);
+    }
 }
+
