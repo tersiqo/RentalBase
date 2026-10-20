@@ -28,7 +28,7 @@ Contoh implementasi utama pada tahap proyek adalah rental perlengkapan bayi, nam
 ## 3. Multi-Client Rules
 Semua data bisnis milik client harus memperhatikan `client_id`.
 
-Admin Rental hanya boleh melihat dan mengelola data client miliknya, dan akunnya terikat pada satu `client_id` (tidak bisa login lintas-client). Owner memiliki akses lintas client sesuai fungsi pengelolaan (client, akun Admin Rental, subscription, dashboard monitoring ringkas), tetapi tidak mengakses transaksi harian customer. Customer mengakses satu client melalui domain/subdomain, namun akun Customer sendiri bersifat global (`users.client_id = NULL`) dan dapat dipakai untuk menyewa di client mana pun.
+Admin Rental hanya boleh melihat dan mengelola data client miliknya, dan akunnya terikat pada satu `client_id` (tidak bisa login lintas-client). Admin Rental juga dapat membuat dan mengelola akun Admin Rental tambahan untuk staf di tokonya sendiri melalui menu Profil sesuai kuota paket langganan (Starter: 1, Business: 3, Professional: 10). Owner memiliki akses lintas client sesuai fungsi pengelolaan (client, persetujuan registrasi, subscription, dashboard monitoring ringkas), tetapi tidak mengakses transaksi harian customer. Customer mengakses satu client melalui domain/subdomain, namun akun Customer sendiri bersifat global (`users.client_id = NULL`) dan dapat dipakai untuk menyewa di client mana pun.
 
 ## 4. Actors
 - **Customer:** pengguna yang menyewa peralatan.
@@ -59,7 +59,7 @@ Admin Rental hanya boleh melihat dan mengelola data client miliknya, dan akunnya
 21. Kerusakan dapat dibuat sebagai damage case.
 22. Penyelesaian kerusakan mengikuti kebijakan client, bukan otomatisasi AI.
 23. Customer dapat menambahkan produk ke dalam Keranjang Belanja (Cart) dan melakukan checkout sekaligus.
-24. Client (Admin Rental) dapat mengatur nama usaha, deskripsi, dan logo; custom warna beberapa elemen desain halaman hanya tersedia pada paket Business dan Professional; subdomain tetap dikelola Owner.
+24. Client (Admin Rental) dapat mengatur nama usaha, deskripsi, logo, serta membuat akun Admin Rental tambahan untuk rekan tokonya melalui menu Profil sesuai kuota paket; custom warna beberapa elemen desain halaman hanya tersedia pada paket Business dan Professional; subdomain tetap dikelola Owner.
 25. Core UI tidak boleh diubah sembarangan.
 26. Laravel adalah backend dan business logic utama.
 27. PostgreSQL adalah database utama.

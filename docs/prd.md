@@ -44,6 +44,7 @@ Halaman utama `/` merupakan landing page platform RentalBase. Customer mengakses
 
 ### 2.2 Admin Rental
 - Mengelola profil dan branding usaha (nama usaha, deskripsi, logo, warna tema) dalam batas konfigurasi yang disediakan sistem.
+- Mengelola dan membuat akun Admin Rental baru untuk staf/rekan toko melalui menu Profil sesuai kuota paket langganan (Starter: 1, Business: 3, Professional: 10).
 - Mengelola kategori, product (termasuk multi foto produk), physical equipment unit, harga, status unit, dan identity guarantee requirements per product.
 - Mengelola metode pembayaran toko (multi rekening bank dan QRIS).
 - Memeriksa booking.
@@ -151,8 +152,8 @@ Kondisi physical equipment unit dicatat sebelum dan sesudah penyewaan melalui ch
 - **Pembatalan Otomatis oleh Sistem (Auto-Cancel 24 Jam)**: Jika jaminan identitas telah diverifikasi namun customer tidak mengunggah bukti pembayaran dalam waktu 24 jam, sistem akan secara otomatis membatalkan pesanan.
 - **Pembatalan oleh Admin**: Admin Rental dapat menolak atau membatalkan pesanan kapan saja, dengan menyertakan alasan pembatalan. Jika pesanan dibatalkan setelah customer melakukan pembayaran, uang tidak dikembalikan secara otomatis oleh sistem. Status refund dicatat dalam sistem (`menunggu_refund`, `refund_selesai`), dan admin wajib melakukan transfer manual ke customer di luar sistem. Saat mengubah status menjadi `refund_selesai`, Admin diwajibkan mengunggah foto bukti transfer (`refund_proof`) agar dapat dilihat oleh customer sebagai bukti yang sah.
 
-### 4.12 Client Branding
-Admin Rental dapat mengubah nama usaha, deskripsi, dan logo miliknya sendiri melalui fitur Profil dan Branding. Pengubahan warna beberapa elemen desain halaman hanya tersedia untuk client dengan paket **Business** atau **Professional**. Paket **Starter** menggunakan warna/desain bawaan RentalBase. Subdomain dan pembuatan akun Admin Rental tetap menjadi wewenang Owner.
+### 4.12 Client Branding & Manajemen Akun Admin Toko
+Admin Rental dapat mengubah nama usaha, deskripsi, dan logo miliknya sendiri melalui fitur Profil dan Branding. Pengubahan warna beberapa elemen desain halaman hanya tersedia untuk client dengan paket **Business** atau **Professional**. Paket **Starter** menggunakan warna/desain bawaan RentalBase. Subdomain tetap menjadi wewenang Owner, sedangkan pembuatan akun Admin Rental pertama dilakukan otomatis saat pendaftaran toko disetujui Owner, dan penambahan akun Admin Rental berikutnya dilakukan langsung oleh Admin Rental melalui menu Profil sesuai kuota paket langganan tokonya.
 
 ### 4.13 Notification Triggers Matrix
 Sistem mengirimkan notifikasi (*in-app notification*) pada kejadian-kejadian berikut:
@@ -198,6 +199,7 @@ Aplikasi menjalankan beberapa scheduled background commands secara berkala:
 ### Admin Rental
 - Dashboard operasional (ringkasan booking baru, pembayaran menunggu verifikasi, barang perlu dikirim/diterima).
 - Update profil dan branding usaha (nama usaha, deskripsi, logo, dan warna tema jika paket Business/Professional).
+- Membuat dan mengelola akun Admin Rental tambahan untuk staf toko melalui menu Profil (dibatasi sesuai kuota paket langganan).
 - Category management.
 - Product dan equipment unit management, termasuk pengisian identity guarantee requirements per product.
 - Booking management.
@@ -210,8 +212,7 @@ Aplikasi menjalankan beberapa scheduled background commands secara berkala:
 
 ### Owner
 - Login.
-- Client management.
-- Membuat dan mengelola akun Admin Rental per client.
+- Client management & registrasi tenant approval.
 - Subdomain management.
 - Subscription management.
 - Client status.
