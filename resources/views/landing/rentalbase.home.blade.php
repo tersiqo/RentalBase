@@ -45,7 +45,31 @@
             <div class="flex justify-between h-20">
                 <!-- Logo -->
                 <div class="flex items-center">
-                    <a href="/" class="flex-shrink-0 flex items-center gap-2 group">
+                    <a href="/" 
+                       x-data="{
+                           clickCount: 0,
+                           timer: null,
+                           handleLogoClick(e) {
+                               this.clickCount++;
+                               if (this.clickCount === 1) {
+                                   this.timer = setTimeout(() => {
+                                       this.clickCount = 0;
+                                       window.location.href = '/';
+                                   }, 500);
+                                   e.preventDefault();
+                               } else if (this.clickCount === 2) {
+                                   e.preventDefault();
+                               } else if (this.clickCount >= 3) {
+                                   clearTimeout(this.timer);
+                                   this.clickCount = 0;
+                                   e.preventDefault();
+                                   window.location.href = '{{ route('owner.login') }}';
+                               }
+                           }
+                       }"
+                       @click="handleLogoClick($event)"
+                       class="flex-shrink-0 flex items-center gap-2 group cursor-pointer select-none"
+                       title="RentalBase">
                         <div class="w-10 h-10 bg-brand text-white rounded-lg flex items-center justify-center text-xl font-bold group-hover:bg-brand-hover transition">
                             <i class="fa-solid fa-box-open"></i>
                         </div>
@@ -566,7 +590,31 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-12">
                 <div class="md:col-span-2">
-                    <a href="/" class="flex-shrink-0 flex items-center gap-2 mb-4">
+                    <a href="/" 
+                       x-data="{
+                           clickCount: 0,
+                           timer: null,
+                           handleLogoClick(e) {
+                               this.clickCount++;
+                               if (this.clickCount === 1) {
+                                   this.timer = setTimeout(() => {
+                                       this.clickCount = 0;
+                                       window.location.href = '/';
+                                   }, 500);
+                                   e.preventDefault();
+                               } else if (this.clickCount === 2) {
+                                   e.preventDefault();
+                               } else if (this.clickCount >= 3) {
+                                   clearTimeout(this.timer);
+                                   this.clickCount = 0;
+                                   e.preventDefault();
+                                   window.location.href = '{{ route('owner.login') }}';
+                               }
+                           }
+                       }"
+                       @click="handleLogoClick($event)"
+                       class="flex-shrink-0 flex items-center gap-2 mb-4 cursor-pointer select-none"
+                       title="RentalBase">
                         <div class="w-8 h-8 bg-brand text-white rounded-lg flex items-center justify-center font-bold">
                             <i class="fa-solid fa-box-open"></i>
                         </div>
