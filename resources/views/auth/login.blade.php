@@ -328,6 +328,9 @@
             <div x-show="isRegister" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                 <form method="POST" action="{{ route('register.submit') }}" @submit="handleSubmitRegister($event)" novalidate class="space-y-4">
                     @csrf
+                    @if(request()->filled('redirect'))
+                        <input type="hidden" name="redirect" value="{{ request('redirect') }}">
+                    @endif
                     
                     <!-- NOTE KEAMANAN: Form pendaftaran ini TIDAK menyertakan input untuk role, status, atau client_id -->
 

@@ -81,7 +81,7 @@
                     @else
                         <!-- Guest Actions -->
                         <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="hidden sm:inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 text-[14px] transition-colors">Masuk</a>
-                        <a href="{{ route('tenant.register') }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-transparent bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 text-[14px] transition-all">Daftar</a>
+                        <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-transparent bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 text-[14px] transition-all">Daftar</a>
                     @endauth
                     
                     <!-- Mobile menu button -->
@@ -117,7 +117,7 @@
                 @else
                     <div class="border-t border-gray-100 pt-3 mt-2 flex flex-col gap-2">
                         <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="w-full text-center py-2.5 font-bold rounded-xl border border-gray-200 bg-white text-gray-800 hover:bg-gray-50">Masuk</a>
-                        <a href="{{ route('tenant.register') }}" class="w-full text-center py-2.5 font-bold rounded-xl bg-primary-500 text-white hover:bg-primary-600">Daftar</a>
+                        <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="w-full text-center py-2.5 font-bold rounded-xl bg-primary-500 text-white hover:bg-primary-600">Daftar</a>
                     </div>
                 @endauth
             </div>

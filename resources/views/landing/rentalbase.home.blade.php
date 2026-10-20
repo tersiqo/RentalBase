@@ -37,7 +37,7 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 antialiased selection:bg-brand selection:text-white">
+<body x-data="{ showRoleModal: false }" class="bg-gray-50 text-gray-800 antialiased selection:bg-brand selection:text-white">
 
     <!-- NAVBAR START -->
     <nav x-data="{ open: false }" class="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
@@ -60,7 +60,7 @@
                     <a href="#kontak" class="text-gray-600 hover:text-brand font-medium transition">Kontak</a>
                     <div class="h-6 w-px bg-gray-200"></div>
                     <a href="/login" class="text-gray-700 hover:text-brand font-medium transition">Login</a>
-                    <a href="/register" class="bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-full font-semibold transition shadow-lg shadow-orange-200/50 transform hover:-translate-y-0.5">Daftar Sekarang</a>
+                    <button type="button" @click="showRoleModal = true" class="bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-full font-semibold transition shadow-lg shadow-orange-200/50 transform hover:-translate-y-0.5 cursor-pointer">Daftar Sekarang</button>
                 </div>
                 
                 <!-- Mobile Menu Button -->
@@ -81,7 +81,7 @@
                 <a href="#kontak" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Kontak</a>
                 <div class="border-t border-gray-100 my-2"></div>
                 <a href="/login" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Login</a>
-                <a href="/register" class="block px-3 py-3 rounded-md text-base font-bold text-center text-white bg-brand hover:bg-brand-hover mt-4">Daftar Sekarang</a>
+                <button type="button" @click="open = false; showRoleModal = true" class="block w-full px-3 py-3 rounded-md text-base font-bold text-center text-white bg-brand hover:bg-brand-hover mt-4 cursor-pointer">Daftar Sekarang</button>
             </div>
         </div>
     </nav>
@@ -159,10 +159,10 @@
                         style="display:none"
                         class="mt-10 flex flex-col sm:flex-row gap-4 sm:justify-center lg:justify-start"
                     >
-                        <a href="/register" class="inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-bold rounded-full shadow-lg shadow-orange-200/50 text-white bg-brand hover:bg-brand-hover hover:-translate-y-1 transition duration-300">
+                        <button type="button" @click="showRoleModal = true" class="inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-bold rounded-full shadow-lg shadow-orange-200/50 text-white bg-brand hover:bg-brand-hover hover:-translate-y-1 transition duration-300 cursor-pointer">
                             Daftar Sekarang
                             <i class="fa-solid fa-arrow-right ml-2"></i>
-                        </a>
+                        </button>
                     </div>
 
                     <!-- Social Proof -->
@@ -510,7 +510,7 @@
                                     </li>
                                 @endforeach
                             </ul>
-                            <a href="/register?plan={{ strtolower($pkg['name']) }}" class="block w-full py-4 px-4 {{ $isPopular ? 'bg-brand text-white hover:bg-brand-hover shadow-lg shadow-orange-200/50' : 'bg-brand-light text-brand hover:bg-orange-200' }} font-bold text-center rounded-xl transition">
+                            <a href="{{ route('tenant.register', ['plan' => strtolower($pkg['name'])]) }}" class="block w-full py-4 px-4 {{ $isPopular ? 'bg-brand text-white hover:bg-brand-hover shadow-lg shadow-orange-200/50' : 'bg-brand-light text-brand hover:bg-orange-200' }} font-bold text-center rounded-xl transition">
                                 Pilih Paket {{ $pkg['name'] }}
                             </a>
                         </div>
@@ -547,13 +547,14 @@
                     >
                         Ribuan pemilik rental telah menghemat waktu dan meningkatkan profit mereka. Mulai kelola dengan profesional sekarang.
                     </p>
-                    <a
-                        href="/register"
-                        class="inline-flex items-center justify-center px-10 py-4 text-lg font-bold rounded-full text-brand bg-white hover:bg-gray-50 hover:scale-105 transition-all duration-700 ease-out delay-[450ms] shadow-xl"
+                    <button
+                        type="button"
+                        @click="showRoleModal = true"
+                        class="inline-flex items-center justify-center px-10 py-4 text-lg font-bold rounded-full text-brand bg-white hover:bg-gray-50 hover:scale-105 transition-all duration-700 ease-out delay-[450ms] shadow-xl cursor-pointer"
                         :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
                     >
                         Sign Up Gratis — Tanpa Kartu Kredit
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
@@ -601,6 +602,156 @@
         </div>
     </footer>
     <!-- FOOTER END -->
+
+    <!-- ======================================================== -->
+    <!-- MODAL PILIHAN PENDAFTARAN (CUSTOMER ATAU TENANT)        -->
+    <!-- ======================================================== -->
+    <div 
+        x-show="showRoleModal" 
+        x-cloak
+        class="fixed inset-0 z-50 overflow-y-auto"
+        aria-labelledby="modal-title" 
+        role="dialog" 
+        aria-modal="true"
+    >
+        <!-- Backdrop -->
+        <div 
+            x-show="showRoleModal"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @click="showRoleModal = false"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+        ></div>
+
+        <!-- Modal Box -->
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-6">
+            <div 
+                x-show="showRoleModal"
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                @click.away="showRoleModal = false"
+                @keydown.escape.window="showRoleModal = false"
+                class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-slate-100 p-6 sm:p-8"
+            >
+                <!-- Close Button -->
+                <button 
+                    @click="showRoleModal = false" 
+                    type="button" 
+                    class="absolute top-5 right-5 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors focus:outline-none"
+                    aria-label="Tutup Modal"
+                >
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+
+                <!-- Modal Header -->
+                <div class="text-center max-w-md mx-auto mb-6">
+                    <div class="w-12 h-12 bg-orange-100 text-brand rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl font-bold shadow-sm">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900" id="modal-title">
+                        Pilih Jenis Pendaftaran
+                    </h3>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                        Bagaimana Anda ingin menggunakan platform RentalBase?
+                    </p>
+                </div>
+
+                <!-- Role Selection Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- 1. Customer Option Card -->
+                    <div class="rounded-2xl border-2 border-slate-200 hover:border-brand hover:shadow-lg transition-all duration-200 p-5 flex flex-col justify-between bg-white group">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-orange-50 text-brand flex items-center justify-center text-xl mb-3.5 group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all">
+                                <i class="fa-solid fa-bag-shopping"></i>
+                            </div>
+                            <h4 class="text-base sm:text-lg font-bold text-slate-900 mb-1">
+                                Sebagai Customer
+                            </h4>
+                            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                                Untuk pelanggan yang ingin menyewa barang, alat, atau kendaraan di toko rental mitra kami.
+                            </p>
+                            <ul class="text-xs text-slate-600 space-y-2 mb-5">
+                                <li class="flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+                                    <span>Akun universal untuk semua toko</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+                                    <span>Riwayat order & tracking sewa</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+                                    <span>Gratis tanpa biaya pendaftaran</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <a 
+                            href="{{ route('login', ['tab' => 'register']) }}" 
+                            class="w-full text-center py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm border border-slate-300 text-slate-700 bg-slate-50 hover:bg-brand hover:text-white hover:border-brand transition-colors duration-150 block"
+                        >
+                            Daftar Akun Customer &rarr;
+                        </a>
+                    </div>
+
+                    <!-- 2. Tenant Option Card (Recommended) -->
+                    <div class="rounded-2xl border-2 border-brand bg-orange-50/20 hover:bg-orange-50/50 hover:shadow-xl transition-all duration-200 p-5 flex flex-col justify-between relative group">
+                        <div class="absolute -top-3 right-4 bg-brand text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow-sm tracking-wider">
+                            Pemilik Usaha
+                        </div>
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-brand text-white flex items-center justify-center text-xl mb-3.5 group-hover:scale-110 transition-transform shadow-md shadow-orange-500/25">
+                                <i class="fa-solid fa-store"></i>
+                            </div>
+                            <h4 class="text-base sm:text-lg font-bold text-slate-900 mb-1">
+                                Sebagai Pemilik Toko
+                            </h4>
+                            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                                Untuk pengusaha rental yang ingin mengelola stok unit, booking, invoice, dan website toko online sendiri.
+                            </p>
+                            <ul class="text-xs text-slate-600 space-y-2 mb-5">
+                                <li class="flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-check text-brand text-xs"></i>
+                                    <span>Subdomain website toko mandiri</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-check text-brand text-xs"></i>
+                                    <span>Manajemen unit & jadwal sewa</span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-check text-brand text-xs"></i>
+                                    <span>Laporan omzet & analitik bisnis</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <a 
+                            href="{{ route('tenant.register') }}" 
+                            class="w-full text-center py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm bg-brand text-white hover:bg-brand-hover shadow-md shadow-orange-500/25 transition-all duration-150 block"
+                        >
+                            Buka Toko Rental (Tenant) &rarr;
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer Switch -->
+                <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+                    <p class="text-xs text-slate-500">
+                        Sudah punya akun sebelumnya? 
+                        <a href="{{ route('login') }}" class="font-bold text-brand hover:underline ml-1">
+                            Masuk di sini
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

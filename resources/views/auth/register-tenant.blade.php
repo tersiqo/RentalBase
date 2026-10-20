@@ -20,6 +20,7 @@
 
     <form method="POST" action="{{ route('tenant.register') }}" novalidate>
         @csrf
+        <input type="hidden" name="plan" value="{{ $plan ?? request('plan', 'starter') }}">
 
         <div class="field">
             <label for="username">Username <i>*</i></label>
