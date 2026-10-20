@@ -1254,27 +1254,28 @@ Request:
 }
 ```
 
-## 25. Owner Admin Rental Account Management
-Mendukung fitur "Manajemen Akun Admin Rental" pada proposal (5.3). Owner membuat dan mengelola akun Admin Rental untuk client tertentu.
+## 25. Admin Rental Account Management (Self-Service via Profile Menu)
+Mendukung fitur pengelolaan dan pembuatan akun Admin Rental tambahan secara mandiri oleh Admin Rental di dalam tokonya sendiri (diakses melalui menu dropdown Profil di Admin Panel).
 
 ```text
-GET    /api/owner/clients/{id}/admin-accounts
-POST   /api/owner/clients/{id}/admin-accounts
-PUT    /api/owner/admin-accounts/{id}
-PATCH  /api/owner/admin-accounts/{id}/status
+GET    /api/admin/admins
+POST   /api/admin/admins
+PUT    /api/admin/admins/{id}
+PATCH  /api/admin/admins/{id}/status
 ```
 
 ### Create Admin Rental Account
 ```http
-POST /api/owner/clients/{id}/admin-accounts
+POST /api/admin/admins
 ```
 
 Request:
 ```json
 {
-  "name": "Admin Jaya Equipment",
-  "email": "admin@jaya.com",
-  "password": "password123"
+  "name": "Staf Admin Jaya",
+  "email": "staf@jaya.com",
+  "password": "password123",
+  "password_confirmation": "password123"
 }
 ```
 
@@ -1284,17 +1285,18 @@ Response:
   "message": "Akun Admin Rental berhasil dibuat",
   "data": {
     "id": 15,
-    "name": "Admin Jaya Equipment",
-    "email": "admin@jaya.com",
+    "name": "Staf Admin Jaya",
+    "email": "staf@jaya.com",
     "role": "admin_rental",
+    "status": "aktif",
     "client_id": 6
   }
 }
 ```
 
-Backend harus memastikan akun yang dibuat otomatis terhubung ke `client_id` sesuai `{id}` pada URL. Berbeda dengan akun Customer, akun Admin Rental wajib memiliki `client_id` dan tidak dapat dipakai lintas-client.
+Backend wajib memastikan akun yang dibuat otomatis terhubung ke `client_id` milik Admin Rental yang sedang login (`Auth::user()->client_id`). Berbeda dengan akun Customer, akun Admin Rental wajib memiliki `client_id` dan tidak dapat dipakai lintas-client. Admin tidak dapat menonaktifkan akun dirinya sendiri yang sedang aktif login.
 
-Package limit: sebelum membuat Admin Rental baru, backend menghitung jumlah Admin Rental yang masih aktif pada client. Starter maksimal 1, Business maksimal 3, dan Professional maksimal 10.
+Package limit: sebelum membuat Admin Rental baru, backend menghitung jumlah Admin Rental yang masih aktif pada client tersebut. Starter maksimal 1, Business maksimal 3, dan Professional maksimal 10.
 
 ## 26. Owner Subscription Management
 
@@ -1497,10 +1499,10 @@ POST /api/damage-reports/{id}/response
 Customer tidak dapat mengakses endpoint Admin atau Owner.
 
 ### Admin Rental
-Mengakses endpoint `/admin/*` (termasuk `/admin/profile`, `/admin/dashboard`, `/admin/reports`, dan review Identity Guarantee) hanya untuk data client miliknya. Berbeda dengan Customer, akun Admin Rental terikat pada satu `client_id` dan tidak dapat login lintas-client.
+Mengakses endpoint `/admin/*` (termasuk `/admin/profile`, `/admin/admins`, `/admin/dashboard`, `/admin/reports`, dan review Identity Guarantee) hanya untuk data client miliknya. Berbeda dengan Customer, akun Admin Rental terikat pada satu `client_id` dan tidak dapat login lintas-client.
 
 ### Owner
-Mengakses endpoint `/owner/*` (termasuk `/owner/clients/{id}/admin-accounts`, `/owner/registrations`, dan `/owner/dashboard`) sesuai kebutuhan pengelolaan sistem. Owner tidak mengakses endpoint `/admin/*` transaksi harian.
+Mengakses endpoint `/owner/*` (termasuk `/owner/clients`, `/owner/registrations`, `/owner/subscriptions`, dan `/owner/dashboard`) sesuai kebutuhan pengelolaan sistem. Owner tidak mengakses endpoint `/admin/*` transaksi harian.
 
 ## 30. API Response Standard
 Success:
@@ -1579,13 +1581,11 @@ Admin Payment Methods
 ↓
 Notifications
 ↓
-Admin Profile & Branding
+Admin Profile, Branding, & Admin Account Management (/admin/admins)
 ↓
 Admin Dashboard & Reports
 ↓
 Owner Client Registrations Management
 ↓
-Owner Admin Rental Account Management
-↓
-Owner Dashboard
+Owner Dashboard & Subscriptions
 ```

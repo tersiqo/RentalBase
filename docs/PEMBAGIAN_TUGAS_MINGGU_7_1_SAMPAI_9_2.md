@@ -53,8 +53,8 @@ RentalBase adalah aplikasi pengelolaan rental berbasis banyak client/tenant. Roo
 
 1. **Pengunjung publik** — melihat landing page RentalBase, informasi produk SaaS, paket, fitur, formulir pendaftaran tenant, dan portal autentikasi.
 2. **Customer** — melihat katalog pada toko/tenant tertentu (guest browsing), memilih periode sewa, memasukkan barang ke keranjang / menekan "Sewa Alat", checkout (wajib login), mengirim identitas/jaminan, mengunggah bukti pembayaran, melihat status pesanan, pelacakan refund, pengiriman, pengembalian, notifikasi, dan profil.
-3. **Admin Rental** — mengelola data satu toko/tenant: login admin (dengan pengecekan status toko belum terverifikasi/ditolak/aktif), pesanan, konfirmasi/pembatalan order, verifikasi identitas & pembayaran, kategori, produk, unit fisik, pengiriman, retur, pemeriksaan fisik, kasus kerusakan, metode pembayaran, laporan, branding, notifikasi, dan activity log.
-4. **Owner/Super Admin** — mengelola platform dan tenant: pengajuan tenant, client, admin rental lintas tenant, subscription, dashboard monitoring, notifikasi Owner, dan activity log tingkat platform. Panel Owner tidak menampilkan detail transaksi customer lintas tenant sebagai data operasional.
+3. **Admin Rental** — mengelola data satu toko/tenant: login admin (dengan pengecekan status toko belum terverifikasi/ditolak/aktif), pesanan, konfirmasi/pembatalan order, verifikasi identitas & pembayaran, kategori, produk, unit fisik, pengiriman, retur, pemeriksaan fisik, kasus kerusakan, metode pembayaran, laporan, branding, manajemen/pembuatan akun sesama Admin toko (via menu Profil sesuai kuota paket), notifikasi, dan activity log.
+4. **Owner/Super Admin** — mengelola platform dan tenant: pengajuan tenant, client, subscription, dashboard monitoring, notifikasi Owner, dan activity log tingkat platform. Panel Owner tidak menampilkan detail transaksi customer lintas tenant sebagai data operasional.
 
 ### 2.2 Layout dasar yang dibutuhkan
 
@@ -62,8 +62,8 @@ RentalBase adalah aplikasi pengelolaan rental berbasis banyak client/tenant. Roo
 |---|---|---|
 | **Public Layout** | Landing page, pendaftaran tenant multi-step, halaman publik lainnya | Navbar RentalBase, menu Fitur/Harga/Kontak, CTA Login/Daftar ("Memulai"), footer dan tautan legal. |
 | **Customer Layout** | Katalog toko, detail produk, cart, checkout, pesanan, retur customer, laporan kerusakan customer, notifikasi, profil | Header toko (logo, Beranda, Produk, Cara Sewa, Cart badge, Pesanan Saya, Notifikasi, Profile/Login), footer kontak/jam operasional/kebijakan. Dibuat oleh Iqo. |
-| **Admin Layout** | Dashboard Admin dan seluruh halaman pengelolaan tenant | Sidebar Admin (Operasional, Katalog, Laporan & Audit, Pengaturan), topbar nama toko, lonceng notifikasi, menu profil/logout, breadcrumb, responsif HP. Dibuat oleh Fiza. |
-| **Owner Layout** | Dashboard dan halaman manajemen pusat | Sidebar Owner (Dashboard, Registrasi, Clients, Admins, Subscriptions, Activity Log, Notifikasi), topbar profil Super Admin, konten terpisah dari panel tenant. Dibuat oleh Fiza. |
+| **Admin Layout** | Dashboard Admin dan seluruh halaman pengelolaan tenant | Sidebar Admin (Operasional, Katalog, Laporan & Audit, Pengaturan), topbar nama toko, lonceng notifikasi, **menu dropdown profil** (Kelola/Buat Akun Admin Toko, Tema & Branding, Logout), breadcrumb, responsif HP. Dibuat oleh Fiza. |
+| **Owner Layout** | Dashboard dan halaman manajemen pusat | Sidebar Owner (Dashboard, Registrasi, Clients, Subscriptions, Activity Log, Notifikasi), topbar profil Super Admin, konten terpisah dari panel tenant. Dibuat oleh Fiza. |
 | **Auth Layout** | Login, register, lupa/reset password | Form terpusat tanpa sidebar; validasi per-field, show/hide password bila tersedia, pesan error dan loading. |
 | **Global Error/Suspended Layout** | 403, 404, tenant suspend/nonaktif | Tampilan fokus pada pesan dan aksi yang sesuai, tidak menampilkan menu yang justru dilarang pada halaman suspended. Dibuat oleh Yanuar. |
 
@@ -116,7 +116,7 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 8.2-Y2 | 8 Bagian 2 | Halaman Tenant Tidak Aktif/Suspended | Yanuar |
 | 8.2-F3 | 8 Bagian 2 | Dashboard Owner | Fiza (ditukar dari Yanuar / 8.2-Y3) |
 | 8.2-F1 | 8 Bagian 2 | Manajemen Client Owner | Fiza |
-| 8.2-F2 | 8 Bagian 2 | Akun Admin Rental Owner | Fiza |
+| 8.2-F2 | 8 Bagian 2 | Manajemen Akun Admin Toko (Via Profil Admin) | Fiza |
 | 8.2-A1 | 8 Bagian 2 | Notifikasi Customer | Iak |
 | 8.2-A2 | 8 Bagian 2 | Notifikasi Admin | Iak |
 | 9.1-Y1 | 9 Bagian 1 | Metode Pembayaran Admin | Yanuar (dialihkan dari Iqo / 9.1-I1) |
@@ -624,7 +624,7 @@ Menyediakan form masuk dengan tampilan konsisten untuk Admin Rental dan Owner ta
 - Setelah login, backend menentukan role dan redirect ke area yang sesuai.
 - Admin hanya bisa masuk ke tenant yang menjadi wewenangnya; Owner ke panel pusat.
 - UI tidak boleh mengandalkan role dari form yang dikirim pengguna.
-- Fiza bertanggung jawab membuat Base Layout Owner agar konsisten di seluruh modul Owner (Dashboard, Registrations, Clients, Admins, Subscriptions, Notifications).
+- Fiza bertanggung jawab membuat Base Layout Owner agar konsisten di seluruh modul Owner (Dashboard, Registrations, Clients, Subscriptions, Notifications).
 
 ### Kriteria selesai
 Login tidak mengirim pengguna ke panel yang salah, session/token ditangani dengan benar, logout mengakhiri session sesuai implementasi, dan error tidak membocorkan rincian sensitif.
@@ -1112,31 +1112,41 @@ Memungkinkan Owner mencari, meninjau, memperbarui status, dan mengelola informas
 ### Kriteria selesai
 Owner dapat mencari, meninjau, mengubah data yang diizinkan, suspend/aktifkan dengan alasan, dan melihat perubahan status secara konsisten.
 
-## 7.7 — Fiza: Akun Admin Rental Owner
+## 7.7 — Fiza: Manajemen Akun Admin Toko (Via Profil Admin)
 
 **ID:** 8.2-F2  
-**Route pada sumber:** `/owner/admins`  
-**Layout:** Base Layout Owner.
+**Route kanonis:** `/admin/admins` (diakses melalui **Dropdown Menu Profil Admin** di topbar/sidebar)  
+**Layout:** Base Layout Admin.
 
 ### Tujuan
-Mengelola akun Admin Rental yang berada di tenant berbeda dari panel pusat.
+Memungkinkan Admin Rental (pemilik/pengelola toko) untuk membuat akun Admin Rental baru bagi rekan kerja/staf tokonya sendiri serta mengelola daftar akun Admin di dalam tokonya secara mandiri (*self-service*), tanpa harus meminta Owner platform membuatkannya secara manual.
 
-### Komponen UI
-- Tabel staf/admin lintas tenant: nama, email, tenant/client, status akun, aksi.
-- Filter tenant dan pencarian nama/email.
-- Form buat Admin: nama, email, password/instruksi aktivasi, dropdown tenant penempatan.
-- Form edit/ubah tenant/status bila aturan mengizinkan.
-- Pesan error ketika email sudah terpakai atau limit admin tenant tercapai.
+### Alur Akses (Via Menu Profil Admin)
+- Di pojok kanan atas Topbar Admin (avatar bulat gelap) dan/atau kartu profil di bagian bawah Sidebar Admin, saat diklik akan memunculkan **Menu Dropdown Profil** berisi:
+  1. **Kelola / Buat Akun Admin** (`/admin/admins`) — dengan badge kuota (misal `1/3 Admin`).
+  2. **Profil & Tema Toko** (`/admin/theme`).
+  3. **Keluar / Logout**.
 
-### Aturan limit
-- Starter maksimum 1 Admin Rental.
-- Business maksimum 3 Admin Rental.
-- Professional maksimum 10 Admin Rental.
-- UI dapat memberi peringatan/disable tombol saat limit tercapai, tetapi backend tetap wajib menolak request yang melampaui limit.
-- Istilah “Backdoor” pada sumber tidak berarti jalur tanpa keamanan; fitur ini tetap endpoint administrasi resmi dengan otorisasi Owner, audit, dan penanganan password aman.
+### Komponen UI Halaman `/admin/admins`
+- **Banner / Kartu Indikator Kuota Admin Paket:** menampilkan pemakaian kuota akun Admin aktif saat ini dibandingkan batas maksimal paket langganan toko (contoh: *"Kuota Admin Toko: 1 dari 3 Akun (Paket Business)"* lengkap dengan progress bar).
+- **Tabel Daftar Akun Admin Toko (`client_id` milik toko yang sedang login):** nama, email, status akun (`aktif` / `nonaktif`), penanda `"Akun Anda"` pada baris admin yang sedang login, waktu dibuat, dan tombol aksi.
+- **Modal / Form "Buat Akun Admin Rental Baru":**
+  - Input Nama Lengkap Admin/Staf.
+  - Input Email Login.
+  - Input Password & Konfirmasi Password (dengan fitur show/hide).
+  - Otomatis mengikat akun baru ke `client_id` toko milik Admin yang sedang login dan `role = 'admin_rental'` (tanpa dropdown pilih tenant agar tidak bocor lintas toko).
+- **Aksi Nonaktifkan / Aktifkan Akun Rekan Admin:** dapat mengubah status akun rekan admin di toko yang sama (`aktif` ↔ `nonaktif`), dengan proteksi **tidak boleh menonaktifkan akun dirinya sendiri** yang sedang dipakai login.
+- Pesan error/peringatan jelas ketika email sudah terpakai atau kuota maksimum Admin pada paket langganan toko sudah penuh.
+
+### Aturan limit & keamanan
+- **Starter:** maksimum **1** Admin Rental aktif (tombol *"Buat Akun Admin Baru"* otomatis terkunci/disabled disertai info upgrade paket karena kuota 1/1 sudah dipakai oleh akun utama toko).
+- **Business:** maksimum **3** Admin Rental aktif.
+- **Professional:** maksimum **10** Admin Rental aktif.
+- UI wajib memberi peringatan & menonaktifkan tombol tambah saat kuota penuh, dan **backend wajib menolak request `POST`** yang melampaui limit paket aktif tenant.
+- Isolasi multi-tenant ketat: query daftar admin, pembuatan admin baru, dan ubah status wajib selalu difilter dengan `where('client_id', Auth::user()->client_id)` dan `where('role', 'admin_rental')`.
 
 ### Kriteria selesai
-Owner bisa membuat/mengelola Admin dalam batas paket; tenant penempatan tidak tertukar; akses Admin dibatasi ke tenant yang ditugaskan.
+Admin Rental dapat membuka menu **Kelola / Buat Akun Admin** dari dropdown Profil, melihat sisa kuota admin sesuai paket tokonya, menambahkan akun Admin Rental baru untuk tokonya selama kuota masih tersedia, serta mengelola status aktif rekan admin tanpa bisa mengakses admin milik toko lain.
 
 ## 7.8 — Iak: Notifikasi Customer
 
@@ -1672,7 +1682,7 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 - [ ] **Laporan transaksi Admin (8.1-F2):** filter tanggal transaksi, ringkasan pendapatan kotor sewa/denda/ganti rugi, tabel transaksi, export CSV/PDF.
 - [ ] **Dashboard Owner (8.2-F3):** Base Layout Owner reusable, 4 kartu metrik platform (total, aktif, suspended, expiring soon), daftar tenant (ditukar dari Yanuar).
 - [ ] **Manajemen client Owner (8.2-F1):** tabel seluruh tenant, edit profil tenant, validasi perubahan subdomain, aksi suspend/aktifkan dengan input alasan.
-- [ ] **Manajemen Admin Owner (8.2-F2):** tabel akun admin rental lintas tenant, buat akun admin baru, penempatan tenant, penegakan kuota admin paket.
+- [ ] **Manajemen Akun Admin Toko via Profil Admin (8.2-F2):** menu dropdown profil Admin, tabel akun admin internal toko, form buat akun admin rental baru (`client_id` otomatis), dan penegakan kuota admin sesuai paket (Starter 1, Business 3, Pro 10).
 - [ ] **Antrean persetujuan tenant Owner (9.1-F2):** tabel pengajuan baru, review detail usaha/PIC, tombol WhatsApp direct (`wa.me`), tolak beralasan, persetujuan transaksional & trigger email aktivasi.
 - [ ] **Subscription Owner (9.1-F1):** masa berlaku langganan, indikator jatuh tempo, form perpanjangan manual, pencatatan histori perpanjangan.
 - [ ] **Notifikasi Owner, Backend Order API & Scheduled Commands (9.2-F1):** feed notifikasi pusat, transactional locking order & alokasi unit, 3 scheduled console commands (`orders:auto-cancel-unpaid`, `orders:auto-complete`, `subscriptions:check-expired`), dan 15 in-app notification triggers.
@@ -1756,10 +1766,10 @@ Untuk meminimalkan blocker dan saling tunggu antar-anggota tim, urutan implement
 5. **Pengembalian Barang & Denda:** Customer mengajukan retur (Iak: `7.2-A1`), Admin memverifikasi unit kembali & menghitung denda keterlambatan (Iak: `7.1-A2`).
 6. **Kasus Kerusakan:** Admin membuat tiket ganti rugi kerusakan fisik (Iqo: `8.1-I3`), Customer meninjau & mengunggah bukti bayar kompensasi (Iqo: `8.1-I4`).
 
-### Fase 5: Panel Owner Platform dan Manajemen Tenant
+### Fase 5: Panel Owner Platform, Manajemen Tenant, dan Manajemen Staf Admin Toko
 1. **Dashboard Owner Pusat:** Pemantauan kesehatan platform & 4 kartu metrik agregat (Fiza: `8.2-F3`).
-2. **Antrean Persetujuan Tenant:** Owner meninjau pengajuan toko baru, kontak WhatsApp direct (`wa.me`), tolak atau approve dengan otomatisasi provisioning tenant & email aktivasi (Fiza: `9.1-F2`).
-3. **Manajemen Client & Admin Tenant:** Pengelolaan tenant, penegakan kuota, penambahan staf admin, serta aksi suspend tenant (Fiza: `8.2-F1` & `8.2-F2`).
+2. **Antrean Persetujuan Tenant:** Owner meninjau pengajuan toko baru, kontak WhatsApp direct (`wa.me`), tolak atau approve dengan otomatisasi provisioning tenant & akun Admin utama (Fiza: `9.1-F2`).
+3. **Manajemen Client Owner & Manajemen Akun Admin Toko:** Pengelolaan status/suspend tenant oleh Owner (Fiza: `8.2-F1`) serta fitur *self-service* pembuatan/pengelolaan akun Admin tambahan oleh Admin Rental melalui menu Profil sesuai kuota paket (Fiza: `8.2-F2`).
 4. **Penanganan Tenant Suspended:** Halaman Error 403/404 (Yanuar: `8.2-Y1`) dan halaman Tenant Suspended via middleware (Yanuar: `8.2-Y2`).
 5. **Subscription & Siklus Tagihan:** Pelacakan masa aktif langganan tenant & form perpanjangan manual (Fiza: `9.1-F1`).
 
