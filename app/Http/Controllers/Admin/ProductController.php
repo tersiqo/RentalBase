@@ -86,7 +86,7 @@ class ProductController extends Controller
 
         $mainImagePath = $this->handleImageUpload($request);
 
-        $product = Product::create([
+        $productData = [
             'client_id' => $client->id,
             'category_id' => $category->id,
             'name' => $validated['name'],
@@ -98,7 +98,27 @@ class ProductController extends Controller
             'main_image' => $mainImagePath,
             'identity_guarantee_requirements' => $validated['identity_guarantee_requirements'] ?? null,
             'status' => $validated['status'],
-        ]);
+        ];
+
+        // Sinkronkan sequence PostgreSQL jika driver adalah pgsql agar tidak terjadi duplicate key products_pkey
+        if (\Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql') {
+            try {
+                \Illuminate\Support\Facades\DB::statement("SELECT setval(pg_get_serial_sequence('products', 'id'), COALESCE((SELECT MAX(id) FROM products), 1))");
+            } catch (\Throwable $t) {
+                // Abaikan jika bukan PostgreSQL standar
+            }
+        }
+
+        try {
+            $product = Product::create($productData);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            if (str_contains($e->getMessage(), 'products_pkey')) {
+                \Illuminate\Support\Facades\DB::statement("SELECT setval(pg_get_serial_sequence('products', 'id'), COALESCE((SELECT MAX(id) FROM products), 1))");
+                $product = Product::create($productData);
+            } else {
+                throw $e;
+            }
+        }
 
         return redirect()
             ->route('admin.products.index')
