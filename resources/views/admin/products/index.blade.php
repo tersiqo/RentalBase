@@ -347,25 +347,27 @@
          aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="addModalOpen" 
-                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter="ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave="ease-in duration-150"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" 
-                 @click="addModalOpen = false"></div>
+                 class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity" 
+                 @click="addModalOpen = false"
+                 aria-hidden="true"></div>
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div x-show="addModalOpen"
-                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter="ease-out duration-200"
                  x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave="ease-in duration-150"
                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+                 @click.stop
+                 class="relative z-10 inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
                 
                 <form method="POST" action="{{ route('admin.products.store') }}" enctype="multipart/form-data" class="p-6 sm:p-8 space-y-5">
                     @csrf
@@ -538,25 +540,27 @@
          aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="editModalOpen" 
-                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter="ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave="ease-in duration-150"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" 
-                 @click="editModalOpen = false"></div>
+                 class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity" 
+                 @click="editModalOpen = false"
+                 aria-hidden="true"></div>
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div x-show="editModalOpen"
-                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter="ease-out duration-200"
                  x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave="ease-in duration-150"
                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+                 @click.stop
+                 class="relative z-10 inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
                 
                 <form :action="editActionUrl" method="POST" enctype="multipart/form-data" class="p-6 sm:p-8 space-y-5">
                     @csrf
@@ -717,25 +721,27 @@
          aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="deleteModalOpen" 
-                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter="ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave="ease-in duration-150"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" 
-                 @click="deleteModalOpen = false"></div>
+                 class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity" 
+                 @click="deleteModalOpen = false"
+                 aria-hidden="true"></div>
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div x-show="deleteModalOpen"
-                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter="ease-out duration-200"
                  x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave="ease-in duration-150"
                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-100 p-6 sm:p-7">
+                 @click.stop
+                 class="relative z-10 inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-100 p-6 sm:p-7">
                 
                 <div class="text-center">
                     <div class="w-14 h-14 rounded-2xl bg-red-100 text-red-600 mx-auto flex items-center justify-center mb-4">
