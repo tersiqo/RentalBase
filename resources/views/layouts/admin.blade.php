@@ -253,6 +253,27 @@
             <span x-show="!collapsed || mobileOpen" class="truncate">Laporan</span>
         </a>
 
+        @if(Auth::user()?->isPrimaryAdmin())
+        <hr class="my-3 border-gray-100" x-show="!collapsed || mobileOpen">
+
+        <p x-show="!collapsed || mobileOpen"
+           class="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+            PENGATURAN TOKO
+        </p>
+
+        {{-- Manajemen Akun Admin --}}
+        <a href="{{ route('admin.admins.index') }}"
+           title="Mengelola akun staf Admin internal toko dan memantau penggunaan kuota paket subscription."
+           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                  {{ request()->routeIs('admin.admins.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
+            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.admins.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            </span>
+            <span x-show="!collapsed || mobileOpen" class="truncate">Manajemen Akun Admin</span>
+        </a>
+        @endif
     </nav>
 
     {{-- User Profile (bottom of sidebar) --}}
@@ -265,7 +286,7 @@
             </div>
             <div x-show="!collapsed || mobileOpen" class="flex-1 min-w-0">
                 <p class="text-xs font-bold text-gray-900 truncate">{{ Auth::user()->name ?? 'Budi Admin' }}</p>
-                <p class="text-[10px] text-gray-400 capitalize truncate">Admin Rental</p>
+                <p class="text-[10px] text-gray-400 capitalize truncate">{{ Auth::user()?->isPrimaryAdmin() ? 'Admin Utama' : 'Admin Staf' }}</p>
             </div>
             <form x-show="!collapsed || mobileOpen"
                   method="POST"
@@ -331,79 +352,66 @@
         <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white"></span>
     </button>
 
-    {{-- Profile Avatar & Dropdown Menu --}}
-    <div class="relative" x-data="{ profileOpen: false }" @click.outside="profileOpen = false">
+    {{-- Profile Dropdown --}}
+    <div x-data="{ profileOpen: false }" class="relative" @keydown.escape.stop="profileOpen = false">
         <button @click="profileOpen = !profileOpen"
                 type="button"
-                class="flex items-center gap-2 p-1 rounded-full hover:bg-stone-100 transition-colors focus:outline-none">
-            <div class="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-sm ring-2 ring-orange-500/20">
-                <svg class="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-            </div>
-            <svg class="w-3.5 h-3.5 text-gray-400 hidden sm:block transition-transform duration-150" :class="profileOpen ? 'rotate-180 text-orange-600' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-            </svg>
+                id="btn-profile-dropdown"
+                title="Menu Profil Admin"
+                class="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-sm hover:ring-2 hover:ring-orange-500 hover:ring-offset-2 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                :aria-expanded="profileOpen.toString()">
+            @if(Auth::user()?->avatar)
+                <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="w-full h-full rounded-full object-cover">
+            @else
+                <span class="sr-only">Buka menu profil</span>
+                <span class="uppercase font-semibold text-xs">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</span>
+            @endif
         </button>
 
-        {{-- Dropdown Panel --}}
+        {{-- Dropdown Menu --}}
         <div x-show="profileOpen"
              x-cloak
+             @click.away="profileOpen = false"
              x-transition:enter="transition ease-out duration-150"
-             x-transition:enter-start="opacity-0 scale-95 translate-y-1"
-             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
              x-transition:leave="transition ease-in duration-100"
-             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-             x-transition:leave-end="opacity-0 scale-95 translate-y-1"
-             class="absolute right-0 mt-2.5 w-64 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-stone-900/10 py-2 z-50">
-            
-            {{-- Info Admin Aktif --}}
-            <div class="px-4 py-2.5 border-b border-gray-100">
-                <p class="text-xs font-bold text-gray-900 truncate">{{ Auth::user()->name ?? 'Budi Admin' }}</p>
-                <p class="text-[11px] text-gray-500 truncate">{{ Auth::user()->email ?? 'admin@toko.com' }}</p>
-                <span class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-md bg-orange-50 text-orange-700 text-[10px] font-bold">
-                    Admin Rental • {{ $client->business_name ?? 'Toko' }}
-                </span>
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="absolute right-0 mt-2 w-64 rounded-2xl bg-white shadow-xl border border-gray-100 py-1.5 z-50 text-xs font-medium divide-y divide-gray-100">
+
+            {{-- User Info Header --}}
+            <div class="px-4 py-3 bg-stone-50/50">
+                <p class="font-bold text-gray-900 text-sm truncate">{{ Auth::user()->name ?? 'Budi Admin' }}</p>
+                <p class="text-gray-500 truncate text-[11px] mt-0.5">{{ Auth::user()->email ?? 'admin@rentalbase.id' }}</p>
+                <div class="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full {{ Auth::user()?->isPrimaryAdmin() ? 'bg-orange-50 text-orange-700 border-orange-200/60' : 'bg-slate-100 text-slate-700 border-slate-200' }} text-[10px] font-bold border">
+                    <span class="w-1.5 h-1.5 rounded-full {{ Auth::user()?->isPrimaryAdmin() ? 'bg-orange-500' : 'bg-slate-400' }}"></span>
+                    <span>{{ Auth::user()?->isPrimaryAdmin() ? 'Admin Utama' : 'Admin Staf' }}</span>
+                </div>
             </div>
 
-            {{-- Menu Pilihan --}}
-            <div class="py-1.5 px-1.5 space-y-0.5">
-                <a href="{{ Route::has('admin.admins.index') ? route('admin.admins.index') : url('/admin/admins') }}"
-                   class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors">
-                    <span class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-                        </svg>
-                    </span>
-                    <div class="flex-1 min-w-0">
-                        <p class="truncate">Buat / Kelola Akun Admin</p>
-                        <p class="text-[10px] font-normal text-gray-400 truncate">Tambah staf admin sesuai kuota paket</p>
-                    </div>
-                </a>
-
-                <a href="{{ route('admin.theme.index') }}"
-                   class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-stone-50 hover:text-gray-900 transition-colors">
-                    <span class="w-7 h-7 rounded-lg bg-stone-100 text-gray-500 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
-                        </svg>
-                    </span>
-                    <span>Profil & Tema Toko</span>
+            {{-- Main Links --}}
+            <div class="py-1.5">
+                <a href="{{ route('admin.settings.index') }}"
+                   class="flex items-center gap-2.5 px-4 py-2.5 text-gray-700 hover:bg-stone-50 hover:text-gray-900 transition-colors">
+                    <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Setelan</span>
                 </a>
             </div>
 
-            {{-- Logout --}}
-            <div class="border-t border-gray-100 pt-1.5 px-1.5">
+            {{-- Logout Action --}}
+            <div class="py-1.5">
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit"
-                            class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors">
-                        <span class="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                            </svg>
-                        </span>
-                        <span>Keluar / Logout</span>
+                            class="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-red-600 hover:bg-red-50 transition-colors">
+                        <svg class="w-4 h-4 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span class="font-semibold">Keluar</span>
                     </button>
                 </form>
             </div>

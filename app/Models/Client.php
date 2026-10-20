@@ -33,6 +33,11 @@ class Client extends Model
         return $this->hasOne(Subscription::class)->latestOfMany();
     }
 
+    public function primaryAdmin()
+    {
+        return $this->belongsTo(User::class, 'primary_admin_id');
+    }
+
     public function adminUser()
     {
         return $this->hasOne(User::class)->where('role', 'admin_rental');

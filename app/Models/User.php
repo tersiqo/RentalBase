@@ -41,4 +41,24 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Client::class);
     }
+
+    /**
+     * Memeriksa apakah user adalah Admin Utama toko (Primary Admin).
+     */
+    public function isPrimaryAdmin(): bool
+    {
+        if ($this->role !== 'admin_rental' || ! $this->client_id) {
+            return false;
+        }
+
+        return (int) $this->client?->primary_admin_id === (int) $this->id;
+    }
+
+    /**
+     * Memeriksa apakah user adalah Admin Staf toko.
+     */
+    public function isStaffAdmin(): bool
+    {
+        return $this->role === 'admin_rental' && ! $this->isPrimaryAdmin();
+    }
 }

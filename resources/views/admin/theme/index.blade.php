@@ -51,6 +51,13 @@
                 </div>
             </div>
 
+            @if(!Auth::user()?->isPrimaryAdmin())
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3 text-amber-800 text-xs font-medium mb-6">
+                    <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span><strong>Mode Lihat Saja:</strong> Anda sedang login sebagai Admin Staf. Hanya <strong>Admin Utama</strong> yang berwenang mengubah warna tema dan branding toko.</span>
+                </div>
+            @endif
+
             @if($isLocked)
                 <div class="bg-stone-50 border border-stone-200 rounded-xl p-5 relative overflow-hidden">
                     <div class="absolute -right-6 -top-6 text-stone-200/50">
@@ -90,7 +97,7 @@
                             <p class="text-sm font-semibold text-gray-700 mb-3">Warna Custom</p>
                             <div class="flex items-center gap-3">
                                 <div class="relative w-12 h-12 rounded-xl overflow-hidden border border-gray-300 shadow-sm focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-gray-900" :style="`background-color: ${theme};`">
-                                    <input type="color" name="theme_color" x-model="theme" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                    <input type="color" name="theme_color" x-model="theme" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" {{ !Auth::user()?->isPrimaryAdmin() ? 'disabled' : '' }}>
                                 </div>
                                 <div class="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                                     <span class="text-sm font-mono font-bold text-gray-700 uppercase" x-text="theme"></span>
@@ -101,9 +108,15 @@
                     </div>
 
                     <div class="mt-8">
-                        <button type="submit" class="bg-orange-500 text-white hover:bg-orange-600 transition-colors px-6 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-orange-500/30">
-                            Simpan Tema
-                        </button>
+                        @if(Auth::user()?->isPrimaryAdmin())
+                            <button type="submit" class="bg-orange-500 text-white hover:bg-orange-600 transition-colors px-6 py-2.5 rounded-xl text-sm font-semibold shadow-sm shadow-orange-500/30">
+                                Simpan Tema
+                            </button>
+                        @else
+                            <button type="button" disabled class="bg-gray-200 text-gray-400 cursor-not-allowed px-6 py-2.5 rounded-xl text-sm font-semibold shadow-none" title="Hanya Admin Utama yang berwenang menyimpan perubahan tema">
+                                Simpan Tema (Terkunci)
+                            </button>
+                        @endif
                     </div>
                 </form>
             @endif
