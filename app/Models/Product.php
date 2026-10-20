@@ -23,6 +23,50 @@ class Product extends Model
         return $this->hasMany(EquipmentUnit::class);
     }
 
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function getRentalPriceAttribute()
+    {
+        return $this->rental_price_per_day;
+    }
+
+    public function setRentalPriceAttribute($value)
+    {
+        $this->attributes['rental_price_per_day'] = $value;
+    }
+
+    public function getImageAttribute()
+    {
+        if (! empty($this->attributes['image'])) {
+            return is_array($this->attributes['image']) 
+                ? $this->attributes['image'] 
+                : json_decode($this->attributes['image'], true);
+        }
+
+        return $this->main_image ? [$this->main_image] : [];
+    }
+
+    public function getCoverImageUrlAttribute(): string
+    {
+        if ($this->main_image) {
+            if (str_starts_with($this->main_image, 'http')) {
+                return $this->main_image;
+            }
+
+            // Cek apakah file ada di storage lokal public
+            if (file_exists(public_path('storage/' . $this->main_image))) {
+                return asset('storage/' . $this->main_image);
+            }
+
+            return \Illuminate\Support\Facades\Storage::url($this->main_image);
+        }
+
+        return 'https://placehold.co/400x300/f8fafc/64748b?text=' . urlencode($this->name ?? 'No Image');
+    }
+
     public function getAvailableUnitsForPeriod($startDate = null, $endDate = null): int
     {
         if (! $startDate || ! $endDate) {

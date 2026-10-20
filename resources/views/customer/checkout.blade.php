@@ -371,7 +371,7 @@
                                 <div class="w-[78px] h-[78px] rounded-xl bg-white border border-gray-200/80 overflow-hidden flex-none flex items-center justify-center relative">
                                     <template x-if="item.image_url || item.main_image">
                                         <div class="w-full h-full relative">
-                                            <img :src="item.image_url || ('https://ekiclwgioicjakapbeuc.supabase.co/storage/v1/object/public/rentalbase-storage/' + item.main_image)" :alt="item.name" class="w-full h-full object-cover">
+                                            <img :src="item.image_url || ('{{ rtrim(config('filesystems.disks.s3.url', Storage::url('')), '/') }}/' + item.main_image)" :alt="item.name" class="w-full h-full object-cover">
                                         </div>
                                     </template>
                                     <template x-if="!item.image_url && !item.main_image">
