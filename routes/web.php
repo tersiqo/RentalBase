@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminStaffController;
 use App\Http\Controllers\Admin\AdminThemeController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReturnController;
@@ -102,6 +103,10 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::get('/theme', [AdminThemeController::class, 'index'])->name('theme.index');
     Route::post('/theme', [AdminThemeController::class, 'update'])->name('theme.update');
     Route::get('/settings', fn () => back())->name('settings.index');
+
+    Route::get('/admins', [AdminStaffController::class, 'index'])->name('admins.index');
+    Route::post('/admins', [AdminStaffController::class, 'store'])->name('admins.store');
+    Route::post('/admins/{user}/status', [AdminStaffController::class, 'toggleStatus'])->name('admins.toggle-status');
 });
 
 Route::prefix('owner')->middleware(['owner'])->name('owner.')->group(function () {

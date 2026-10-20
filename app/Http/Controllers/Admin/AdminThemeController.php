@@ -18,6 +18,10 @@ class AdminThemeController extends Controller
 
     public function update(Request $request)
     {
+        if (! Auth::user()?->isPrimaryAdmin()) {
+            return back()->with('error', 'Akses ditolak: Hanya Admin Utama yang berwenang mengubah branding dan tema toko.');
+        }
+
         $client = Auth::user()->client;
         $subscription = $client->activeSubscription;
         $plan = $subscription ? strtolower($subscription->plan_name) : 'starter';
