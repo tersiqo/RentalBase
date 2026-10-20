@@ -100,7 +100,7 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 7.2-Y2 | 7 Bagian 2 | Detail Pesanan Customer | Yanuar | ✔
 | 7.2-F1 | 7 Bagian 2 | Login Admin dan Owner | Fiza | ✔
 | 7.2-A3 | 7 Bagian 2 | Daftar Pesanan Admin | Iak (dialihkan dari Iqo / 7.2-I3) | ✔
-| 7.2-A1 | 7 Bagian 2 | Detail Pesanan Admin | Iak (dialokasikan di Minggu 7.2) |
+| 7.2-A1 | 7 Bagian 2 | Detail Pesanan Admin | Iak (dialokasikan di Minggu 7.2) | ✔
 | 8.1-I1 | 8 Bagian 1 | Kategori Admin | Iqo | ✔
 | 8.1-I2 | 8 Bagian 1 | Produk Admin | Iqo | ✔
 | 8.1-Y1 | 8 Bagian 1 | Login/Register Customer | Yanuar | ✔
@@ -110,12 +110,12 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 8.1-I3 | 8 Bagian 1 | Daftar dan Detail Kasus Kerusakan Admin | Iqo (dialihkan dari Iak / 8.1-A1) |
 | 8.1-I4 | 8 Bagian 1 | Laporan Kerusakan Customer | Iqo (dialihkan dari Iak / 8.1-A2) |
 | 8.2-I1 | 8 Bagian 2 | Unit Fisik Admin | Iqo |
-| 8.2-Y3 | 8 Bagian 2 | Profil/Branding Admin | Yanuar (dialihkan dari Iqo / 8.2-I2) |
+| 8.2-Y3 | 8 Bagian 2 | Profil/Branding Admin | Yanuar (dialihkan dari Iqo / 8.2-I2) | ✔
 | 8.2-Y1 | 8 Bagian 2 | Metode Pembayaran Admin | Yanuar (dimajukan ke Minggu 8.2) |
 | 8.2-Y2 | 8 Bagian 2 | Halaman Tenant Tidak Aktif/Suspended | Yanuar |
 | 8.2-F3 | 8 Bagian 2 | Dashboard Owner | Fiza (ditukar dari Yanuar / 8.2-Y3) | ✔
 | 8.2-F1 | 8 Bagian 2 | Manajemen Client Owner | Fiza | ✔
-| 8.2-F2 | 8 Bagian 2 | Manajemen Akun Admin Toko (Via Profil Admin) | Fiza |
+| 8.2-F2 | 8 Bagian 2 | Manajemen Akun Admin Toko (Via Profil Admin) | Fiza | ✔
 | 8.2-F4 | 8 Bagian 2 | Antrean Persetujuan Tenant Owner | Fiza (dimajukan dari 9.1 / dialihkan dari Yanuar) | ✔
 | 8.2-A3 | 8 Bagian 2 | Pengembalian Customer | Iak (dialihkan ke Minggu 8.2) |
 | 8.2-A1 | 8 Bagian 2 | Notifikasi Customer | Iak |
