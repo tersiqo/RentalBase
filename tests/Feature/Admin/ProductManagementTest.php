@@ -34,7 +34,11 @@ class ProductManagementTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        $disk = config('filesystems.default', 'public');
+        Storage::fake($disk);
+        if ($disk !== 'public') {
+            Storage::fake('public');
+        }
 
         $this->client = Client::create([
             'business_name' => 'BabyRent Malang',
@@ -176,6 +180,10 @@ class ProductManagementTest extends TestCase
             'late_fee_per_hour' => 5000,
             'status' => 'aktif',
         ]);
+
+        $created = Product::where('name', 'Cocolatte Pockit Cl-788')->first();
+        $this->assertNotNull($created->main_image);
+        Storage::disk(config('filesystems.default', 'public'))->assertExists($created->main_image);
     }
 
     public function test_create_product_fails_when_plan_limit_reached(): void

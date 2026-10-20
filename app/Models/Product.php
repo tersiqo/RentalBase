@@ -52,9 +52,16 @@ class Product extends Model
     public function getCoverImageUrlAttribute(): string
     {
         if ($this->main_image) {
-            return str_starts_with($this->main_image, 'http')
-                ? $this->main_image
-                : \Illuminate\Support\Facades\Storage::url($this->main_image);
+            if (str_starts_with($this->main_image, 'http')) {
+                return $this->main_image;
+            }
+
+            // Cek apakah file ada di storage lokal public
+            if (file_exists(public_path('storage/' . $this->main_image))) {
+                return asset('storage/' . $this->main_image);
+            }
+
+            return \Illuminate\Support\Facades\Storage::url($this->main_image);
         }
 
         return 'https://placehold.co/400x300/f8fafc/64748b?text=' . urlencode($this->name ?? 'No Image');

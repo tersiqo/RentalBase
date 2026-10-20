@@ -159,8 +159,13 @@ class ProductController extends Controller
         ];
 
         if ($mainImagePath) {
-            if ($product->main_image && Storage::disk('public')->exists($product->main_image)) {
-                Storage::disk('public')->delete($product->main_image);
+            $disk = config('filesystems.default', 'public');
+            if ($product->main_image) {
+                if (Storage::disk($disk)->exists($product->main_image)) {
+                    Storage::disk($disk)->delete($product->main_image);
+                } elseif (Storage::disk('public')->exists($product->main_image)) {
+                    Storage::disk('public')->delete($product->main_image);
+                }
             }
             $updateData['main_image'] = $mainImagePath;
         }
@@ -204,9 +209,14 @@ class ProductController extends Controller
         // Hapus unit fisik terkait jika ada
         $product->units()->delete();
 
-        // Hapus file gambar jika ada di public storage
-        if ($product->main_image && Storage::disk('public')->exists($product->main_image)) {
-            Storage::disk('public')->delete($product->main_image);
+        // Hapus file gambar jika ada di storage
+        if ($product->main_image) {
+            $disk = config('filesystems.default', 'public');
+            if (Storage::disk($disk)->exists($product->main_image)) {
+                Storage::disk($disk)->delete($product->main_image);
+            } elseif (Storage::disk('public')->exists($product->main_image)) {
+                Storage::disk('public')->delete($product->main_image);
+            }
         }
 
         $name = $product->name;
@@ -254,15 +264,17 @@ class ProductController extends Controller
 
     private function handleImageUpload(Request $request): ?string
     {
+        $disk = config('filesystems.default', 'public');
+
         if ($request->hasFile('images')) {
             $files = $request->file('images');
             if (! empty($files) && isset($files[0]) && $files[0]->isValid()) {
-                return $files[0]->store('products', 'public');
+                return $files[0]->store('products', $disk);
             }
         }
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            return $request->file('image')->store('products', 'public');
+            return $request->file('image')->store('products', $disk);
         }
 
         return null;
