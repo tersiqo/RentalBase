@@ -108,7 +108,7 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 8.1-A1 | 8 Bagian 1 | Pemeriksaan Kondisi Fisik Admin | Iak (dialokasikan di Minggu 8.1) | ✔
 | 8.1-F2 | 8 Bagian 1 | Laporan Transaksi Admin | Fiza |
 | 8.1-I3 | 8 Bagian 1 | Daftar dan Detail Kasus Kerusakan Admin | Iqo (dialihkan dari Iak / 8.1-A1) |
-| 8.1-I4 | 8 Bagian 1 | Laporan Kerusakan Customer | Iqo (dialihkan dari Iak / 8.1-A2) |
+| 8.1-I4 | 8 Bagian 1 | Laporan Kerusakan Customer | Iqo (dialihkan dari Iak / 8.1-A2) | ✔
 | 8.2-I1 | 8 Bagian 2 | Unit Fisik Admin | Iqo |
 | 8.2-Y3 | 8 Bagian 2 | Profil/Branding Admin | Yanuar (dialihkan dari Iqo / 8.2-I2) | ✔
 | 8.2-Y1 | 8 Bagian 2 | Metode Pembayaran Admin | Yanuar (dimajukan ke Minggu 8.2) |
@@ -1651,14 +1651,14 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 
 ## 12.1 Iqo / Tersiqo Alfarezel — 10 pekerjaan
 
-- [ ] **Katalog customer (7.1-I1):** header/footer reusable, search, filter kategori/harga, periode sewa, grid dan pagination, guest browsing.
-- [ ] **Detail produk (7.1-I2):** galeri foto multi-image, deskripsi/spesifikasi/syarat jaminan, harga dan denda, quantity selector, direct checkout.
-- [ ] **Keranjang (7.2-I1):** kelompok berdasarkan periode, hitung subtotal dinamis, pemilihan item, checkout per kelompok tanggal.
-- [ ] **Checkout (7.2-I2):** ringkasan sewa, alamat, data jaminan KTP & selfie, upload file, validasi ketersediaan unit.
+- [x] **Katalog customer (7.1-I1):** header/footer reusable, search, filter kategori/harga, periode sewa, grid dan pagination, guest browsing.
+- [x] **Detail produk (7.1-I2):** galeri foto multi-image, deskripsi/spesifikasi/syarat jaminan, harga dan denda, quantity selector, direct checkout.
+- [x] **Keranjang (7.2-I1):** kelompok berdasarkan periode, hitung subtotal dinamis, pemilihan item, checkout per kelompok tanggal.
+- [x] **Checkout (7.2-I2):** ringkasan sewa, alamat, data jaminan KTP & selfie, upload file, validasi ketersediaan unit.
 - [ ] **Kasus Kerusakan Admin (8.1-I3):** pembuatan tiket kerusakan barang, unggah 3–5 foto bukti cacat, klaim nominal ganti rugi, update status unit menjadi rusak/perawatan, verifikasi bukti kompensasi, penutupan kasus (dialihkan dari Iak / 8.1-A1).
-- [ ] **Laporan Kerusakan Customer (8.1-I4):** galeri foto kerusakan, rincian biaya ganti rugi, textarea tanggapan/negosiasi, uploader bukti transfer pembayaran kompensasi (dialihkan dari Iak / 8.1-A2).
-- [ ] **Kategori Admin (8.1-I1):** CRUD kategori, jumlah produk, validasi unik per tenant, batas kuota kategori paket.
-- [ ] **Produk Admin (8.1-I2):** form detail, multi-foto, cover image, harga per hari, tarif denda per jam, syarat jaminan dan toggle aktif.
+- [x] **Laporan Kerusakan Customer (8.1-I4):** galeri foto kerusakan, rincian biaya ganti rugi, textarea tanggapan/negosiasi, uploader bukti transfer pembayaran kompensasi (dialihkan dari Iak / 8.1-A2).
+- [x] **Kategori Admin (8.1-I1):** CRUD kategori, jumlah produk, validasi unik per tenant, batas kuota kategori paket.
+- [x] **Produk Admin (8.1-I2):** form detail, multi-foto, cover image, harga per hari, tarif denda per jam, syarat jaminan dan toggle aktif.
 - [ ] **Unit fisik (8.2-I1):** kuota total unit paket, asset code unik, filter status fisik unit, isolasi jadwal sewa.
 - [ ] **Profil customer & integrasi (9.2-I1):** profil via API, pembersihan data dummy katalog/cart, payload multipart file checkout.
 

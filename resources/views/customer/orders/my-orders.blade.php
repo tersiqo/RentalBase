@@ -186,6 +186,11 @@
                                     @if($order->client)
                                         <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg font-medium">{{ $order->client->nama_usaha }}</span>
                                     @endif
+                                    @if($order->damageReports()->exists())
+                                        <span class="text-[11px] bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1">
+                                            ⚠️ Ada Klaim Kerusakan
+                                        </span>
+                                    @endif
                                 </div>
                                 <span class="text-xs sm:text-sm text-gray-500 mt-1">
                                     Jadwal Sewa: <strong class="text-gray-700 font-semibold">{{ $order->date_range }}</strong> &bull; Dipesan {{ $order->created_at ? $order->created_at->translatedFormat('d M Y') : '-' }}
@@ -236,6 +241,14 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 <span>Lihat Detail</span>
                             </button>
+
+                            @if($order->damageReports()->exists())
+                                <a href="{{ route('customer.orders.damage', $order->id) }}"
+                                   class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold py-2.5 rounded-xl transition text-sm flex items-center justify-center gap-1.5 shadow-2xs">
+                                    <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <span>Lihat Klaim Kerusakan</span>
+                                </a>
+                            @endif
                             
                             @if($order->can_cancel)
                                 <button type="button" 

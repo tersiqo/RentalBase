@@ -69,6 +69,16 @@ class Order extends Model
         return $this->hasMany(ReturnModel::class);
     }
 
+    public function damageReports()
+    {
+        return $this->hasMany(DamageReport::class);
+    }
+
+    public function damageCases()
+    {
+        return $this->hasManyThrough(DamageCase::class, DamageReport::class);
+    }
+
     public function getStatusLabelAttribute(): string
     {
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
