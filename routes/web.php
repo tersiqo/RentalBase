@@ -81,6 +81,7 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AdminDashboardController::class, 'logout'])->name('logout');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{order}/confirm', [OrderController::class, 'confirm'])->name('orders.confirm');
     Route::post('/orders/{order}/reject', [OrderController::class, 'reject'])->name('orders.reject');
     Route::get('/shipments', [ShipmentController::class, 'index'])->name('shipments.index');

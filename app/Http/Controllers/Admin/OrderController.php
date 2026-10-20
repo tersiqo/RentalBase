@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\EquipmentUnit;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class OrderController extends Controller
 {
@@ -86,6 +88,69 @@ class OrderController extends Controller
         ];
 
         return view('admin.orders.index', compact('orders', 'statusOptions'));
+    }
+
+    /**
+     * Halaman detail pesanan.
+     * Menampilkan semua informasi pesanan secara lengkap untuk admin.
+     */
+    public function show(Order $order)
+    {
+        // Pastikan order milik toko yang sedang login
+        $user = Auth::user();
+        if (! $user) {
+            $user = \App\Models\User::whereNotNull('client_id')->first();
+        }
+        $client = $user?->client;
+
+        if (! $client || $order->client_id !== $client->id) {
+            abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
+        }
+
+        // Eager load semua relasi yang dibutuhkan halaman detail
+        $order->load([
+            'user',
+            'orderItems.product',
+            'orderItems.orderItemUnits.equipmentUnit',
+            'payments',
+            'latestPayment',
+            'identityGuarantee',
+            'shipment',
+        ]);
+
+        // Ambil daftar unit fisik milik toko ini yang statusnya 'available'
+        // untuk keperluan dropdown alokasi unit
+        $availableUnits = EquipmentUnit::where('client_id', $client->id)
+            ->where('status', 'available')
+            ->with('product')
+            ->get();
+
+        // Helper: ambil URL file dari storage (disk public atau s3)
+        // Mengembalikan null jika path kosong
+        $getFileUrl = function (?string $path, string $disk = 'public'): ?string {
+            if (! $path) {
+                return null;
+            }
+            if (str_starts_with($path, 'http')) {
+                return $path;
+            }
+            return Storage::disk($disk)->url($path);
+        };
+
+        // URL preview foto identitas (KTP dan selfie)
+        $ktpUrl    = $getFileUrl($order->identityGuarantee?->ktp_photo);
+        $selfieUrl = $getFileUrl($order->identityGuarantee?->selfie_photo);
+
+        // URL preview bukti pembayaran (dari payment terakhir)
+        $paymentProofUrl = $getFileUrl($order->latestPayment?->proof_of_payment);
+
+        return view('admin.orders.show', compact(
+            'order',
+            'availableUnits',
+            'ktpUrl',
+            'selfieUrl',
+            'paymentProofUrl',
+        ));
     }
         /**
      * Admin menerima/mengkonfirmasi pesanan.
