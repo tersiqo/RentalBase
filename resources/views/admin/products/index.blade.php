@@ -125,30 +125,28 @@
         </div>
     </div>
 
-    {{-- FILTER & SEARCH TOOLBAR --}}
+    {{-- FILTER & SEARCH TOOLBAR (REAL-TIME INSTANT FILTER) --}}
     <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs">
-        <form method="GET" action="{{ route('admin.products.index') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
             
-            {{-- Pencarian --}}
+            {{-- Pencarian Realtime --}}
             <div class="sm:col-span-5 relative">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
                 <input type="text" 
-                       name="search" 
-                       value="{{ request('search') }}" 
-                       placeholder="Cari nama produk atau deskripsi..." 
+                       x-model="searchQuery" 
+                       placeholder="Cari nama produk, deskripsi, atau slug..." 
                        class="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition">
             </div>
 
             {{-- Filter Kategori --}}
             <div class="sm:col-span-3">
-                <select name="category_id" 
-                        onchange="this.form.submit()"
+                <select x-model="selectedCategory" 
                         class="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition text-slate-700">
                     <option value="">Semua Kategori</option>
                     @foreach($categories as $category)
-                        <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                        <option value="{{ $category->id }}">
                             {{ $category->name }}
                         </option>
                     @endforeach
@@ -157,28 +155,32 @@
 
             {{-- Filter Status --}}
             <div class="sm:col-span-2">
-                <select name="status" 
-                        onchange="this.form.submit()"
+                <select x-model="selectedStatus" 
                         class="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition text-slate-700">
                     <option value="">Semua Status</option>
-                    <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif</option>
-                    <option value="nonaktif" {{ request('status') === 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                    <option value="aktif">Aktif</option>
+                    <option value="nonaktif">Nonaktif</option>
                 </select>
             </div>
 
-            {{-- Tombol Submit & Reset --}}
+            {{-- Aksi Reset & Indikator Hasil --}}
             <div class="sm:col-span-2 flex items-center gap-2">
-                <button type="submit" class="w-full py-2 px-3 text-xs font-bold rounded-xl bg-slate-800 text-white hover:bg-slate-900 transition flex items-center justify-center gap-1.5">
-                    <span>Filter</span>
-                </button>
-                @if(request()->filled('search') || request()->filled('category_id') || request()->filled('status'))
-                    <a href="{{ route('admin.products.index') }}" class="py-2 px-3 text-xs font-bold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition" title="Reset Filter">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                    </a>
-                @endif
+                <template x-if="hasActiveFilters">
+                    <button type="button" 
+                            @click="resetFilters()" 
+                            class="w-full py-2 px-3 text-xs font-bold rounded-xl border border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 transition flex items-center justify-center gap-1.5 shadow-xs">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <span>Reset Filter</span>
+                    </button>
+                </template>
+                <template x-if="!hasActiveFilters">
+                    <div class="w-full py-2 px-2 text-[11px] font-semibold text-slate-400 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl truncate">
+                        <span x-text="productsData.length + ' Produk'"></span>
+                    </div>
+                </template>
             </div>
 
-        </form>
+        </div>
     </div>
 
     {{-- TABEL DAFTAR PRODUK --}}
@@ -198,7 +200,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-sm">
                         @foreach($products as $product)
-                            <tr class="hover:bg-slate-50/50 transition">
+                            <tr x-show="matchesFilter({{ $product->id }})" class="hover:bg-slate-50/50 transition">
                                 
                                 {{-- Thumbnail & Nama --}}
                                 <td class="py-3.5 px-4">
@@ -296,14 +298,32 @@
 
                             </tr>
                         @endforeach
+
+                        {{-- Empty state saat filter realtime menghasilkan 0 produk --}}
+                        <tr x-show="filteredCount === 0" class="bg-white">
+                            <td colspan="6" class="py-12 px-4 text-center">
+                                <div class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 mx-auto flex items-center justify-center mb-3 shadow-inner">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-800">Tidak Ada Produk yang Cocok</h4>
+                                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                                    Tidak ada produk yang memenuhi kriteria pencarian dan filter yang Anda pilih.
+                                </p>
+                                <button type="button" @click="resetFilters()" class="mt-4 px-4 py-2 text-xs font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl transition shadow-xs">
+                                    Reset Semua Filter
+                                </button>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
             {{-- PAGINATION --}}
-            <div class="p-4 border-t border-slate-100 bg-slate-50/40">
-                {{ $products->links() }}
-            </div>
+            @if($products->hasPages())
+                <div x-show="!hasActiveFilters" class="p-4 border-t border-slate-100 bg-slate-50/40">
+                    {{ $products->links() }}
+                </div>
+            @endif
         @else
             {{-- EMPTY STATE --}}
             <div class="py-16 px-4 text-center">
@@ -780,6 +800,59 @@
 <script>
     function productManagement() {
         return {
+            searchQuery: '{{ request('search', '') }}',
+            selectedCategory: '{{ request('category_id', '') }}',
+            selectedStatus: '{{ request('status', '') }}',
+
+            productsData: [
+                @foreach($products as $p)
+                {
+                    id: {{ $p->id }},
+                    name: {{ json_encode($p->name) }},
+                    category_id: {{ json_encode((string) $p->category_id) }},
+                    status: {{ json_encode($p->status) }},
+                    description: {{ json_encode($p->description ?? '') }},
+                    slug: {{ json_encode($p->slug ?? '') }}
+                },
+                @endforeach
+            ],
+
+            matchesFilter(productId) {
+                const p = this.productsData.find(item => item.id === productId);
+                if (!p) return true;
+
+                if (this.selectedCategory && p.category_id !== String(this.selectedCategory)) {
+                    return false;
+                }
+                if (this.selectedStatus && p.status !== this.selectedStatus) {
+                    return false;
+                }
+                if (this.searchQuery.trim()) {
+                    const q = this.searchQuery.trim().toLowerCase();
+                    const name = (p.name || '').toLowerCase();
+                    const desc = (p.description || '').toLowerCase();
+                    const slug = (p.slug || '').toLowerCase();
+                    if (!name.includes(q) && !desc.includes(q) && !slug.includes(q)) {
+                        return false;
+                    }
+                }
+                return true;
+            },
+
+            get filteredCount() {
+                return this.productsData.filter(p => this.matchesFilter(p.id)).length;
+            },
+
+            get hasActiveFilters() {
+                return Boolean(this.searchQuery.trim() || this.selectedCategory || this.selectedStatus);
+            },
+
+            resetFilters() {
+                this.searchQuery = '';
+                this.selectedCategory = '';
+                this.selectedStatus = '';
+            },
+
             addModalOpen: false,
             editModalOpen: false,
             deleteModalOpen: false,

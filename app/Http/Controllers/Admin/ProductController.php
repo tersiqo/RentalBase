@@ -47,7 +47,7 @@ class ProductController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        $products = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+        $products = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
 
         $categories = Category::where('client_id', $client->id)
             ->orderBy('name')
