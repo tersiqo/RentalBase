@@ -20,12 +20,30 @@ class TenantRegistrationController extends Controller
         if (Auth::check()) {
             $user = Auth::user();
 
+            if ($user->status === 'pending_setup') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                $activeTab = $request->query('tab', 'login');
+
+                return view('auth.login', compact('activeTab'));
+            }
+
             if ($user->role === 'owner') {
                 return redirect()->route('owner.dashboard');
             }
 
             if ($user->role === 'admin_rental') {
                 return redirect()->route('admin.dashboard');
+            }
+
+            if ($user->role === 'customer') {
+                if ($request->query('tab') === 'register') {
+                    return redirect()->route('customer.home', ['subdomain' => session('active_client_subdomain', 'babyrental')]);
+                }
+
+                return redirect()->intended('/client/babyrental');
             }
 
             return redirect('/');
@@ -178,7 +196,20 @@ class TenantRegistrationController extends Controller
             $activeSubdomain = $client?->subdomain;
         }
 
+        if ($user && $user->status === 'pending_setup') {
+            if ($user->client_id && ($client = Client::find($user->client_id))) {
+                ClientRegistration::where('admin_email', $user->email)->delete();
+                Subscription::where('client_id', $client->id)->delete();
+                $client->delete();
+            }
+            $user->delete();
+        }
+
         Auth::guard('web')->logout();
+
+        $request->session()->forget('tenant_registration');
+        $request->session()->forget('registration_plan');
+        $request->session()->forget('registration_theme_selected');
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -246,6 +277,14 @@ class TenantRegistrationController extends Controller
 
                 return view('auth.setup-payment', compact('client', 'planName', 'price', 'planDetails', 'paymentInfo'));
             }
+        }
+
+        // Jika user belum login, tetapi sudah mengisi Tahap 1 yang tersimpan di session:
+        if ($request->session()->has('tenant_registration.account')) {
+            $plan = $request->session()->get('registration_plan', 'starter');
+            $client = null;
+
+            return view('auth.setup-tenant', compact('plan', 'client'));
         }
 
         $plan = $request->query('plan', 'starter');
@@ -355,6 +394,20 @@ class TenantRegistrationController extends Controller
             }
         }
 
+        // 1. Bersihkan akun pending_setup yang ditinggalkan dengan email/username ini jika ada
+        $abandonedUsers = User::where(function ($q) use ($request) {
+            $q->where('email', $request->email)->orWhere('name', $request->username);
+        })->where('status', 'pending_setup')->get();
+
+        foreach ($abandonedUsers as $abandonedUser) {
+            if ($abandonedUser->client_id && ($client = Client::find($abandonedUser->client_id))) {
+                ClientRegistration::where('admin_email', $abandonedUser->email)->delete();
+                Subscription::where('client_id', $client->id)->delete();
+                $client->delete();
+            }
+            $abandonedUser->delete();
+        }
+
         $request->validate([
             'username' => 'required|string|max:255|unique:users,name|alpha_dash',
             'email' => 'required|string|email|max:255|unique:users,email',
@@ -363,16 +416,16 @@ class TenantRegistrationController extends Controller
             'username.alpha_dash' => 'Username tidak boleh mengandung spasi.',
         ]);
 
-        $user = User::create([
-            'name' => $request->username,
+        $plan = $request->input('plan', $request->query('plan', 'starter'));
+
+        // Simpan data akun tahap 1 di session (Belum dimasukkan ke database)
+        $request->session()->put('tenant_registration.account', [
+            'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'admin_rental',
-            'status' => 'pending_setup',
+            'plan' => $plan,
         ]);
-
-        Auth::login($user);
-        $request->session()->put('registration_plan', $request->input('plan', $request->query('plan', 'starter')));
+        $request->session()->put('registration_plan', $plan);
 
         return redirect()->route('tenant.register');
     }
@@ -391,13 +444,18 @@ class TenantRegistrationController extends Controller
     public function setup(Request $request)
     {
         $user = Auth::user();
-        if (! $user) {
+        $accountData = $request->session()->get('tenant_registration.account');
+
+        if (! $user && ! $accountData) {
             return redirect()->route('login');
         }
 
-        if ($user->status !== 'pending_setup') {
+        if ($user && $user->status !== 'pending_setup') {
             return redirect()->route('admin.dashboard');
         }
+
+        $adminEmail = $user ? $user->email : ($accountData['email'] ?? null);
+        $clientId = $user ? $user->client_id : null;
 
         $request->validate([
             'business_name' => 'required|string|max:255',
@@ -406,8 +464,8 @@ class TenantRegistrationController extends Controller
                 'string',
                 'max:255',
                 'alpha_dash',
-                Rule::unique('clients', 'subdomain')->ignore($user->client_id),
-                Rule::unique('client_registrations', 'subdomain')->ignore($user->email, 'admin_email'),
+                Rule::unique('clients', 'subdomain')->ignore($clientId),
+                Rule::unique('client_registrations', 'subdomain')->ignore($adminEmail, 'admin_email'),
             ],
             'description' => 'required|string',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -433,7 +491,7 @@ class TenantRegistrationController extends Controller
             'logo.mimes' => 'Format file logo harus berupa jpeg, png, jpg, atau gif.',
         ]);
 
-        $logoPath = $user->avatar;
+        $logoPath = $user ? $user->avatar : null;
         if ($request->hasFile('logo')) {
             $logoPath = $request->file('logo')->store('clients/logos', 'public');
         }
@@ -441,6 +499,22 @@ class TenantRegistrationController extends Controller
         DB::beginTransaction();
 
         try {
+            // Jika user belum dibuat di DB (berasal dari session tahap 1), buat sekarang:
+            if (! $user && $accountData) {
+                $ownerName = $request->filled('owner_name') ? $request->owner_name : $accountData['username'];
+                $user = User::create([
+                    'name' => $ownerName,
+                    'email' => $accountData['email'],
+                    'password' => $accountData['password'],
+                    'phone' => $request->phone,
+                    'address' => $request->address,
+                    'avatar' => $logoPath,
+                    'role' => 'admin_rental',
+                    'status' => 'pending_setup',
+                ]);
+                Auth::login($user);
+            }
+
             $clientData = [
                 'business_name' => $request->business_name,
                 'description' => $request->description,
@@ -679,6 +753,10 @@ class TenantRegistrationController extends Controller
     public function handleRegistration(Request $request)
     {
         if (! Auth::check()) {
+            if ($request->filled('business_name') && $request->session()->has('tenant_registration.account')) {
+                return $this->setup($request);
+            }
+
             return $this->register($request);
         }
 

@@ -122,7 +122,7 @@
                     <div class="icon-left">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     </div>
-                    <input id="owner_name" name="owner_name" type="text" class="input @error('owner_name') is-invalid @enderror" value="{{ old('owner_name', auth()->user()->name) }}" placeholder="Nama Lengkap" required>
+                    <input id="owner_name" name="owner_name" type="text" class="input @error('owner_name') is-invalid @enderror" value="{{ old('owner_name', auth()->user()?->name ?? session('tenant_registration.account.username', '')) }}" placeholder="Nama Lengkap" required>
                 </div>
                 @error('owner_name')
                     <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
@@ -135,7 +135,7 @@
                     <div class="icon-left">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                     </div>
-                    <input id="phone" name="phone" type="tel" class="input @error('phone') is-invalid @enderror" value="{{ old('phone', auth()->user()->phone ?? '') }}" placeholder="081234567890" required>
+                    <input id="phone" name="phone" type="tel" class="input @error('phone') is-invalid @enderror" value="{{ old('phone', auth()->user()?->phone ?? '') }}" placeholder="081234567890" required>
                 </div>
                 @error('phone')
                     <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
@@ -145,7 +145,7 @@
 
         <div class="field">
             <label for="address">Alamat Lengkap <i>*</i></label>
-            <textarea id="address" name="address" class="input @error('address') is-invalid @enderror" rows="2" placeholder="Alamat rumah/kantor" required style="resize: vertical; padding-left: 16px;">{{ old('address', auth()->user()->address ?? '') }}</textarea>
+            <textarea id="address" name="address" class="input @error('address') is-invalid @enderror" rows="2" placeholder="Alamat rumah/kantor" required style="resize: vertical; padding-left: 16px;">{{ old('address', auth()->user()?->address ?? '') }}</textarea>
             @error('address')
                 <span style="color: var(--red-500); font-size: 12px; margin-top: 4px; display: block; font-weight: 500;">{{ $message }}</span>
             @enderror
@@ -260,6 +260,15 @@
             Berikutnya
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </button>
+
+        <div style="text-align: center; margin-top: 16px;">
+            <a href="#" onclick="event.preventDefault(); document.getElementById('cancel-tenant-setup-form').submit();" style="font-size: 13px; color: var(--slate-400); text-decoration: none; font-weight: 500;">
+                Batal dan keluar dari pendaftaran toko
+            </a>
+        </div>
+    </form>
+    <form id="cancel-tenant-setup-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+        @csrf
     </form>
 
     <script>
