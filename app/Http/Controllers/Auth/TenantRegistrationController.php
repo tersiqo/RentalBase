@@ -127,7 +127,7 @@ class TenantRegistrationController extends Controller
                 Auth::logout();
 
                 return back()->withInput()->withErrors([
-                    'email' => 'Akun ini terdaftar sebagai Pengelola/Admin Toko. Silakan klik tab "Admin" di atas untuk masuk.',
+                    'email' => 'Akun ini terdaftar sebagai Pengelola/Admin Toko. Silakan klik tab "Admin Toko" di atas untuk masuk.',
                 ]);
             }
 
@@ -137,6 +137,12 @@ class TenantRegistrationController extends Controller
                 return back()->withInput()->withErrors([
                     'email' => 'Akun ini terdaftar sebagai Customer. Silakan klik tab "Customer" di atas untuk masuk.',
                 ]);
+            }
+
+            if ($user->role === 'owner') {
+                Auth::logout();
+
+                return redirect()->route('owner.login')->with('info', 'Akun Anda terdaftar sebagai Owner Platform. Silakan masuk melalui Portal Khusus Owner.');
             }
 
             if ($user->status === 'menunggu_verifikasi') {
@@ -156,10 +162,6 @@ class TenantRegistrationController extends Controller
             }
 
             $request->session()->regenerate();
-
-            if ($user->role === 'owner') {
-                return redirect()->intended(route('owner.dashboard'));
-            }
 
             if ($user->role === 'admin_rental') {
                 return redirect()->intended(route('admin.dashboard'));

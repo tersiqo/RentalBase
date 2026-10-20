@@ -22,9 +22,36 @@ class OwnerAuthAndDashboardTest extends TestCase
         $response->assertSee('Masuk ke Akun Anda');
     }
 
-    public function test_owner_can_login_and_is_redirected_to_owner_dashboard(): void
+    public function test_owner_login_page_is_accessible(): void
+    {
+        $response = $this->get('/owner/login');
+
+        $response->assertStatus(200);
+        $response->assertSee('Portal Owner Platform');
+    }
+
+    public function test_owner_can_login_via_dedicated_portal_and_is_redirected_to_owner_dashboard(): void
     {
         $owner = User::create([
+            'name' => 'Owner Platform',
+            'email' => 'owner@rentalbase.id',
+            'password' => Hash::make('password123'),
+            'role' => 'owner',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->post('/owner/login', [
+            'email' => 'owner@rentalbase.id',
+            'password' => 'password123',
+        ]);
+
+        $response->assertRedirect('/owner/dashboard');
+        $this->assertAuthenticatedAs($owner);
+    }
+
+    public function test_owner_logging_in_via_public_login_is_redirected_to_owner_login(): void
+    {
+        User::create([
             'name' => 'Owner Platform',
             'email' => 'owner@rentalbase.id',
             'password' => Hash::make('password123'),
@@ -37,8 +64,29 @@ class OwnerAuthAndDashboardTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertRedirect('/owner/dashboard');
-        $this->assertAuthenticatedAs($owner);
+        $response->assertRedirect('/owner/login');
+        $response->assertSessionHas('info');
+        $this->assertGuest();
+    }
+
+    public function test_non_owner_cannot_login_via_owner_portal(): void
+    {
+        User::create([
+            'name' => 'Customer Biasa',
+            'email' => 'customer@gmail.com',
+            'password' => Hash::make('password123'),
+            'role' => 'customer',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->from('/owner/login')->post('/owner/login', [
+            'email' => 'customer@gmail.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertRedirect('/owner/login');
+        $response->assertSessionHasErrors(['email']);
+        $this->assertGuest();
     }
 
     public function test_admin_rental_can_login_and_is_redirected_to_admin_dashboard(): void
@@ -125,7 +173,7 @@ class OwnerAuthAndDashboardTest extends TestCase
     {
         $response = $this->get('/owner/dashboard');
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect('/owner/login');
     }
 
     public function test_admin_rental_cannot_access_owner_dashboard(): void
@@ -219,7 +267,7 @@ class OwnerAuthAndDashboardTest extends TestCase
 
         $response = $this->actingAs($owner)->post('/owner/logout');
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect('/owner/login');
         $this->assertGuest();
     }
 }

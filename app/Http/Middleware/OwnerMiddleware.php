@@ -16,14 +16,14 @@ class OwnerMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (! Auth::check()) {
-            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
+            return redirect()->route('owner.login')->with('error', 'Silakan masuk terlebih dahulu untuk mengakses Portal Owner.');
         }
 
         $user = Auth::user();
 
         if ($user->status !== 'aktif') {
             Auth::logout();
-            return redirect()->route('login')->with('error', 'Akun tidak aktif.');
+            return redirect()->route('owner.login')->with('error', 'Akun tidak aktif.');
         }
 
         if ($user->role !== 'owner') {
@@ -31,7 +31,7 @@ class OwnerMiddleware
                 return redirect()->route('admin.dashboard')->with('error', 'Akses ditolak. Halaman ini hanya dapat diakses oleh Owner Platform.');
             }
 
-            return redirect()->route('login')->with('error', 'Akses ditolak. Halaman ini hanya dapat diakses oleh Owner.');
+            return redirect()->route('owner.login')->with('error', 'Akses ditolak. Halaman ini hanya dapat diakses oleh Owner Platform.');
         }
 
         return $next($request);
