@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — {{ $client->business_name ?? 'RentalBase Admin' }}</title>
     <meta name="description" content="Panel Admin RentalBase — Kelola pesanan, produk, dan operasional rental peralatan bayi Anda.">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -180,16 +182,17 @@
         </a>
 
         {{-- Kasus Kerusakan --}}
-        <div title="Fitur Kasus Kerusakan sedang dalam tahap pengembangan (Segera Hadir)."
-             class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed select-none">
-            <span class="shrink-0 w-5 h-5 text-slate-400">
+        <a href="{{ route('admin.damage-cases.index') }}"
+           title="Mencatat tiket kerusakan setelah barang kembali, mengomunikasikan penilaian kepada penyewa, serta mengelola verifikasi kompensasi dan penutupan kasus."
+           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                  {{ request()->routeIs('admin.damage-cases.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
+            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.damage-cases.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
             </span>
             <span x-show="!collapsed || mobileOpen" class="truncate">Kasus Kerusakan</span>
-            <span x-show="!collapsed || mobileOpen" class="ml-auto text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Segera</span>
-        </div>
+        </a>
 
         <hr class="my-3 border-gray-100" x-show="!collapsed || mobileOpen">
 
@@ -225,16 +228,17 @@
         </a>
 
         {{-- Unit --}}
-        <div title="Fitur Manajemen Unit fisik sedang dalam tahap pengembangan (Segera Hadir)."
-             class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed select-none">
-            <span class="shrink-0 w-5 h-5 text-slate-400">
+        <a href="{{ route('admin.units.index') }}"
+           title="Mengelola master data unit fisik individual (kode aset, nomor seri, dan status ketersediaan) perlengkapan rental."
+           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                  {{ request()->routeIs('admin.units.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
+            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.units.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
                 </svg>
             </span>
             <span x-show="!collapsed || mobileOpen" class="truncate">Unit</span>
-            <span x-show="!collapsed || mobileOpen" class="ml-auto text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Segera</span>
-        </div>
+        </a>
 
         <hr class="my-3 border-gray-100" x-show="!collapsed || mobileOpen">
 

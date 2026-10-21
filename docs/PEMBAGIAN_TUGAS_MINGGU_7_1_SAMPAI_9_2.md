@@ -13,10 +13,10 @@
 3. Peta 40 halaman/pekerjaan utama
 4. Minggu 7 Bagian 1 — Layout utama
 5. Minggu 7 Bagian 2 — Keranjang, checkout, order, dan inspeksi
-6. Minggu 8 Bagian 1 — Katalog admin, autentikasi, transaksi, dan kerusakan
-7. Minggu 8 Bagian 2 — Unit, branding, Owner, dan notifikasi
-8. Minggu 9 Bagian 1 — Pembayaran, persetujuan tenant, subscription, activity log
-9. Minggu 9 Bagian 2 — Profil, notifikasi Owner, activity log Owner, dan integrasi
+6. Minggu 8 Bagian 1 — Katalog admin, autentikasi customer, dashboard & client Owner, kerusakan customer
+7. Minggu 8 Bagian 2 — Unit fisik, branding & metode pembayaran, approval tenant & admin toko, retur customer
+8. Minggu 9 Bagian 1 — Kasus kerusakan admin, tenant suspended & error UI, laporan transaksi & subscription, notifikasi customer & admin
+9. Minggu 9 Bagian 2 — Profil customer, integrasi UI, notifikasi & commands Owner, activity log
 10. Aturan integrasi lintas halaman
 11. Perbedaan spesifikasi lama dengan rancangan RentalBase terkini yang harus disinkronkan
 12. Checklist final per anggota
@@ -106,26 +106,26 @@ Peta berikut membagi beban secara seimbang: **tepat 10 pekerjaan per anggota (to
 | 8.1-Y1 | 8 Bagian 1 | Login/Register Customer | Yanuar | ✔
 | 8.1-Y2 | 8 Bagian 1 | Lupa/Reset Password | Yanuar | ✔
 | 8.1-A1 | 8 Bagian 1 | Pemeriksaan Kondisi Fisik Admin | Iak (dialokasikan di Minggu 8.1) | ✔
-| 8.1-F2 | 8 Bagian 1 | Laporan Transaksi Admin | Fiza |
-| 8.1-I3 | 8 Bagian 1 | Daftar dan Detail Kasus Kerusakan Admin | Iqo (dialihkan dari Iak / 8.1-A1) |
+| 8.1-F1 | 8 Bagian 1 | Dashboard Owner | Fiza (dialihkan ke Minggu 8.1 / sebelumnya 8.2-F3) | ✔
+| 8.1-F2 | 8 Bagian 1 | Manajemen Client Owner | Fiza (dialihkan ke Minggu 8.1 / sebelumnya 8.2-F1) | ✔
 | 8.1-I4 | 8 Bagian 1 | Laporan Kerusakan Customer | Iqo (dialihkan dari Iak / 8.1-A2) | ✔
-| 8.2-I1 | 8 Bagian 2 | Unit Fisik Admin | Iqo |
+| 8.2-I1 | 8 Bagian 2 | Unit Fisik Admin | Iqo | ✔
 | 8.2-Y3 | 8 Bagian 2 | Profil/Branding Admin | Yanuar (dialihkan dari Iqo / 8.2-I2) | ✔
-| 8.2-Y1 | 8 Bagian 2 | Metode Pembayaran Admin | Yanuar (dimajukan ke Minggu 8.2) |
-| 8.2-Y2 | 8 Bagian 2 | Halaman Tenant Tidak Aktif/Suspended | Yanuar |
-| 8.2-F3 | 8 Bagian 2 | Dashboard Owner | Fiza (ditukar dari Yanuar / 8.2-Y3) | ✔
-| 8.2-F1 | 8 Bagian 2 | Manajemen Client Owner | Fiza | ✔
-| 8.2-F2 | 8 Bagian 2 | Manajemen Akun Admin Toko (Via Profil Admin) | Fiza | ✔
+| 8.2-Y1 | 8 Bagian 2 | Metode Pembayaran Admin | Yanuar (dimajukan ke Minggu 8.2) | ✔
 | 8.2-F4 | 8 Bagian 2 | Antrean Persetujuan Tenant Owner | Fiza (dimajukan dari 9.1 / dialihkan dari Yanuar) | ✔
-| 8.2-A3 | 8 Bagian 2 | Pengembalian Customer | Iak (dialihkan ke Minggu 8.2) |
-| 8.2-A1 | 8 Bagian 2 | Notifikasi Customer | Iak |
-| 8.2-A2 | 8 Bagian 2 | Notifikasi Admin | Iak |
+| 8.2-F2 | 8 Bagian 2 | Manajemen Akun Admin Toko (Via Profil Admin) | Fiza | ✔
+| 8.2-A3 | 8 Bagian 2 | Pengembalian Customer | Iak (dialihkan ke Minggu 8.2) | ✔
+| 9.1-I1 | 9 Bagian 1 | Kasus Kerusakan Admin | Iqo (dialihkan dari Minggu 8.1 / sebelumnya 8.1-I3) | ✔
+| 9.1-Y2 | 9 Bagian 1 | Halaman Tenant Tidak Aktif/Suspended | Yanuar (dialihkan dari Minggu 8.2 / sebelumnya 8.2-Y2) |
 | 9.1-Y1 | 9 Bagian 1 | Error 403 dan 404 | Yanuar (dialihkan ke Minggu 9.1) |
+| 9.1-F2 | 9 Bagian 1 | Laporan Transaksi Admin | Fiza (dialihkan dari Minggu 8.1 / sebelumnya 8.1-F2) |
 | 9.1-F1 | 9 Bagian 1 | Subscription Tenant Owner | Fiza |
-| 9.1-A1 | 9 Bagian 1 | Activity Log Admin | Iak |
+| 9.1-A1 | 9 Bagian 1 | Notifikasi Customer | Iak (dialihkan dari Minggu 8.2 / sebelumnya 8.2-A1) |
+| 9.1-A2 | 9 Bagian 1 | Notifikasi Admin | Iak (dialihkan dari Minggu 8.2 / sebelumnya 8.2-A2) |
 | 9.2-I1 | 9 Bagian 2 | Profil Customer dan Integrasi Frontend | Iqo |
 | 9.2-F1 | 9 Bagian 2 | Notifikasi Owner, Backend Order & Scheduled Commands | Fiza |
-| 9.2-A1 | 9 Bagian 2 | Activity Log Owner dan Integrasi Logistik | Iak |
+| 9.2-A1 | 9 Bagian 2 | Activity Log Admin | Iak (dialihkan dari Minggu 9.1 / sebelumnya 9.1-A1) |
+| 9.2-A2 | 9 Bagian 2 | Activity Log Owner dan Integrasi Logistik | Iak |
 
 ---
 
@@ -837,67 +837,62 @@ Mendokumentasikan keadaan unit fisik sebelum diserahkan ke customer dan setelah 
 ### Kriteria selesai
 Admin dapat menyimpan dua fase inspeksi; record/foto bisa ditinjau kembali; input tidak dapat dikaitkan ke order atau unit yang salah.
 
-## 6.6 — Fiza: Laporan Transaksi Admin
+## 6.6 — Fiza: Dashboard Owner Pusat
 
-**ID:** 8.1-F2  
-**Route pada sumber:** `/admin/reports`  
-**Layout:** Base Layout Admin.
+**ID:** 8.1-F1 (dialihkan ke Minggu 8.1 / sebelumnya 8.2-F3)  
+**Route pada sumber:** `/owner/dashboard`  
+**Layout:** Base Layout Owner yang reusable.
 
 ### Tujuan
-Memberi laporan kinerja transaksi tenant dalam rentang waktu yang dipilih.
+Menampilkan ringkasan kesehatan platform dan kondisi tenant kepada pemilik platform.
 
 ### Komponen UI
-- Filter Start Date/End Date dan tombol Terapkan Filter.
-- Summary cards: jumlah order selesai, pendapatan sewa kotor, pendapatan tambahan (denda dan ganti rugi) sesuai definisi akuntansi yang disepakati.
-- Tabel transaksi: tanggal, ID order, customer, biaya sewa, biaya denda, kompensasi kerusakan, grand total.
-- Tombol unduh CSV/PDF sesuai kemampuan yang disepakati.
-- Loading, data kosong, error, dan indicator filter aktif.
+- Topbar profil Super Admin.
+- Sidebar Owner: Dashboard, Pendaftaran Baru, Client/Tenant, Admin List, Subscriptions, Activity Log, Notifikasi.
+- Empat kartu metrik: total tenant terdaftar, tenant aktif, tenant suspended, tenant yang langganannya segera berakhir sesuai definisi rentang waktu.
+- Tabel ringkas tenant: nama/subdomain, paket, status. Urutan alfabetis dapat digunakan.
+- Loading/error/empty state.
 
 ### Aturan
-- Perhitungan total harus berasal dari agregasi backend dan dapat diaudit.
-- Denda dan kompensasi tidak boleh dihitung ganda pada total.
-- Filter tanggal inklusif/eksklusif harus konsisten dengan API dan ditulis jelas.
-- Laporan hanya untuk tenant aktif milik Admin.
+- **Tidak boleh menampilkan detail transaksi atau order customer tenant pada dashboard Owner** menurut spesifikasi sumber.
+- Angka kuota dan langganan harus bersumber dari backend.
+- Link mengarah ke halaman manajemen Owner yang sesuai.
 
 ### Kriteria selesai
-Ringkasan dan baris tabel sesuai data transaksi; filter mengubah hasil; download (jika diaktifkan) memakai filter yang sama dan tidak bocor data tenant lain.
+Dashboard menampilkan agregat tenant, tidak membocorkan transaksi customer, menu Owner konsisten, dan data status aktual.
 
-## 6.7 — Iqo: Daftar dan Detail Kasus Kerusakan Admin
+## 6.7 — Fiza: Manajemen Client Owner
 
-**ID:** 8.1-I3 (dialihkan dari Iak / 8.1-A1)  
-**Route pada sumber:** `/admin/damage-cases`  
-**Layout:** Base Layout Admin.
+**ID:** 8.1-F2 (dialihkan ke Minggu 8.1 / sebelumnya 8.2-F1)  
+**Route pada sumber:** `/owner/clients`  
+**Layout:** Base Layout Owner.
 
 ### Tujuan
-Mencatat kerusakan setelah barang kembali, mengomunikasikan penilaian kepada customer, dan memantau penyelesaian kompensasi.
+Memungkinkan Owner mencari, meninjau, memperbarui status, dan mengelola informasi tenant di seluruh platform.
 
-### Daftar kasus
-- Filter/pencarian order, nama produk/unit, dan status kasus.
-- Kolom ID order, nama barang/unit, tanggal laporan, status kasus, nominal kompensasi dan aksi detail.
-- Status contoh dalam sumber: menunggu respons, negosiasi, lunas/selesai; label final harus disepakati dengan backend.
-- Tombol untuk membuat laporan baru jika kasus dapat dibuat manual oleh Admin.
+### Tabel
+- Client ID.
+- Nama usaha.
+- Subdomain.
+- Paket subscription.
+- Tanggal kedaluwarsa/akhir subscription.
+- Status client.
+- Aksi lihat/edit/suspend/aktifkan.
+- Pencarian dan filter status/paket bila diperlukan.
 
-### Form laporan baru
-- Pilih order.
-- Pilih produk/unit yang rusak dari barang yang memang terkait dengan order/inspeksi.
-- Textarea deskripsi kerusakan.
-- Multi-upload 3–5 foto bukti, dengan preview, hapus/ganti, dan validasi tipe/ukuran.
-- Input nominal tuntutan ganti rugi dalam Rupiah.
-- Tombol simpan/kirim laporan.
-
-### Detail dan resolusi
-- Galeri foto, deskripsi, nominal dan status kasus.
-- Timeline/percakapan admin-customer jika fitur respons tersedia.
-- Ringkasan respons customer dan bukti pembayaran kompensasi.
-- Tombol “Konfirmasi Lunas & Tutup Kasus” dengan konfirmasi modal.
+### Form/detail client
+- Informasi nama dan deskripsi bisnis, subdomain, paket dan status.
+- Edit subdomain (jika benar-benar dibutuhkan) wajib menjalankan validasi unik, pembaruan routing/tenant, dan konfirmasi karena berdampak pada URL. Tidak boleh hanya mengganti string tanpa memperbarui dependensi.
+- Tombol Suspend/Aktifkan dengan dialog konfirmasi.
+- Saat suspend, minta alasan sesuai kebutuhan audit/notifikasi.
 
 ### Aturan
-- Kasus kerusakan terpisah dari denda terlambat.
-- Nilai kompensasi dan status pembayaran disimpan backend.
-- Jangan menutup kasus sebelum pembayaran/keputusan penyelesaian sesuai kebijakan.
+- Hanya Owner yang dapat melakukan aksi lintas tenant.
+- Perubahan status harus memicu perilaku middleware/tenant sesuai kontrak backend.
+- Jangan mengubah data pelanggan atau order sebagai efek samping dari pengubahan client tanpa aturan yang disetujui.
 
 ### Kriteria selesai
-Kasus dapat dibuat, dilihat, direspons, pembayaran dapat diverifikasi, bukti disimpan, dan status penutupan tercatat.
+Owner dapat mencari, meninjau, mengubah data yang diizinkan, suspend/aktifkan dengan alasan, dan melihat perubahan status secara konsisten.
 
 ## 6.8 — Iqo: Laporan Kerusakan Customer
 
@@ -925,7 +920,7 @@ Customer dapat melihat bukti dan nominal, memberi tanggapan, mengunggah bukti pe
 
 ---
 
-# 7. MINGGU 8 BAGIAN 2 — UNIT, BRANDING, OWNER, ORDER ADMIN, DAN NOTIFIKASI
+# 7. MINGGU 8 BAGIAN 2 — UNIT FISIK, BRANDING, METODE PEMBAYARAN, OWNER APPROVAL, ADMIN AKUN, RETUR CUSTOMER
 
 ## 7.1 — Iqo: Unit Fisik Admin
 
@@ -1021,86 +1016,38 @@ Mengatur instruksi pembayaran yang ditampilkan kepada customer saat membayar ord
 ### Kriteria selesai
 Admin dapat menambah/mengubah/menonaktifkan metode, file QRIS tervalidasi, halaman customer hanya menunjukkan metode aktif, dan API dipakai sesuai kontrak.
 
-## 7.4 — Yanuar: Halaman Tenant Tidak Aktif/Suspended
+## 7.4 — Fiza: Antrean Persetujuan Tenant Owner
 
-**ID:** 8.2-Y2  
-**Tipe halaman:** UI global untuk middleware tenant suspend/nonaktif.
-
-### Tujuan
-Memblokir akses ke area tenant jika tenant disuspend/nonaktif sesuai respons backend, dan menjelaskan keadaan itu kepada pengunjung.
-
-### UI
-- Halaman penuh dengan ikon gembok/toko tutup.
-- Judul “Toko Sewa Tidak Aktif”.
-- Penjelasan singkat bahwa toko sedang ditangguhkan/tidak aktif.
-- Sesuai spesifikasi sumber, halaman ini tidak menyediakan navigasi ke katalog toko yang diblokir. Tombol bantuan hanya boleh ditambahkan jika disetujui.
-
-### Perilaku
-- Middleware/backend yang menentukan tenant suspended; UI tidak menggunakan daftar tenant hardcoded.
-- Tangani HTTP/status error yang disepakati dan jangan menampilkan layar suspend untuk masalah jaringan umum.
-- Halaman hanya memblokir area tenant terkait, bukan otomatis memblokir root RentalBase atau tenant lain.
-
-### Kriteria selesai
-Saat backend menandai client `suspended`, halaman tenant menampilkan layar ini; ketika status kembali active, akses normal pulih.
-
-## 7.5 — Fiza: Dashboard Owner Pusat
-
-**ID:** 8.2-F3 (ditukar dari Yanuar / 8.2-Y3)  
-**Route pada sumber:** `/owner/dashboard`  
-**Layout:** Base Layout Owner yang reusable.
-
-### Tujuan
-Menampilkan ringkasan kesehatan platform dan kondisi tenant kepada pemilik platform.
-
-### Komponen UI
-- Topbar profil Super Admin.
-- Sidebar Owner: Dashboard, Pendaftaran Baru, Client/Tenant, Admin List, Subscriptions, Activity Log, Notifikasi.
-- Empat kartu metrik: total tenant terdaftar, tenant aktif, tenant suspended, tenant yang langganannya segera berakhir sesuai definisi rentang waktu.
-- Tabel ringkas tenant: nama/subdomain, paket, status. Urutan alfabetis dapat digunakan.
-- Loading/error/empty state.
-
-### Aturan
-- **Tidak boleh menampilkan detail transaksi atau order customer tenant pada dashboard Owner** menurut spesifikasi sumber.
-- Angka kuota dan langganan harus bersumber dari backend.
-- Link mengarah ke halaman manajemen Owner yang sesuai.
-
-### Kriteria selesai
-Dashboard menampilkan agregat tenant, tidak membocorkan transaksi customer, menu Owner konsisten, dan data status aktual.
-
-## 7.6 — Fiza: Manajemen Client Owner
-
-**ID:** 8.2-F1  
-**Route pada sumber:** `/owner/clients`  
+**ID:** 8.2-F4 (dimajukan dari 9.1-F2 / dialihkan dari Yanuar / 9.1-Y1)  
+**Route pada sumber:** `/owner/registrations`  
 **Layout:** Base Layout Owner.
 
 ### Tujuan
-Memungkinkan Owner mencari, meninjau, memperbarui status, dan mengelola informasi tenant di seluruh platform.
+Memberi tim pusat kemampuan meninjau pengajuan tenant baru (dari Form Pendaftaran Tenant buatan Fiza), memverifikasi data PIC/usaha, menghubungi calon tenant via WhatsApp, dan memproses persetujuan toko.
 
-### Tabel
-- Client ID.
-- Nama usaha.
-- Subdomain.
-- Paket subscription.
-- Tanggal kedaluwarsa/akhir subscription.
-- Status client.
-- Aksi lihat/edit/suspend/aktifkan.
-- Pencarian dan filter status/paket bila diperlukan.
+### Antrean pendaftaran
+- Tabel tanggal pengajuan, nama calon usaha, subdomain yang diminta, paket langganan (Starter/Business/Professional), nomor kontak WhatsApp PIC, dan status pengajuan.
+- Filter/pencarian status (`menunggu_verifikasi`, `disetujui`, `ditolak`) atau pencarian nama calon usaha.
+- Empty state saat tidak ada antrean pengajuan baru.
 
-### Form/detail client
-- Informasi nama dan deskripsi bisnis, subdomain, paket dan status.
-- Edit subdomain (jika benar-benar dibutuhkan) wajib menjalankan validasi unik, pembaruan routing/tenant, dan konfirmasi karena berdampak pada URL. Tidak boleh hanya mengganti string tanpa memperbarui dependensi.
-- Tombol Suspend/Aktifkan dengan dialog konfirmasi.
-- Saat suspend, minta alasan sesuai kebutuhan audit/notifikasi.
+### Review detail/modal
+- Informasi lengkap usaha dan PIC: nama usaha, deskripsi, nama lengkap PIC, email, dan nomor WhatsApp.
+- Subdomain yang diajukan dan paket yang dipilih.
+- Bukti pembayaran biaya platform/langganan jika tenant mengunggahnya pada saat registrasi.
+- **Tombol WhatsApp Direct**: Tautan cepat `https://wa.me/{admin_phone}` dengan template pesan pembuka otomatis untuk verifikasi cepat langsung ke PIC.
+- Tombol **Tolak**: membuka modal input alasan penolakan yang akan dicatat di database dan dapat dibaca calon tenant di halaman cek status.
+- Tombol **Setujui & Buat Toko**: menampilkan konfirmasi, memicu otomatisasi provisioning database tenant, membuat akun Admin Rental awal, dan mengirim email notifikasi resmi berisi instruksi aktivasi dan kredensial login admin.
 
 ### Aturan
-- Hanya Owner yang dapat melakukan aksi lintas tenant.
-- Perubahan status harus memicu perilaku middleware/tenant sesuai kontrak backend.
-- Jangan mengubah data pelanggan atau order sebagai efek samping dari pengubahan client tanpa aturan yang disetujui.
+- Fitur ini merupakan bagian integral dari panel Owner yang dikelola Fiza dan dimajukan ke Minggu 8.2 agar alur verifikasi calon tenant selaras dengan pengelolaan client di panel Owner.
+- Persetujuan wajib memvalidasi kembali keunikan subdomain dan kelengkapan data.
+- Semua alur provisioning tenant, pembuatan akun admin, dan pengiriman email berjalan transaksional di backend (DB transaction).
+- Jika proses provisioning gagal, rollback dilakukan dan UI menampilkan pesan error teknis yang informatif tanpa mengubah status menjadi `disetujui`.
 
 ### Kriteria selesai
-Owner dapat mencari, meninjau, mengubah data yang diizinkan, suspend/aktifkan dengan alasan, dan melihat perubahan status secara konsisten.
+Owner dapat meninjau data pengajuan, menghubungi via WhatsApp direct, menolak dengan alasan tercatat, menyetujui pengajuan dengan pembuatan toko & admin otomatis serta trigger email konfirmasi, dan tenant aktif siap diakses via subdomain.
 
-## 7.7 — Fiza: Manajemen Akun Admin Toko (Via Profil Admin)
+## 7.5 — Fiza: Manajemen Akun Admin Toko (Via Profil Admin)
 
 **ID:** 8.2-F2  
 **Route kanonis:** `/admin/admins` (diakses melalui **Dropdown Menu Profil Admin** di topbar/sidebar)  
@@ -1136,94 +1083,7 @@ Memungkinkan Admin Rental (pemilik/pengelola toko) untuk membuat akun Admin Rent
 ### Kriteria selesai
 Admin Rental dapat membuka menu **Kelola / Buat Akun Admin** dari dropdown Profil, melihat sisa kuota admin sesuai paket tokonya, menambahkan akun Admin Rental baru untuk tokonya selama kuota masih tersedia, serta mengelola status aktif rekan admin tanpa bisa mengakses admin milik toko lain.
 
-## 7.8 — Fiza: Antrean Persetujuan Tenant Owner
-
-**ID:** 8.2-F4 (dimajukan dari 9.1-F2 / dialihkan dari Yanuar / 9.1-Y1)  
-**Route pada sumber:** `/owner/registrations`  
-**Layout:** Base Layout Owner.
-
-### Tujuan
-Memberi tim pusat kemampuan meninjau pengajuan tenant baru (dari Form Pendaftaran Tenant buatan Fiza), memverifikasi data PIC/usaha, menghubungi calon tenant via WhatsApp, dan memproses persetujuan toko.
-
-### Antrean pendaftaran
-- Tabel tanggal pengajuan, nama calon usaha, subdomain yang diminta, paket langganan (Starter/Business/Professional), nomor kontak WhatsApp PIC, dan status pengajuan.
-- Filter/pencarian status (`menunggu_verifikasi`, `disetujui`, `ditolak`) atau pencarian nama calon usaha.
-- Empty state saat tidak ada antrean pengajuan baru.
-
-### Review detail/modal
-- Informasi lengkap usaha dan PIC: nama usaha, deskripsi, nama lengkap PIC, email, dan nomor WhatsApp.
-- Subdomain yang diajukan dan paket yang dipilih.
-- Bukti pembayaran biaya platform/langganan jika tenant mengunggahnya pada saat registrasi.
-- **Tombol WhatsApp Direct**: Tautan cepat `https://wa.me/{admin_phone}` dengan template pesan pembuka otomatis untuk verifikasi cepat langsung ke PIC.
-- Tombol **Tolak**: membuka modal input alasan penolakan yang akan dicatat di database dan dapat dibaca calon tenant di halaman cek status.
-- Tombol **Setujui & Buat Toko**: menampilkan konfirmasi, memicu otomatisasi provisioning database tenant, membuat akun Admin Rental awal, dan mengirim email notifikasi resmi berisi instruksi aktivasi dan kredensial login admin.
-
-### Aturan
-- Fitur ini merupakan bagian integral dari panel Owner yang dikelola Fiza dan dimajukan ke Minggu 8.2 agar alur verifikasi calon tenant selaras dengan pengelolaan client di panel Owner.
-- Persetujuan wajib memvalidasi kembali keunikan subdomain dan kelengkapan data.
-- Semua alur provisioning tenant, pembuatan akun admin, dan pengiriman email berjalan transaksional di backend (DB transaction).
-- Jika proses provisioning gagal, rollback dilakukan dan UI menampilkan pesan error teknis yang informatif tanpa mengubah status menjadi `disetujui`.
-
-### Kriteria selesai
-Owner dapat meninjau data pengajuan, menghubungi via WhatsApp direct, menolak dengan alasan tercatat, menyetujui pengajuan dengan pembuatan toko & admin otomatis serta trigger email konfirmasi, dan tenant aktif siap diakses via subdomain.
-
-## 7.9 — Iak: Notifikasi Customer
-
-**ID:** 8.2-A1  
-**Route pada sumber:** `/notifications`  
-**Layout:** Base Layout Customer.
-
-### Tujuan
-Menampilkan pemberitahuan yang relevan dengan order dan aktivitas customer.
-
-### Komponen UI
-- Daftar/feed yang dapat di-scroll.
-- Ikon berdasarkan tipe notifikasi (misalnya pengiriman, pembayaran/denda, verifikasi identitas).
-- Setiap baris: judul, cuplikan pesan, waktu relatif/timestamp, status sudah/belum dibaca.
-- Unread mempunyai penanda visual yang berbeda.
-- Aksi “Tandai Semua Dibaca”.
-- Klik notifikasi mengarah ke order yang sesuai, bila tersedia.
-- Loading, empty, error, dan pagination/load-more jika daftar panjang.
-
-### Aturan
-- Hanya notifikasi untuk user yang sedang login.
-- Link order divalidasi agar user tidak membuka order milik orang lain.
-- Tandai dibaca harus tersimpan di backend, bukan hanya mengubah warna lokal.
-
-### Kriteria selesai
-Notifikasi tampil dari API, status baca tersimpan, tautan konteks bekerja, dan tidak ada notifikasi milik pengguna lain.
-
-## 7.10 — Iak: Notifikasi Admin
-
-**ID:** 8.2-A2  
-**Route pada sumber:** `/admin/notifications`  
-**Layout:** Base Layout Admin.
-
-### Tujuan
-Memperlihatkan kejadian yang perlu ditindaklanjuti Admin Rental di tenant-nya.
-
-### Jenis alert dalam sumber
-- Booking/order baru.
-- Customer mengunggah identitas.
-- Customer mengunggah bukti pembayaran.
-- Peringatan masa subscription tenant hampir habis.
-
-### Komponen UI dan perilaku
-- Feed list seperti notifikasi customer tetapi konteks Admin.
-- Ikon/warna yang membedakan jenis alert.
-- Judul, deskripsi, waktu, status baca.
-- Klik notifikasi mengarah ke halaman tindakan yang sesuai: order detail, review identitas/pembayaran, atau pengaturan subscription bila memang boleh diakses Admin.
-- Tandai dibaca satuan/semua jika endpoint menyediakan.
-
-### Aturan
-- Data order/identitas/pembayaran hanya dari tenant Admin tersebut.
-- Peringatan subscription tidak memberikan Admin akses ke tindakan khusus Owner.
-- Jangan mengirim informasi sensitif berlebihan ke isi notifikasi.
-
-### Kriteria selesai
-Feed berfungsi, link benar, status baca tersimpan, dan konten terisolasi per tenant.
-
-## 7.11 — Iak: Pengembalian Customer
+## 7.6 — Iak: Pengembalian Customer
 
 **ID:** 8.2-A3 (dialihkan dari Minggu 7.2 / sebelumnya 7.2-A1)  
 **Nama halaman:** Form Pengembalian Customer  
@@ -1253,12 +1113,71 @@ Form pengembalian terkirim sukses, data resi dan bukti bayar denda (jika ada) te
 
 ---
 
-# 8. MINGGU 9 BAGIAN 1 — PEMBAYARAN, SUBSCRIPTION, ACTIVITY LOG
+# 8. MINGGU 9 BAGIAN 1 — KASUS KERUSAKAN ADMIN, TENANT SUSPENDED & ERROR UI, LAPORAN TRANSAKSI, SUBSCRIPTION, NOTIFIKASI
 
-## 8.1 — Yanuar: Global Error 403 dan 404
+## 8.1 — Iqo: Daftar dan Detail Kasus Kerusakan Admin
 
-**ID:** 9.1-Y1 (dialihkan dari Minggu 8.2 / sebelumnya 8.2-Y1)  
-**Tipe halaman:** Global Error UI; tidak memakai sidebar/navbar utama.
+**ID:** 9.1-I1 (dialihkan dari Minggu 8.1 / sebelumnya 8.1-I3)  
+**Route pada sumber:** `/admin/damage-cases`  
+**Layout:** Base Layout Admin.
+
+### Tujuan
+Mencatat kerusakan setelah barang kembali, mengomunikasikan penilaian kepada customer, dan memantau penyelesaian kompensasi.
+
+### Daftar kasus
+- Filter/pencarian order, nama produk/unit, dan status kasus.
+- Kolom ID order, nama barang/unit, tanggal laporan, status kasus, nominal kompensasi dan aksi detail.
+- Status contoh dalam sumber: menunggu respons, negosiasi, lunas/selesai; label final harus disepakati dengan backend.
+- Tombol untuk membuat laporan baru jika kasus dapat dibuat manual oleh Admin.
+
+### Form laporan baru
+- Pilih order.
+- Pilih produk/unit yang rusak dari barang yang memang terkait dengan order/inspeksi.
+- Textarea deskripsi kerusakan.
+- Multi-upload 3–5 foto bukti, dengan preview, hapus/ganti, dan validasi tipe/ukuran.
+- Input nominal tuntutan ganti rugi dalam Rupiah.
+- Tombol simpan/kirim laporan.
+
+### Detail dan resolusi
+- Galeri foto, deskripsi, nominal dan status kasus.
+- Timeline/percakapan admin-customer jika fitur respons tersedia.
+- Ringkasan respons customer dan bukti pembayaran kompensasi.
+- Tombol “Konfirmasi Lunas & Tutup Kasus” dengan konfirmasi modal.
+
+### Aturan
+- Kasus kerusakan terpisah dari denda terlambat.
+- Nilai kompensasi dan status pembayaran disimpan backend.
+- Jangan menutup kasus sebelum pembayaran/keputusan penyelesaian sesuai kebijakan.
+
+### Kriteria selesai
+Kasus dapat dibuat, dilihat, direspons, pembayaran dapat diverifikasi, bukti disimpan, dan status penutupan tercatat.
+
+## 8.2 — Yanuar: Halaman Tenant Tidak Aktif/Suspended
+
+**ID:** 9.1-Y2 (dialihkan dari Minggu 8.2 / sebelumnya 8.2-Y2)  
+**Tipe halaman:** UI global untuk middleware tenant suspend/nonaktif.
+
+### Tujuan
+Memblokir akses ke area tenant jika tenant disuspend/nonaktif sesuai respons backend, dan menjelaskan keadaan itu kepada pengunjung.
+
+### UI
+- Halaman penuh dengan ikon gembok/toko tutup.
+- Judul “Toko Sewa Tidak Aktif”.
+- Penjelasan singkat bahwa toko sedang ditangguhkan/tidak aktif.
+- Sesuai spesifikasi sumber, halaman ini tidak menyediakan navigasi ke katalog toko yang diblokir. Tombol bantuan hanya boleh ditambahkan jika disetujui.
+
+### Perilaku
+- Middleware/backend yang menentukan tenant suspended; UI tidak menggunakan daftar tenant hardcoded.
+- Tangani HTTP/status error yang disepakati dan jangan menampilkan layar suspend untuk masalah jaringan umum.
+- Halaman hanya memblokir area tenant terkait, bukan otomatis memblokir root RentalBase atau tenant lain.
+
+### Kriteria selesai
+Saat backend menandai client `suspended`, halaman tenant menampilkan layar ini; ketika status kembali active, akses normal pulih.
+
+## 8.3 — Yanuar: Global Error 403 dan 404
+
+**ID:** 9.1-Y1 (dialihkan ke Minggu 9.1 / sebelumnya 8.2-Y1)  
+**Tipe halaman:** Global Error UI; tidak memakai sidebar/navbar utama.  
 **File Target:** `resources/views/errors/403.blade.php`, `resources/views/errors/404.blade.php`
 
 ### Tujuan
@@ -1279,7 +1198,32 @@ Menampilkan umpan balik yang mudah dipahami saat route tidak ditemukan atau peng
 ### Kriteria selesai
 403 dan 404 berbeda dengan benar, responsif, aman, dan mudah dipahami.
 
-## 8.2 — Fiza: Subscription Paket Owner
+## 8.4 — Fiza: Laporan Transaksi Admin
+
+**ID:** 9.1-F2 (dialihkan dari Minggu 8.1 / sebelumnya 8.1-F2)  
+**Route pada sumber:** `/admin/reports`  
+**Layout:** Base Layout Admin.
+
+### Tujuan
+Memberi laporan kinerja transaksi tenant dalam rentang waktu yang dipilih.
+
+### Komponen UI
+- Filter Start Date/End Date dan tombol Terapkan Filter.
+- Summary cards: jumlah order selesai, pendapatan sewa kotor, pendapatan tambahan (denda dan ganti rugi) sesuai definisi akuntansi yang disepakati.
+- Tabel transaksi: tanggal, ID order, customer, biaya sewa, biaya denda, kompensasi kerusakan, grand total.
+- Tombol unduh CSV/PDF sesuai kemampuan yang disepakati.
+- Loading, data kosong, error, dan indicator filter aktif.
+
+### Aturan
+- Perhitungan total harus berasal dari agregasi backend dan dapat diaudit.
+- Denda dan kompensasi tidak boleh dihitung ganda pada total.
+- Filter tanggal inklusif/eksklusif harus konsisten dengan API dan ditulis jelas.
+- Laporan hanya untuk tenant aktif milik Admin.
+
+### Kriteria selesai
+Ringkasan dan baris tabel sesuai data transaksi; filter mengubah hasil; download (jika diaktifkan) memakai filter yang sama dan tidak bocor data tenant lain.
+
+## 8.5 — Fiza: Subscription Paket Owner
 
 **ID:** 9.1-F1  
 **Route pada sumber:** `/owner/subscriptions`  
@@ -1313,36 +1257,67 @@ Memantau masa langganan tenant dan mengelola perpanjangan secara manual bila pro
 ### Kriteria selesai
 Daftar subscription, indikator jatuh tempo, dan perpanjangan manual terhubung API; status dan masa berlaku konsisten dengan tenant/middleware.
 
-## 8.3 — Iak: Activity Log Admin
+## 8.6 — Iak: Notifikasi Customer
 
-**ID:** 9.1-A1  
-**Route pada sumber:** `/admin/activity-logs`  
+**ID:** 9.1-A1 (dialihkan dari Minggu 8.2 / sebelumnya 8.2-A1)  
+**Route pada sumber:** `/notifications`  
+**Layout:** Base Layout Customer.
+
+### Tujuan
+Menampilkan pemberitahuan yang relevan dengan order dan aktivitas customer.
+
+### Komponen UI
+- Daftar/feed yang dapat di-scroll.
+- Ikon berdasarkan tipe notifikasi (misalnya pengiriman, pembayaran/denda, verifikasi identitas).
+- Setiap baris: judul, cuplikan pesan, waktu relatif/timestamp, status sudah/belum dibaca.
+- Unread mempunyai penanda visual yang berbeda.
+- Aksi “Tandai Semua Dibaca”.
+- Klik notifikasi mengarah ke order yang sesuai, bila tersedia.
+- Loading, empty, error, dan pagination/load-more jika daftar panjang.
+
+### Aturan
+- Hanya notifikasi untuk user yang sedang login.
+- Link order divalidasi agar user tidak membuka order milik orang lain.
+- Tandai dibaca harus tersimpan di backend, bukan hanya mengubah warna lokal.
+
+### Kriteria selesai
+Notifikasi tampil dari API, status baca tersimpan, tautan konteks bekerja, dan tidak ada notifikasi milik pengguna lain.
+
+## 8.7 — Iak: Notifikasi Admin
+
+**ID:** 9.1-A2 (dialihkan dari Minggu 8.2 / sebelumnya 8.2-A2)  
+**Route pada sumber:** `/admin/notifications`  
 **Layout:** Base Layout Admin.
 
 ### Tujuan
-Membantu Admin/tenant menelusuri perubahan data dan aktivitas penting yang dilakukan staf di tokonya.
+Memperlihatkan kejadian yang perlu ditindaklanjuti Admin Rental di tenant-nya.
 
-### Komponen UI
-- Filter tanggal dan jam dari–sampai.
-- Filter pelaku/admin.
-- Tabel read-only berisi waktu aksi, nama pelaku, tipe aksi (badge), deskripsi detail, dan objek/ID yang berubah bila tersedia.
-- Contoh aktivitas sumber: memverifikasi identitas, menghapus/mengubah produk, memperbarui pengaturan, atau tindakan order.
-- Pagination dan empty/error/loading state.
+### Jenis alert dalam sumber
+- Booking/order baru.
+- Customer mengunggah identitas.
+- Customer mengunggah bukti pembayaran.
+- Peringatan masa subscription tenant hampir habis.
+
+### Komponen UI dan perilaku
+- Feed list seperti notifikasi customer tetapi konteks Admin.
+- Ikon/warna yang membedakan jenis alert.
+- Judul, deskripsi, waktu, status baca.
+- Klik notifikasi mengarah ke halaman tindakan yang sesuai: order detail, review identitas/pembayaran, atau pengaturan subscription bila memang boleh diakses Admin.
+- Tandai dibaca satuan/semua jika endpoint menyediakan.
 
 ### Aturan
-- Halaman **read-only**: tidak ada tombol edit atau delete untuk log.
-- Data hanya untuk tenant Admin terkait.
-- Log harus datang dari pencatatan backend. Frontend tidak boleh mengarang audit event sendiri hanya karena tombol diklik.
-- Informasi sensitif (misalnya nomor identitas penuh, password, token, file URL privat) tidak boleh dimasukkan mentah ke deskripsi log.
+- Data order/identitas/pembayaran hanya dari tenant Admin tersebut.
+- Peringatan subscription tidak memberikan Admin akses ke tindakan khusus Owner.
+- Jangan mengirim informasi sensitif berlebihan ke isi notifikasi.
 
 ### Kriteria selesai
-Filter bekerja, catatan aktivitas urut waktu, data hanya dari tenant aktif, dan log tidak bisa diubah dari UI.
+Feed berfungsi, link benar, status baca tersimpan, dan konten terisolasi per tenant.
 
 ---
 
-# 9. MINGGU 9 BAGIAN 2 — PROFIL, NOTIFIKASI OWNER, ACTIVITY LOG OWNER, DAN INTEGRASI FINAL
+# 9. MINGGU 9 BAGIAN 2 — PROFIL CUSTOMER, INTEGRASI FRONTEND, NOTIFIKASI & COMMANDS OWNER, ACTIVITY LOG
 
-## 9.1 — Iqo: Profil Saya Customer
+## 9.1 — Iqo: Profil Saya Customer dan Integrasi Frontend
 
 **ID:** 9.2-I1  
 **Route pada sumber:** `/profile`  
@@ -1443,9 +1418,34 @@ Mengimplementasikan pemanggilan event & listener notifikasi in-app untuk 15 kond
 ### Kriteria selesai
 Halaman notifikasi Owner terhubung API, endpoint order aman dari race condition, 3 command artisan terdaftar di scheduler dan berjalan sukses saat diuji, serta seluruh 15 trigger notifikasi memicu record database notification yang tepat.
 
-## 9.4 — Iak: Activity Log Owner
+## 9.4 — Iak: Activity Log Admin
 
-**ID:** 9.2-A1  
+**ID:** 9.2-A1 (dialihkan dari Minggu 9.1 / sebelumnya 9.1-A1)  
+**Route pada sumber:** `/admin/activity-logs`  
+**Layout:** Base Layout Admin.
+
+### Tujuan
+Membantu Admin/tenant menelusuri perubahan data dan aktivitas penting yang dilakukan staf di tokonya.
+
+### Komponen UI
+- Filter tanggal dan jam dari–sampai.
+- Filter pelaku/admin.
+- Tabel read-only berisi waktu aksi, nama pelaku, tipe aksi (badge), deskripsi detail, dan objek/ID yang berubah bila tersedia.
+- Contoh aktivitas sumber: memverifikasi identitas, menghapus/mengubah produk, memperbarui pengaturan, atau tindakan order.
+- Pagination dan empty/error/loading state.
+
+### Aturan
+- Halaman **read-only**: tidak ada tombol edit atau delete untuk log.
+- Data hanya untuk tenant Admin terkait.
+- Log harus datang dari pencatatan backend. Frontend tidak boleh mengarang audit event sendiri hanya karena tombol diklik.
+- Informasi sensitif (misalnya nomor identitas penuh, password, token, file URL privat) tidak boleh dimasukkan mentah ke deskripsi log.
+
+### Kriteria selesai
+Filter bekerja, catatan aktivitas urut waktu, data hanya dari tenant aktif, dan log tidak bisa diubah dari UI.
+
+## 9.5 — Iak: Activity Log Owner dan Integrasi Logistik
+
+**ID:** 9.2-A2  
 **Route pada sumber:** `/owner/activity-logs`  
 **Layout:** Base Layout Owner.
 
@@ -1655,51 +1655,51 @@ Checklist ini adalah ringkasan hasil yang harus bisa diperagakan pada demo/QA. J
 - [x] **Detail produk (7.1-I2):** galeri foto multi-image, deskripsi/spesifikasi/syarat jaminan, harga dan denda, quantity selector, direct checkout.
 - [x] **Keranjang (7.2-I1):** kelompok berdasarkan periode, hitung subtotal dinamis, pemilihan item, checkout per kelompok tanggal.
 - [x] **Checkout (7.2-I2):** ringkasan sewa, alamat, data jaminan KTP & selfie, upload file, validasi ketersediaan unit.
-- [ ] **Kasus Kerusakan Admin (8.1-I3):** pembuatan tiket kerusakan barang, unggah 3–5 foto bukti cacat, klaim nominal ganti rugi, update status unit menjadi rusak/perawatan, verifikasi bukti kompensasi, penutupan kasus (dialihkan dari Iak / 8.1-A1).
-- [x] **Laporan Kerusakan Customer (8.1-I4):** galeri foto kerusakan, rincian biaya ganti rugi, textarea tanggapan/negosiasi, uploader bukti transfer pembayaran kompensasi (dialihkan dari Iak / 8.1-A2).
 - [x] **Kategori Admin (8.1-I1):** CRUD kategori, jumlah produk, validasi unik per tenant, batas kuota kategori paket.
 - [x] **Produk Admin (8.1-I2):** form detail, multi-foto, cover image, harga per hari, tarif denda per jam, syarat jaminan dan toggle aktif.
-- [ ] **Unit fisik (8.2-I1):** kuota total unit paket, asset code unik, filter status fisik unit, isolasi jadwal sewa.
+- [x] **Laporan Kerusakan Customer (8.1-I4):** galeri foto kerusakan, rincian biaya ganti rugi, textarea tanggapan/negosiasi, uploader bukti transfer pembayaran kompensasi (dialihkan dari Iak / 8.1-A2).
+- [x] **Unit fisik (8.2-I1):** kuota total unit paket, asset code unik, filter status fisik unit, isolasi jadwal sewa.
+- [x] **Kasus Kerusakan Admin (9.1-I1):** pembuatan tiket kerusakan barang, unggah 3–5 foto bukti cacat, klaim nominal ganti rugi, update status unit menjadi rusak/perawatan, verifikasi bukti kompensasi, penutupan kasus (dialihkan ke Minggu 9.1 / sebelumnya 8.1-I3).
 - [ ] **Profil customer & integrasi (9.2-I1):** profil via API, pembersihan data dummy katalog/cart, payload multipart file checkout.
 
 ## 12.2 Yanuar Alda Baran — 10 pekerjaan
 
-- [ ] **Landing Page (7.1-Y1):** Public Layout, Hero CTA "Memulai", showcase fitur SaaS multi-tenant, paket subskripsi (3, 6, 12 bulan), footer legal.
-- [ ] **Pesanan Saya Customer (7.1-Y2):** tab filter status, order cards, badge status terpadu, deep link ke detail pesanan.
-- [ ] **Login Gate & Status Verifikasi Tenant (7.2-Y1):** integrasi pengecekan langsung via form login admin, alert toko masih ditinjau Owner (`menunggu_verifikasi`), alert alasan penolakan (`ditolak`), dan auto-redirect ke dashboard saat disetujui.
-- [ ] **Detail pesanan customer (7.2-Y2):** stepper status lengkap, panel identitas, panel pembayaran, resi pengiriman, panel refund & preview bukti transfer refund.
-- [ ] **Login & Register Customer (8.1-Y1):** form tab masuk/daftar, akun customer global multi-tenant, validasi input, intended redirect setelah login gate.
-- [ ] **Lupa & Reset Password (8.1-Y2):** request reset email, token Laravel resmi, validasi password baru, instruksi login kembali.
-- [ ] **Metode Pembayaran Admin (8.2-Y1):** bank transfer & QRIS toko, uploader barcode QRIS, toggle status aktif, validasi minimum 1 metode aktif (dimajukan ke Minggu 8.2).
-- [ ] **Halaman Tenant Suspended (8.2-Y2):** layar blokir toko nonaktif, responsif terhadap middleware client suspended, isolasi per tenant.
-- [ ] **Profil & Branding Admin (8.2-Y3):** form nama/deskripsi/logo toko, live color picker styling tema toko kustom (Business/Pro), named route kanonis (dialihkan dari Iqo / 8.2-I2).
+- [x] **Landing Page (7.1-Y1):** Public Layout, Hero CTA "Memulai", showcase fitur SaaS multi-tenant, paket subskripsi (3, 6, 12 bulan), footer legal.
+- [x] **Pesanan Saya Customer (7.1-Y2):** tab filter status, order cards, badge status terpadu, deep link ke detail pesanan.
+- [x] **Login Gate & Status Verifikasi Tenant (7.2-Y1):** integrasi pengecekan langsung via form login admin, alert toko masih ditinjau Owner (`menunggu_verifikasi`), alert alasan penolakan (`ditolak`), dan auto-redirect ke dashboard saat disetujui.
+- [x] **Detail pesanan customer (7.2-Y2):** stepper status lengkap, panel identitas, panel pembayaran, resi pengiriman, panel refund & preview bukti transfer refund.
+- [x] **Login & Register Customer (8.1-Y1):** form tab masuk/daftar, akun customer global multi-tenant, validasi input, intended redirect setelah login gate.
+- [x] **Lupa & Reset Password (8.1-Y2):** request reset email, token Laravel resmi, validasi password baru, instruksi login kembali.
+- [x] **Profil & Branding Admin (8.2-Y3):** form nama/deskripsi/logo toko, live color picker styling tema toko kustom (Business/Pro), named route kanonis (dialihkan dari Iqo / 8.2-I2).
+- [x] **Metode Pembayaran Admin (8.2-Y1):** bank transfer & QRIS toko, uploader barcode QRIS, toggle status aktif, validasi minimum 1 metode aktif (dimajukan ke Minggu 8.2).
+- [ ] **Halaman Tenant Suspended (9.1-Y2):** layar blokir toko nonaktif, responsif terhadap middleware client suspended, isolasi per tenant (dialihkan dari Minggu 8.2 / sebelumnya 8.2-Y2).
 - [ ] **Halaman Error 403 & 404 (9.1-Y1):** visual responsif, pesan jelas tanpa leak informasi sensitif, tombol kembali ke beranda aman (dialihkan ke Minggu 9.1).
 
 ## 12.3 Fiza Rahmatus Sholikha — 10 pekerjaan
 
-- [ ] **Dashboard Admin (7.1-F1):** Base Layout Admin reusable, 4 kartu metrik, progres kuota paket produk & unit fisik, tabel 5 pesanan terbaru tenant.
-- [ ] **Form pendaftaran tenant (7.1-F2):** form pendaftaran multi-step publik, pilihan paket, upload logo/dokumen, rate limit `throttle:5,60`, status `menunggu_verifikasi`.
-- [ ] **Login Admin & Owner (7.2-F1):** Auth Layout, isolasi kredensial Admin (tenant) vs Super Admin (Owner), redirect otomatis berdasarkan role.
-- [ ] **Laporan transaksi Admin (8.1-F2):** filter tanggal transaksi, ringkasan pendapatan kotor sewa/denda/ganti rugi, tabel transaksi, export CSV/PDF.
-- [ ] **Dashboard Owner (8.2-F3):** Base Layout Owner reusable, 4 kartu metrik platform (total, aktif, suspended, expiring soon), daftar tenant (ditukar dari Yanuar).
-- [ ] **Manajemen client Owner (8.2-F1):** tabel seluruh tenant, edit profil tenant, validasi perubahan subdomain, aksi suspend/aktifkan dengan input alasan.
-- [ ] **Manajemen Akun Admin Toko via Profil Admin (8.2-F2):** menu dropdown profil Admin, tabel akun admin internal toko, form buat akun admin rental baru (`client_id` otomatis), dan penegakan kuota admin sesuai paket (Starter 1, Business 3, Pro 10).
-- [ ] **Antrean persetujuan tenant Owner (8.2-F4):** tabel pengajuan baru, review detail usaha/PIC, tombol WhatsApp direct (`wa.me`), tolak beralasan, persetujuan transaksional & trigger email aktivasi (dimajukan dari Minggu 9.1 ke Minggu 8.2).
+- [x] **Dashboard Admin (7.1-F1):** Base Layout Admin reusable, 4 kartu metrik, progres kuota paket produk & unit fisik, tabel 5 pesanan terbaru tenant.
+- [x] **Form pendaftaran tenant (7.1-F2):** form pendaftaran multi-step publik, pilihan paket, upload logo/dokumen, rate limit `throttle:5,60`, status `menunggu_verifikasi`.
+- [x] **Login Admin & Owner (7.2-F1):** Auth Layout, isolasi kredensial Admin (tenant) vs Super Admin (Owner), redirect otomatis berdasarkan role.
+- [x] **Dashboard Owner (8.1-F1):** Base Layout Owner reusable, 4 kartu metrik platform (total, aktif, suspended, expiring soon), daftar tenant (dialihkan ke Minggu 8.1 / sebelumnya 8.2-F3).
+- [x] **Manajemen client Owner (8.1-F2):** tabel seluruh tenant, edit profil tenant, validasi perubahan subdomain, aksi suspend/aktifkan dengan input alasan (dialihkan ke Minggu 8.1 / sebelumnya 8.2-F1).
+- [x] **Antrean persetujuan tenant Owner (8.2-F4):** tabel pengajuan baru, review detail usaha/PIC, tombol WhatsApp direct (`wa.me`), tolak beralasan, persetujuan transaksional & trigger email aktivasi (dimajukan dari Minggu 9.1 ke Minggu 8.2).
+- [x] **Manajemen Akun Admin Toko via Profil Admin (8.2-F2):** menu dropdown profil Admin, tabel akun admin internal toko, form buat akun admin rental baru (`client_id` otomatis), dan penegakan kuota admin sesuai paket (Starter 1, Business 3, Pro 10).
+- [ ] **Laporan transaksi Admin (9.1-F2):** filter tanggal transaksi, ringkasan pendapatan kotor sewa/denda/ganti rugi, tabel transaksi, export CSV/PDF (dialihkan ke Minggu 9.1 / sebelumnya 8.1-F2).
 - [ ] **Subscription Owner (9.1-F1):** masa berlaku langganan, indikator jatuh tempo, form perpanjangan manual, pencatatan histori perpanjangan.
 - [ ] **Notifikasi Owner, Backend Order API & Scheduled Commands (9.2-F1):** feed notifikasi pusat, transactional locking order & alokasi unit, 3 scheduled console commands (`orders:auto-cancel-unpaid`, `orders:auto-complete`, `subscriptions:check-expired`), dan 15 in-app notification triggers.
 
 ## 12.4 Iak / Anggota ke-4 — 10 pekerjaan
 
-- [ ] **Pengiriman Admin (7.1-A1):** daftar order siap kirim, pemilihan metode pengiriman (`kurir`/`ambil_toko`), input nama kurir & nomor resi, update status pesanan.
-- [ ] **Penerimaan & Denda Retur Admin (7.1-A2):** konfirmasi barang kembali, perhitungan keterlambatan jam presisi, kalkulator tarif denda backend, override denda dengan catatan.
-- [ ] **Daftar Pesanan Admin (7.2-A3):** filter rentang tanggal sewa, filter status operasional, pencarian order/customer, pagination, isolasi data tenant (dialihkan dari Iqo / 7.2-I3).
-- [ ] **Detail Pesanan Admin (7.2-A1):** konfirmasi/tolak pesanan baru, verifikasi identitas (KTP/selfie), verifikasi pembayaran bank/QRIS, alokasi unit fisik, pembatalan & upload bukti refund manual (dialokasikan di Minggu 7.2).
-- [ ] **Pemeriksaan kondisi fisik (8.1-A1):** checklist inspeksi sebelum serah-terima & sesudah pengembalian, multi-upload foto kondisi (maks 5), catatan cacat fisik (dialokasikan di Minggu 8.1).
-- [ ] **Notifikasi Customer (8.2-A1):** feed notifikasi aktivitas customer, unread badge, filter alert, deep link ke detail order/tiket kerusakan.
-- [ ] **Notifikasi Admin (8.2-A2):** feed alert operasional toko (order baru, unggah KTP, bukti bayar, retur masuk), penanda sudah dibaca, deep link penanganan.
-- [ ] **Pengembalian Customer (8.2-A3):** instruksi retur, pilihan ekspedisi/antar langsung, input nomor resi retur, invoice denda terlambat jika ada, submit bukti bayar denda (dialihkan ke Minggu 8.2).
-- [ ] **Activity Log Admin (9.1-A1):** feed audit trail riwayat perubahan data toko, filter waktu & staf admin, format read-only tanpa aksi hapus.
-- [ ] **Activity Log Owner & Integrasi Logistik (9.2-A1):** jejak audit menyeluruh tingkat platform lintas tenant, filter tenant & pelaku, validasi integrasi resi kurir, foto kondisi fisik & kalkulator denda.
+- [x] **Pengiriman Admin (7.1-A1):** daftar order siap kirim, pemilihan metode pengiriman (`kurir`/`ambil_toko`), input nama kurir & nomor resi, update status pesanan.
+- [x] **Penerimaan & Denda Retur Admin (7.1-A2):** konfirmasi barang kembali, perhitungan keterlambatan jam presisi, kalkulator tarif denda backend, override denda dengan catatan.
+- [x] **Daftar Pesanan Admin (7.2-A3):** filter rentang tanggal sewa, filter status operasional, pencarian order/customer, pagination, isolasi data tenant (dialihkan dari Iqo / 7.2-I3).
+- [x] **Detail Pesanan Admin (7.2-A1):** konfirmasi/tolak pesanan baru, verifikasi identitas (KTP/selfie), verifikasi pembayaran bank/QRIS, alokasi unit fisik, pembatalan & upload bukti refund manual (dialokasikan di Minggu 7.2).
+- [x] **Pemeriksaan kondisi fisik (8.1-A1):** checklist inspeksi sebelum serah-terima & sesudah pengembalian, multi-upload foto kondisi (maks 5), catatan cacat fisik (dialokasikan di Minggu 8.1).
+- [x] **Pengembalian Customer (8.2-A3):** instruksi retur, pilihan ekspedisi/antar langsung, input nomor resi retur, invoice denda terlambat jika ada, submit bukti bayar denda (dialihkan ke Minggu 8.2).
+- [ ] **Notifikasi Customer (9.1-A1):** feed notifikasi aktivitas customer, unread badge, filter alert, deep link ke detail order/tiket kerusakan (dialihkan ke Minggu 9.1 / sebelumnya 8.2-A1).
+- [ ] **Notifikasi Admin (9.1-A2):** feed alert operasional toko (order baru, unggah KTP, bukti bayar, retur masuk), penanda sudah dibaca, deep link penanganan (dialihkan ke Minggu 9.1 / sebelumnya 8.2-A2).
+- [ ] **Activity Log Admin (9.2-A1):** feed audit trail riwayat perubahan data toko, filter waktu & staf admin, format read-only tanpa aksi hapus (dialihkan ke Minggu 9.2 / sebelumnya 9.1-A1).
+- [ ] **Activity Log Owner & Integrasi Logistik (9.2-A2):** jejak audit menyeluruh tingkat platform lintas tenant, filter tenant & pelaku, validasi integrasi resi kurir, foto kondisi fisik & kalkulator denda.
 
 ---
 
@@ -1765,19 +1765,20 @@ Untuk meminimalkan blocker dan saling tunggu antar-anggota tim, urutan implement
 3. **Logistik Pengiriman:** Admin memasukkan metode ekspedisi/pickup dan nomor resi kurir (Iak: `7.1-A1`).
 4. **Pemeriksaan Fisik Unit:** Dokumen inspeksi foto unit fisik sebelum serah-terima dan setelah pengembalian (Iak: `8.1-A1`).
 5. **Pengembalian Barang & Denda:** Customer mengajukan retur (Iak: `8.2-A3`), Admin memverifikasi unit kembali & menghitung denda keterlambatan (Iak: `7.1-A2`).
-6. **Kasus Kerusakan:** Admin membuat tiket ganti rugi kerusakan fisik (Iqo: `8.1-I3`), Customer meninjau & mengunggah bukti bayar kompensasi (Iqo: `8.1-I4`).
+6. **Kasus Kerusakan:** Admin membuat tiket ganti rugi kerusakan fisik (Iqo: `9.1-I1`), Customer meninjau & mengunggah bukti bayar kompensasi (Iqo: `8.1-I4`).
 
 ### Fase 5: Panel Owner Platform, Manajemen Tenant, dan Manajemen Staf Admin Toko
-1. **Dashboard Owner Pusat:** Pemantauan kesehatan platform & 4 kartu metrik agregat (Fiza: `8.2-F3`).
+1. **Dashboard Owner Pusat:** Pemantauan kesehatan platform & 4 kartu metrik agregat (Fiza: `8.1-F1`).
 2. **Antrean Persetujuan Tenant:** Owner meninjau pengajuan toko baru, kontak WhatsApp direct (`wa.me`), tolak atau approve dengan otomatisasi provisioning tenant & akun Admin utama (Fiza: `8.2-F4`).
-3. **Manajemen Client Owner & Manajemen Akun Admin Toko:** Pengelolaan status/suspend tenant oleh Owner (Fiza: `8.2-F1`) serta fitur *self-service* pembuatan/pengelolaan akun Admin tambahan oleh Admin Rental melalui menu Profil sesuai kuota paket (Fiza: `8.2-F2`).
-4. **Penanganan Tenant Suspended:** Halaman Error 403/404 (Yanuar: `9.1-Y1`) dan halaman Tenant Suspended via middleware (Yanuar: `8.2-Y2`).
+3. **Manajemen Client Owner & Manajemen Akun Admin Toko:** Pengelolaan status/suspend tenant oleh Owner (Fiza: `8.1-F2`) serta fitur *self-service* pembuatan/pengelolaan akun Admin tambahan oleh Admin Rental melalui menu Profil sesuai kuota paket (Fiza: `8.2-F2`).
+4. **Penanganan Tenant Suspended:** Halaman Error 403/404 (Yanuar: `9.1-Y1`) dan halaman Tenant Suspended via middleware (Yanuar: `9.1-Y2`).
 5. **Subscription & Siklus Tagihan:** Pelacakan masa aktif langganan tenant & form perpanjangan manual (Fiza: `9.1-F1`).
+6. **Laporan Transaksi Admin:** Filter tanggal, ringkasan pendapatan kotor sewa/denda/ganti rugi, dan export laporan (Fiza: `9.1-F2`).
 
 ### Fase 6: Background Tasks, Notifikasi, Audit Trail, dan Final QA
 1. **Scheduled Console Commands Laravel:** Implementasi 3 background worker cron scheduler untuk auto-cancel pesanan belum dibayar, auto-complete pesanan retur, dan check-expired langganan tenant (Fiza: `9.2-F1`).
-2. **Matriks Notifikasi In-App:** Pemanggilan 15 trigger alert untuk Customer, Admin, dan Owner (Fiza: `9.2-F1`, Iak: `8.2-A1` & `8.2-A2`).
-3. **Audit Trail & Activity Logs:** Pencatatan log aktivitas Admin toko (Iak: `9.1-A1`) dan Owner platform lintas tenant (Iak: `9.2-A1`).
+2. **Matriks Notifikasi In-App:** Pemanggilan 15 trigger alert untuk Customer, Admin, dan Owner (Fiza: `9.2-F1`, Iak: `9.1-A1` & `9.1-A2`).
+3. **Audit Trail & Activity Logs:** Pencatatan log aktivitas Admin toko (Iak: `9.2-A1`) dan Owner platform lintas tenant (Iak: `9.2-A2`).
 4. **Profil Akun & Integrasi Akhir:** Halaman profil customer (Iqo: `9.2-I1`), pembersihan seluruh dummy JSON, dan sinkronisasi rute kanonis.
 5. **End-to-End Testing & Bug Fixing:** Uji coba skenario lengkap dari registrasi tenant → katalog → sewa alat → verifikasi KTP/bayar → kirim → retur → denda/kerusakan → laporan transaksi.
 

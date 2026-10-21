@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\ShipmentController;
 use App\Http\Controllers\Admin\ConditionCheckController;
+use App\Http\Controllers\Admin\DamageCaseController;
+use App\Http\Controllers\Admin\EquipmentUnitController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Auth\GoogleController;
@@ -99,7 +101,14 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::post('/condition-checks', [ConditionCheckController::class, 'store'])->name('condition-checks.store');
     Route::get('/condition-checks/units', [ConditionCheckController::class, 'getUnits'])->name('condition-checks.units');
 
-    Route::get('/damage-cases', fn () => back())->name('damage-cases.index');
+    Route::get('/damage-cases', [DamageCaseController::class, 'index'])->name('damage-cases.index');
+    Route::get('/damage-cases/create', [DamageCaseController::class, 'create'])->name('damage-cases.create');
+    Route::post('/damage-cases', [DamageCaseController::class, 'store'])->name('damage-cases.store');
+    Route::get('/damage-cases/units', [DamageCaseController::class, 'getUnits'])->name('damage-cases.units');
+    Route::get('/damage-cases/{damageCase}', [DamageCaseController::class, 'show'])->name('damage-cases.show');
+    Route::post('/damage-cases/{damageCase}/respond', [DamageCaseController::class, 'respond'])->name('damage-cases.respond');
+    Route::post('/damage-cases/{damageCase}/verify-payment', [DamageCaseController::class, 'verifyPayment'])->name('damage-cases.verify-payment');
+    Route::post('/damage-cases/{damageCase}/close', [DamageCaseController::class, 'close'])->name('damage-cases.close');
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
@@ -109,7 +118,10 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::post('/products/{product}/status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
-    Route::get('/units', fn () => back())->name('units.index');
+    Route::get('/units', [EquipmentUnitController::class, 'index'])->name('units.index');
+    Route::post('/units', [EquipmentUnitController::class, 'store'])->name('units.store');
+    Route::put('/units/{unit}', [EquipmentUnitController::class, 'update'])->name('units.update');
+    Route::delete('/units/{unit}', [EquipmentUnitController::class, 'destroy'])->name('units.destroy');
     Route::get('/reports', fn () => back())->name('reports.index');
     Route::get('/theme', [AdminThemeController::class, 'index'])->name('theme.index');
     Route::post('/theme', [AdminThemeController::class, 'update'])->name('theme.update');

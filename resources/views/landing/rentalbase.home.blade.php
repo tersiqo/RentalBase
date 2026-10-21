@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RentalBase - Kelola Bisnis Rental Peralatan dalam Satu Sistem</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
     
     <!-- CDN Links -->
     <script src="https://cdn.tailwindcss.com"></script>

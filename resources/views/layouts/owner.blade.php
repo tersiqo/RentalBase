@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard Owner') — RentalBase Platform</title>
     <meta name="description" content="Panel Owner Pusat RentalBase — Pantau dan kelola semua tenant rental di platform.">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 

@@ -121,7 +121,7 @@ class OrderController extends Controller
         // Ambil daftar unit fisik milik toko ini yang statusnya 'available'
         // untuk keperluan dropdown alokasi unit
         $availableUnits = EquipmentUnit::where('client_id', $client->id)
-            ->where('status', 'available')
+            ->whereIn('status', ['tersedia', 'available'])
             ->with('product')
             ->get();
 
