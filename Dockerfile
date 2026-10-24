@@ -11,7 +11,7 @@ RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --igno
 
 # Copy application files and generate optimized autoload
 COPY . .
-RUN composer dump-autoload --optimize --no-dev
+RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs
 
 # ==========================================
 # Stage 2: Build Frontend Assets (Vite)
@@ -40,7 +40,7 @@ RUN npm run build
 # ==========================================
 # Stage 3: Production PHP + Nginx Runtime
 # ==========================================
-FROM php:8.3-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 WORKDIR /var/www/html
 
