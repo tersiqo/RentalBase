@@ -1,11 +1,26 @@
 # ==========================================
-# Stage 1: Build Frontend Assets (Vite)
+# Stage 1: Vendor Dependencies (Composer)
 # ==========================================
-FROM node:20-alpine AS node_builder
+FROM composer:2 AS composer_builder
 
 WORKDIR /app
 
-# Install dependencies
+# Copy composer definitions and install packages
+COPY composer*.json ./
+RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --ignore-platform-reqs
+
+# Copy application files and generate optimized autoload
+COPY . .
+RUN composer dump-autoload --optimize --no-dev
+
+# ==========================================
+# Stage 2: Build Frontend Assets (Vite)
+# ==========================================
+FROM node:22-alpine AS node_builder
+
+WORKDIR /app
+
+# Install npm dependencies
 COPY package*.json ./
 RUN npm ci
 
@@ -14,12 +29,16 @@ COPY vite.config.js ./
 COPY resources/ ./resources/
 COPY app/ ./app/
 COPY routes/ ./routes/
+COPY public/ ./public/
+
+# Copy vendor from composer_builder so Livewire ESM and Tailwind sources are available
+COPY --from=composer_builder /app/vendor ./vendor
 
 # Compile frontend assets
 RUN npm run build
 
 # ==========================================
-# Stage 2: Production PHP + Nginx Runtime
+# Stage 3: Production PHP + Nginx Runtime
 # ==========================================
 FROM php:8.3-fpm-alpine
 
@@ -36,8 +55,7 @@ RUN apk add --no-cache \
     freetype-dev \
     icu-dev \
     bash \
-    curl \
-    git
+    curl
 
 # Configure & install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -55,18 +73,14 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 # Use production PHP settings
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-# Get Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Copy application files
+# Copy application source code
 COPY . /var/www/html
 
-# Copy built frontend assets from Stage 1
-COPY --from=node_builder /app/public/build /var/www/html/public/build
+# Copy vendor from composer_builder
+COPY --from=composer_builder /app/vendor /var/www/html/vendor
 
-# Install PHP dependencies (production only)
-ENV COMPOSER_ALLOW_SUPERUSER=1
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+# Copy built frontend assets from node_builder
+COPY --from=node_builder /app/public/build /var/www/html/public/build
 
 # Configure Nginx, Supervisor, and startup script
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
