@@ -14,7 +14,66 @@
     showVerifyModal: false,
     verifyId: null,
     verifyName: '',
-    verifyUrl: ''
+    verifyUrl: '',
+
+    normalizeWhatsAppNumber(phone) {
+        if (!phone || typeof phone !== 'string') return null;
+        let cleaned = phone.trim();
+        if (!cleaned || cleaned === '-') return null;
+
+        // Hilangkan format tanda tambah di awal bila ada
+        if (cleaned.startsWith('+')) {
+            cleaned = cleaned.substring(1);
+        }
+
+        // Hilangkan spasi, tanda hubung, tanda kurung, dan karakter pemformatan non-digit lainnya
+        cleaned = cleaned.replace(/\D/g, '');
+
+        // Normalisasi nomor Indonesia: ubah awalan 08... atau 8... menjadi 628...
+        if (cleaned.startsWith('08')) {
+            cleaned = '628' + cleaned.substring(2);
+        } else if (cleaned.startsWith('8') && cleaned.length >= 9 && cleaned.length <= 13) {
+            cleaned = '628' + cleaned.substring(1);
+        }
+
+        // Validasi:
+        // Standar nomor WhatsApp internasional E.164 (panjang 9 - 15 digit)
+        // Tidak boleh diawali angka 0 (karena nomor WA internasional membutuhkan kode negara)
+        if (cleaned.length < 9 || cleaned.length > 15 || cleaned.startsWith('0')) {
+            return null;
+        }
+
+        // Hindari nomor dummy/berulang (misal: 0000000000, 1111111111)
+        if (/^(\d)\1+$/.test(cleaned)) {
+            return null;
+        }
+
+        return cleaned;
+    },
+
+    getWhatsAppLink(tenant) {
+        if (!tenant || !tenant.admin_phone) return null;
+        const normalized = this.normalizeWhatsAppNumber(tenant.admin_phone);
+        if (!normalized) return null;
+
+        const adminName = (tenant.admin_name || '').trim();
+        const businessName = (tenant.business_name || '').trim();
+
+        // Pesan pembuka percakapan yang sopan untuk menanyakan kelengkapan pengajuan
+        let message = 'Halo';
+        if (adminName) {
+            message += ' Bapak/Ibu ' + adminName;
+        }
+        message += ', saya dari tim RentalBase terkait pengajuan pendaftaran';
+        if (businessName) {
+            message += ' toko *' + businessName + '*';
+        } else {
+            message += ' toko Anda';
+        }
+        message += '. Kami ingin mengonfirmasi perihal kelengkapan data pengajuan Anda. Apakah ada berkas atau informasi yang perlu kami bantu lengkapi? Terima kasih.';
+
+        return 'https://wa.me/' + normalized + '?text=' + encodeURIComponent(message);
+    }
 }">
 
     {{-- Flash Notifications --}}
@@ -42,6 +101,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
             <span class="font-medium">{{ session('error') }}</span>
+        </div>
+    @endif
+
+    @if(session('warning'))
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm shadow-sm">
+            <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span class="font-medium">{{ session('warning') }}</span>
         </div>
     @endif
 
@@ -74,19 +142,19 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {{-- Status Tabs --}}
         <div class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/60 self-start sm:self-auto overflow-x-auto max-w-full">
-            <a href="{{ route('owner.registrations.index', ['status' => 'all', 'search' => request('search')]) }}"
+            <a href="{{ route('owner.registrations.index', array_merge(request()->query(), ['status' => 'all', 'page' => 1])) }}"
                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap {{ $status === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
                 Semua ({{ $counts['total'] }})
             </a>    
-            <a href="{{ route('owner.registrations.index', ['status' => 'menunggu_verifikasi', 'search' => request('search')]) }}"
+            <a href="{{ route('owner.registrations.index', array_merge(request()->query(), ['status' => 'menunggu_verifikasi', 'page' => 1])) }}"
                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap {{ $status === 'menunggu_verifikasi' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
                 Menunggu Verifikasi ({{ $counts['menunggu'] }})
             </a>
-            <a href="{{ route('owner.registrations.index', ['status' => 'disetujui', 'search' => request('search')]) }}"
+            <a href="{{ route('owner.registrations.index', array_merge(request()->query(), ['status' => 'disetujui', 'page' => 1])) }}"
                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap {{ $status === 'disetujui' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
                 Disetujui ({{ $counts['disetujui'] }})
             </a>
-            <a href="{{ route('owner.registrations.index', ['status' => 'ditolak', 'search' => request('search')]) }}"
+            <a href="{{ route('owner.registrations.index', array_merge(request()->query(), ['status' => 'ditolak', 'page' => 1])) }}"
                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap {{ $status === 'ditolak' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-600 hover:text-slate-900' }}">
                 Ditolak ({{ $counts['ditolak'] }})
             </a>
@@ -95,6 +163,8 @@
         {{-- Search Input --}}
         <form method="GET" action="{{ route('owner.registrations.index') }}" class="w-full sm:w-72">
             <input type="hidden" name="status" value="{{ $status }}">
+            <input type="hidden" name="sort" value="{{ $sort }}">
+            <input type="hidden" name="direction" value="{{ $direction }}">
             <div class="relative">
                 <input type="text" name="search" value="{{ request('search') }}"
                        placeholder="Cari toko, admin, email..."
@@ -107,6 +177,23 @@
             </div>
         </form>
     </div>
+
+    @php
+        $getSortUrl = function ($column) use ($sort, $direction) {
+            $nextDir = 'asc';
+            if ($sort === $column) {
+                $nextDir = $direction === 'asc' ? 'desc' : 'asc';
+            } elseif ($column === 'created_at') {
+                $nextDir = 'desc';
+            }
+
+            return route('owner.registrations.index', array_merge(request()->query(), [
+                'sort' => $column,
+                'direction' => $nextDir,
+                'page' => 1,
+            ]));
+        };
+    @endphp
 
     {{-- Registrations Table Card --}}
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -131,13 +218,163 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50/50">
-                            <th scope="col" class="py-3.5 px-6">Tenant</th>
-                            <th scope="col" class="py-3.5 px-6">Pemohon</th>
-                            <th scope="col" class="py-3.5 px-6">Telepon</th>
-                            <th scope="col" class="py-3.5 px-6">Paket</th>
-                            <th scope="col" class="py-3.5 px-6">Status</th>
-                            <th scope="col" class="py-3.5 px-6">Diajukan</th>
-                            <th scope="col" class="py-3.5 px-6 text-right">Aksi</th>
+                            {{-- Tenant Header --}}
+                            <th scope="col" class="py-3.5 px-6">
+                                <a href="{{ $getSortUrl('business_name') }}"
+                                   class="group inline-flex items-center gap-1.5 hover:text-slate-800 transition-colors {{ $sort === 'business_name' ? 'text-orange-600 font-extrabold' : 'text-slate-500 font-bold' }}"
+                                   title="Urutkan berdasarkan Nama Tenant">
+                                    <span>Tenant</span>
+                                    <span class="inline-flex items-center">
+                                        @if($sort === 'business_name')
+                                            @if($direction === 'asc')
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+                                                </svg>
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                                </svg>
+                                            @endif
+                                        @else
+                                            <svg class="w-3.5 h-3.5 text-slate-300 opacity-60 group-hover:opacity-100 group-hover:text-slate-500 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </a>
+                            </th>
+
+                            {{-- Pemohon Header --}}
+                            <th scope="col" class="py-3.5 px-6">
+                                <a href="{{ $getSortUrl('admin_name') }}"
+                                   class="group inline-flex items-center gap-1.5 hover:text-slate-800 transition-colors {{ $sort === 'admin_name' ? 'text-orange-600 font-extrabold' : 'text-slate-500 font-bold' }}"
+                                   title="Urutkan berdasarkan Nama Pemohon / Admin">
+                                    <span>Pemohon</span>
+                                    <span class="inline-flex items-center">
+                                        @if($sort === 'admin_name')
+                                            @if($direction === 'asc')
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+                                                </svg>
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                                </svg>
+                                            @endif
+                                        @else
+                                            <svg class="w-3.5 h-3.5 text-slate-300 opacity-60 group-hover:opacity-100 group-hover:text-slate-500 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </a>
+                            </th>
+
+                            {{-- Telepon Header --}}
+                            <th scope="col" class="py-3.5 px-6">
+                                <a href="{{ $getSortUrl('admin_phone') }}"
+                                   class="group inline-flex items-center gap-1.5 hover:text-slate-800 transition-colors {{ $sort === 'admin_phone' ? 'text-orange-600 font-extrabold' : 'text-slate-500 font-bold' }}"
+                                   title="Urutkan berdasarkan Nomor Telepon / WA">
+                                    <span>Telepon</span>
+                                    <span class="inline-flex items-center">
+                                        @if($sort === 'admin_phone')
+                                            @if($direction === 'asc')
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+                                                </svg>
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                                </svg>
+                                            @endif
+                                        @else
+                                            <svg class="w-3.5 h-3.5 text-slate-300 opacity-60 group-hover:opacity-100 group-hover:text-slate-500 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </a>
+                            </th>
+
+                            {{-- Paket Header --}}
+                            <th scope="col" class="py-3.5 px-6">
+                                <a href="{{ $getSortUrl('plan_name') }}"
+                                   class="group inline-flex items-center gap-1.5 hover:text-slate-800 transition-colors {{ $sort === 'plan_name' ? 'text-orange-600 font-extrabold' : 'text-slate-500 font-bold' }}"
+                                   title="Urutkan berdasarkan Paket Langganan">
+                                    <span>Paket</span>
+                                    <span class="inline-flex items-center">
+                                        @if($sort === 'plan_name')
+                                            @if($direction === 'asc')
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+                                                </svg>
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                                </svg>
+                                            @endif
+                                        @else
+                                            <svg class="w-3.5 h-3.5 text-slate-300 opacity-60 group-hover:opacity-100 group-hover:text-slate-500 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </a>
+                            </th>
+
+                            {{-- Status Header --}}
+                            <th scope="col" class="py-3.5 px-6">
+                                <a href="{{ $getSortUrl('status') }}"
+                                   class="group inline-flex items-center gap-1.5 hover:text-slate-800 transition-colors {{ $sort === 'status' ? 'text-orange-600 font-extrabold' : 'text-slate-500 font-bold' }}"
+                                   title="Urutkan berdasarkan Status Pengajuan">
+                                    <span>Status</span>
+                                    <span class="inline-flex items-center">
+                                        @if($sort === 'status')
+                                            @if($direction === 'asc')
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+                                                </svg>
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                                </svg>
+                                            @endif
+                                        @else
+                                            <svg class="w-3.5 h-3.5 text-slate-300 opacity-60 group-hover:opacity-100 group-hover:text-slate-500 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </a>
+                            </th>
+
+                            {{-- Diajukan Header --}}
+                            <th scope="col" class="py-3.5 px-6">
+                                <a href="{{ $getSortUrl('created_at') }}"
+                                   class="group inline-flex items-center gap-1.5 hover:text-slate-800 transition-colors {{ $sort === 'created_at' ? 'text-orange-600 font-extrabold' : 'text-slate-500 font-bold' }}"
+                                   title="Urutkan berdasarkan Waktu Pengajuan">
+                                    <span>Diajukan</span>
+                                    <span class="inline-flex items-center">
+                                        @if($sort === 'created_at')
+                                            @if($direction === 'asc')
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/>
+                                                </svg>
+                                            @else
+                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                                </svg>
+                                            @endif
+                                        @else
+                                            <svg class="w-3.5 h-3.5 text-slate-300 opacity-60 group-hover:opacity-100 group-hover:text-slate-500 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </a>
+                            </th>
+
+                            <th scope="col" class="py-3.5 px-6 text-right font-bold text-slate-400">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100/80 text-sm">
@@ -344,7 +581,21 @@
                                 </div>
                                 <div>
                                     <span class="block text-[11px] font-medium text-slate-400">Nomor WhatsApp / Telepon</span>
-                                    <span class="text-xs text-slate-700 font-medium" x-text="activeTenant?.admin_phone || '-'"></span>
+                                    <div class="flex items-center justify-between gap-2 mt-1">
+                                        <span class="text-xs text-slate-700 font-medium" x-text="activeTenant?.admin_phone || '-'"></span>
+                                        <template x-if="getWhatsAppLink(activeTenant)">
+                                            <a :href="getWhatsAppLink(activeTenant)"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-xs transition-colors shrink-0"
+                                               title="Buka percakapan WhatsApp dengan PIC">
+                                                <svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.101.005.241-.038.375.285.144.346.491 1.198.534 1.285.044.086.073.188.015.303-.058.116-.087.188-.173.289l-.26.303c-.087.086-.177.181-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.073.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/>
+                                                </svg>
+                                                <span>Hubungi PIC</span>
+                                            </a>
+                                        </template>
+                                    </div>
                                 </div>
                                 <div>
                                     <span class="block text-[11px] font-medium text-slate-400">Waktu Pengajuan</span>
