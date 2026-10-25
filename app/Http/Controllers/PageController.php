@@ -4,8 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Order;
+use App\Models\ReturnModel;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PageController extends Controller
 {
@@ -181,36 +186,243 @@ class PageController extends Controller
         return back()->with('success', 'Penerimaan barang pesanan #' . $order->order_number . ' berhasil dikonfirmasi. Masa sewa sedang berjalan.');
     }
 
+    /**
+     * Fungsi bantu untuk menghitung keterlambatan & denda di BACKEND.
+     * Rumus ini dibuat sama persis dengan Admin\ReturnController supaya konsisten!
+     */
+    private function calculateLateFeeData(Order $order): array
+    {
+        $now = Carbon::now();
+        $dueDate = $order->rental_end_date ? Carbon::parse($order->rental_end_date) : null;
+
+        $isLate = false;
+        $lateHours = 0;
+
+        // Cek apakah waktu server sekarang sudah melewati batas akhir sewa
+        if ($dueDate && $now->greaterThan($dueDate)) {
+            $diffInMinutes = $dueDate->diffInMinutes($now);
+            $lateHours = (int) ceil($diffInMinutes / 60);
+            $isLate = $lateHours > 0;
+        }
+
+        // Hitung rincian tarif denda per barang dan total keseluruhannya
+        $totalLateFee = 0;
+        $itemBreakdown = [];
+
+        foreach ($order->orderItems as $item) {
+            $hourlyRate = (float) ($item->product->late_fee_per_hour ?? 0);
+            $qty = (int) ($item->quantity ?? 1);
+            $itemFee = $isLate ? ($hourlyRate * $qty * $lateHours) : 0;
+
+            $totalLateFee += $itemFee;
+
+            $itemBreakdown[] = [
+                'product_name' => $item->product->name ?? 'Barang Sewa',
+                'quantity'     => $qty,
+                'hourly_rate'  => $hourlyRate,
+                'late_hours'   => $lateHours,
+                'subtotal_fee' => $itemFee,
+            ];
+        }
+
+        return [
+            'is_late'         => $isLate,
+            'late_hours'      => $lateHours,
+            'late_days'       => (int) floor($lateHours / 24),
+            'remaining_hours' => $lateHours % 24,
+            'total_late_fee'  => $totalLateFee,
+            'items'           => $itemBreakdown,
+            'checked_at'      => $now,
+        ];
+    }
+
+    /**
+     * Menampilkan halaman Form Pengembalian Barang & Denda Sewa Customer.
+     * Route: GET /my-orders/{order}/return
+     */
+    public function returnForm(Request $request, Order $order)
+    {
+        // 1. KEAMANAN OTORISASI: Pastikan pesanan ini milik customer yang sedang login!
+        if ($order->user_id !== Auth::id()) {
+            abort(403, 'Akses ditolak: Anda tidak berhak mengakses pesanan milik pelanggan lain.');
+        }
+
+        // 2. Muat relasi barang, produk, metode pembayaran toko, dan data retur
+        $order->loadMissing([
+            'orderItems.product',
+            'client.paymentMethods',
+            'returnModel',
+        ]);
+
+        // 3. VALIDASI STATUS: Hanya boleh diakses jika status 'sedang_disewa' / 'siap_kembali'
+        // dan belum pernah mengajukan pengembalian sebelumnya.
+        if (! $order->can_return) {
+            return redirect()->route('customer.orders.show', $order->id)
+                ->with('error', 'Pengajuan pengembalian tidak dapat dilakukan karena status pesanan tidak memenuhi syarat atau pengembalian sudah diajukan.');
+        }
+
+        // 4. Ambil data toko untuk header/footer layout customer & informasi alamat/rekening toko
+        $client = $order->client ?? Client::find($order->client_id) ?? Client::where('status', 'aktif')->first();
+
+        // 5. Hitung denda keterlambatan di sisi server (backend)
+        $lateFeeData = $this->calculateLateFeeData($order);
+
+        // 6. Daftar kurir resmi sesuai spesifikasi fitur
+        $couriers = ['JNE', 'J&T', 'SiCepat', 'Gojek', 'Grab'];
+
+        return view('customer.orders.return', compact(
+            'order',
+            'client',
+            'lateFeeData',
+            'couriers'
+        ));
+    }
+
+    /**
+     * Memproses pengiriman Form Pengembalian Barang & Denda Sewa Customer.
+     * Route: POST /my-orders/{order}/return
+     */
     public function returnOrder(Request $request, Order $order)
     {
+        // 1. KEAMANAN OTORISASI: Cek kepemilikan pesanan (Wajib 403 jika bukan miliknya)
         if ($order->user_id !== Auth::id()) {
-            abort(403);
+            abort(403, 'Akses ditolak: Anda tidak berhak mengajukan pengembalian untuk pesanan ini.');
         }
 
+        // 2. Muat relasi yang dibutuhkan untuk perhitungan ulang denda
+        $order->loadMissing(['orderItems.product', 'returnModel', 'client']);
+
+        // 3. CEGAH PENGAJUAN GANDA & VALIDASI STATUS:
         if (! $order->can_return) {
-            return back()->with('error', 'Pengajuan pengembalian tidak diizinkan untuk pesanan ini.');
+            return redirect()->route('customer.orders.show', $order->id)
+                ->with('error', 'Pengajuan pengembalian tidak diizinkan atau sudah pernah dikirim sebelumnya.');
         }
 
-        $request->validate([
-            'return_method' => 'nullable|string',
-            'notes' => 'nullable|string|min:5',
-        ]);
+        // 4. HITUNG ULANG DENDA DI BACKEND (Jangan pernah percaya angka dari browser!)
+        $lateFeeData = $this->calculateLateFeeData($order);
+        $hasLateFee  = $lateFeeData['is_late'] && $lateFeeData['total_late_fee'] > 0;
 
-        \App\Models\ReturnModel::updateOrCreate(
-            ['order_id' => $order->id],
-            [
-                'return_method' => $request->input('return_method', 'ambil_toko'),
-                'return_date' => now(),
-                'return_status' => 'diajukan',
-                'notes' => $request->input('notes'),
-            ]
-        );
+        // 5. Bersihkan spasi berlebih pada nomor resi sebelum divalidasi
+        if ($request->has('tracking_number')) {
+            $request->merge([
+                'tracking_number' => trim((string) $request->input('tracking_number')),
+            ]);
+        }
 
-        $order->update([
-            'status' => 'dikembalikan',
-        ]);
+        // 6. VALIDASI INPUT BERDASARKAN METODE PENGEMBALIAN & STATUS DENDA
+        $rules = [
+            'return_method'   => ['required', 'string', 'in:kurir,ambil_toko'],
+            'courier_name'    => [
+                $request->input('return_method') === 'kurir' ? 'required' : 'nullable',
+                'string',
+                'in:JNE,J&T,SiCepat,Gojek,Grab',
+            ],
+            'tracking_number' => [
+                $request->input('return_method') === 'kurir' ? 'required' : 'nullable',
+                'string',
+                'max:100',
+                'regex:/.*\S.*/',
+            ],
+            'late_fee_proof'  => [
+                $hasLateFee ? 'required' : 'nullable',
+                'file',
+                'mimes:jpg,jpeg,png',
+                'max:2048',
+            ],
+            'notes'           => ['nullable', 'string', 'max:1000'],
+        ];
 
-        return back()->with('success', 'Pengajuan pengembalian barang pesanan #' . $order->order_number . ' berhasil dikirim ke toko.');
+        $messages = [
+            'return_method.required'   => 'Silakan pilih metode pengembalian barang.',
+            'return_method.in'         => 'Metode pengembalian yang dipilih tidak valid.',
+            'courier_name.required'    => 'Nama ekspedisi/kurir wajib dipilih jika dikirim via kurir.',
+            'courier_name.in'          => 'Pilihan kurir harus salah satu dari: JNE, J&T, SiCepat, Gojek, atau Grab.',
+            'tracking_number.required' => 'Nomor resi retur wajib diisi jika menggunakan ekspedisi/kurir.',
+            'tracking_number.regex'    => 'Nomor resi tidak boleh hanya berisi spasi.',
+            'late_fee_proof.required'  => 'Karena pesanan melewati batas waktu sewa, Anda wajib mengunggah bukti pembayaran denda.',
+            'late_fee_proof.mimes'     => 'Bukti pembayaran denda harus berformat JPG atau PNG.',
+            'late_fee_proof.max'       => 'Ukuran foto bukti pembayaran denda maksimal 2 MB.',
+            'notes.max'                => 'Catatan tambahan maksimal 1000 karakter.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
+
+        // 7. SIMPAN FILE & DATA KE DATABASE DENGAN DB TRANSACTION
+        $proofPath = null;
+
+        try {
+            if ($request->hasFile('late_fee_proof')) {
+                $proofPath = $request->file('late_fee_proof')->store('returns', 'public');
+            }
+
+            DB::transaction(function () use ($order, $validated, $lateFeeData, $hasLateFee, $proofPath) {
+                $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+
+                if (! $lockedOrder || ! $lockedOrder->can_return) {
+                    throw new \RuntimeException('Pengajuan pengembalian sudah diproses sebelumnya.');
+                }
+
+                $isCourier = $validated['return_method'] === 'kurir';
+
+                ReturnModel::updateOrCreate(
+                    ['order_id' => $lockedOrder->id],
+                    [
+                        'return_method'       => $validated['return_method'],
+                        'courier_name'        => $isCourier ? ($validated['courier_name'] ?? null) : null,
+                        'tracking_number'     => $isCourier ? ($validated['tracking_number'] ?? null) : null,
+                        'return_date'         => $lateFeeData['checked_at'],
+                        'late_hours'          => $lateFeeData['late_hours'],
+                        'return_status'       => 'diajukan',
+                        'calculated_late_fee' => $lateFeeData['total_late_fee'],
+                        'late_fee_amount'     => $lateFeeData['total_late_fee'],
+                        'late_fee_status'     => $hasLateFee ? 'menunggu_pembayaran' : 'tidak_ada',
+                        'late_fee_proof'      => $proofPath,
+                        'notes'               => $validated['notes'] ?? null,
+                    ]
+                );
+
+                $lockedOrder->update([
+                    'status' => 'dikembalikan',
+                ]);
+
+                // Kirim notifikasi ke Admin Toko (jika tabel notifications tersedia)
+                $adminUsers = User::where('client_id', $lockedOrder->client_id)
+                    ->where('role', 'admin_rental')
+                    ->where('status', 'aktif')
+                    ->get();
+
+                foreach ($adminUsers as $admin) {
+                    DB::table('notifications')->insert([
+                        'user_id'    => $admin->id,
+                        'title'      => 'Pengajuan Pengembalian Barang Baru',
+                        'message'    => 'Customer mengajukan pengembalian untuk pesanan #' . $lockedOrder->order_number
+                                        . ($isCourier ? ' via kurir ' . ($validated['courier_name'] ?? '') . ' (Resi: ' . ($validated['tracking_number'] ?? '-') . ')' : ' (Antar langsung ke toko)')
+                                        . ($hasLateFee ? ' disertai bukti bayar denda Rp ' . number_format($lateFeeData['total_late_fee'], 0, ',', '.') : '.'),
+                        'type'       => 'return',
+                        'data'       => json_encode([
+                            'order_id'     => $lockedOrder->id,
+                            'order_number' => $lockedOrder->order_number,
+                            'url'          => route('admin.returns.index'),
+                        ]),
+                        'is_read'    => false,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            });
+
+            return redirect()->route('customer.orders.show', $order->id)
+                ->with('success', 'Pengajuan pengembalian barang pesanan #' . $order->order_number . ' berhasil dikirim ke toko!');
+
+        } catch (\Throwable $e) {
+            if ($proofPath && Storage::disk('public')->exists($proofPath)) {
+                Storage::disk('public')->delete($proofPath);
+            }
+
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal menyimpan pengajuan pengembalian: ' . $e->getMessage());
+        }
     }
 
     public function uploadPayment(Request $request, Order $order)
