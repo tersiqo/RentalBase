@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminStaffController;
 use App\Http\Controllers\Admin\AdminThemeController;
+use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\TenantProfileController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReturnController;
@@ -127,6 +128,12 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::get('/reports', fn () => back())->name('reports.index');
     Route::get('/settings/profile', [TenantProfileController::class, 'edit'])->name('settings.profile');
     Route::post('/settings/profile', [TenantProfileController::class, 'update'])->name('settings.profile.update');
+    Route::get('/settings/payments', [PaymentMethodController::class, 'index'])->name('settings.payments');
+    Route::post('/settings/payments', [PaymentMethodController::class, 'store'])->name('settings.payments.store');
+    Route::get('/settings/payments/{paymentMethod}/edit', [PaymentMethodController::class, 'edit'])->name('settings.payments.edit');
+    Route::put('/settings/payments/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('settings.payments.update');
+    Route::delete('/settings/payments/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('settings.payments.destroy');
+    Route::post('/settings/payments/{paymentMethod}/toggle', [PaymentMethodController::class, 'toggleStatus'])->name('settings.payments.toggle');
     Route::get('/theme', [TenantProfileController::class, 'edit'])->name('theme.index');
     Route::post('/theme', [TenantProfileController::class, 'update'])->name('theme.update');
     Route::get('/settings', fn () => redirect()->route('admin.settings.profile'))->name('settings.index');
