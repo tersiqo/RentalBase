@@ -259,11 +259,10 @@
                             @endif
 
                             @if($order->can_return)
-                                <button type="button" 
-                                        @click="openReturnModal('{{ $order->order_number ?? ('ORD-' . $order->id) }}', '{{ route('customer.orders.return', $order->id) }}')" 
-                                        class="flex-1 bg-white text-orange-600 border border-orange-300 font-bold py-2.5 rounded-xl hover:bg-orange-50 transition text-sm flex items-center justify-center gap-1">
+                                <a href="{{ route('customer.orders.return.form', $order->id) }}" 
+                                   class="flex-1 bg-white text-orange-600 border border-orange-300 font-bold py-2.5 rounded-xl hover:bg-orange-50 transition text-sm flex items-center justify-center gap-1">
                                     <span>Ajukan Pengembalian</span>
-                                </button>
+                                </a>
                             @endif
 
                             @if($order->can_receive)
