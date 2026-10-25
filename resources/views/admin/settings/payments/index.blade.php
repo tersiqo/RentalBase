@@ -7,7 +7,7 @@
      x-data="paymentMethodsApp({
          routes: {
              store: '{{ route('admin.settings.payments.store') }}',
-             baseUpdate: '{{ url('/settings/payments') }}'
+             baseUpdate: '{{ url('/admin/settings/payments') }}'
          }
      })">
 

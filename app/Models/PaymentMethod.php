@@ -85,4 +85,20 @@ class PaymentMethod extends Model
     {
         return $this->type === 'qris';
     }
+
+    /**
+     * Aksesor kompatibilitas untuk view lama yang membaca account_holder.
+     */
+    public function getAccountHolderAttribute(): ?string
+    {
+        return $this->account_name;
+    }
+
+    /**
+     * Aksesor kompatibilitas untuk view lama yang membaca qris_image.
+     */
+    public function getQrisImageAttribute(): ?string
+    {
+        return $this->qris_image_path;
+    }
 }

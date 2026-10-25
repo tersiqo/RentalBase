@@ -66,7 +66,8 @@ class PaymentMethodController extends Controller
 
         unset($validated['qris_image']);
 
-        PaymentMethod::create($validated);
+        $paymentMethod = PaymentMethod::create($validated);
+        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'save');
 
         return redirect()
             ->back()
@@ -135,6 +136,7 @@ class PaymentMethodController extends Controller
         unset($validated['qris_image']);
 
         $paymentMethod->update($validated);
+        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'save');
 
         return redirect()
             ->back()
@@ -153,6 +155,7 @@ class PaymentMethodController extends Controller
         // Menjalankan SoftDeletes (mengisi deleted_at tanpa menghapus baris fisik)
         // File gambar QRIS di storage tetap dipertahankan untuk histori order/invoice lama
         $paymentMethod->delete();
+        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'delete');
 
         return redirect()
             ->back()
@@ -170,6 +173,7 @@ class PaymentMethodController extends Controller
         $paymentMethod->update([
             'is_active' => ! $paymentMethod->is_active,
         ]);
+        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'save');
 
         $statusText = $paymentMethod->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
@@ -247,6 +251,40 @@ class PaymentMethodController extends Controller
                     // Fail-safe handling
                 }
             }
+        }
+    }
+
+    /**
+     * Sinkronisasi data ke tabel legacy client_payment_methods agar modul pesanan lama tetap kompatibel.
+     */
+    protected function syncWithLegacyClientPaymentMethod(PaymentMethod $paymentMethod, string $action = 'save'): void
+    {
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasTable('client_payment_methods')) {
+                return;
+            }
+
+            if ($action === 'delete') {
+                \App\Models\ClientPaymentMethod::where('client_id', $paymentMethod->client_id)
+                    ->where('account_number', $paymentMethod->account_number ?? ('QRIS-' . $paymentMethod->id))
+                    ->update(['is_active' => false]);
+                return;
+            }
+
+            \App\Models\ClientPaymentMethod::updateOrCreate(
+                [
+                    'client_id'      => $paymentMethod->client_id,
+                    'account_number' => $paymentMethod->account_number ?? ('QRIS-' . $paymentMethod->id),
+                ],
+                [
+                    'bank_name'      => $paymentMethod->bank_name ?? ($paymentMethod->qris_merchant_name ?: 'QRIS'),
+                    'account_holder' => $paymentMethod->account_name ?? ($paymentMethod->qris_merchant_name ?: 'Merchant QRIS'),
+                    'qris_image'     => $paymentMethod->qris_image_path,
+                    'is_active'      => $paymentMethod->is_active,
+                ]
+            );
+        } catch (\Throwable $e) {
+            // Fail-safe
         }
     }
 }
