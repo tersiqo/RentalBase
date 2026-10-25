@@ -90,6 +90,12 @@ class TenantProfileController extends Controller
             $storedPath = $disk->putFileAs('tenant-logos', $file, $filename, 'public');
 
             $validated['logo_path'] = $storedPath;
+        } elseif ($request->boolean('remove_logo')) {
+            // Hapus logo dari storage jika admin meminta hapus logo
+            if (! empty($profile->logo_path)) {
+                $this->deleteOldLogo($profile->logo_path);
+            }
+            $validated['logo_path'] = null;
         }
 
         // Hapus input temporary 'logo' dari data update model
