@@ -62,4 +62,9 @@ class Client extends Model
     {
         return $this->hasMany(ClientPaymentMethod::class)->where('is_active', true);
     }
+
+    public function tenantProfile()
+    {
+        return $this->hasOne(TenantProfile::class);
+    }
 }
