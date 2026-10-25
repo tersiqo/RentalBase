@@ -15,8 +15,68 @@
     <!-- Scripts/Styles (Vite) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+
+    @php
+        $tenantProfile = $client?->tenantProfile ?? $client?->profile;
+        $themeColor = $tenantProfile?->theme_color ?? $client?->theme_color ?? '#F97316';
+        $textColor = $tenantProfile?->text_color ?? (new \App\Models\TenantProfile(['theme_color' => $themeColor]))->text_color;
+
+        $logoPath = $tenantProfile?->logo_path ?? $client?->logo ?? null;
+        $logoUrl = null;
+        if ($logoPath) {
+            $logoUrl = str_starts_with($logoPath, 'http')
+                ? $logoPath
+                : \Illuminate\Support\Facades\Storage::url($logoPath);
+        }
+    @endphp
+
     <style>
         body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+
+        :root {
+            --tenant-theme: {{ $themeColor }};
+            --tenant-text: {{ $textColor }};
+            --color-primary-500: {{ $themeColor }};
+            --color-primary-600: {{ $themeColor }};
+        }
+
+        /* Override tombol checkout & elemen utama katalog customer */
+        .bg-primary-500,
+        .btn-tenant {
+            background-color: var(--tenant-theme) !important;
+            color: var(--tenant-text) !important;
+        }
+
+        .text-primary-500,
+        .text-primary-600 {
+            color: var(--tenant-theme) !important;
+        }
+
+        .border-primary-500 {
+            border-color: var(--tenant-theme) !important;
+        }
+
+        .border-primary-100 {
+            border-color: color-mix(in srgb, var(--tenant-theme) 25%, white) !important;
+        }
+
+        .bg-primary-50 {
+            background-color: color-mix(in srgb, var(--tenant-theme) 10%, white) !important;
+        }
+
+        .from-primary-500 {
+            --tw-gradient-from: var(--tenant-theme) var(--tw-gradient-from-position) !important;
+            --tw-gradient-to: color-mix(in srgb, var(--tenant-theme) 80%, black) var(--tw-gradient-to-position) !important;
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+        }
+
+        .to-primary-600 {
+            --tw-gradient-to: color-mix(in srgb, var(--tenant-theme) 80%, black) var(--tw-gradient-to-position) !important;
+        }
+
+        .hover\:bg-primary-600:hover {
+            filter: brightness(0.92);
+        }
     </style>
 </head>
 <body class="bg-[#FAFAFA] text-gray-600 font-sans antialiased min-h-screen flex flex-col">
@@ -26,11 +86,18 @@
         <div class="max-w-[1260px] mx-auto px-6">
             <div class="flex justify-between items-center h-[68px]">
                 <!-- Logo & Name -->
-                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="flex items-center gap-3 font-extrabold text-gray-900 text-[17px]">
-                    <div class="w-[38px] h-[38px] bg-primary-500 rounded-xl text-white flex items-center justify-center font-bold shadow-[0_8px_16px_-6px_rgba(249,115,22,0.5)]">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M3 4h3l2 11h10M6 8h13l-2 6H8"/></svg>
-                    </div>
-                    <span>{{ $client->nama_usaha ?? ($client->name ?? 'RentalBase Tenant') }}</span>
+                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="flex items-center gap-3 font-extrabold text-gray-900 text-[17px] group">
+                    @if($logoUrl)
+                        <img src="{{ $logoUrl }}"
+                             alt="{{ $tenantProfile?->name ?? $client->nama_usaha ?? 'Logo Toko' }}"
+                             class="w-[40px] h-[40px] rounded-xl object-contain border border-gray-100 p-0.5 shadow-sm group-hover:scale-105 transition-transform bg-white">
+                    @else
+                        <div class="w-[38px] h-[38px] rounded-xl flex items-center justify-center font-bold shadow-sm transition-all"
+                             style="background-color: var(--tenant-theme); color: var(--tenant-text);">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M3 4h3l2 11h10M6 8h13l-2 6H8"/></svg>
+                        </div>
+                    @endif
+                    <span>{{ $tenantProfile?->name ?? $client->nama_usaha ?? ($client->name ?? 'RentalBase Tenant') }}</span>
                 </a>
 
                 <!-- Center Navigation -->
@@ -136,14 +203,17 @@
         <div class="max-w-[1260px] mx-auto px-6">
             <div class="flex justify-between flex-wrap gap-5">
                 <div>
-                    <b class="text-white text-sm block mb-1">{{ $client->nama_usaha ?? 'BabyRent Malang' }}</b>
-                    {{ $client->address ?? 'Jl. Contoh No. 12, Malang.' }}<br>
-                    Buka setiap hari {{ $client->operational_hours ?? '08.00 - 20.00' }}<br>
-                    WhatsApp: {{ $client->phone ?? '-' }}
+                    <b class="text-white text-sm block mb-1">{{ $tenantProfile?->name ?? $client->nama_usaha ?? 'BabyRent' }}</b>
+                    {{ $tenantProfile?->address ?? $client->address ?? 'Alamat operasional toko' }}
+                    @if($tenantProfile?->city ?? $client->city)
+                        , {{ $tenantProfile?->city ?? $client->city }}
+                    @endif
+                    <br>
+                    WhatsApp: {{ $tenantProfile?->whatsapp ?? $client->phone ?? '-' }}
                 </div>
                 <div class="text-right">
                     Ditenagai <b class="text-primary-500">RentalBase</b><br>
-                    &copy; {{ date('Y') }} {{ $client->nama_usaha ?? 'BabyRent Malang' }}.
+                    &copy; {{ date('Y') }} {{ $tenantProfile?->name ?? $client->nama_usaha ?? 'RentalBase' }}.
                 </div>
             </div>
         </div>
