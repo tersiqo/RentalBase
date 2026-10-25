@@ -709,10 +709,33 @@
                 </h2>
 
                 <div class="space-y-3">
-                    @if($return && $return->return_status === 'diajukan')
-                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs flex items-center gap-2">
-                            <span>↩️</span>
-                            <span><b>Pengembalian Diajukan:</b> Menunggu konfirmasi toko untuk penerimaan barang.</span>
+                    @if($return && in_array($return->return_status, ['diajukan', 'diproses', 'dalam_pengembalian', 'diterima', 'selesai']))
+                        <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs space-y-1.5">
+                            <div class="flex items-center gap-2 font-bold text-blue-950">
+                                <span>↩️</span>
+                                <span>Pengembalian Barang ({{ ucfirst(str_replace('_', ' ', $return->return_status)) }})</span>
+                            </div>
+                            <p class="text-blue-800">
+                                Metode: <b>{{ $return->return_method === 'kurir' ? 'Ekspedisi / Kurir (' . ($return->courier_name ?? '-') . ')' : 'Antar Langsung ke Toko' }}</b>
+                                @if($return->return_method === 'kurir' && $return->tracking_number)
+                                    &bull; Resi: <span class="font-mono font-bold">{{ $return->tracking_number }}</span>
+                                @endif
+                            </p>
+                            @if((float) ($return->late_fee_amount ?? 0) > 0)
+                                <p class="text-blue-800">
+                                    Denda Keterlambatan ({{ $return->late_hours ?? 0 }} jam):
+                                    <b class="font-mono">Rp {{ number_format((float) $return->late_fee_amount, 0, ',', '.') }}</b>
+                                    ({{ ucfirst(str_replace('_', ' ', $return->late_fee_status ?? 'menunggu_pembayaran')) }})
+                                </p>
+                            @endif
+                            @if($return->late_fee_proof)
+                                @php
+                                    $feeProofImg = str_starts_with($return->late_fee_proof, 'http') ? $return->late_fee_proof : Storage::url($return->late_fee_proof);
+                                @endphp
+                                <button type="button" @click="openLightbox('{{ $feeProofImg }}', 'Bukti Pembayaran Denda')" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:underline pt-1">
+                                    🔍 Lihat Bukti Pembayaran Denda
+                                </button>
+                            @endif
                         </div>
                     @endif
 
@@ -726,12 +749,11 @@
                     @endif
 
                     @if($order->can_return)
-                        <button type="button" 
-                                @click="openReturnModal('{{ $order->order_number ?? ('ORD-' . $order->id) }}', '{{ route('customer.orders.return', $order->id) }}')" 
-                                class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-1.5">
+                        <a href="{{ route('customer.orders.return.form', $order->id) }}" 
+                           class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-1.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                             <span>Ajukan Pengembalian</span>
-                        </button>
+                        </a>
                     @endif
 
                     @if($order->can_receive)
