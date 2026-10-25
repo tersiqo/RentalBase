@@ -42,6 +42,11 @@ class User extends Authenticatable
         return $this->belongsTo(Client::class);
     }
 
+    public function tenant()
+    {
+        return $this->belongsTo(Client::class, 'client_id');
+    }
+
     /**
      * Memeriksa apakah user adalah Admin Utama toko (Primary Admin).
      */

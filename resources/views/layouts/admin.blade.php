@@ -262,6 +262,19 @@
             PENGATURAN TOKO
         </p>
 
+        {{-- Profil & Tema Toko --}}
+        <a href="{{ route('admin.settings.profile') }}"
+           title="Mengatur identitas toko, logo, kontak, dan kustomisasi warna tema."
+           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                  {{ request()->routeIs('admin.settings.profile*') || request()->routeIs('admin.theme.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
+            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.settings.profile*') || request()->routeIs('admin.theme.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+            </span>
+            <span x-show="!collapsed || mobileOpen" class="truncate">Profil & Tema Toko</span>
+        </a>
+
         {{-- Manajemen Akun Admin --}}
         <a href="{{ route('admin.admins.index') }}"
            title="Mengelola akun staf Admin internal toko dan memantau penggunaan kuota paket subscription."

@@ -13,6 +13,11 @@ class Client extends Model
         return $this->attributes['nama_usaha'] ?? $this->attributes['business_name'] ?? 'RentalBase Tenant';
     }
 
+    public function getPlanAttribute(): string
+    {
+        return strtolower((string) ($this->activeSubscription?->plan_name ?? 'starter'));
+    }
+
     public function users()
     {
         return $this->hasMany(User::class);
@@ -61,5 +66,10 @@ class Client extends Model
     public function paymentMethods()
     {
         return $this->hasMany(ClientPaymentMethod::class)->where('is_active', true);
+    }
+
+    public function tenantProfile()
+    {
+        return $this->hasOne(TenantProfile::class);
     }
 }

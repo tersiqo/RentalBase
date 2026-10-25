@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminStaffController;
 use App\Http\Controllers\Admin\AdminThemeController;
+use App\Http\Controllers\Admin\TenantProfileController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReturnController;
 use App\Http\Controllers\Admin\ShipmentController;
@@ -124,9 +125,11 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::put('/units/{unit}', [EquipmentUnitController::class, 'update'])->name('units.update');
     Route::delete('/units/{unit}', [EquipmentUnitController::class, 'destroy'])->name('units.destroy');
     Route::get('/reports', fn () => back())->name('reports.index');
-    Route::get('/theme', [AdminThemeController::class, 'index'])->name('theme.index');
-    Route::post('/theme', [AdminThemeController::class, 'update'])->name('theme.update');
-    Route::get('/settings', fn () => back())->name('settings.index');
+    Route::get('/settings/profile', [TenantProfileController::class, 'edit'])->name('settings.profile');
+    Route::post('/settings/profile', [TenantProfileController::class, 'update'])->name('settings.profile.update');
+    Route::get('/theme', [TenantProfileController::class, 'edit'])->name('theme.index');
+    Route::post('/theme', [TenantProfileController::class, 'update'])->name('theme.update');
+    Route::get('/settings', fn () => redirect()->route('admin.settings.profile'))->name('settings.index');
 
     Route::get('/admins', [AdminStaffController::class, 'index'])->name('admins.index');
     Route::post('/admins', [AdminStaffController::class, 'store'])->name('admins.store');
