@@ -275,6 +275,19 @@
             <span x-show="!collapsed || mobileOpen" class="truncate">Profil & Tema Toko</span>
         </a>
 
+        {{-- Metode Pembayaran --}}
+        <a href="{{ route('admin.settings.payments') }}"
+           title="Mengatur nomor rekening bank dan QRIS pembayaran pesanan customer."
+           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                  {{ request()->routeIs('admin.settings.payments*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
+            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.settings.payments*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+            </span>
+            <span x-show="!collapsed || mobileOpen" class="truncate">Metode Pembayaran</span>
+        </a>
+
         {{-- Manajemen Akun Admin --}}
         <a href="{{ route('admin.admins.index') }}"
            title="Mengelola akun staf Admin internal toko dan memantau penggunaan kuota paket subscription."
