@@ -209,11 +209,11 @@ class Order extends Model
     {
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
 
-        if ($status !== 'sedang_disewa') {
+        if (! in_array($status, ['sedang_disewa', 'siap_kembali'])) {
             return false;
         }
 
-        return ! ($this->returnModel && in_array($this->returnModel->return_status, ['diajukan', 'diterima']));
+        return ! ($this->returnModel && in_array($this->returnModel->return_status, ['diajukan', 'diproses', 'dalam_pengembalian', 'diterima', 'selesai']));
     }
 
     public function getCanReceiveAttribute(): bool
