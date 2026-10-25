@@ -37,9 +37,9 @@ class TenantProfileController extends Controller
         $plan = $client->plan ?? 'starter';
         $allowsCustomTheme = config("packages.{$plan}.features.custom_theme", false);
 
-        $viewName = view()->exists('admin.profile.edit')
-            ? 'admin.profile.edit'
-            : (view()->exists('admin.theme.index') ? 'admin.theme.index' : 'admin.profile.edit');
+        $viewName = view()->exists('admin.settings.profile')
+            ? 'admin.settings.profile'
+            : (view()->exists('admin.profile.edit') ? 'admin.profile.edit' : 'admin.theme.index');
 
         return view($viewName, compact('profile', 'client', 'subscription', 'allowsCustomTheme'));
     }
