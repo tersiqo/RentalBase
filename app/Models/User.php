@@ -56,7 +56,16 @@ class User extends Authenticatable
             return false;
         }
 
-        return (int) $this->client?->primary_admin_id === (int) $this->id;
+        if ($this->client?->primary_admin_id) {
+            return (int) $this->client->primary_admin_id === (int) $this->id;
+        }
+
+        $firstAdminId = static::where('role', 'admin_rental')
+            ->where('client_id', $this->client_id)
+            ->oldest('id')
+            ->value('id');
+
+        return (int) $firstAdminId === (int) $this->id;
     }
 
     /**
