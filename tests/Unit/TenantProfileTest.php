@@ -51,6 +51,10 @@ class TenantProfileTest extends TestCase
         $profile = new TenantProfile(['theme_color' => '#800000']);
         $this->assertSame('#ffffff', $profile->text_color);
 
+        // Oranye RentalBase (#F97316) -> YIQ ~ 144.4 (< 150 threshold, teks putih bersih)
+        $profile = new TenantProfile(['theme_color' => '#F97316']);
+        $this->assertSame('#ffffff', $profile->text_color);
+
         // Hex tanpa tanda '#'
         $profile = new TenantProfile(['theme_color' => '1E3A8A']);
         $this->assertSame('#ffffff', $profile->text_color);
@@ -68,10 +72,6 @@ class TenantProfileTest extends TestCase
 
         // Kuning terang (#FFFF00)
         $profile = new TenantProfile(['theme_color' => '#FFFF00']);
-        $this->assertSame('#000000', $profile->text_color);
-
-        // Oranye RentalBase (#F97316) -> YIQ ~ 144.4 (>= 128)
-        $profile = new TenantProfile(['theme_color' => '#F97316']);
         $this->assertSame('#000000', $profile->text_color);
 
         // Cyan / Sky Blue (#00FFFF)

@@ -133,10 +133,22 @@
                         <div class="space-y-2 mb-3">
                             @foreach($item->orderItemUnits as $allocation)
                                 <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2 text-sm">
-                                    <span class="font-medium text-emerald-800">
-                                        {{ $allocation->equipmentUnit->unit_code ?? $allocation->equipmentUnit->asset_code ?? 'Unit #' . $allocation->equipment_unit_id }}
-                                    </span>
-                                    <span class="text-xs text-emerald-600">✓ Dialokasikan</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-medium text-emerald-800">
+                                            {{ $allocation->equipmentUnit->unit_code ?? $allocation->equipmentUnit->asset_code ?? 'Unit #' . $allocation->equipment_unit_id }}
+                                        </span>
+                                        <span class="text-xs text-emerald-600 font-semibold">✓ Dialokasikan</span>
+                                    </div>
+                                    @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']))
+                                        <form action="{{ route('admin.orders.deallocate', [$order->id, $allocation->id]) }}" method="POST" onsubmit="return confirm('Batalkan alokasi unit ini untuk memilih unit lain?');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold hover:underline flex items-center gap-1 transition cursor-pointer" title="Batalkan dan ganti unit">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                <span>Batal / Ganti Unit</span>
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
@@ -144,8 +156,8 @@
                         <p class="text-sm text-gray-400 italic mb-3">Belum ada unit yang dialokasikan.</p>
                     @endif
 
-                    {{-- Form tambah alokasi (hanya tampil jika status memungkinkan) --}}
-                    @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']))
+                    {{-- Form tambah alokasi (hanya tampil jika status memungkinkan dan alokasi belum terpenuhi) --}}
+                    @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']) && $item->orderItemUnits->count() < $item->quantity)
                         @php
                             // Filter: hanya unit yang produknya cocok dengan item ini
                             $matchingUnits = $availableUnits->filter(function($unit) use ($item) {
@@ -200,18 +212,29 @@
         </div>
 
         {{-- ─── KARTU: Aksi Verifikasi ─── --}}
-        @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi']))
+        @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran']))
             <div class="bg-white border border-amber-300 rounded-lg shadow-sm p-5" x-data="{ showRejectForm: false }">
                 <h2 class="text-sm font-bold text-amber-600 uppercase tracking-wide mb-4">Tindakan Admin</h2>
 
                 {{-- Tombol Terima --}}
                 <div x-show="!showRejectForm">
-                    <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST" class="mb-3">
+                    <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST" class="mb-3 space-y-2">
                         @csrf
-                        <button type="submit"
-                                class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-md transition">
-                            ✓ Terima & Konfirmasi Pesanan
-                        </button>
+                        @if($order->status === 'menunggu_konfirmasi')
+                            <button type="submit"
+                                    class="w-full px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-md transition shadow-sm">
+                                ✓ Setujui Identitas & Minta Pembayaran
+                            </button>
+                            <button type="submit" name="direct_ready" value="1"
+                                    class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition">
+                                ✓ Konfirmasi Langsung Lunas (Siap Kirim)
+                            </button>
+                        @else
+                            <button type="submit"
+                                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-md transition shadow-sm">
+                                ✓ Verifikasi Pembayaran & Siap Kirim
+                            </button>
+                        @endif
                     </form>
                     <button @click="showRejectForm = true"
                             class="w-full px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-sm font-semibold rounded-md transition">

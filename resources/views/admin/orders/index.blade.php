@@ -143,11 +143,11 @@
                                 Detail
                             </a>
 
-                            {{-- Tombol Verifikasi: muncul hanya jika status menunggu konfirmasi --}}
-                            @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi']))
+                            {{-- Tombol Verifikasi: muncul jika status pra-kirim --}}
+                            @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran']))
                                 <button @click="openModal = true"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-md transition">
-                                    Verifikasi
+                                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white {{ $order->status === 'menunggu_verifikasi' ? 'bg-emerald-600 hover:bg-emerald-700' : ($order->status === 'menunggu_pembayaran' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-orange-500 hover:bg-orange-600') }} rounded-md transition">
+                                    {{ $order->status === 'menunggu_konfirmasi' ? 'Verifikasi KTP' : ($order->status === 'menunggu_verifikasi' ? 'Verifikasi Bayar' : 'Konfirmasi') }}
                                 </button>
 
                                 {{-- POP UP VERIFIKASI --}}
@@ -156,13 +156,13 @@
                                      x-cloak
                                      style="display: none; background-color: rgba(0, 0, 0, 0.5);">
 
-                                    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6 text-left whitespace-normal"
-                                         @click.away="openModal = false">
+                                     <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6 text-left whitespace-normal"
+                                          @click.away="openModal = false">
 
                                         {{-- Header Pop Up --}}
                                         <div class="flex justify-between items-center mb-4 border-b pb-3">
                                             <h3 class="text-lg font-bold text-gray-900">
-                                                Verifikasi Pesanan #{{ $order->order_number }}
+                                                {{ $order->status === 'menunggu_konfirmasi' ? 'Verifikasi KTP Pesanan' : 'Verifikasi Pembayaran' }} #{{ $order->order_number }}
                                             </h3>
                                             <button type="button" @click="openModal = false"
                                                     class="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button>
@@ -219,18 +219,25 @@
                                             </div>
 
                                             {{-- Tombol utama: Terima dan Tolak --}}
-                                            <div x-show="!showReject" class="flex justify-end gap-2">
+                                            <div x-show="!showReject" class="flex flex-col sm:flex-row justify-end gap-2">
                                                 <button type="button" @click="showReject = true"
-                                                        class="px-4 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-md border border-red-200 transition">
-                                                    Tolak Pesanan
+                                                        class="px-3.5 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-md border border-red-200 transition">
+                                                    Tolak
                                                 </button>
 
-                                                <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST">
+                                                <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST" class="inline">
                                                     @csrf
-                                                    <button type="submit"
-                                                            class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md transition">
-                                                        ✓ Terima & Konfirmasi
-                                                    </button>
+                                                    @if($order->status === 'menunggu_konfirmasi')
+                                                        <button type="submit"
+                                                                class="w-full sm:w-auto px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-md transition">
+                                                            ✓ Setujui KTP & Minta Bayar
+                                                        </button>
+                                                    @else
+                                                        <button type="submit"
+                                                                class="w-full sm:w-auto px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md transition">
+                                                            ✓ Verifikasi Bayar & Siap Kirim
+                                                        </button>
+                                                    @endif
                                                 </form>
                                             </div>
 

@@ -95,6 +95,8 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/orders/{order}/confirm', [OrderController::class, 'confirm'])->name('orders.confirm');
     Route::post('/orders/{order}/reject', [OrderController::class, 'reject'])->name('orders.reject');
+    Route::post('/orders/{order}/allocate', [OrderController::class, 'allocate'])->name('orders.allocate');
+    Route::delete('/orders/{order}/allocate/{orderItemUnit}', [OrderController::class, 'deallocate'])->name('orders.deallocate');
     Route::get('/shipments', [ShipmentController::class, 'index'])->name('shipments.index');
     Route::post('/shipments/{order}/process', [ShipmentController::class, 'process'])->name('shipments.process');
     Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');

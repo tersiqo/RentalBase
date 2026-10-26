@@ -26,8 +26,8 @@ class ShipmentController extends Controller
             abort(403, 'Akses ditolak: Akun tidak terhubung ke toko.');
         }
 
-        // PERUBAHAN: Tambahkan 'orderItems.product' agar bisa menampilkan List Detail Barang
-        $orders = Order::with(['user', 'orderItems.product'])
+        // Eager load relasi user, produk, dan unit yang dialokasikan
+        $orders = Order::with(['user', 'orderItems.product', 'orderItems.orderItemUnits'])
             ->where('client_id', $client->id)
             ->whereIn('status', ['siap_kirim', 'diproses'])
             ->latest()
@@ -49,6 +49,15 @@ class ShipmentController extends Controller
             abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
         }
 
+        // SOP Rental: Wajib pastikan seluruh unit fisik sudah dialokasikan sebelum dikirim
+        $totalRequired = $order->orderItems->sum('quantity');
+        $totalAllocated = $order->orderItems->sum(fn ($item) => $item->orderItemUnits->count());
+
+        if ($totalAllocated < $totalRequired) {
+            return redirect()->route('admin.orders.show', $order->id)
+                ->with('error', 'Pengiriman belum dapat diproses: Unit fisik belum dialokasikan lengkap (' . $totalAllocated . '/' . $totalRequired . '). Silakan alokasikan unit fisik terlebih dahulu di halaman ini.');
+        }
+
         // Tambahkan $request di dalam "use" agar datanya bisa dibaca
         DB::transaction(function () use ($order, $request) {
             $isPickup = $order->isPickup();
@@ -66,13 +75,20 @@ class ShipmentController extends Controller
                 ]
             );
 
-            // Sesuai chat PM: mengubah status order menjadi "dikirim"
+            // Mengubah status order menjadi "dikirim"
             $order->update([
                 'status' => 'dikirim',
             ]);
+
+            // Pastikan seluruh unit fisik yang dialokasikan berubah status menjadi 'disewa'
+            foreach ($order->orderItems as $item) {
+                foreach ($item->orderItemUnits as $oiu) {
+                    $oiu->equipmentUnit?->update(['status' => 'disewa']);
+                }
+            }
         });
 
         return redirect()->route('admin.shipments.index')
-            ->with('success', 'Status pesanan berhasil diperbarui!');
+            ->with('success', 'Pesanan #' . $order->order_number . ' berhasil diproses dan dikirim!');
     }
 }

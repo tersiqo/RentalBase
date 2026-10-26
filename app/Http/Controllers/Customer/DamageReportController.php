@@ -44,10 +44,10 @@ class DamageReportController extends Controller
 
         $damageCase = $damageReport?->damageCase;
 
-        // Ambil metode pembayaran aktif toko
-        $paymentMethods = $client?->paymentMethods()
-            ->where('is_active', true)
-            ->get() ?? collect();
+        // Ambil metode pembayaran aktif toko (support client_payment_methods dan payment_methods)
+        $paymentMethods = ($client?->clientPaymentMethods()->where('is_active', true)->exists())
+            ? $client->clientPaymentMethods()->where('is_active', true)->get()
+            : ($client?->paymentMethods()->where('is_active', true)->get() ?? collect());
 
         // Cari riwayat bukti pembayaran kompensasi yang sudah diunggah jika ada
         $compensationPayment = $order->payments()
@@ -133,8 +133,10 @@ class DamageReportController extends Controller
         $path = $request->file('payment_proof')->store('payments/damage', 'public');
 
         $paymentMethodId = $request->input('client_payment_method_id')
-            ?? $order->client?->paymentMethods()->where('is_active', true)->value('id')
-            ?? $order->client?->paymentMethods()->first()?->id;
+            ?? $order->client?->clientPaymentMethods()->where('is_active', true)->value('id')
+            ?? $order->client?->clientPaymentMethods()->first()?->id
+            ?? \App\Models\ClientPaymentMethod::where('is_active', true)->value('id')
+            ?? \App\Models\ClientPaymentMethod::first()?->id;
 
         // Catat di tabel payments
         Payment::create([

@@ -465,4 +465,87 @@ class CustomerCatalogEnhancementTest extends TestCase
         $this->assertEquals($newStart, $cart[$newHash]['start_date']);
         $this->assertEquals($newEnd, $cart[$newHash]['end_date']);
     }
+
+    public function test_cart_page_can_toggle_all_items_in_date_group(): void
+    {
+        $product1 = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Stroller Yoyo',
+            'slug' => 'stroller-yoyo',
+            'rental_price_per_day' => 100000,
+            'status' => 'aktif',
+        ]);
+        $product2 = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Box Bayi Sena',
+            'slug' => 'box-bayi-sena',
+            'rental_price_per_day' => 90000,
+            'status' => 'aktif',
+        ]);
+        $product3 = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Cocolatte Pockit',
+            'slug' => 'cocolatte-pockit',
+            'rental_price_per_day' => 150000,
+            'status' => 'aktif',
+        ]);
+
+        $groupKeyA = '2026-11-01|2026-11-02';
+        $groupKeyB = '2026-11-10|2026-11-12';
+
+        $hashA1 = md5($product1->id . '2026-11-01' . '2026-11-02');
+        $hashA2 = md5($product2->id . '2026-11-01' . '2026-11-02');
+        $hashB1 = md5($product3->id . '2026-11-10' . '2026-11-12');
+
+        session()->put('cart', [
+            $hashA1 => [
+                'hash' => $hashA1,
+                'product_id' => $product1->id,
+                'name' => $product1->name,
+                'price' => 100000,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => '2026-11-01',
+                'end_date' => '2026-11-02',
+                'duration_days' => 2,
+                'quantity' => 1,
+                'subtotal' => 200000,
+            ],
+            $hashA2 => [
+                'hash' => $hashA2,
+                'product_id' => $product2->id,
+                'name' => $product2->name,
+                'price' => 90000,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => '2026-11-01',
+                'end_date' => '2026-11-02',
+                'duration_days' => 2,
+                'quantity' => 1,
+                'subtotal' => 180000,
+            ],
+            $hashB1 => [
+                'hash' => $hashB1,
+                'product_id' => $product3->id,
+                'name' => $product3->name,
+                'price' => 150000,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => '2026-11-10',
+                'end_date' => '2026-11-12',
+                'duration_days' => 3,
+                'quantity' => 1,
+                'subtotal' => 450000,
+            ],
+        ]);
+
+        Livewire::test(\App\Livewire\Customer\CartPage::class, ['subdomain' => $this->client->subdomain])
+            ->call('toggleDateGroup', $groupKeyA)
+            ->assertSet('selectedItems', [$hashA1, $hashA2])
+            ->call('toggleDateGroup', $groupKeyA)
+            ->assertSet('selectedItems', []);
+    }
 }

@@ -550,7 +550,7 @@
 
             // Formula Kontras Warna YIQ
             // ((r * 299) + (g * 587) + (b * 114)) / 1000
-            // Threshold >= 128 (terang -> teks hitam), < 128 (gelap -> teks putih)
+            // Threshold >= 150 (terang -> teks hitam), < 150 (gelap/vibrant -> teks putih)
             getTextColor(hex) {
                 if (!hex) return '#ffffff';
                 let clean = hex.replace('#', '').trim();
@@ -573,7 +573,7 @@
 
                 const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
 
-                return yiq >= 128 ? '#000000' : '#ffffff';
+                return yiq >= 150 ? '#000000' : '#ffffff';
             }
         };
     }

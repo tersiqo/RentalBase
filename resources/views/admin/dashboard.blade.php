@@ -220,19 +220,19 @@
 
                 @forelse($recentOrders as $order)
                     @php
-                        $statusBadge = match($order->status) {
-                            'menunggu_pembayaran'      => 'bg-gray-100 text-gray-600 border-gray-200/60 ring-gray-400',
-                            'menunggu_konfirmasi'      => 'bg-amber-50 text-amber-600 border-amber-200/60 ring-amber-500',
-                            'pembayaran_terverifikasi' => 'bg-blue-50 text-blue-600 border-blue-200/60 ring-blue-500',
-                            'dikonfirmasi'             => 'bg-blue-50 text-blue-600 border-blue-200/60 ring-blue-500',
-                            'siap_kirim'               => 'bg-indigo-50 text-indigo-600 border-indigo-200/60 ring-indigo-500',
-                            'sedang_disewa'            => 'bg-emerald-50 text-emerald-600 border-emerald-200/60 ring-emerald-500',
-                            'selesai'                  => 'bg-teal-50 text-teal-600 border-teal-200/60 ring-teal-500',
-                            'dibatalkan'               => 'bg-red-50 text-red-600 border-red-200/60 ring-red-500',
-                            default                    => 'bg-gray-100 text-gray-600 border-gray-200/60 ring-gray-400',
+                        $statusLabel = $order->status_label;
+                        $statusBadge = match(strtolower(trim(str_replace(['-', ' '], '_', $order->status ?? '')))) {
+                            'menunggu_konfirmasi'                  => 'bg-orange-50 text-orange-600 border-orange-200/60 ring-orange-500',
+                            'menunggu_pembayaran', 'belum_dibayar' => 'bg-amber-50 text-amber-700 border-amber-200/60 ring-amber-500',
+                            'menunggu_verifikasi', 'verifikasi'    => 'bg-yellow-50 text-yellow-700 border-yellow-200/60 ring-yellow-500',
+                            'siap_kirim', 'diproses', 'dikonfirmasi'=> 'bg-indigo-50 text-indigo-600 border-indigo-200/60 ring-indigo-500',
+                            'dikirim'                              => 'bg-purple-50 text-purple-600 border-purple-200/60 ring-purple-500',
+                            'sedang_disewa'                        => 'bg-blue-50 text-blue-600 border-blue-200/60 ring-blue-500',
+                            'dikembalikan'                         => 'bg-cyan-50 text-cyan-600 border-cyan-200/60 ring-cyan-500',
+                            'selesai'                              => 'bg-teal-50 text-teal-600 border-teal-200/60 ring-teal-500',
+                            'dibatalkan', 'batal', 'ditolak'       => 'bg-red-50 text-red-600 border-red-200/60 ring-red-500',
+                            default                                => 'bg-gray-100 text-gray-600 border-gray-200/60 ring-gray-400',
                         };
-
-                        $statusLabel = ucwords(str_replace('_', ' ', $order->status));
                         
                         $startDate = \Carbon\Carbon::parse($order->rental_start_date);
                         $endDate = \Carbon\Carbon::parse($order->rental_end_date);
@@ -267,7 +267,7 @@
                             </span>
                         </td>
                         <td class="px-5 py-3.5 text-right whitespace-nowrap">
-                            <a href="#" class="inline-block px-3 py-1.5 bg-white border border-gray-200 hover:border-orange-500 hover:text-orange-500 text-gray-600 font-semibold rounded-lg text-xs transition-colors shadow-sm">
+                            <a href="{{ route('admin.orders.show', $order->id) }}" class="inline-block px-3 py-1.5 bg-white border border-gray-200 hover:border-orange-500 hover:text-orange-500 text-gray-600 font-semibold rounded-lg text-xs transition-colors shadow-sm">
                                 Kelola
                             </a>
                         </td>

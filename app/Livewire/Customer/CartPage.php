@@ -55,6 +55,32 @@ class CartPage extends Component
         }
     }
 
+    public function toggleDateGroup(string $dateGroup): void
+    {
+        $cartWithHash = collect($this->cart)->map(function ($item, $key) {
+            $item['hash'] = $key;
+            return $item;
+        });
+
+        $groupHashes = $cartWithHash
+            ->filter(fn($item) => ($item['start_date'] . '|' . $item['end_date']) === $dateGroup)
+            ->pluck('hash')
+            ->values()
+            ->all();
+
+        if (empty($groupHashes)) {
+            return;
+        }
+
+        $allSelected = count(array_intersect($groupHashes, $this->selectedItems)) === count($groupHashes);
+
+        if ($allSelected) {
+            $this->selectedItems = array_values(array_diff($this->selectedItems, $groupHashes));
+        } else {
+            $this->selectedItems = array_values(array_unique(array_merge($this->selectedItems, $groupHashes)));
+        }
+    }
+
     public function removeItem($hash)
     {
         $cart = session()->get('cart', []);
