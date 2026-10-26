@@ -84,11 +84,14 @@ class Order extends Model
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
 
         return match ($status) {
-            'menunggu_pembayaran', 'belum_dibayar' => 'Belum Dibayar',
-            'menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi' => 'Menunggu Verifikasi',
-            'siap_kirim', 'diproses', 'dikonfirmasi' => 'Diproses',
+            'menunggu_konfirmasi', 'menunggu_verifikasi_identitas' => 'Menunggu Konfirmasi',
+            'menunggu_pembayaran', 'belum_dibayar' => 'Menunggu Pembayaran',
+            'menunggu_verifikasi', 'verifikasi' => 'Menunggu Verifikasi',
+            'siap_kirim' => 'Siap Kirim',
+            'diproses', 'dikonfirmasi' => 'Diproses',
             'dikirim' => 'Dikirim',
             'sedang_disewa' => 'Sedang Disewa',
+            'dikembalikan' => 'Dikembalikan',
             'selesai' => 'Selesai',
             'batal', 'dibatalkan', 'ditolak' => 'Batal',
             default => ucwords(str_replace('_', ' ', $this->status ?? 'Menunggu')),
@@ -100,11 +103,14 @@ class Order extends Model
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
 
         return match ($status) {
-            'menunggu_pembayaran', 'belum_dibayar' => 'bg-red-600 text-white',
-            'menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi' => 'bg-amber-500 text-white',
-            'siap_kirim', 'diproses', 'dikonfirmasi' => 'bg-indigo-600 text-white',
+            'menunggu_konfirmasi' => 'bg-orange-500 text-white',
+            'menunggu_pembayaran', 'belum_dibayar' => 'bg-amber-500 text-white',
+            'menunggu_verifikasi', 'verifikasi' => 'bg-yellow-500 text-white',
+            'siap_kirim' => 'bg-indigo-600 text-white',
+            'diproses', 'dikonfirmasi' => 'bg-indigo-600 text-white',
             'dikirim' => 'bg-purple-600 text-white',
             'sedang_disewa' => 'bg-blue-600 text-white',
+            'dikembalikan' => 'bg-cyan-600 text-white',
             'selesai' => 'bg-green-600 text-white',
             'batal', 'dibatalkan', 'ditolak' => 'bg-gray-500 text-white',
             default => 'bg-gray-600 text-white',
@@ -177,12 +183,13 @@ class Order extends Model
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
 
         return match ($status) {
-            'menunggu_pembayaran', 'belum_dibayar' => 'Selesaikan pembayaran agar pesanan dapat diproses oleh toko rental.',
             'menunggu_konfirmasi' => 'Toko sedang memeriksa data pesanan dan verifikasi jaminan identitas Anda.',
-            'menunggu_verifikasi', 'verifikasi' => 'Toko sedang memverifikasi bukti pembayaran yang Anda kirimkan.',
+            'menunggu_pembayaran', 'belum_dibayar' => 'Identitas Anda telah disetujui! Silakan lakukan pembayaran sesuai rincian agar pesanan dapat diproses.',
+            'menunggu_verifikasi', 'verifikasi' => 'Bukti pembayaran telah diunggah. Toko sedang memverifikasi pembayaran Anda.',
             'siap_kirim', 'diproses', 'dikonfirmasi' => 'Pembayaran terverifikasi! Toko sedang mempersiapkan unit barang pesanan Anda.',
             'dikirim' => 'Pesanan dalam perjalanan pengiriman. Tekan tombol “Terima Barang” setelah paket sampai di tujuan.',
             'sedang_disewa' => 'Masa sewa sedang berjalan. Harap gunakan barang dengan baik dan kembalikan tepat waktu sebelum masa sewa berakhir.',
+            'dikembalikan' => 'Barang telah dikembalikan dan sedang diperiksa oleh toko rental.',
             'selesai' => 'Terima kasih telah menyewa di toko kami! Pesanan ini telah selesai sepenuhnya.',
             'batal', 'dibatalkan', 'ditolak' => 'Pesanan ini telah dibatalkan / ditolak.',
             default => 'Status pesanan Anda sedang diproses oleh sistem.',

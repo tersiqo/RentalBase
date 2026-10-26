@@ -1,10 +1,24 @@
+@php
+    $currentClient = $client ?? Auth::user()?->client ?? Auth::user()?->tenant;
+    $currentProfile = $currentClient?->tenantProfile;
+    $storeName = $currentProfile?->name ?? $currentClient?->business_name ?? $currentClient?->nama_usaha ?? 'RentalBase Admin';
+    $subdomain = $currentProfile?->subdomain ?? $currentClient?->subdomain ?? 'tenant';
+
+    $storeLogo = $currentProfile?->logo_path ?? $currentClient?->logo ?? null;
+    $storeLogoUrl = null;
+    if ($storeLogo) {
+        $storeLogoUrl = str_starts_with($storeLogo, 'http')
+            ? $storeLogo
+            : \Illuminate\Support\Facades\Storage::url($storeLogo);
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="id" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') — {{ $client->business_name ?? 'RentalBase Admin' }}</title>
+    <title>@yield('title', 'Dashboard') — {{ $storeName }}</title>
     <meta name="description" content="Panel Admin RentalBase — Kelola pesanan, produk, dan operasional rental peralatan bayi Anda.">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
@@ -92,19 +106,32 @@
     {{-- Logo / Brand --}}
     <div class="flex items-center gap-3 px-5 border-b border-gray-100"
          style="height: 64px; min-height: 64px;">
-        <div class="shrink-0 w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center shadow-md shadow-orange-500/30">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-            </svg>
-        </div>
+        @if($storeLogoUrl)
+            <img src="{{ $storeLogoUrl }}"
+                 alt="{{ $storeName }}"
+                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';"
+                 class="shrink-0 w-9 h-9 rounded-xl object-contain border border-gray-100 p-0.5 bg-white shadow-sm">
+            <div class="hidden shrink-0 w-9 h-9 bg-orange-500 rounded-xl items-center justify-center shadow-md shadow-orange-500/30">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+            </div>
+        @else
+            <div class="shrink-0 w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center shadow-md shadow-orange-500/30">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+            </div>
+        @endif
         <div x-show="!collapsed || mobileOpen"
              x-transition:enter="transition-opacity duration-150"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
-             class="overflow-hidden whitespace-nowrap">
-            <p class="text-sm font-bold text-gray-900 leading-tight">{{ $client->business_name ?? 'RentalBase Baby Care' }}</p>
-            <p class="text-[11px] text-gray-400 font-medium">Rental Ops — Peralatan Bayi</p>
+             class="overflow-hidden whitespace-nowrap min-w-0">
+            <p class="text-sm font-bold text-gray-900 leading-tight truncate" title="{{ $storeName }}">{{ $storeName }}</p>
+            <p class="text-[11px] text-gray-400 font-medium truncate">Rental Ops — {{ $subdomain }}.rentalbase</p>
         </div>
     </div>
 
@@ -348,7 +375,7 @@
 
     {{-- Breadcrumb/Page title --}}
     <div class="flex items-center gap-2 text-xs font-medium">
-        <span class="font-bold text-gray-900">{{ $client->business_name ?? 'Baby Rental Studio' }}</span>
+        <span class="font-bold text-gray-900">{{ $storeName }}</span>
         <span class="text-gray-300">/</span>
         <span class="text-gray-500">@yield('page-title', 'Dashboard Operasional')</span>
     </div>

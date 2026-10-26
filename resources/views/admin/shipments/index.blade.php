@@ -14,6 +14,12 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {{ session('error') }}
+        </div>
+    @endif
+
     {{-- Desain tabel kembali menggunakan desain awal yang bersih --}}
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
@@ -72,16 +78,38 @@
                         </td>
                         
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                Sudah Disiapkan
-                            </span>
+                            @php
+                                $totalReq = $order->orderItems->sum('quantity');
+                                $totalAlloc = $order->orderItems->sum(fn($i) => $i->orderItemUnits->count());
+                            @endphp
+                            @if($totalAlloc >= $totalReq && $totalReq > 0)
+                                <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                                    ✓ Unit Siap ({{ $totalAlloc }}/{{ $totalReq }})
+                                </span>
+                            @elseif($totalAlloc > 0)
+                                <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
+                                    Sebagian Siap ({{ $totalAlloc }}/{{ $totalReq }})
+                                </span>
+                            @else
+                                <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                    Siap Disiapkan
+                                </span>
+                            @endif
                         </td>
                         
                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                            {{-- Tombol untuk membuka Pop Up --}}
-                            <button @click="openModal = true" class="{{ $isPickup ? 'bg-purple-600 hover:bg-purple-700' : 'bg-orange-500 hover:bg-orange-600' }} text-white px-4 py-2 rounded-md font-semibold text-sm transition">
-                                {{ $isPickup ? 'Serahkan Barang' : 'Proses Kirim' }}
-                            </button>
+                            @if($totalAlloc < $totalReq)
+                                <a href="{{ route('admin.orders.show', $order->id) }}" 
+                                   title="Klik untuk memilih unit fisik di Detail Pesanan"
+                                   class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-md font-semibold text-xs transition shadow-sm">
+                                    <span>⚙️ Alokasikan Unit Dulu</span>
+                                </a>
+                            @else
+                                {{-- Tombol untuk membuka Pop Up jika unit sudah dialokasikan --}}
+                                <button @click="openModal = true" class="{{ $isPickup ? 'bg-purple-600 hover:bg-purple-700' : 'bg-orange-500 hover:bg-orange-600' }} text-white px-4 py-2 rounded-md font-semibold text-sm transition shadow-sm">
+                                    {{ $isPickup ? 'Serahkan Barang' : 'Proses Kirim' }}
+                                </button>
+                            @endif
 
                             {{-- ================= POP UP BARU SESUAI INSTRUKSI PM ================= --}}
                             <div x-show="openModal" 

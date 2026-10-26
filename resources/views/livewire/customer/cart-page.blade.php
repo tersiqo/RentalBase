@@ -124,17 +124,32 @@
                          x-transition.opacity.duration.300ms 
                          class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative group">
                         <!-- Group Header -->
-                        <div class="bg-gray-50 border-b border-gray-100 px-4 sm:px-6 py-4 flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center">
+                        <div class="bg-gray-50/90 border-b border-gray-100 px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+                                <!-- Checkbox Centang Seluruh Produk Rentang Tanggal Ini -->
+                                <input type="checkbox"
+                                       x-bind:checked="groupHashes.length > 0 && groupHashes.every(h => $wire.selectedItems.includes(h))"
+                                       x-on:change="
+                                           let isChecked = $event.target.checked;
+                                           if (isChecked) {
+                                               $wire.selectedItems = [...new Set([...$wire.selectedItems, ...groupHashes])];
+                                           } else {
+                                               $wire.selectedItems = $wire.selectedItems.filter(h => !groupHashes.includes(h));
+                                           }
+                                       "
+                                       title="Centang semua produk dengan jadwal sewa ini"
+                                       aria-label="Centang semua produk dengan jadwal sewa ini"
+                                       class="w-5 h-5 text-primary-600 bg-white border-gray-300 rounded focus:ring-primary-500 cursor-pointer transition flex-none">
+
+                                <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center flex-none">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </div>
-                                <div>
-                                    <h4 class="font-bold text-gray-900 leading-tight">Jadwal Sewa</h4>
-                                    <p class="text-xs sm:text-sm text-gray-500">{{ $start }} - {{ $end }}</p>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-gray-900 leading-tight text-sm sm:text-base">Jadwal Sewa</h4>
+                                    <p class="text-xs sm:text-sm text-gray-500 font-medium truncate">{{ $start }} - {{ $end }}</p>
                                 </div>
                             </div>
-                            <span class="text-xs sm:text-sm font-semibold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">{{ $items->first()['duration_days'] }} Hari</span>
+                            <span class="text-xs sm:text-sm font-semibold text-primary-600 bg-primary-50 px-3 py-1 rounded-full flex-none">{{ $items->first()['duration_days'] }} Hari</span>
                         </div>
                         
                         <!-- Items -->
@@ -218,7 +233,7 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-gray-100 pt-4 mb-8">
+                    <div class="border-t border-gray-100 pt-4 mb-6">
                         <div class="flex justify-between items-end relative">
                             <span class="text-base font-bold text-gray-900">Total Tagihan</span>
                             <div class="text-right">

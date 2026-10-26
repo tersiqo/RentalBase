@@ -72,7 +72,7 @@ class TenantProfile extends Model
      * dan '#000000' (hitam) jika theme_color terang.
      *
      * Rumus YIQ: ((r * 299) + (g * 587) + (b * 114)) / 1000
-     * Threshold: 128 (skala 0 - 255)
+     * Threshold: 150 (skala 0 - 255)
      */
     public function getTextColorAttribute(): string
     {
@@ -94,6 +94,6 @@ class TenantProfile extends Model
 
         $yiq = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
 
-        return $yiq >= 128 ? '#000000' : '#ffffff';
+        return $yiq >= 150 ? '#000000' : '#ffffff';
     }
 }

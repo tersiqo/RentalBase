@@ -540,12 +540,16 @@
                     $isOrderAdvanced = in_array(strtolower($order->status), [
                         'diproses', 'dikonfirmasi', 'siap_kirim', 'dikirim', 'sedang_disewa', 'selesai', 'dikembalikan'
                     ]);
-                    $isPaidVerified = $isOrderAdvanced || in_array($payStatus, [
+                    $isPaidVerified = in_array($payStatus, [
                         'terverifikasi', 'dikonfirmasi', 'sukses', 'lunas', 'berhasil'
-                    ]);
-                    $isPaidWaiting = !$isPaidVerified && in_array($payStatus, [
+                    ]) || ($isOrderAdvanced && $order->payments()->whereIn('status', ['terverifikasi', 'dikonfirmasi', 'sukses', 'lunas', 'berhasil'])->exists());
+                    $isPaidWaiting = !$isPaidVerified && (in_array($payStatus, [
                         'menunggu_konfirmasi', 'menunggu_verifikasi', 'pending'
-                    ]);
+                    ]) || $order->status === 'menunggu_verifikasi');
+
+                    $activePaymentMethods = ($client?->clientPaymentMethods()->where('is_active', true)->exists())
+                        ? $client->clientPaymentMethods()->where('is_active', true)->get()
+                        : (($client?->paymentMethods()->exists()) ? $client->paymentMethods : collect());
                 @endphp
 
                 @if($isPaidVerified)
@@ -603,7 +607,7 @@
 
                     <!-- Tab Bank Transfer -->
                     <div x-show="ptab === 'bank'" class="space-y-2 mb-4">
-                        @forelse($client?->paymentMethods ?? [] as $method)
+                        @forelse($activePaymentMethods->filter(fn($m) => !empty($m->account_number)) as $method)
                             <div class="p-3 border border-gray-200 rounded-xl flex items-center justify-between gap-3 bg-white">
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-2">
@@ -648,7 +652,7 @@
                     <!-- Tab QRIS -->
                     <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-3 border border-gray-200 rounded-xl mb-4 bg-white">
                         @php
-                            $qrisMethod = collect($client?->paymentMethods ?? [])->first(fn($m) => !empty($m->qris_image));
+                            $qrisMethod = $activePaymentMethods->first(fn($m) => !empty($m->qris_image));
                             $qrisImg = $qrisMethod?->qris_image ? (str_starts_with($qrisMethod->qris_image, 'http') ? $qrisMethod->qris_image : Storage::url($qrisMethod->qris_image)) : null;
                         @endphp
 

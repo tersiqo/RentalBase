@@ -443,8 +443,10 @@ class PageController extends Controller
         $path = $request->file('payment_proof')->store('payments', 'public');
 
         $paymentMethodId = $request->input('client_payment_method_id') 
-            ?? $order->client?->paymentMethods()->where('is_active', true)->value('id')
-            ?? $order->client?->paymentMethods()->first()?->id;
+            ?? $order->client?->clientPaymentMethods()->where('is_active', true)->value('id')
+            ?? $order->client?->clientPaymentMethods()->first()?->id
+            ?? \App\Models\ClientPaymentMethod::where('is_active', true)->value('id')
+            ?? \App\Models\ClientPaymentMethod::first()?->id;
 
         \App\Models\Payment::create([
             'order_id' => $order->id,

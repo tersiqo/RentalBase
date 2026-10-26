@@ -90,7 +90,12 @@
                     @if($logoUrl)
                         <img src="{{ $logoUrl }}"
                              alt="{{ $tenantProfile?->name ?? $client->nama_usaha ?? 'Logo Toko' }}"
+                             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';"
                              class="w-[40px] h-[40px] rounded-xl object-contain border border-gray-100 p-0.5 shadow-sm group-hover:scale-105 transition-transform bg-white">
+                        <div class="hidden w-[38px] h-[38px] rounded-xl items-center justify-center font-bold shadow-sm transition-all"
+                             style="background-color: var(--tenant-theme); color: var(--tenant-text);">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M3 4h3l2 11h10M6 8h13l-2 6H8"/></svg>
+                        </div>
                     @else
                         <div class="w-[38px] h-[38px] rounded-xl flex items-center justify-center font-bold shadow-sm transition-all"
                              style="background-color: var(--tenant-theme); color: var(--tenant-text);">
@@ -125,8 +130,16 @@
                     @auth
                         <!-- Login / Avatar (Alpine Dropdown) -->
                         <div x-data="{ open: false }" class="relative flex items-center ml-1">
-                            <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none">
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=f97316&color=fff&bold=true" alt="Profile" class="w-[42px] h-[42px] rounded-xl border border-gray-200 hover:border-primary-500 transition-colors">
+                            <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none cursor-pointer">
+                                @php
+                                    $userAvatar = auth()->user()->avatar 
+                                        ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : \Illuminate\Support\Facades\Storage::url(auth()->user()->avatar))
+                                        : "https://ui-avatars.com/api/?name=" . urlencode(auth()->user()->name) . "&background=f97316&color=fff&bold=true";
+                                @endphp
+                                <img src="{{ $userAvatar }}" 
+                                     alt="Profile" 
+                                     onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=f97316&color=fff&bold=true'"
+                                     class="w-[42px] h-[42px] rounded-xl object-cover border border-gray-200 hover:border-primary-500 transition-colors">
                             </button>
                             
                             <div x-show="open" 
