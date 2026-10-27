@@ -225,19 +225,15 @@ class PaymentMethodController extends Controller
     }
 
     /**
-     * Menentukan disk storage untuk upload file (supabase -> s3 -> default).
+     * Menentukan disk storage untuk upload file (supabase jika kredensial lengkap, fallback: 'public').
      */
     protected function resolveStorageDisk(): string
     {
-        if (config('filesystems.disks.supabase')) {
+        if (! empty(config('filesystems.disks.supabase.key')) && ! empty(config('filesystems.disks.supabase.bucket'))) {
             return 'supabase';
         }
 
-        if (config('filesystems.disks.s3')) {
-            return 's3';
-        }
-
-        return config('filesystems.default', 'public');
+        return 'public';
     }
 
     /**

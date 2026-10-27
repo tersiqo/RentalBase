@@ -138,19 +138,15 @@ class TenantProfileController extends Controller
     }
 
     /**
-     * Menentukan disk storage yang tersedia (prioritas: supabase -> s3 -> default).
+     * Menentukan disk storage yang tersedia (supabase jika kredensial lengkap, fallback: 'public').
      */
     protected function resolveStorageDisk(): string
     {
-        if (config('filesystems.disks.supabase')) {
+        if (! empty(config('filesystems.disks.supabase.key')) && ! empty(config('filesystems.disks.supabase.bucket'))) {
             return 'supabase';
         }
 
-        if (config('filesystems.disks.s3')) {
-            return 's3';
-        }
-
-        return config('filesystems.default', 'public');
+        return 'public';
     }
 
     /**
@@ -199,8 +195,13 @@ class TenantProfileController extends Controller
             $updates['description'] = $profile->description;
         }
 
-        if ($profile->logo_path && $client->logo !== $profile->logo_path) {
-            $updates['logo'] = $profile->logo_path;
+        // Sinkronisasi logo: perbarui jika ada logo baru, atau hapus eksplisit jika logo_path bernilai null
+        if (! empty($profile->logo_path)) {
+            if ($client->logo !== $profile->logo_path) {
+                $updates['logo'] = $profile->logo_path;
+            }
+        } else {
+            $updates['logo'] = null;
         }
 
         if ($profile->theme_color && $client->theme_color !== $profile->theme_color) {
