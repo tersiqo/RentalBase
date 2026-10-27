@@ -22,6 +22,11 @@ class PaymentMethodController extends Controller
     {
         $client = $this->resolveCurrentClient();
 
+        // Auto-backfill: Cek apakah relasi payment_methods untuk client/tenant saat ini kosong.
+        // Jika kosong tapi tabel legacy client_payment_methods memiliki data aktif,
+        // otomatis duplikasi/sinkronisasikan ke payment_methods.
+        $this->autoBackfillFromLegacyPaymentMethods($client);
+
         // Query selalu scoped ke client_id
         $paymentMethods = PaymentMethod::where('client_id', $client->id)
             ->orderByDesc('is_active')
@@ -107,6 +112,10 @@ class PaymentMethodController extends Controller
         $client = $this->resolveCurrentClient();
         $this->authorizePaymentMethod($client, $paymentMethod);
 
+        $oldAccountIdentifier = $paymentMethod->type === 'qris'
+            ? ($paymentMethod->account_number ?? ('QRIS-' . $paymentMethod->id))
+            : $paymentMethod->account_number;
+
         $validated = $request->validated();
         $validated['is_active'] = $request->boolean('is_active', $paymentMethod->is_active);
 
@@ -136,7 +145,7 @@ class PaymentMethodController extends Controller
         unset($validated['qris_image']);
 
         $paymentMethod->update($validated);
-        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'save');
+        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'save', $oldAccountIdentifier);
 
         return redirect()
             ->back()
@@ -152,10 +161,14 @@ class PaymentMethodController extends Controller
         $client = $this->resolveCurrentClient();
         $this->authorizePaymentMethod($client, $paymentMethod);
 
+        $oldAccountIdentifier = $paymentMethod->type === 'qris'
+            ? ($paymentMethod->account_number ?? ('QRIS-' . $paymentMethod->id))
+            : $paymentMethod->account_number;
+
         // Menjalankan SoftDeletes (mengisi deleted_at tanpa menghapus baris fisik)
         // File gambar QRIS di storage tetap dipertahankan untuk histori order/invoice lama
         $paymentMethod->delete();
-        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'delete');
+        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'delete', $oldAccountIdentifier);
 
         return redirect()
             ->back()
@@ -170,10 +183,14 @@ class PaymentMethodController extends Controller
         $client = $this->resolveCurrentClient();
         $this->authorizePaymentMethod($client, $paymentMethod);
 
+        $oldAccountIdentifier = $paymentMethod->type === 'qris'
+            ? ($paymentMethod->account_number ?? ('QRIS-' . $paymentMethod->id))
+            : $paymentMethod->account_number;
+
         $paymentMethod->update([
             'is_active' => ! $paymentMethod->is_active,
         ]);
-        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'save');
+        $this->syncWithLegacyClientPaymentMethod($paymentMethod, 'save', $oldAccountIdentifier);
 
         $statusText = $paymentMethod->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
@@ -255,36 +272,145 @@ class PaymentMethodController extends Controller
     }
 
     /**
-     * Sinkronisasi data ke tabel legacy client_payment_methods agar modul pesanan lama tetap kompatibel.
+     * Auto-backfill: Duplikasi data dari tabel legacy client_payment_methods ke payment_methods
+     * jika relasi payment_methods untuk client/tenant saat ini kosong.
      */
-    protected function syncWithLegacyClientPaymentMethod(PaymentMethod $paymentMethod, string $action = 'save'): void
+    protected function autoBackfillFromLegacyPaymentMethods(Client $client): void
+    {
+        try {
+            if (! \Illuminate\Support\Facades\Schema::hasTable('payment_methods')
+                || ! \Illuminate\Support\Facades\Schema::hasTable('client_payment_methods')) {
+                return;
+            }
+
+            // Cek apakah payment_methods untuk client saat ini kosong
+            $hasPaymentMethods = PaymentMethod::where('client_id', $client->id)->exists();
+            if ($hasPaymentMethods) {
+                return;
+            }
+
+            // Ambil data aktif dari tabel legacy client_payment_methods
+            $legacyMethods = \App\Models\ClientPaymentMethod::where('client_id', $client->id)
+                ->where('is_active', true)
+                ->get();
+
+            if ($legacyMethods->isEmpty()) {
+                return;
+            }
+
+            foreach ($legacyMethods as $legacy) {
+                $isQris = str_contains(strtolower((string) $legacy->bank_name), 'qris')
+                    || str_starts_with((string) $legacy->account_number, 'QRIS-')
+                    || (empty($legacy->account_number) && ! empty($legacy->qris_image));
+
+                PaymentMethod::create([
+                    'client_id'          => $client->id,
+                    'type'               => $isQris ? 'qris' : 'bank_transfer',
+                    'bank_name'          => $isQris ? null : $legacy->bank_name,
+                    'account_number'     => $isQris ? null : $legacy->account_number,
+                    'account_name'       => $isQris ? null : $legacy->account_holder,
+                    'qris_merchant_name' => $isQris ? ($legacy->account_holder ?: ($client->business_name ?? 'QRIS')) : null,
+                    'qris_image_path'    => $legacy->qris_image,
+                    'is_active'          => (bool) $legacy->is_active,
+                ]);
+            }
+
+            if ($client->relationLoaded('paymentMethods')) {
+                $client->unsetRelation('paymentMethods');
+            }
+        } catch (\Throwable $e) {
+            // Fail-safe handling
+        }
+    }
+
+    /**
+     * Sinkronisasi data ke tabel legacy client_payment_methods agar modul pesanan dan relasi payments tetap aman.
+     */
+    protected function syncWithLegacyClientPaymentMethod(PaymentMethod $paymentMethod, string $action = 'save', ?string $oldAccountNumber = null): void
     {
         try {
             if (! \Illuminate\Support\Facades\Schema::hasTable('client_payment_methods')) {
                 return;
             }
 
+            $currentAccountIdentifier = $paymentMethod->account_number
+                ?? ($paymentMethod->type === 'qris' ? ('QRIS-' . $paymentMethod->id) : null);
+
+            $targetAccount = $oldAccountNumber ?? $currentAccountIdentifier;
+
             if ($action === 'delete') {
-                \App\Models\ClientPaymentMethod::where('client_id', $paymentMethod->client_id)
-                    ->where('account_number', $paymentMethod->account_number ?? ('QRIS-' . $paymentMethod->id))
-                    ->update(['is_active' => false]);
+                $query = \App\Models\ClientPaymentMethod::where('client_id', $paymentMethod->client_id);
+
+                if ($targetAccount) {
+                    $query->where(function ($q) use ($targetAccount, $paymentMethod) {
+                        $q->where('account_number', $targetAccount);
+                        if ($paymentMethod->type === 'qris') {
+                            $q->orWhere('account_number', 'QRIS-' . $paymentMethod->id)
+                              ->orWhere('bank_name', 'QRIS');
+                        }
+                    });
+                } elseif ($paymentMethod->type === 'qris') {
+                    $query->where(function ($q) use ($paymentMethod) {
+                        $q->where('account_number', 'QRIS-' . $paymentMethod->id)
+                          ->orWhere('bank_name', 'QRIS');
+                    });
+                }
+
+                $query->update(['is_active' => false]);
                 return;
             }
 
-            \App\Models\ClientPaymentMethod::updateOrCreate(
-                [
-                    'client_id'      => $paymentMethod->client_id,
-                    'account_number' => $paymentMethod->account_number ?? ('QRIS-' . $paymentMethod->id),
-                ],
-                [
-                    'bank_name'      => $paymentMethod->bank_name ?? ($paymentMethod->qris_merchant_name ?: 'QRIS'),
-                    'account_holder' => $paymentMethod->account_name ?? ($paymentMethod->qris_merchant_name ?: 'Merchant QRIS'),
-                    'qris_image'     => $paymentMethod->qris_image_path,
-                    'is_active'      => $paymentMethod->is_active,
-                ]
-            );
+            // Cari record legacy yang sudah ada untuk di-update, atau buat baru jika belum ada
+            $legacyRecord = null;
+
+            // 1. Coba cari berdasarkan $oldAccountNumber jika ada
+            if ($oldAccountNumber) {
+                $legacyRecord = \App\Models\ClientPaymentMethod::where('client_id', $paymentMethod->client_id)
+                    ->where('account_number', $oldAccountNumber)
+                    ->first();
+            }
+
+            // 2. Jika belum ketemu, coba cari berdasarkan current account number
+            if (! $legacyRecord && $currentAccountIdentifier) {
+                $legacyRecord = \App\Models\ClientPaymentMethod::where('client_id', $paymentMethod->client_id)
+                    ->where('account_number', $currentAccountIdentifier)
+                    ->first();
+            }
+
+            // 3. Jika bertipe QRIS dan belum ketemu, coba cari berdasarkan identifier QRIS
+            if (! $legacyRecord && $paymentMethod->type === 'qris') {
+                $legacyRecord = \App\Models\ClientPaymentMethod::where('client_id', $paymentMethod->client_id)
+                    ->where(function ($q) use ($paymentMethod) {
+                        $q->where('account_number', 'QRIS-' . $paymentMethod->id)
+                          ->orWhere('bank_name', 'QRIS');
+                    })
+                    ->first();
+            }
+
+            // 4. Jika bertipe bank_transfer dan belum ketemu, coba cari berdasarkan bank_name dan account_holder
+            if (! $legacyRecord && $paymentMethod->type === 'bank_transfer' && $paymentMethod->bank_name) {
+                $legacyRecord = \App\Models\ClientPaymentMethod::where('client_id', $paymentMethod->client_id)
+                    ->where('bank_name', $paymentMethod->bank_name)
+                    ->where('account_holder', $paymentMethod->account_name)
+                    ->first();
+            }
+
+            $legacyData = [
+                'client_id'      => $paymentMethod->client_id,
+                'bank_name'      => $paymentMethod->bank_name ?? ($paymentMethod->qris_merchant_name ?: 'QRIS'),
+                'account_number' => $paymentMethod->account_number ?? ('QRIS-' . $paymentMethod->id),
+                'account_holder' => $paymentMethod->account_name ?? ($paymentMethod->qris_merchant_name ?: 'Merchant QRIS'),
+                'qris_image'     => $paymentMethod->qris_image_path,
+                'is_active'      => (bool) $paymentMethod->is_active,
+            ];
+
+            if ($legacyRecord) {
+                $legacyRecord->update($legacyData);
+            } else {
+                \App\Models\ClientPaymentMethod::create($legacyData);
+            }
         } catch (\Throwable $e) {
-            // Fail-safe
+            // Fail-safe handling
         }
     }
 }
