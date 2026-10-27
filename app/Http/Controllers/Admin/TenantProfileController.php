@@ -50,6 +50,11 @@ class TenantProfileController extends Controller
      */
     public function update(TenantProfileRequest $request): RedirectResponse
     {
+        // Pastikan hanya primary admin yang dapat mengubah profil toko
+        if (! $request->user()?->isPrimaryAdmin()) {
+            abort(403, 'Akses ditolak: Hanya Admin Utama yang memiliki izin mengubah profil toko.');
+        }
+
         $client = $this->resolveCurrentClient();
 
         // Pastikan hanya profile milik client_id ini yang dapat diakses/diupdate
@@ -64,6 +69,9 @@ class TenantProfileController extends Controller
         }
 
         $validated = $request->validated();
+
+        // Subdomain bersifat permanen (read-only), pastikan selalu dibuang sebelum save
+        unset($validated['subdomain']);
 
         // Proteksi keamanan ganda: tolak/hapus theme_color jika paket tenant adalah Starter
         $plan = $client->plan ?? 'starter';
