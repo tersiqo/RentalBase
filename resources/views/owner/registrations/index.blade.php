@@ -766,14 +766,14 @@
                         <div>
                             <h3 class="text-base font-bold text-slate-900">Tolak Pendaftaran Tenant</h3>
                             <p class="text-xs text-slate-500 mt-1">
-                                Anda akan menolak pengajuan untuk <strong class="text-slate-800" x-text="rejectName"></strong>.
+                                Anda akan menolak pengajuan untuk <strong class="text-slate-800" x-text="rejectName"></strong>. Calon tenant akan menerima notifikasi email berisi alasan penolakan beserta petunjuk perbaikan data pendaftaran.
                             </p>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Alasan Penolakan (akan dicatat di sistem):</label>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Alasan Penolakan (akan dicatat di sistem & dikirimkan via email):</label>
                             <textarea name="rejection_reason" rows="3" required
-                                      placeholder="Contoh: Bukti pembayaran buram / nominal transfer tidak sesuai..."
+                                      placeholder="Contoh: Bukti transfer buram / nominal pembayaran tidak sesuai paket. Mohon unggah bukti pembayaran yang valid."
                                       class="w-full text-xs rounded-xl border border-slate-200 p-3 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"></textarea>
                         </div>
                     </div>

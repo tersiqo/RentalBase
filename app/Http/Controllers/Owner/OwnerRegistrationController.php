@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Owner;
 
 use App\Http\Controllers\Controller;
 use App\Mail\TenantApproved;
+use App\Mail\TenantRejected;
 use App\Models\Client;
 use App\Models\ClientRegistration;
 use App\Models\Subscription;
@@ -171,11 +172,13 @@ class OwnerRegistrationController extends Controller
             return redirect()->back()->with('error', 'Pendaftaran tenant yang sudah disetujui tidak dapat ditolak.');
         }
 
-        DB::transaction(function () use ($reg, $request) {
+        $reason = $request->input('rejection_reason');
+
+        DB::transaction(function () use ($reg, $reason) {
             $reg->update([
                 'status' => 'ditolak',
                 'payment_status' => 'ditolak',
-                'rejection_reason' => $request->input('rejection_reason'),
+                'rejection_reason' => $reason,
                 'reviewed_by' => auth()->id(),
                 'reviewed_at' => Carbon::now(),
             ]);
@@ -197,6 +200,26 @@ class OwnerRegistrationController extends Controller
             }
         });
 
-        return redirect()->back()->with('success', "Pendaftaran tenant {$reg->business_name} telah ditolak.");
+        // Kirim email pemberitahuan penolakan di luar transaksi database
+        $emailSent = true;
+        try {
+            Mail::to($reg->admin_email)->send(
+                new TenantRejected($reg, $reason)
+            );
+        } catch (\Throwable $e) {
+            $emailSent = false;
+            Log::error("Gagal mengirim email penolakan pendaftaran tenant [ID: {$reg->id}, Email: {$reg->admin_email}]: " . $e->getMessage(), [
+                'registration_id' => $reg->id,
+                'business_name'   => $reg->business_name,
+                'email'           => $reg->admin_email,
+                'exception'       => $e,
+            ]);
+        }
+
+        if ($emailSent) {
+            return redirect()->back()->with('success', "Pendaftaran tenant {$reg->business_name} telah ditolak. Email pemberitahuan beserta alasan penolakan telah dikirimkan ke {$reg->admin_email}.");
+        }
+
+        return redirect()->back()->with('warning', "Pendaftaran tenant {$reg->business_name} telah ditolak, namun email pemberitahuan ke {$reg->admin_email} gagal dikirim. Silakan hubungi PIC secara langsung.");
     }
 }

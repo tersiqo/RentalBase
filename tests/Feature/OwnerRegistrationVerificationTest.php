@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\TenantApproved;
+use App\Mail\TenantRejected;
 use App\Models\Client;
 use App\Models\ClientRegistration;
 use App\Models\Subscription;
@@ -329,6 +330,8 @@ class OwnerRegistrationVerificationTest extends TestCase
 
     public function test_owner_can_reject_registration_and_updates_all_associated_records(): void
     {
+        Mail::fake();
+
         $client = Client::create([
             'business_name' => 'Kamera Bali Rental',
             'subdomain' => 'kamerabali',
@@ -368,8 +371,10 @@ class OwnerRegistrationVerificationTest extends TestCase
             'payment_proof' => 'subscriptions/proofs/sample.jpg',
         ]);
 
+        $rejectionReason = 'Bukti pembayaran buram dan tidak terbaca. Mohon unggah struk transfer yang jelas.';
+
         $response = $this->actingAs($this->owner)->post(route('owner.registrations.reject', $reg->id), [
-            'rejection_reason' => 'Bukti pembayaran buram dan tidak terbaca. Mohon unggah struk transfer yang jelas.',
+            'rejection_reason' => $rejectionReason,
         ]);
 
         $response->assertRedirect();
@@ -380,7 +385,7 @@ class OwnerRegistrationVerificationTest extends TestCase
             'id' => $reg->id,
             'status' => 'ditolak',
             'payment_status' => 'ditolak',
-            'rejection_reason' => 'Bukti pembayaran buram dan tidak terbaca. Mohon unggah struk transfer yang jelas.',
+            'rejection_reason' => $rejectionReason,
             'reviewed_by' => $this->owner->id,
         ]);
 
@@ -399,6 +404,97 @@ class OwnerRegistrationVerificationTest extends TestCase
             'id' => $subscription->id,
             'status' => 'ditolak',
             'payment_status' => 'ditolak',
+        ]);
+
+        // Assert rejection email was sent to tenant's admin email
+        Mail::assertSent(TenantRejected::class, function (TenantRejected $mail) use ($reg, $rejectionReason) {
+            return $mail->hasTo('wayan@kamerabali.id')
+                && str_contains($mail->envelope()->subject, 'Kamera Bali Rental')
+                && $mail->businessName === 'Kamera Bali Rental'
+                && $mail->rejectionReason === $rejectionReason;
+        });
+    }
+
+    public function test_owner_reject_handles_email_failure_gracefully(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Surabaya Sound Rental',
+            'subdomain' => 'surabayasound',
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $user = User::create([
+            'name' => 'Joko PIC',
+            'email' => 'joko@surabayasound.id',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'client_id' => $client->id,
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $subscription = Subscription::create([
+            'client_id' => $client->id,
+            'plan_name' => 'business',
+            'price' => 99000,
+            'billing_cycle' => 'monthly',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addMonth()->toDateString(),
+            'status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        $reg = ClientRegistration::create([
+            'business_name' => 'Surabaya Sound Rental',
+            'subdomain' => 'surabayasound',
+            'plan_name' => 'business',
+            'admin_name' => 'Joko PIC',
+            'admin_email' => 'joko@surabayasound.id',
+            'admin_password' => $user->password,
+            'status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        // Simulate mail failure
+        Mail::shouldReceive('to')
+            ->once()
+            ->with('joko@surabayasound.id')
+            ->andThrow(new \Exception('SMTP connection timeout'));
+
+        Log::shouldReceive('error')
+            ->once()
+            ->withArgs(function ($message, $context) use ($reg) {
+                return str_contains($message, 'Gagal mengirim email penolakan')
+                    && $context['registration_id'] === $reg->id
+                    && $context['email'] === 'joko@surabayasound.id';
+            });
+
+        $response = $this->actingAs($this->owner)->post(route('owner.registrations.reject', $reg->id), [
+            'rejection_reason' => 'Nominal transfer tidak sesuai dengan harga paket langganan.',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('warning');
+
+        // Database transaction remains committed despite mail failure
+        $this->assertDatabaseHas('client_registrations', [
+            'id' => $reg->id,
+            'status' => 'ditolak',
+            'rejection_reason' => 'Nominal transfer tidak sesuai dengan harga paket langganan.',
+        ]);
+
+        $this->assertDatabaseHas('clients', [
+            'id' => $client->id,
+            'status' => 'ditolak',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'status' => 'ditolak',
+        ]);
+
+        $this->assertDatabaseHas('subscriptions', [
+            'id' => $subscription->id,
+            'status' => 'ditolak',
         ]);
     }
 
