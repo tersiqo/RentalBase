@@ -21,7 +21,13 @@ class Order extends Model
 
     public function isPickup(): bool
     {
-        return $this->shipping_method === self::SHIPPING_AMBIL_TOKO;
+        $method = strtolower(trim($this->shipping_method ?? ''));
+        $address = strtolower(trim($this->shipping_address ?? ''));
+
+        return in_array($method, [self::SHIPPING_AMBIL_TOKO, 'pickup', 'ambil_sendiri', 'self_pickup', 'ambil-sendiri'])
+            || str_contains($address, 'ambil langsung di toko')
+            || str_contains($address, 'ambil di toko')
+            || str_contains($address, 'pickup');
     }
 
     public function client()
