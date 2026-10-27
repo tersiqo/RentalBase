@@ -58,6 +58,18 @@
         <p style="font-size: 14px; color: var(--slate-500);">Lengkapi informasi toko untuk menyelesaikan pendaftaran.</p>
     </div>
 
+    @if (session('rejection_reason'))
+        <div class="alert" style="background-color: var(--red-50); border: 1px solid var(--red-500); color: var(--red-700); padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-size: 14px; line-height: 1.5;" role="alert">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: var(--red-500); flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <div>
+                    <strong style="display: block; font-weight: 700; color: var(--red-800); margin-bottom: 2px;">Pendaftaran Ditolak</strong>
+                    <span>Pendaftaran Anda sebelumnya ditolak dengan alasan: <strong>{{ session('rejection_reason') }}</strong>. Silakan perbaiki data di bawah ini dan ajukan ulang.</span>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if (session('error'))
         <div class="alert" role="alert">
             {{ session('error') }}

@@ -106,53 +106,28 @@ class OwnerRegistrationController extends Controller
             ]);
 
             // Update status client menjadi aktif
-            if ($reg->client_id) {
-                Client::where('id', $reg->client_id)->update([
-                    'status' => 'aktif',
-                ]);
-            } else {
-                Client::where('subdomain', $reg->subdomain)->update([
-                    'status' => 'aktif',
-                ]);
-            }
+            Client::where('subdomain', $reg->subdomain)->update([
+                'status' => 'aktif',
+            ]);
 
             // Update status user (admin rental) menjadi aktif
-            if ($reg->user_id) {
-                User::where('id', $reg->user_id)->update([
-                    'status' => 'aktif',
-                ]);
-                $targetUser = User::find($reg->user_id);
-            } else {
-                User::where('email', $reg->admin_email)->update([
-                    'status' => 'aktif',
-                ]);
-                $targetUser = User::where('email', $reg->admin_email)->first();
-            }
+            User::where('email', $reg->admin_email)->update([
+                'status' => 'aktif',
+            ]);
+            $targetUser = User::where('email', $reg->admin_email)->first();
 
-            // Update status subscription menjadi aktif dan atur start/end date jika belum
-            $subscription = null;
-            if ($reg->subscription_id) {
-                $subscription = Subscription::find($reg->subscription_id);
-            } elseif ($reg->client_id) {
-                $subscription = Subscription::where('client_id', $reg->client_id)->latest()->first();
-            } else {
-                $client = Client::where('subdomain', $reg->subdomain)->first();
-                if ($client) {
-                    $subscription = Subscription::where('client_id', $client->id)->latest()->first();
-                }
-            }
+            // Update status subscription menjadi aktif dan atur masa aktif mulai hari ini
+            $client = $reg->client ?? Client::where('subdomain', $reg->subdomain)->first();
+            $subscription = $client ? Subscription::where('client_id', $client->id)->latest()->first() : null;
 
             if ($subscription) {
                 $now = Carbon::now();
-                $updateData = [
+                $subscription->update([
                     'status' => 'aktif',
                     'payment_status' => 'lunas',
-                ];
-                if (!$subscription->start_date) {
-                    $updateData['start_date'] = $now->toDateString();
-                    $updateData['end_date'] = $now->copy()->addMonth()->toDateString();
-                }
-                $subscription->update($updateData);
+                    'start_date' => $now->toDateString(),
+                    'end_date' => $now->copy()->addMonth()->toDateString(),
+                ]);
             }
         });
 
@@ -191,10 +166,36 @@ class OwnerRegistrationController extends Controller
 
         $reg = ClientRegistration::findOrFail($id);
 
-        $reg->update([
-            'status' => 'ditolak',
-            'rejection_reason' => $request->input('rejection_reason'),
-        ]);
+        // Cegah tolak pendaftaran yang sudah disetujui dan aktif
+        if ($reg->status === 'disetujui') {
+            return redirect()->back()->with('error', 'Pendaftaran tenant yang sudah disetujui tidak dapat ditolak.');
+        }
+
+        DB::transaction(function () use ($reg, $request) {
+            $reg->update([
+                'status' => 'ditolak',
+                'payment_status' => 'ditolak',
+                'rejection_reason' => $request->input('rejection_reason'),
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => Carbon::now(),
+            ]);
+
+            Client::where('subdomain', $reg->subdomain)->update([
+                'status' => 'ditolak',
+            ]);
+
+            User::where('email', $reg->admin_email)->update([
+                'status' => 'ditolak',
+            ]);
+
+            $clientId = $reg->client?->id ?? Client::where('subdomain', $reg->subdomain)->value('id');
+            if ($clientId) {
+                Subscription::where('client_id', $clientId)->update([
+                    'status' => 'ditolak',
+                    'payment_status' => 'ditolak',
+                ]);
+            }
+        });
 
         return redirect()->back()->with('success', "Pendaftaran tenant {$reg->business_name} telah ditolak.");
     }

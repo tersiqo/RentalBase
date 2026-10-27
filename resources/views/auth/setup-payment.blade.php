@@ -59,6 +59,18 @@
         </p>
     </div>
 
+    @if (session('rejection_reason'))
+        <div class="alert" style="background-color: var(--red-50); border: 1px solid var(--red-500); color: var(--red-700); padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; font-size: 14px; line-height: 1.5;" role="alert">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: var(--red-500); flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <div>
+                    <strong style="display: block; font-weight: 700; color: var(--red-800); margin-bottom: 2px;">Pendaftaran Ditolak</strong>
+                    <span>Pendaftaran Anda sebelumnya ditolak dengan alasan: <strong>{{ session('rejection_reason') }}</strong>. Silakan perbaiki data di bawah ini dan ajukan ulang.</span>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if (session('error'))
         <div class="alert" style="background-color: var(--red-50); border: 1px solid var(--red-500); color: var(--red-500); padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; font-size: 14px; font-weight: 500;" role="alert">
             {{ session('error') }}
@@ -163,7 +175,13 @@
             </p>
 
             <div class="field" style="margin-bottom: 0;">
-                <input type="file" id="payment_proof" name="payment_proof" accept="image/png,image/jpeg,image/jpg" class="input @error('payment_proof') is-invalid @enderror" style="padding: 10px;" required>
+                @if(!empty($existingProof))
+                    <div style="margin-bottom: 12px; padding: 10px 14px; background-color: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; font-size: 12px; color: var(--slate-600); display: flex; align-items: center; justify-content: space-between;">
+                        <span>Bukti pembayaran sebelumnya telah tersimpan. Pilih file baru jika ingin menggantinya.</span>
+                        <a href="{{ asset('storage/' . $existingProof) }}" target="_blank" style="color: var(--orange-600); font-weight: 600; text-decoration: none;">Lihat Bukti &rarr;</a>
+                    </div>
+                @endif
+                <input type="file" id="payment_proof" name="payment_proof" accept="image/png,image/jpeg,image/jpg" class="input @error('payment_proof') is-invalid @enderror" style="padding: 10px;" {{ empty($existingProof) ? 'required' : '' }}>
                 <div id="file-preview-container" style="display: none; margin-top: 12px; align-items: center; gap: 12px; background-color: var(--slate-50); border: 1px solid var(--slate-200); padding: 8px 12px; border-radius: 8px;">
                     <img id="file-preview-img" src="" alt="Preview Bukti" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--slate-200);">
                     <div style="flex: 1; min-width: 0;">
