@@ -607,19 +607,21 @@
 
                     <!-- Tab Bank Transfer -->
                     <div x-show="ptab === 'bank'" class="space-y-2 mb-4">
-                        @forelse($activePaymentMethods->filter(fn($m) => !empty($m->account_number)) as $method)
-                            <div class="p-3 border border-gray-200 rounded-xl flex items-center justify-between gap-3 bg-white">
-                                <div class="min-w-0">
-                                    <div class="flex items-center gap-2">
-                                        <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[11px]">{{ $method->bank_name }}</span>
-                                        <b class="font-mono text-gray-900 text-sm tracking-wider">{{ $method->account_number }}</b>
+                        @forelse($activePaymentMethods->filter(fn($m) => !empty($m->account_number) && (!isset($m->type) || $m->type !== 'qris') && !str_starts_with((string)$m->account_number, 'QRIS-')) as $method)
+                            @if(!empty($method->account_number))
+                                <div class="p-3 border border-gray-200 rounded-xl flex items-center justify-between gap-3 bg-white">
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[11px]">{{ $method->bank_name }}</span>
+                                            <b class="font-mono text-gray-900 text-sm tracking-wider">{{ $method->account_number }}</b>
+                                        </div>
+                                        <small class="text-xs text-gray-500 block mt-0.5">a.n. {{ $method->account_holder ?? $method->account_name }}</small>
                                     </div>
-                                    <small class="text-xs text-gray-500 block mt-0.5">a.n. {{ $method->account_holder }}</small>
+                                    <button type="button" @click="copyToClipboard('{{ str_replace(' ', '', $method->account_number) }}')" class="px-2.5 py-1 text-xs font-bold text-orange-600 hover:bg-orange-50 rounded-lg border border-orange-200 transition">
+                                        Salin
+                                    </button>
                                 </div>
-                                <button type="button" @click="copyToClipboard('{{ str_replace(' ', '', $method->account_number) }}')" class="px-2.5 py-1 text-xs font-bold text-orange-600 hover:bg-orange-50 rounded-lg border border-orange-200 transition">
-                                    Salin
-                                </button>
-                            </div>
+                            @endif
                         @empty
                             <!-- Fallback Mock Bank accounts dari dokumentasi BabyRent Malang -->
                             <div class="p-3 border border-gray-200 rounded-xl flex items-center justify-between gap-3 bg-white">

@@ -50,6 +50,11 @@ class TenantProfileController extends Controller
      */
     public function update(TenantProfileRequest $request): RedirectResponse
     {
+        // Pastikan hanya primary admin yang dapat mengubah profil toko
+        if (! $request->user()?->isPrimaryAdmin()) {
+            abort(403, 'Akses ditolak: Hanya Admin Utama yang memiliki izin mengubah profil toko.');
+        }
+
         $client = $this->resolveCurrentClient();
 
         // Pastikan hanya profile milik client_id ini yang dapat diakses/diupdate
@@ -64,6 +69,9 @@ class TenantProfileController extends Controller
         }
 
         $validated = $request->validated();
+
+        // Subdomain bersifat permanen (read-only), pastikan selalu dibuang sebelum save
+        unset($validated['subdomain']);
 
         // Proteksi keamanan ganda: tolak/hapus theme_color jika paket tenant adalah Starter
         $plan = $client->plan ?? 'starter';
@@ -130,19 +138,15 @@ class TenantProfileController extends Controller
     }
 
     /**
-     * Menentukan disk storage yang tersedia (prioritas: supabase -> s3 -> default).
+     * Menentukan disk storage yang tersedia (supabase jika kredensial lengkap, fallback: 'public').
      */
     protected function resolveStorageDisk(): string
     {
-        if (config('filesystems.disks.supabase')) {
+        if (! empty(config('filesystems.disks.supabase.key')) && ! empty(config('filesystems.disks.supabase.bucket'))) {
             return 'supabase';
         }
 
-        if (config('filesystems.disks.s3')) {
-            return 's3';
-        }
-
-        return config('filesystems.default', 'public');
+        return 'public';
     }
 
     /**
@@ -191,8 +195,13 @@ class TenantProfileController extends Controller
             $updates['description'] = $profile->description;
         }
 
-        if ($profile->logo_path && $client->logo !== $profile->logo_path) {
-            $updates['logo'] = $profile->logo_path;
+        // Sinkronisasi logo: perbarui jika ada logo baru, atau hapus eksplisit jika logo_path bernilai null
+        if (! empty($profile->logo_path)) {
+            if ($client->logo !== $profile->logo_path) {
+                $updates['logo'] = $profile->logo_path;
+            }
+        } else {
+            $updates['logo'] = null;
         }
 
         if ($profile->theme_color && $client->theme_color !== $profile->theme_color) {
