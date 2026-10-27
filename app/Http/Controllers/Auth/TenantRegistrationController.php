@@ -151,6 +151,15 @@ class TenantRegistrationController extends Controller
                 return back()->withInput()->with('info', 'Pendaftaran berhasil diajukan. Silakan tunggu verifikasi dari Owner. Informasi persetujuan akan dikirimkan melalui email Anda.');
             }
 
+            if ($user->status === 'ditolak') {
+                $reg = ClientRegistration::where('admin_email', $user->email)->latest()->first();
+                $user->update(['status' => 'pending_setup']);
+                $request->session()->regenerate();
+                session()->flash('rejection_reason', $reg?->rejection_reason ?? 'Mohon periksa kembali kelengkapan data pendaftaran Anda.');
+
+                return redirect()->route('tenant.register');
+            }
+
             if ($user->status === 'pending_setup') {
                 return redirect()->route('tenant.register');
             }
@@ -261,23 +270,25 @@ class TenantRegistrationController extends Controller
 
             if ($user->status === 'pending_setup') {
                 $client = Client::where('id', $user->client_id)->first();
-                $plan = $request->session()->get('registration_plan', 'starter');
+                $subscription = $client ? Subscription::where('client_id', $client->id)->first() : null;
+                $plan = $subscription ? $subscription->plan_name : $request->session()->get('registration_plan', 'starter');
 
-                if (! $client || $request->query('step') === 'info') {
+                if (! $client || $request->query('step') === 'info' || session()->has('rejection_reason')) {
                     return view('auth.setup-tenant', compact('plan', 'client'));
                 }
 
-                if ($request->query('step') === 'theme' || ! $request->session()->get('registration_theme_selected')) {
+                if ($request->query('step') === 'theme' || (! $request->session()->get('registration_theme_selected') && ! ($client && $client->theme_color))) {
                     return view('auth.setup-theme', compact('client'));
                 }
 
-                $subscription = Subscription::where('client_id', $client->id)->first();
                 $planName = $subscription ? $subscription->plan_name : $plan;
                 $price = $this->getPrice($planName);
                 $planDetails = $this->getPlanDetails($planName);
                 $paymentInfo = $this->getPlatformPaymentInfo();
+                $existingProof = $subscription?->payment_proof
+                    ?? ClientRegistration::where('admin_email', $user->email)->value('payment_proof');
 
-                return view('auth.setup-payment', compact('client', 'planName', 'price', 'planDetails', 'paymentInfo'));
+                return view('auth.setup-payment', compact('client', 'planName', 'price', 'planDetails', 'paymentInfo', 'existingProof'));
             }
         }
 
@@ -572,10 +583,15 @@ class TenantRegistrationController extends Controller
                     'admin_password' => $user->password,
                     'status' => 'menunggu_verifikasi',
                     'payment_status' => 'menunggu',
+                    'rejection_reason' => null,
                 ]
             );
 
             DB::commit();
+
+            if ($request->session()->has('rejection_reason')) {
+                $request->session()->flash('rejection_reason', $request->session()->get('rejection_reason'));
+            }
 
             return redirect()->route('tenant.register');
 
@@ -693,8 +709,11 @@ class TenantRegistrationController extends Controller
             return redirect()->route('tenant.register', ['step' => 'info']);
         }
 
+        $existingProof = Subscription::where('client_id', $client->id)->value('payment_proof')
+            ?? ClientRegistration::where('admin_email', $user->email)->value('payment_proof');
+
         $request->validate([
-            'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'payment_proof' => $existingProof ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
         ], [
             'payment_proof.required' => 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.',
             'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
@@ -702,7 +721,9 @@ class TenantRegistrationController extends Controller
             'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
         ]);
 
-        $proofPath = $request->file('payment_proof')->store('subscriptions/proofs', 'public');
+        $proofPath = $request->hasFile('payment_proof')
+            ? $request->file('payment_proof')->store('subscriptions/proofs', 'public')
+            : $existingProof;
 
         DB::beginTransaction();
 
@@ -719,6 +740,7 @@ class TenantRegistrationController extends Controller
                 'payment_proof' => $proofPath,
                 'payment_status' => 'menunggu',
                 'status' => 'menunggu_verifikasi',
+                'rejection_reason' => null,
             ]);
 
             // Set user dan client ke status menunggu_verifikasi

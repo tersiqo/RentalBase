@@ -326,4 +326,303 @@ class OwnerRegistrationVerificationTest extends TestCase
         $registrationsCreated = $responseCreated->viewData('registrations');
         $this->assertEquals('ZZZ Rental', $registrationsCreated->first()->business_name);
     }
+
+    public function test_owner_can_reject_registration_and_updates_all_associated_records(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Kamera Bali Rental',
+            'subdomain' => 'kamerabali',
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $user = User::create([
+            'name' => 'Wayan PIC',
+            'email' => 'wayan@kamerabali.id',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'client_id' => $client->id,
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $subscription = Subscription::create([
+            'client_id' => $client->id,
+            'plan_name' => 'business',
+            'price' => 99000,
+            'billing_cycle' => 'monthly',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addMonth()->toDateString(),
+            'status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        $reg = ClientRegistration::create([
+            'business_name' => 'Kamera Bali Rental',
+            'description' => 'Sewa kamera mirrorless dan lensa di Denpasar',
+            'subdomain' => 'kamerabali',
+            'plan_name' => 'business',
+            'admin_name' => 'Wayan PIC',
+            'admin_email' => 'wayan@kamerabali.id',
+            'admin_password' => $user->password,
+            'status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+            'payment_proof' => 'subscriptions/proofs/sample.jpg',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post(route('owner.registrations.reject', $reg->id), [
+            'rejection_reason' => 'Bukti pembayaran buram dan tidak terbaca. Mohon unggah struk transfer yang jelas.',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Client registration record must be updated to ditolak with reason and audit info
+        $this->assertDatabaseHas('client_registrations', [
+            'id' => $reg->id,
+            'status' => 'ditolak',
+            'payment_status' => 'ditolak',
+            'rejection_reason' => 'Bukti pembayaran buram dan tidak terbaca. Mohon unggah struk transfer yang jelas.',
+            'reviewed_by' => $this->owner->id,
+        ]);
+
+        // Related records must also be updated to ditolak without deletion
+        $this->assertDatabaseHas('clients', [
+            'id' => $client->id,
+            'status' => 'ditolak',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'status' => 'ditolak',
+        ]);
+
+        $this->assertDatabaseHas('subscriptions', [
+            'id' => $subscription->id,
+            'status' => 'ditolak',
+            'payment_status' => 'ditolak',
+        ]);
+    }
+
+    public function test_owner_cannot_reject_already_approved_registration(): void
+    {
+        $reg = ClientRegistration::create([
+            'business_name' => 'Jogja Sound Rental',
+            'subdomain' => 'jogjasound',
+            'plan_name' => 'starter',
+            'admin_name' => 'Bambang PIC',
+            'admin_email' => 'bambang@jogjasound.id',
+            'admin_password' => Hash::make('password123'),
+            'status' => 'disetujui',
+            'payment_status' => 'diverifikasi',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post(route('owner.registrations.reject', $reg->id), [
+            'rejection_reason' => 'Coba tolak pendaftaran yang sudah aktif.',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'Pendaftaran tenant yang sudah disetujui tidak dapat ditolak.');
+
+        $reg->refresh();
+        $this->assertEquals('disetujui', $reg->status);
+    }
+
+    public function test_rejected_tenant_login_sets_pending_setup_and_flashes_rejection_reason(): void
+    {
+        $user = User::create([
+            'name' => 'Slamet Tenant',
+            'email' => 'slamet@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'ditolak',
+        ]);
+
+        ClientRegistration::create([
+            'business_name' => 'Slamet Rent Car',
+            'subdomain' => 'slametrent',
+            'plan_name' => 'starter',
+            'admin_name' => 'Slamet Tenant',
+            'admin_email' => 'slamet@example.com',
+            'admin_password' => $user->password,
+            'status' => 'ditolak',
+            'rejection_reason' => 'Foto identitas dan bukti bayar buram.',
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'slamet@example.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertRedirect(route('tenant.register'));
+        $response->assertSessionHas('rejection_reason', 'Foto identitas dan bukti bayar buram.');
+
+        // User status must now be transitioned to pending_setup to allow fixing data
+        $user->refresh();
+        $this->assertEquals('pending_setup', $user->status);
+    }
+
+    public function test_rejected_tenant_can_view_setup_form_with_rejection_reason_alert(): void
+    {
+        $this->withoutVite();
+
+        $client = Client::create([
+            'business_name' => 'Slamet Rent Car',
+            'subdomain' => 'slametrent',
+            'status' => 'ditolak',
+        ]);
+
+        $user = User::create([
+            'name' => 'Slamet Tenant',
+            'email' => 'slamet@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'client_id' => $client->id,
+            'status' => 'pending_setup',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withSession(['rejection_reason' => 'Foto identitas dan bukti bayar buram.'])
+            ->get(route('tenant.register'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Pendaftaran Anda sebelumnya ditolak dengan alasan:');
+        $response->assertSee('Foto identitas dan bukti bayar buram.');
+        $response->assertSee('Slamet Rent Car');
+    }
+
+    public function test_rejected_tenant_resubmission_updates_records_to_menunggu_verifikasi(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Slamet Rent Car',
+            'subdomain' => 'slametrent',
+            'status' => 'ditolak',
+        ]);
+
+        $user = User::create([
+            'name' => 'Slamet Tenant',
+            'email' => 'slamet@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'client_id' => $client->id,
+            'status' => 'pending_setup',
+        ]);
+
+        $subscription = Subscription::create([
+            'client_id' => $client->id,
+            'plan_name' => 'starter',
+            'price' => 0,
+            'billing_cycle' => 'monthly',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addMonth()->toDateString(),
+            'status' => 'ditolak',
+            'payment_status' => 'ditolak',
+            'payment_proof' => 'subscriptions/proofs/old_proof.jpg',
+        ]);
+
+        $reg = ClientRegistration::create([
+            'business_name' => 'Slamet Rent Car',
+            'subdomain' => 'slametrent',
+            'plan_name' => 'starter',
+            'admin_name' => 'Slamet Tenant',
+            'admin_email' => 'slamet@example.com',
+            'admin_password' => $user->password,
+            'status' => 'ditolak',
+            'payment_status' => 'ditolak',
+            'payment_proof' => 'subscriptions/proofs/old_proof.jpg',
+            'rejection_reason' => 'Foto identitas dan bukti bayar buram.',
+        ]);
+
+        // Tenant submits updated store info
+        $updateResponse = $this->actingAs($user)->post('/register-tenant', [
+            'business_name' => 'Slamet Rent Car Official',
+            'subdomain' => 'slametrent',
+            'description' => 'Sewa mobil terlengkap dan terpercaya',
+            'owner_name' => 'Slamet Riyadi',
+            'phone' => '081234567899',
+            'address' => 'Jl. Kebon Jeruk No. 5',
+            'plan_name' => 'starter',
+            'terms' => '1',
+        ]);
+
+        $updateResponse->assertRedirect('/register-tenant');
+
+        // Tenant submits updated payment proof
+        $newProof = \Illuminate\Http\UploadedFile::fake()->create('struk_baru.jpg', 150, 'image/jpeg');
+        $paymentResponse = $this->actingAs($user)->post('/register-tenant', [
+            'action_step' => 'payment',
+            'payment_proof' => $newProof,
+        ]);
+
+        $paymentResponse->assertRedirect('/register-tenant');
+
+        // All records must now be updated back to menunggu_verifikasi and rejection_reason cleared
+        $this->assertDatabaseHas('client_registrations', [
+            'id' => $reg->id,
+            'business_name' => 'Slamet Rent Car Official',
+            'status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+            'rejection_reason' => null,
+        ]);
+
+        $this->assertDatabaseHas('clients', [
+            'id' => $client->id,
+            'business_name' => 'Slamet Rent Car Official',
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $this->assertDatabaseHas('subscriptions', [
+            'id' => $subscription->id,
+            'status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        // It must reappear in owner verification queue
+        $ownerIndex = $this->actingAs($this->owner)->get(route('owner.registrations.index'));
+        $ownerIndex->assertSee('Slamet Rent Car Official');
+        $ownerIndex->assertSee('Menunggu Verifikasi');
+    }
+
+    public function test_rejected_tenant_login_with_google_redirects_to_setup_with_rejection_reason(): void
+    {
+        $user = User::create([
+            'name' => 'google_user',
+            'email' => 'google@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'ditolak',
+        ]);
+
+        ClientRegistration::create([
+            'business_name' => 'Google Rental',
+            'subdomain' => 'googlerental',
+            'plan_name' => 'starter',
+            'admin_name' => 'google_user',
+            'admin_email' => 'google@example.com',
+            'admin_password' => $user->password,
+            'status' => 'ditolak',
+            'rejection_reason' => 'KTP tidak sesuai dengan nama rekening.',
+        ]);
+
+        $abstractUser = \Mockery::mock(\Laravel\Socialite\Two\User::class);
+        $abstractUser->shouldReceive('getId')->andReturn('google-id-12345');
+        $abstractUser->shouldReceive('getName')->andReturn('Google User');
+        $abstractUser->shouldReceive('getEmail')->andReturn('google@example.com');
+
+        $provider = \Mockery::mock(\Laravel\Socialite\Two\GoogleProvider::class);
+        $provider->shouldReceive('user')->andReturn($abstractUser);
+
+        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        $response = $this->get('/auth/google/callback');
+
+        $response->assertRedirect(route('tenant.register'));
+        $response->assertSessionHas('rejection_reason', 'KTP tidak sesuai dengan nama rekening.');
+
+        $user->refresh();
+        $this->assertEquals('pending_setup', $user->status);
+    }
 }

@@ -102,32 +102,14 @@ class AdminStaffController extends Controller
         ]);
 
         // Buat akun staf admin baru dengan role admin_rental terikat ke client_id toko login
-        try {
-            User::create([
-                'client_id' => $client->id,
-                'name'      => trim($validated['name']),
-                'email'     => strtolower(trim($validated['email'])),
-                'password'  => Hash::make($validated['password']),
-                'role'      => 'admin_rental',
-                'status'    => 'aktif',
-            ]);
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-            // Jika sequence PostgreSQL tertinggal (users_pkey), sinkronkan sequence ke MAX(id) lalu coba kembali
-            if (str_contains($e->getMessage(), 'users_pkey')) {
-                \Illuminate\Support\Facades\DB::statement("SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 1))");
-
-                User::create([
-                    'client_id' => $client->id,
-                    'name'      => trim($validated['name']),
-                    'email'     => strtolower(trim($validated['email'])),
-                    'password'  => Hash::make($validated['password']),
-                    'role'      => 'admin_rental',
-                    'status'    => 'aktif',
-                ]);
-            } else {
-                throw $e;
-            }
-        }
+        User::create([
+            'client_id' => $client->id,
+            'name'      => trim($validated['name']),
+            'email'     => strtolower(trim($validated['email'])),
+            'password'  => Hash::make($validated['password']),
+            'role'      => 'admin_rental',
+            'status'    => 'aktif',
+        ]);
 
         return redirect()
             ->route('admin.admins.index')

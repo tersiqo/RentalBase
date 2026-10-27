@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClientRegistration;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -43,8 +44,22 @@ class GoogleController extends Controller
             return redirect()->route('login')->with('info', 'Pendaftaran berhasil diajukan. Silakan tunggu verifikasi dari Owner. Informasi persetujuan akan dikirimkan melalui email Anda.');
         }
 
+        if ($user->status === 'ditolak') {
+            $reg = ClientRegistration::where('admin_email', $user->email)->latest()->first();
+            $user->update(['status' => 'pending_setup']);
+            session()->flash('rejection_reason', $reg?->rejection_reason ?? 'Mohon periksa kembali kelengkapan data pendaftaran Anda.');
+
+            return redirect()->route('tenant.register');
+        }
+
         if ($user->status === 'pending_setup') {
             return redirect()->route('tenant.register');
+        }
+
+        if ($user->status !== 'aktif') {
+            Auth::logout();
+
+            return redirect()->route('login')->with('error', 'Akun Anda sedang tidak aktif.');
         }
 
         return redirect()->intended('/admin/dashboard');
