@@ -54,7 +54,13 @@ class OrderController extends Controller
 
             // Filter berdasarkan status
             ->when($status, function ($query, $status) {
-                $query->where('status', $status);
+                if ($status === 'siap_kirim') {
+                    $query->whereIn('status', ['siap_kirim', 'diproses']);
+                } elseif ($status === 'batal') {
+                    $query->whereIn('status', ['batal', 'dibatalkan', 'ditolak']);
+                } else {
+                    $query->where('status', $status);
+                }
             })
 
             // Filter tanggal awal
@@ -238,15 +244,23 @@ class OrderController extends Controller
             abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
         }
 
-        // Hanya boleh tolak jika statusnya masih menunggu konfirmasi
-        if (! in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi'])) {
+        // Boleh tolak jika statusnya masih dalam proses verifikasi atau menunggu pembayaran
+        if (! in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran', 'belum_dibayar'])) {
             return redirect()->route('admin.orders.index')
                 ->with('error', 'Pesanan ini tidak bisa ditolak karena statusnya sudah berubah.');
         }
 
+        // Kembalikan status unit fisik ke 'tersedia' jika sudah dialokasikan sebelumnya
+        foreach ($order->orderItems as $item) {
+            foreach ($item->orderItemUnits as $oiu) {
+                $oiu->equipmentUnit?->update(['status' => 'tersedia']);
+                $oiu->delete();
+            }
+        }
+
         $order->update([
             'status'              => 'dibatalkan',
-            'cancellation_reason' => $request->input('cancellation_reason', 'Ditolak oleh admin.'),
+            'cancellation_reason' => $request->input('cancellation_reason', 'Ditolak/dibatalkan oleh admin.'),
         ]);
 
         return redirect()->route('admin.orders.index')

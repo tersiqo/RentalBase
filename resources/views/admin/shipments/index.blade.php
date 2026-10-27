@@ -173,7 +173,7 @@
                             <td class="px-6 py-4 align-top text-center whitespace-nowrap">
                                 @if($isReadyToShip)
                                     <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                        ✓ Unit Siap ({{ $totalAlloc }}/{{ $totalReq }})
+                                        Unit Siap ({{ $totalAlloc }}/{{ $totalReq }})
                                     </span>
                                 @elseif($totalAlloc > 0)
                                     <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
@@ -192,7 +192,7 @@
                                     <a href="{{ route('admin.orders.show', $order->id) }}" 
                                        title="Klik untuk memilih unit fisik di Detail Pesanan"
                                        class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-md font-semibold text-xs transition shadow-sm">
-                                        <span>⚙️ Alokasikan Unit</span>
+                                        <span>Alokasikan Unit</span>
                                     </a>
                                 @else
                                     <button type="button" 

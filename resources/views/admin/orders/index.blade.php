@@ -13,14 +13,24 @@
 
 {{-- Notifikasi sukses --}}
 @if(session('success'))
-    <div class="p-4 mb-4 text-sm text-emerald-800 rounded-lg bg-emerald-50">
-        {{ session('success') }}
+    <div class="p-4 mb-4 text-sm text-emerald-800 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>{{ session('success') }}</span>
+        </div>
     </div>
 @endif
 
 @if(session('error'))
-    <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50">
-        {{ session('error') }}
+    <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-red-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            <span>{{ session('error') }}</span>
+        </div>
     </div>
 @endif
 
@@ -30,7 +40,7 @@
           class="flex flex-col lg:flex-row gap-3 items-end">
 
         {{-- Input pencarian --}}
-        <div class="flex-1">
+        <div class="flex-1 w-full">
             <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Cari Pesanan</label>
             <input type="text"
                    name="search"
@@ -68,9 +78,9 @@
         </div>
 
         {{-- Tombol aksi --}}
-        <div class="flex gap-2 shrink-0">
+        <div class="flex gap-2 shrink-0 w-full lg:w-auto">
             <button type="submit"
-                    class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-md transition">
+                    class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-md transition shadow-xs">
                 Filter
             </button>
             <a href="{{ route('admin.orders.index') }}"
@@ -88,169 +98,110 @@
         <table class="w-full text-left text-sm text-gray-600">
             <thead class="bg-gray-50 text-xs text-gray-500 uppercase font-bold tracking-wide border-b border-gray-200">
                 <tr>
-                    <th class="px-6 py-4">ID & Tanggal Masuk</th>
-                    <th class="px-6 py-4">Customer</th>
-                    <th class="px-6 py-4">Periode Sewa</th>
-                    <th class="px-6 py-4">Total Harga</th>
-                    <th class="px-6 py-4 text-center">Status</th>
-                    <th class="px-6 py-4 text-center">Aksi</th>
+                    <th class="px-6 py-4 whitespace-nowrap">ID & Tanggal Masuk</th>
+                    <th class="px-6 py-4 whitespace-nowrap">Customer</th>
+                    <th class="px-6 py-4 whitespace-nowrap">Periode Sewa</th>
+                    <th class="px-6 py-4 whitespace-nowrap">Total Tagihan</th>
+                    <th class="px-6 py-4 text-center whitespace-nowrap">Status</th>
+                    <th class="px-6 py-4 text-center whitespace-nowrap">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
+            <tbody class="divide-y divide-gray-200 bg-white">
 
                 @forelse($orders as $order)
+                    @php
+                        $isPickup = $order->isPickup();
+                    @endphp
                     <tr class="hover:bg-gray-50 transition-colors">
 
                         {{-- ID & Tanggal --}}
-                        <td class="px-6 py-4">
-                            <div class="font-bold text-gray-900">{{ $order->order_number }}</div>
+                        <td class="px-6 py-4 align-top whitespace-nowrap">
+                            <a href="{{ route('admin.orders.show', $order->id) }}" class="font-bold text-gray-900 hover:text-orange-600 transition-colors block">
+                                #{{ $order->order_number ?? $order->id }}
+                            </a>
                             <div class="text-xs text-gray-400 mt-0.5">
-                                {{ $order->created_at->translatedFormat('d M Y, H:i') }}
+                                {{ $order->created_at ? $order->created_at->translatedFormat('d M Y, H:i') : '-' }}
                             </div>
                         </td>
 
-                        {{-- Nama Customer --}}
-                        <td class="px-6 py-4">
-                            <div class="font-medium text-gray-900">
-                                {{ $order->user->name ?? 'Customer tidak dikenal' }}
+                        {{-- Nama Customer & Metode Pengiriman --}}
+                        <td class="px-6 py-4 align-top whitespace-nowrap">
+                            <div class="font-semibold text-gray-900">
+                                {{ $order->user->name ?? 'Customer' }}
+                            </div>
+                            <div class="mt-1">
+                                @if($isPickup)
+                                    <span class="inline-flex items-center text-[11px] font-semibold text-purple-700 bg-purple-50 border border-purple-200/80 px-2 py-0.5 rounded-md">
+                                        Ambil di Toko
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">
+                                        Kirim via Kurir
+                                    </span>
+                                @endif
                             </div>
                         </td>
 
-                        {{-- Periode Sewa (pakai accessor dari Order.php) --}}
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-gray-900">{{ $order->date_range }}</div>
-                            <div class="text-xs text-gray-400">{{ $order->duration_days }} hari</div>
+                        {{-- Periode Sewa --}}
+                        <td class="px-6 py-4 align-top whitespace-nowrap">
+                            <div class="text-gray-900 font-medium">{{ $order->date_range }}</div>
+                            <div class="text-xs text-gray-400 mt-0.5">{{ $order->duration_days }} hari sewa</div>
                         </td>
 
-                        {{-- Total Harga (pakai accessor dari Order.php) --}}
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="font-semibold text-gray-900">{{ $order->formatted_total }}</div>
+                        {{-- Total Harga --}}
+                        <td class="px-6 py-4 align-top whitespace-nowrap">
+                            <div class="font-bold text-gray-900">{{ $order->formatted_total }}</div>
+                            <div class="text-[11px] text-gray-400 mt-0.5">{{ $order->items_count }} barang</div>
                         </td>
 
-                        {{-- Badge Status (pakai accessor dari Order.php) --}}
-                        <td class="px-6 py-4 text-center">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $order->status_color }}">
-                                {{ $order->status_label }}
+                        {{-- Badge Status Modern --}}
+                        <td class="px-6 py-4 align-top text-center whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
+                                @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-50 text-amber-700 border border-amber-200
+                                @elseif(in_array($order->status, ['menunggu_pembayaran', 'belum_dibayar'])) bg-yellow-50 text-yellow-700 border border-yellow-200
+                                @elseif(in_array($order->status, ['menunggu_verifikasi', 'verifikasi'])) bg-blue-50 text-blue-700 border border-blue-200
+                                @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-50 text-indigo-700 border border-indigo-200
+                                @elseif($order->status === 'dikirim') bg-purple-50 text-purple-700 border border-purple-200
+                                @elseif($order->status === 'sedang_disewa') bg-sky-50 text-sky-700 border border-sky-200
+                                @elseif($order->status === 'selesai') bg-emerald-50 text-emerald-700 border border-emerald-200
+                                @elseif(in_array($order->status, ['batal', 'dibatalkan', 'ditolak'])) bg-red-50 text-red-700 border border-red-200
+                                @else bg-gray-50 text-gray-700 border border-gray-200 @endif">
+                                
+                                <span class="w-1.5 h-1.5 rounded-full
+                                    @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-500
+                                    @elseif(in_array($order->status, ['menunggu_pembayaran', 'belum_dibayar'])) bg-yellow-500
+                                    @elseif(in_array($order->status, ['menunggu_verifikasi', 'verifikasi'])) bg-blue-500
+                                    @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-500
+                                    @elseif($order->status === 'dikirim') bg-purple-500
+                                    @elseif($order->status === 'sedang_disewa') bg-sky-500
+                                    @elseif($order->status === 'selesai') bg-emerald-500
+                                    @elseif(in_array($order->status, ['batal', 'dibatalkan', 'ditolak'])) bg-red-500
+                                    @else bg-gray-400 @endif"></span>
+                                
+                                <span>{{ $order->status_label }}</span>
                             </span>
                         </td>
 
                         {{-- Kolom Aksi --}}
-                        <td class="px-6 py-4 text-center" x-data="{ openModal: false }">
+                        <td class="px-6 py-4 align-middle text-center whitespace-nowrap">
+                            <div class="inline-flex items-center gap-1.5">
+                                {{-- Tombol Tindakan Cepat Verifikasi jika butuh perhatian admin --}}
+                                @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi']))
+                                    <a href="{{ route('admin.orders.show', $order->id) }}#tindakan-admin"
+                                       class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white {{ $order->status === 'menunggu_konfirmasi' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700' }} rounded-lg transition shadow-xs">
+                                        <span>{{ $order->status === 'menunggu_konfirmasi' ? 'Verifikasi KTP' : 'Verifikasi Bayar' }}</span>
+                                    </a>
+                                @endif
 
-                            {{-- Tombol Lihat Detail: selalu tampil --}}
-                            <a href="{{ route('admin.orders.show', $order->id) }}"
-                               class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-md transition mr-1">
-                                Detail
-                            </a>
-
-                            {{-- Tombol Verifikasi: muncul jika status pra-kirim --}}
-                            @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran']))
-                                <button @click="openModal = true"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white {{ $order->status === 'menunggu_verifikasi' ? 'bg-emerald-600 hover:bg-emerald-700' : ($order->status === 'menunggu_pembayaran' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-orange-500 hover:bg-orange-600') }} rounded-md transition">
-                                    {{ $order->status === 'menunggu_konfirmasi' ? 'Verifikasi KTP' : ($order->status === 'menunggu_verifikasi' ? 'Verifikasi Bayar' : 'Konfirmasi') }}
-                                </button>
-
-                                {{-- POP UP VERIFIKASI --}}
-                                <div x-show="openModal"
-                                     class="fixed inset-0 z-[9999] flex items-center justify-center"
-                                     x-cloak
-                                     style="display: none; background-color: rgba(0, 0, 0, 0.5);">
-
-                                     <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6 text-left whitespace-normal"
-                                          @click.away="openModal = false">
-
-                                        {{-- Header Pop Up --}}
-                                        <div class="flex justify-between items-center mb-4 border-b pb-3">
-                                            <h3 class="text-lg font-bold text-gray-900">
-                                                {{ $order->status === 'menunggu_konfirmasi' ? 'Verifikasi KTP Pesanan' : 'Verifikasi Pembayaran' }} #{{ $order->order_number }}
-                                            </h3>
-                                            <button type="button" @click="openModal = false"
-                                                    class="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button>
-                                        </div>
-
-                                        {{-- Info Pesanan (Read-Only) --}}
-                                        <div class="mb-5 bg-gray-50 border border-gray-200 p-3 rounded-md text-sm">
-                                            <div class="grid grid-cols-2 gap-2">
-                                                <div>
-                                                    <p class="text-xs text-gray-500 uppercase font-bold">Customer</p>
-                                                    <p class="font-semibold text-gray-800">{{ $order->user->name ?? '-' }}</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-gray-500 uppercase font-bold">Total</p>
-                                                    <p class="font-semibold text-gray-800">{{ $order->formatted_total }}</p>
-                                                </div>
-                                                <div class="col-span-2 mt-1">
-                                                    <p class="text-xs text-gray-500 uppercase font-bold">Periode Sewa</p>
-                                                    <p class="font-semibold text-gray-800">{{ $order->date_range }} ({{ $order->duration_days }} hari)</p>
-                                                </div>
-                                                <div class="col-span-2 mt-1">
-                                                    <p class="text-xs text-gray-500 uppercase font-bold">Barang yang Dipesan</p>
-                                                    <ul class="list-disc list-inside">
-                                                        @foreach($order->orderItems as $item)
-                                                            <li class="text-gray-800">{{ $item->quantity }}x {{ $item->product->name ?? 'Barang' }}</li>
-                                                        @endforeach
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {{-- Form Tolak: input alasan (tersembunyi, muncul pakai Alpine) --}}
-                                        <div x-data="{ showReject: false }">
-
-                                            {{-- Tampilkan input alasan jika showReject = true --}}
-                                            <div x-show="showReject" class="mb-4">
-                                                <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST">
-                                                    @csrf
-                                                    <label class="block text-sm font-bold text-gray-700 mb-1">Alasan Penolakan</label>
-                                                    <textarea name="cancellation_reason" rows="3" required
-                                                              placeholder="Contoh: Barang tidak tersedia pada tanggal tersebut..."
-                                                              class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-red-500 focus:border-red-500"></textarea>
-                                                    <div class="flex justify-end gap-2 mt-3">
-                                                        <button type="button" @click="showReject = false"
-                                                                class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md">
-                                                            Batal
-                                                        </button>
-                                                        <button type="submit"
-                                                                class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md">
-                                                            Ya, Tolak Pesanan
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                            </div>
-
-                                            {{-- Tombol utama: Terima dan Tolak --}}
-                                            <div x-show="!showReject" class="flex flex-col sm:flex-row justify-end gap-2">
-                                                <button type="button" @click="showReject = true"
-                                                        class="px-3.5 py-2 text-sm bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-md border border-red-200 transition">
-                                                    Tolak
-                                                </button>
-
-                                                <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    @if($order->status === 'menunggu_konfirmasi')
-                                                        <button type="submit"
-                                                                class="w-full sm:w-auto px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-md transition">
-                                                            ✓ Setujui KTP & Minta Bayar
-                                                        </button>
-                                                    @else
-                                                        <button type="submit"
-                                                                class="w-full sm:w-auto px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md transition">
-                                                            ✓ Verifikasi Bayar & Siap Kirim
-                                                        </button>
-                                                    @endif
-                                                </form>
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                </div>
-                                {{-- END POP UP --}}
-
-                            @else
-                                {{-- Status lain: tampilkan label saja --}}
-                                <span class="text-xs text-gray-400 italic">—</span>
-                            @endif
-
+                                {{-- Tombol Detail Standar --}}
+                                <a href="{{ route('admin.orders.show', $order->id) }}"
+                                   class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900 rounded-lg transition">
+                                    <span>Detail</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            </div>
                         </td>
 
                     </tr>
@@ -258,12 +209,17 @@
                     {{-- Tampilan saat tidak ada data --}}
                     <tr>
                         <td colspan="6" class="px-6 py-16 text-center">
-                            <p class="text-base font-medium text-gray-500">Tidak ada pesanan ditemukan.</p>
-                            <p class="text-sm text-gray-400 mt-1">
+                            <div class="w-16 h-16 mx-auto rounded-3xl bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
+                                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                            </div>
+                            <p class="text-base font-semibold text-gray-700">Tidak ada pesanan ditemukan</p>
+                            <p class="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
                                 @if(request()->hasAny(['search', 'status', 'from', 'to']))
-                                    Coba ubah atau hapus filter di atas.
+                                    Tidak ada data pesanan yang cocok dengan kriteria filter saat ini.
                                 @else
-                                    Belum ada pesanan masuk ke toko ini.
+                                    Belum ada pesanan yang masuk ke toko rental ini.
                                 @endif
                             </p>
                         </td>
@@ -276,7 +232,7 @@
 
     {{-- Pagination --}}
     @if($orders->hasPages())
-        <div class="px-6 py-4 border-t border-gray-200">
+        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50/50">
             {{ $orders->appends(request()->query())->links() }}
         </div>
     @endif
