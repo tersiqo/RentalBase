@@ -29,6 +29,7 @@
 @endif
 
 {{-- Navigasi Kembali & Header Utama --}}
+<div x-data="{ modalImage: null, openImageModal(url) { this.modalImage = url; }, closeImageModal() { this.modalImage = null; } }">
 <div class="mb-6">
     <div class="flex items-center gap-2 mb-3">
         <a href="{{ route('admin.orders.index') }}"
@@ -411,54 +412,91 @@
         @endif
 
         {{-- Kartu Bukti Pembayaran --}}
-        <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
-            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Bukti Pembayaran</h2>
+        <div id="review-pembayaran" class="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <h2 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Review Bukti Pembayaran</h2>
+                </div>
+                @if($order->latestPayment)
+                    <span class="px-2 py-0.5 rounded text-[11px] font-semibold
+                        @if($order->latestPayment->status === 'terverifikasi') bg-emerald-100 text-emerald-800 border border-emerald-200
+                        @elseif($order->latestPayment->status === 'ditolak') bg-red-100 text-red-800 border border-red-200
+                        @else bg-amber-100 text-amber-800 border border-amber-200 @endif">
+                        {{ ucfirst(str_replace('_', ' ', $order->latestPayment->status ?? 'menunggu')) }}
+                    </span>
+                @endif
+            </div>
 
             @if($order->latestPayment)
                 <div class="text-xs space-y-2 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Metode Bayar:</span>
-                        <span class="font-bold text-gray-800">{{ $order->latestPayment->payment_method ?? 'Transfer Bank' }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Nominal:</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500">Nominal Transfer:</span>
                         <span class="font-bold text-gray-900 text-sm">
                             Rp {{ number_format((float)($order->latestPayment->amount ?? 0), 0, ',', '.') }}
                         </span>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Status Verifikasi:</span>
-                        <span class="font-semibold
-                            @if($order->latestPayment->status === 'terverifikasi') text-emerald-600
-                            @elseif($order->latestPayment->status === 'ditolak') text-red-600
-                            @else text-amber-600 @endif">
-                            {{ ucfirst(str_replace('_', ' ', $order->latestPayment->status ?? 'menunggu')) }}
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500">Metode Bayar:</span>
+                        <span class="font-semibold text-gray-800">
+                            {{ $paymentMethod->bank_name ?? $order->latestPayment->payment_method ?? 'Transfer Bank' }}
                         </span>
                     </div>
+                    @if($paymentMethod)
+                        <div class="flex justify-between items-center text-gray-500">
+                            <span>Rekening Tujuan:</span>
+                            <span class="font-medium text-gray-700">
+                                {{ $paymentMethod->account_number }} (a/n {{ $paymentMethod->account_holder }})
+                            </span>
+                        </div>
+                    @endif
                     @if($order->latestPayment->paid_at)
-                        <div class="flex justify-between pt-1 border-t border-gray-200/50">
-                            <span class="text-gray-500">Waktu Diunggah:</span>
+                        <div class="flex justify-between items-center text-gray-500 pt-1 border-t border-gray-200/50">
+                            <span>Waktu Unggah:</span>
                             <span class="font-medium text-gray-700">{{ $order->latestPayment->paid_at->translatedFormat('d M Y, H:i') }}</span>
+                        </div>
+                    @endif
+                    @if($order->latestPayment->notes)
+                        <div class="pt-1 border-t border-gray-200/50">
+                            <span class="text-gray-500 block mb-0.5">Catatan Customer:</span>
+                            <p class="font-medium text-gray-800">{{ $order->latestPayment->notes }}</p>
                         </div>
                     @endif
                 </div>
 
-                {{-- Preview Bukti Pembayaran --}}
+                {{-- Preview Foto Struk Pembayaran --}}
                 @if($paymentProofUrl)
-                    <p class="text-[11px] text-gray-400 uppercase font-bold mb-1.5">Foto Struk / Bukti Transfer</p>
-                    <a href="{{ $paymentProofUrl }}" target="_blank"
-                       x-data
-                       @click.prevent="$dispatch('open-lightbox', { src: '{{ $paymentProofUrl }}' })"
-                       class="block group relative overflow-hidden rounded-lg border border-gray-200 bg-gray-100 hover:border-orange-400 transition">
-                        <img src="{{ $paymentProofUrl }}"
-                             alt="Bukti Pembayaran"
-                             class="w-full h-44 object-contain group-hover:scale-102 transition duration-200">
-                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-medium transition">
-                            Klik untuk memperbesar
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-[11px] text-gray-500 font-semibold uppercase">
+                            <span>Foto Struk / Bukti Transfer</span>
+                            <button type="button"
+                                    @click="openImageModal('{{ $paymentProofUrl }}')"
+                                    class="text-orange-600 hover:text-orange-700 hover:underline text-xs font-semibold focus:outline-none cursor-pointer">
+                                Lihat Foto
+                            </button>
                         </div>
-                    </a>
+                        <div class="relative border rounded-lg overflow-hidden shadow-2xs bg-gray-50 group cursor-pointer"
+                             @click="openImageModal('{{ $paymentProofUrl }}')">
+                            <img src="{{ $paymentProofUrl }}"
+                                 alt="Bukti Pembayaran"
+                                 class="w-full h-44 object-contain bg-white group-hover:scale-102 transition duration-200">
+                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                <span class="px-3 py-1.5 bg-white text-gray-900 rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    <span>Lihat Foto</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 @else
-                    <p class="text-xs text-gray-400 italic">Customer belum mengunggah struk bukti transfer.</p>
+                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                        Customer belum mengunggah struk bukti transfer.
+                    </div>
                 @endif
             @else
                 <p class="text-xs text-gray-400 italic">Belum ada catatan pembayaran untuk pesanan ini.</p>
@@ -466,63 +504,114 @@
         </div>
 
         {{-- Kartu Jaminan Identitas (KTP & Selfie) --}}
-        <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
-            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Jaminan Identitas Customer</h2>
+        <div id="review-identitas" class="bg-white border border-gray-200 rounded-lg shadow-sm p-5">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                    </svg>
+                    <h2 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Review Jaminan Identitas</h2>
+                </div>
+                @if($order->identityGuarantee)
+                    <span class="px-2 py-0.5 rounded text-[11px] font-semibold
+                        @if($order->identityGuarantee->status === 'diverifikasi') bg-emerald-100 text-emerald-800 border border-emerald-200
+                        @elseif($order->identityGuarantee->status === 'ditolak') bg-red-100 text-red-800 border border-red-200
+                        @else bg-amber-100 text-amber-800 border border-amber-200 @endif">
+                        {{ ucfirst(str_replace('_', ' ', $order->identityGuarantee->status ?? '-')) }}
+                    </span>
+                @endif
+            </div>
 
             @if($order->identityGuarantee)
+                {{-- Data Identitas Customer --}}
                 <div class="text-xs space-y-2 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-500">Status Identitas:</span>
-                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold
-                            @if($order->identityGuarantee->status === 'diverifikasi') bg-emerald-100 text-emerald-800
-                            @elseif($order->identityGuarantee->status === 'ditolak') bg-red-100 text-red-800
-                            @else bg-amber-100 text-amber-800 @endif">
-                            {{ ucfirst(str_replace('_', ' ', $order->identityGuarantee->status ?? '-')) }}
-                        </span>
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-500 shrink-0">Nama KTP:</span>
+                        <span class="font-bold text-gray-900 text-right">{{ $order->identityGuarantee->full_name ?? '-' }}</span>
+                    </div>
+                    <div class="flex justify-between items-start">
+                        <span class="text-gray-500 shrink-0">Nomor NIK:</span>
+                        <span class="font-mono font-bold text-gray-900 text-right tracking-wider">{{ $order->identityGuarantee->identity_number ?? '-' }}</span>
+                    </div>
+                    <div class="flex justify-between items-start pt-1 border-t border-gray-200/50">
+                        <span class="text-gray-500 shrink-0">Alamat KTP:</span>
+                        <span class="font-medium text-gray-800 text-right max-w-[65%]">{{ $order->identityGuarantee->identity_address ?? '-' }}</span>
                     </div>
                     @if($order->identityGuarantee->notes)
                         <div class="pt-1 border-t border-gray-200/50">
-                            <span class="text-gray-500">Catatan:</span>
-                            <p class="font-medium text-gray-800 mt-0.5">{{ $order->identityGuarantee->notes }}</p>
+                            <span class="text-gray-500 block mb-0.5">Catatan Verifikasi:</span>
+                            <p class="font-medium text-gray-800">{{ $order->identityGuarantee->notes }}</p>
                         </div>
                     @endif
                 </div>
 
-                {{-- Foto KTP --}}
-                <div class="mb-4">
-                    <p class="text-[11px] text-gray-400 uppercase font-bold mb-1.5">Foto KTP / Kartu Identitas</p>
+                {{-- Preview Foto KTP --}}
+                <div class="mb-4 space-y-1.5">
+                    <div class="flex items-center justify-between text-[11px] text-gray-500 font-semibold uppercase">
+                        <span>Foto KTP / Kartu Identitas</span>
+                        @if($ktpUrl)
+                            <button type="button"
+                                    @click="openImageModal('{{ $ktpUrl }}')"
+                                    class="text-orange-600 hover:text-orange-700 hover:underline text-xs font-semibold focus:outline-none cursor-pointer">
+                                Lihat Foto
+                            </button>
+                        @endif
+                    </div>
                     @if($ktpUrl)
-                        <a href="{{ $ktpUrl }}" target="_blank"
-                           x-data @click.prevent="$dispatch('open-lightbox', { src: '{{ $ktpUrl }}' })"
-                           class="block group relative overflow-hidden rounded-lg border border-gray-200 bg-gray-100 hover:border-orange-400 transition">
+                        <div class="relative border rounded-lg overflow-hidden shadow-2xs bg-gray-50 group cursor-pointer"
+                             @click="openImageModal('{{ $ktpUrl }}')">
                             <img src="{{ $ktpUrl }}"
                                  alt="Foto KTP"
-                                 class="w-full h-36 object-contain group-hover:scale-102 transition duration-200">
-                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-medium transition">
-                                Perbesar foto KTP
+                                 class="w-full h-40 object-contain bg-white group-hover:scale-102 transition duration-200">
+                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                <span class="px-3 py-1.5 bg-white text-gray-900 rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    <span>Lihat Foto</span>
+                                </span>
                             </div>
-                        </a>
+                        </div>
                     @else
-                        <p class="text-xs text-gray-400 italic">Foto KTP belum diunggah.</p>
+                        <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-400 italic">
+                            Foto KTP belum diunggah oleh customer.
+                        </div>
                     @endif
                 </div>
 
-                {{-- Foto Selfie --}}
-                <div>
-                    <p class="text-[11px] text-gray-400 uppercase font-bold mb-1.5">Foto Selfie Customer</p>
+                {{-- Preview Foto Wajah / Selfie --}}
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between text-[11px] text-gray-500 font-semibold uppercase">
+                        <span>Foto Selfie Customer</span>
+                        @if($selfieUrl)
+                            <button type="button"
+                                    @click="openImageModal('{{ $selfieUrl }}')"
+                                    class="text-orange-600 hover:text-orange-700 hover:underline text-xs font-semibold focus:outline-none cursor-pointer">
+                                Lihat Foto
+                            </button>
+                        @endif
+                    </div>
                     @if($selfieUrl)
-                        <a href="{{ $selfieUrl }}" target="_blank"
-                           x-data @click.prevent="$dispatch('open-lightbox', { src: '{{ $selfieUrl }}' })"
-                           class="block group relative overflow-hidden rounded-lg border border-gray-200 bg-gray-100 hover:border-orange-400 transition">
+                        <div class="relative border rounded-lg overflow-hidden shadow-2xs bg-gray-50 group cursor-pointer"
+                             @click="openImageModal('{{ $selfieUrl }}')">
                             <img src="{{ $selfieUrl }}"
                                  alt="Foto Selfie"
-                                 class="w-full h-36 object-contain group-hover:scale-102 transition duration-200">
-                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-medium transition">
-                                Perbesar foto selfie
+                                 class="w-full h-40 object-contain bg-white group-hover:scale-102 transition duration-200">
+                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                <span class="px-3 py-1.5 bg-white text-gray-900 rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    <span>Lihat Foto</span>
+                                </span>
                             </div>
-                        </a>
+                        </div>
                     @else
-                        <p class="text-xs text-gray-400 italic">Foto selfie belum diunggah.</p>
+                        <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-400 italic">
+                            Foto selfie belum diunggah oleh customer.
+                        </div>
                     @endif
                 </div>
 
@@ -534,34 +623,54 @@
     </div>
 </div>
 
-{{-- Lightbox Pop Up Foto Ukuran Penuh --}}
-<div x-data="{
-        open: false,
-        src: '',
-        init() {
-            window.addEventListener('open-lightbox', (e) => {
-                this.src = e.detail.src;
-                this.open = true;
-            });
-        }
-    }"
-     x-show="open"
-     x-cloak
-     class="fixed inset-0 z-[9999] flex items-center justify-center"
-     style="background-color: rgba(0,0,0,0.85);"
-     @click.self="open = false"
-     @keydown.escape.window="open = false">
+{{-- ===== MODAL POP-UP FOTO (LIGHTBOX) SESUAI PEMERIKSAAN KONDISI FISIK ===== --}}
+<div 
+    x-show="modalImage" 
+    x-cloak
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+    @keydown.escape.window="closeImageModal()"
+>
+    {{-- Area Klik di Luar Gambar untuk Menutup --}}
+    <div class="fixed inset-0" @click="closeImageModal()"></div>
 
-    <div class="relative max-w-4xl max-h-[90vh] mx-4">
-        <button @click="open = false"
-                class="absolute -top-10 right-0 text-white text-2xl font-bold hover:text-gray-300 transition p-1"
-                title="Tutup">
-            &times;
+    {{-- Konten Pop-up --}}
+    <div 
+        x-show="modalImage"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="relative z-10 max-w-3xl max-h-[90vh] bg-white rounded-xl shadow-2xl p-2 overflow-hidden flex flex-col items-center"
+    >
+        {{-- Tombol Silang (Close) --}}
+        <button 
+            @click="closeImageModal()" 
+            type="button" 
+            class="absolute top-3 right-3 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/75 transition-colors focus:outline-none cursor-pointer"
+            title="Tutup (Esc)"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
         </button>
-        <img :src="src"
-             alt="Preview Dokumen"
-             class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl bg-white/5">
+
+        {{-- Gambar --}}
+        <img 
+            :src="modalImage" 
+            alt="Preview Dokumen" 
+            class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-sm"
+        >
     </div>
+</div>
+
 </div>
 
 @endsection

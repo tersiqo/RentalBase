@@ -37,7 +37,7 @@ class OrderController extends Controller
         $to     = $request->input('to');
 
         // Bangun query secara bertahap
-        $orders = Order::with(['user', 'orderItems.product'])
+        $orders = Order::with(['user', 'orderItems.product', 'identityGuarantee', 'latestPayment'])
 
             // WAJIB ADA: batasi hanya pesanan milik toko ini
             ->where('client_id', $clientId)
@@ -145,11 +145,16 @@ class OrderController extends Controller
         };
 
         // URL preview foto identitas (KTP dan selfie)
-        $ktpUrl    = $getFileUrl($order->identityGuarantee?->ktp_photo);
-        $selfieUrl = $getFileUrl($order->identityGuarantee?->selfie_photo);
+        $ktpUrl    = $getFileUrl($order->identityGuarantee?->identity_document_image ?? $order->identityGuarantee?->ktp_photo);
+        $selfieUrl = $getFileUrl($order->identityGuarantee?->face_image ?? $order->identityGuarantee?->selfie_photo);
 
         // URL preview bukti pembayaran (dari payment terakhir)
-        $paymentProofUrl = $getFileUrl($order->latestPayment?->proof_of_payment);
+        $paymentProofUrl = $getFileUrl($order->latestPayment?->payment_proof ?? $order->latestPayment?->proof_of_payment);
+
+        // Rekening tujuan pembayaran (tanpa mengubah relasi model Payment)
+        $paymentMethod = $order->latestPayment?->client_payment_method_id
+            ? \App\Models\ClientPaymentMethod::find($order->latestPayment->client_payment_method_id)
+            : null;
 
         return view('admin.orders.show', compact(
             'order',
@@ -157,6 +162,7 @@ class OrderController extends Controller
             'ktpUrl',
             'selfieUrl',
             'paymentProofUrl',
+            'paymentMethod',
         ));
     }
     /**
