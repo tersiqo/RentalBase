@@ -5,6 +5,8 @@
 
 @section('content')
 
+<div x-data="{ modalImage: null, openImageModal(url) { this.modalImage = url; }, closeImageModal() { this.modalImage = null; } }">
+
 {{-- Header --}}
 <div class="mb-6">
     <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Master Pesanan</h1>
@@ -129,7 +131,7 @@
                             <div class="font-semibold text-gray-900">
                                 {{ $order->user->name ?? 'Customer' }}
                             </div>
-                            <div class="mt-1">
+                            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                                 @if($isPickup)
                                     <span class="inline-flex items-center text-[11px] font-semibold text-purple-700 bg-purple-50 border border-purple-200/80 px-2 py-0.5 rounded-md">
                                         Ambil di Toko
@@ -138,6 +140,32 @@
                                     <span class="inline-flex items-center text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">
                                         Kirim via Kurir
                                     </span>
+                                @endif
+
+                                {{-- Preview Foto Dokumen seperti di Pemeriksaan Kondisi Fisik --}}
+                                @php
+                                    $ktpImage = $order->identityGuarantee?->identity_document_image ?? $order->identityGuarantee?->ktp_photo;
+                                    $ktpUrl = $ktpImage ? (str_starts_with($ktpImage, 'http') ? $ktpImage : Storage::disk('public')->url($ktpImage)) : null;
+
+                                    $proofImage = $order->latestPayment?->payment_proof ?? $order->latestPayment?->proof_of_payment;
+                                    $proofUrl = $proofImage ? (str_starts_with($proofImage, 'http') ? $proofImage : Storage::disk('public')->url($proofImage)) : null;
+                                @endphp
+
+                                @if($ktpUrl)
+                                    <button type="button"
+                                            @click="openImageModal('{{ $ktpUrl }}')"
+                                            class="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px] font-semibold transition focus:outline-none cursor-pointer"
+                                            title="Klik untuk melihat foto KTP">
+                                        Lihat KTP
+                                    </button>
+                                @endif
+                                @if($proofUrl)
+                                    <button type="button"
+                                            @click="openImageModal('{{ $proofUrl }}')"
+                                            class="text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-1.5 py-0.5 rounded text-[10px] font-semibold transition focus:outline-none cursor-pointer"
+                                            title="Klik untuk melihat bukti pembayaran transfer">
+                                        Lihat Bukti
+                                    </button>
                                 @endif
                             </div>
                         </td>
@@ -187,9 +215,9 @@
                             <div class="inline-flex items-center gap-1.5">
                                 {{-- Tombol Tindakan Cepat Verifikasi jika butuh perhatian admin --}}
                                 @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi']))
-                                    <a href="{{ route('admin.orders.show', $order->id) }}#tindakan-admin"
+                                    <a href="{{ route('admin.orders.show', $order->id) }}#{{ $order->status === 'menunggu_konfirmasi' ? 'review-identitas' : 'review-pembayaran' }}"
                                        class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white {{ $order->status === 'menunggu_konfirmasi' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700' }} rounded-lg transition shadow-xs">
-                                        <span>{{ $order->status === 'menunggu_konfirmasi' ? 'Verifikasi KTP' : 'Verifikasi Bayar' }}</span>
+                                        <span>{{ $order->status === 'menunggu_konfirmasi' ? 'Review KTP' : 'Review Bayar' }}</span>
                                     </a>
                                 @endif
 
@@ -236,6 +264,56 @@
             {{ $orders->appends(request()->query())->links() }}
         </div>
     @endif
+
+</div>
+
+{{-- ===== MODAL POP-UP FOTO (LIGHTBOX) SESUAI LAPORAN KONDISI FISIK ===== --}}
+<div 
+    x-show="modalImage" 
+    x-cloak
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+    @keydown.escape.window="closeImageModal()"
+>
+    {{-- Area Klik di Luar Gambar untuk Menutup --}}
+    <div class="fixed inset-0" @click="closeImageModal()"></div>
+
+    {{-- Konten Pop-up --}}
+    <div 
+        x-show="modalImage"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="relative z-10 max-w-3xl max-h-[90vh] bg-white rounded-xl shadow-2xl p-2 overflow-hidden flex flex-col items-center"
+    >
+        {{-- Tombol Silang (Close) --}}
+        <button 
+            @click="closeImageModal()" 
+            type="button" 
+            class="absolute top-3 right-3 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/75 transition-colors focus:outline-none cursor-pointer"
+            title="Tutup (Esc)"
+        >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        {{-- Gambar --}}
+        <img 
+            :src="modalImage" 
+            alt="Preview Dokumen" 
+            class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-sm"
+        >
+    </div>
+</div>
 
 </div>
 
