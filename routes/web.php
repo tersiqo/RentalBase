@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\DamageCaseController;
 use App\Http\Controllers\Admin\EquipmentUnitController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\TenantRegistrationController;
@@ -127,7 +128,8 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::post('/units', [EquipmentUnitController::class, 'store'])->name('units.store');
     Route::put('/units/{unit}', [EquipmentUnitController::class, 'update'])->name('units.update');
     Route::delete('/units/{unit}', [EquipmentUnitController::class, 'destroy'])->name('units.destroy');
-    Route::get('/reports', fn () => back())->name('reports.index');
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('/settings/profile', [TenantProfileController::class, 'edit'])->name('settings.profile');
     Route::post('/settings/profile', [TenantProfileController::class, 'update'])->name('settings.profile.update');
     Route::get('/settings/payments', [PaymentMethodController::class, 'index'])->name('settings.payments');
