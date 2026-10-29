@@ -163,6 +163,9 @@
                         @foreach($order->orderItems as $item)
                             @php
                                 $product = $item->product;
+                                $dbFee = (float) ($product?->late_fee_per_hour ?? 0);
+                                $dailyPrice = (float) ($product?->rental_price_per_day ?? 0);
+                                $effectiveLateFee = $dbFee > 0 ? $dbFee : ($dailyPrice > 0 ? round($dailyPrice * 0.1, -3) : 10000);
                                 $img = $product?->main_image
                                     ? (str_starts_with($product->main_image, 'http') ? $product->main_image : Storage::url($product->main_image))
                                     : 'https://placehold.co/100x100/f3f4f6/9ca3af?text=Produk';
@@ -176,7 +179,7 @@
                                         <h4 class="font-bold text-gray-900 text-sm truncate">{{ $product?->name ?? 'Peralatan Sewa' }}</h4>
                                         <p class="text-xs text-gray-500 mt-0.5">
                                             Jumlah: <b class="text-gray-800">{{ $item->quantity ?? 1 }} unit</b>
-                                            &bull; Tarif Denda: <span class="font-mono text-gray-700">Rp {{ number_format((float) ($product?->late_fee_per_hour ?? 0), 0, ',', '.') }}/jam</span>
+                                            &bull; Tarif Denda: <span class="font-mono text-gray-700">Rp {{ number_format($effectiveLateFee, 0, ',', '.') }}/jam</span>
                                         </p>
                                     </div>
                                 </div>
@@ -284,6 +287,7 @@
                                     name="courier_name"
                                     x-model="selectedCourier"
                                     :required="returnMethod === 'kurir'"
+                                    :disabled="returnMethod !== 'kurir'"
                                     class="w-full text-sm p-2.5 rounded-xl border border-gray-300 bg-white focus:ring-orange-500 focus:border-orange-500 font-medium">
                                 <option value="">-- Pilih Kurir Pengembalian --</option>
                                 @foreach($couriers as $courier)
@@ -304,6 +308,7 @@
                                    name="tracking_number"
                                    value="{{ old('tracking_number') }}"
                                    :required="returnMethod === 'kurir'"
+                                   :disabled="returnMethod !== 'kurir'"
                                    placeholder="Contoh: JNE1234567890 atau Link Live Tracking Gojek/Grab"
                                    class="w-full text-sm p-2.5 rounded-xl border border-gray-300 bg-white focus:ring-orange-500 focus:border-orange-500 font-mono">
                             <p class="text-[11px] text-gray-500 mt-1">
@@ -422,7 +427,10 @@
                             {{-- Tab Transfer Bank --}}
                             <div x-show="ptab === 'bank'" class="space-y-2">
                                 @php
-                                    $bankMethods = collect($client?->paymentMethods ?? [])->filter(fn($m) => !empty($m->account_number));
+                                    $allMethods = ($client && method_exists($client, 'clientPaymentMethods') && $client->clientPaymentMethods()->where('is_active', true)->exists())
+                                        ? $client->clientPaymentMethods()->where('is_active', true)->get()
+                                        : collect($client?->paymentMethods ?? []);
+                                    $bankMethods = $allMethods->filter(fn($m) => !empty($m->account_number) && (!isset($m->type) || $m->type !== 'qris') && !str_starts_with((string)$m->account_number, 'QRIS-'));
                                 @endphp
                                 @forelse($bankMethods as $method)
                                     <div class="p-3 border border-gray-200 rounded-xl flex items-center justify-between gap-2 bg-gray-50/70">
@@ -431,7 +439,7 @@
                                                 <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px]">{{ $method->bank_name }}</span>
                                                 <b class="font-mono text-gray-900 text-xs tracking-wider">{{ $method->account_number }}</b>
                                             </div>
-                                            <small class="text-[11px] text-gray-500 block mt-0.5">a.n. {{ $method->account_holder }}</small>
+                                            <small class="text-[11px] text-gray-500 block mt-0.5">a.n. {{ $method->account_holder ?? $method->account_name }}</small>
                                         </div>
                                         <button type="button"
                                                 @click="copyToClipboard('{{ str_replace(' ', '', $method->account_number) }}')"
@@ -449,7 +457,7 @@
                             {{-- Tab QRIS --}}
                             <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-3 border border-gray-200 rounded-xl bg-gray-50/70">
                                 @php
-                                    $qrisMethod = collect($client?->paymentMethods ?? [])->first(fn($m) => !empty($m->qris_image));
+                                    $qrisMethod = $allMethods->first(fn($m) => !empty($m->qris_image));
                                     $qrisImg = $qrisMethod?->qris_image
                                         ? (str_starts_with($qrisMethod->qris_image, 'http') ? $qrisMethod->qris_image : Storage::url($qrisMethod->qris_image))
                                         : null;

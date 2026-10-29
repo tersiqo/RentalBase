@@ -139,13 +139,15 @@
                                 'due_date_iso' => $order->rental_end_date ? $order->rental_end_date->format('Y-m-d\TH:i:s') : now()->format('Y-m-d\TH:i:s'),
                                 'due_date_formatted' => $order->rental_end_date ? $order->rental_end_date->translatedFormat('d M Y, H:i') . ' WIB' : '-',
                                 'return_submitted' => $ret !== null,
+                                'return_date_iso' => $ret?->return_date ? \Carbon\Carbon::parse($ret->return_date)->format('Y-m-d\TH:i:s') : null,
+                                'return_date_formatted' => $ret?->return_date ? \Carbon\Carbon::parse($ret->return_date)->translatedFormat('d M Y, H:i') . ' WIB' : null,
                                 'return_method' => $ret?->return_method ?? ($order->isPickup() ? 'ambil_toko' : 'kurir'),
                                 'courier_name' => $ret?->courier_name,
                                 'tracking_number' => $ret?->tracking_number,
                                 'customer_notes' => $ret?->notes,
                                 'existing_fee' => $ret ? (float) $ret->late_fee_amount : null,
                                 'late_fee_status' => $ret?->late_fee_status ?? 'tidak_ada',
-                                'late_fee_proof_url' => $ret?->late_fee_proof ? \Illuminate\Support\Facades\Storage::url($ret->late_fee_proof) : null,
+                                'late_fee_proof_url' => $ret?->late_fee_proof ? (str_starts_with($ret->late_fee_proof, 'http') ? $ret->late_fee_proof : \Illuminate\Support\Facades\Storage::url($ret->late_fee_proof)) : null,
                                 'checked_return_count' => $checkedReturnCount,
                                 'total_units_count' => $totalUnitsCount,
                                 'items' => $order->orderItems->map(function ($i) {
@@ -377,7 +379,13 @@
                                     <p class="text-blue-800" x-text="'Catatan: ' + activeOrder.customer_notes"></p>
                                 </template>
                                 <template x-if="activeOrder.late_fee_proof_url">
-                                    <div class="pt-1">
+                                    <div class="pt-2 space-y-2">
+                                        <p class="text-[11px] font-bold text-blue-900">Bukti Bayar Denda dari Customer:</p>
+                                        <a :href="activeOrder.late_fee_proof_url" target="_blank" rel="noopener noreferrer" class="block">
+                                            <img :src="activeOrder.late_fee_proof_url"
+                                                 alt="Bukti Pembayaran Denda"
+                                                 class="max-h-40 w-auto rounded-md border border-blue-200 bg-white p-1 object-contain shadow-xs">
+                                        </a>
                                         <a :href="activeOrder.late_fee_proof_url" target="_blank" rel="noopener noreferrer"
                                            class="inline-block px-2.5 py-1 bg-white text-blue-700 font-semibold rounded border border-blue-300 hover:bg-blue-100 transition">
                                             Lihat Bukti Pembayaran Denda
@@ -471,7 +479,7 @@
                             </p>
                         </div>
 
-                        <input type="hidden" name="action_type" x-ref="actionTypeInput" :value="Number(overrideFee) > 0 ? 'denda' : 'normal'">
+                        <input type="hidden" name="action_type" x-ref="actionTypeInput" :value="(Number(overrideFee) > 0 && !activeOrder.late_fee_proof_url) ? 'denda' : 'normal'">
 
                     </div>
 
@@ -542,6 +550,9 @@
             },
 
             get currentTimeFormatted() {
+                if (this.activeOrder && this.activeOrder.return_date_formatted) {
+                    return this.activeOrder.return_date_formatted;
+                }
                 return this.currentTime.toLocaleString('id-ID', {
                     day: '2-digit', month: 'short', year: 'numeric',
                     hour: '2-digit', minute: '2-digit'
@@ -575,7 +586,10 @@
 
             calculateLateFee() {
                 const dueDate = new Date(this.activeOrder.due_date_iso);
-                const diffMs = this.currentTime - dueDate;
+                const compareTime = this.activeOrder.return_date_iso
+                    ? new Date(this.activeOrder.return_date_iso)
+                    : this.currentTime;
+                const diffMs = compareTime - dueDate;
 
                 if (diffMs > 0 && !isNaN(dueDate.getTime())) {
                     this.lateHours = Math.ceil(diffMs / (1000 * 60 * 60));

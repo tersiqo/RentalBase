@@ -43,10 +43,10 @@ class ConditionCheckController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Ambil daftar order untuk dropdown — hanya yang sudah konfirmasi atau sedang disewa
+        // Ambil daftar order untuk dropdown — hanya yang sudah konfirmasi, sedang disewa, atau dikembalikan
         $orders = Order::with(['orderItems.product', 'user'])
             ->where('client_id', $client->id)
-            ->whereIn('status', ['siap_kirim', 'dikonfirmasi', 'dikirim', 'sedang_disewa'])
+            ->whereIn('status', ['siap_kirim', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan', 'menunggu_pembayaran_denda'])
             ->orderBy('created_at', 'desc')
             ->get();
 
