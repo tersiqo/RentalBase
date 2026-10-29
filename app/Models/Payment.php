@@ -23,4 +23,9 @@ class Payment extends Model
     {
         return $this->belongsTo(User::class, 'verified_by');
     }
+
+    public function clientPaymentMethod()
+    {
+        return $this->belongsTo(ClientPaymentMethod::class, 'client_payment_method_id');
+    }
 }
