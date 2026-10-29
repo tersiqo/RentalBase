@@ -42,10 +42,11 @@ class ReturnController extends Controller
             ->whereIn('status', ['sedang_disewa', 'dikembalikan', 'menunggu_pembayaran_denda']);
 
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('order_number', 'ILIKE', "%{$search}%")
-                  ->orWhereHas('user', function ($u) use ($search) {
-                      $u->where('name', 'ILIKE', "%{$search}%");
+            $likeOp = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $query->where(function ($q) use ($search, $likeOp) {
+                $q->where('order_number', $likeOp, "%{$search}%")
+                  ->orWhereHas('user', function ($u) use ($search, $likeOp) {
+                      $u->where('name', $likeOp, "%{$search}%");
                   });
             });
         }
@@ -133,14 +134,14 @@ class ReturnController extends Controller
             $return->late_fee_amount = $lateFeeAmount;
             $return->processed_by = $user->id;
 
-            if ($actionType === 'denda' && $lateFeeAmount > 0) {
+            if ($actionType === 'denda' && $lateFeeAmount > 0 && empty($return->late_fee_proof)) {
                 $return->late_fee_status = 'menunggu_pembayaran';
                 $return->return_status = 'diterima';
                 $order->status = 'menunggu_pembayaran_denda';
                 $msg = 'Tagihan denda sebesar Rp ' . number_format($lateFeeAmount, 0, ',', '.') . " untuk pesanan #{$order->order_number} berhasil diterbitkan.";
             } else {
-                // Barang kembali normal ATAU denda sudah lunas/dimaafkan
-                $return->late_fee_status = $lateFeeAmount > 0 ? 'lunas' : 'tidak_ada';
+                // Barang kembali normal ATAU denda sudah lunas (termasuk jika customer sudah unggah late_fee_proof) / dimaafkan
+                $return->late_fee_status = (! empty($return->late_fee_proof) || $lateFeeAmount > 0) ? 'lunas' : 'tidak_ada';
                 $return->return_status = 'selesai';
                 $order->status = 'selesai';
 

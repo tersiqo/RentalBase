@@ -211,6 +211,10 @@ class PageController extends Controller
 
         foreach ($order->orderItems as $item) {
             $hourlyRate = (float) ($item->product->late_fee_per_hour ?? 0);
+            if ($hourlyRate <= 0) {
+                $dailyPrice = (float) ($item->product->rental_price_per_day ?? 0);
+                $hourlyRate = $dailyPrice > 0 ? round($dailyPrice * 0.1, -3) : 10000;
+            }
             $qty = (int) ($item->quantity ?? 1);
             $itemFee = $isLate ? ($hourlyRate * $qty * $lateHours) : 0;
 
@@ -251,6 +255,7 @@ class PageController extends Controller
         $order->loadMissing([
             'orderItems.product',
             'client.paymentMethods',
+            'client.clientPaymentMethods',
             'returnModel',
         ]);
 
@@ -302,8 +307,13 @@ class PageController extends Controller
         $lateFeeData = $this->calculateLateFeeData($order);
         $hasLateFee  = $lateFeeData['is_late'] && $lateFeeData['total_late_fee'] > 0;
 
-        // 5. Bersihkan spasi berlebih pada nomor resi sebelum divalidasi
-        if ($request->has('tracking_number')) {
+        // 5. Bersihkan spasi berlebih pada nomor resi sebelum divalidasi (atau kosongkan jika ambil_toko)
+        if ($request->input('return_method') !== 'kurir') {
+            $request->merge([
+                'courier_name'    => null,
+                'tracking_number' => null,
+            ]);
+        } elseif ($request->has('tracking_number')) {
             $request->merge([
                 'tracking_number' => trim((string) $request->input('tracking_number')),
             ]);
@@ -350,6 +360,15 @@ class PageController extends Controller
         // 7. SIMPAN FILE & DATA KE DATABASE DENGAN DB TRANSACTION
         $proofPath = null;
 
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            try {
+                DB::statement("SELECT setval(pg_get_serial_sequence('returns', 'id'), COALESCE((SELECT MAX(id) FROM returns), 1))");
+                DB::statement("SELECT setval(pg_get_serial_sequence('notifications', 'id'), COALESCE((SELECT MAX(id) FROM notifications), 1))");
+            } catch (\Throwable $t) {
+                // Abaikan jika bukan sequence standar
+            }
+        }
+
         try {
             if ($request->hasFile('late_fee_proof')) {
                 $proofPath = $request->file('late_fee_proof')->store('returns', 'public');
@@ -385,7 +404,7 @@ class PageController extends Controller
                     'status' => 'dikembalikan',
                 ]);
 
-                // Kirim notifikasi ke Admin Toko (jika tabel notifications tersedia)
+                // Kirim notifikasi ke Admin Toko (sesuai struktur tabel notifications)
                 $adminUsers = User::where('client_id', $lockedOrder->client_id)
                     ->where('role', 'admin_rental')
                     ->where('status', 'aktif')
@@ -393,17 +412,13 @@ class PageController extends Controller
 
                 foreach ($adminUsers as $admin) {
                     DB::table('notifications')->insert([
+                        'client_id'  => $lockedOrder->client_id,
                         'user_id'    => $admin->id,
                         'title'      => 'Pengajuan Pengembalian Barang Baru',
                         'message'    => 'Customer mengajukan pengembalian untuk pesanan #' . $lockedOrder->order_number
                                         . ($isCourier ? ' via kurir ' . ($validated['courier_name'] ?? '') . ' (Resi: ' . ($validated['tracking_number'] ?? '-') . ')' : ' (Antar langsung ke toko)')
                                         . ($hasLateFee ? ' disertai bukti bayar denda Rp ' . number_format($lateFeeData['total_late_fee'], 0, ',', '.') : '.'),
                         'type'       => 'return',
-                        'data'       => json_encode([
-                            'order_id'     => $lockedOrder->id,
-                            'order_number' => $lockedOrder->order_number,
-                            'url'          => route('admin.returns.index'),
-                        ]),
                         'is_read'    => false,
                         'created_at' => now(),
                         'updated_at' => now(),

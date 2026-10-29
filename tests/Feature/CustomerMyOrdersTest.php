@@ -5,18 +5,28 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\ClientPaymentMethod;
+use App\Models\EquipmentUnit;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderItemUnit;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ReturnModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CustomerMyOrdersTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutVite();
+    }
 
     public function test_guest_is_redirected_to_home(): void
     {
@@ -485,5 +495,136 @@ class CustomerMyOrdersTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Pembayaran Terverifikasi');
         $response->assertDontSee('Pembayaran Belum Dibuka');
+    }
+
+    public function test_customer_return_syncs_with_admin_return_and_condition_checks(): void
+    {
+        Storage::fake('public');
+
+        $client = Client::create([
+            'business_name' => 'Kamera Kita',
+            'subdomain' => 'kamerakita',
+            'status' => 'aktif',
+        ]);
+
+        $admin = User::factory()->create([
+            'client_id' => $client->id,
+            'role' => 'admin_rental',
+            'status' => 'aktif',
+        ]);
+
+        $customer = User::factory()->create([
+            'client_id' => $client->id,
+            'role' => 'customer',
+            'status' => 'aktif',
+        ]);
+
+        $category = Category::create([
+            'client_id' => $client->id,
+            'name' => 'Kamera',
+            'slug' => 'kamera',
+        ]);
+
+        $product = Product::create([
+            'client_id' => $client->id,
+            'category_id' => $category->id,
+            'name' => 'Sony A7 IV',
+            'slug' => 'sony-a7-iv',
+            'rental_price_per_day' => 200000,
+            'late_fee_per_hour' => 20000,
+            'status' => 'aktif',
+        ]);
+
+        $unit = EquipmentUnit::create([
+            'client_id' => $client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'UNIT-A7-001',
+            'condition' => 'baik',
+            'status' => 'disewa',
+        ]);
+
+        $order = Order::create([
+            'client_id' => $client->id,
+            'user_id' => $customer->id,
+            'order_number' => 'ORD-SYNC-001',
+            'rental_start_date' => now()->subDays(3),
+            'rental_end_date' => now()->subHours(2),
+            'duration_days' => 3,
+            'total_amount' => 600000,
+            'shipping_address' => 'Jl. Melati No. 10',
+            'status' => 'sedang_disewa',
+        ]);
+
+        $orderItem = OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price_per_day' => 200000,
+            'subtotal' => 600000,
+        ]);
+
+        OrderItemUnit::create([
+            'order_item_id' => $orderItem->id,
+            'equipment_unit_id' => $unit->id,
+        ]);
+
+        $proofFile = UploadedFile::fake()->image('bukti-denda.jpg');
+
+        // 1. Customer submits return with courier + late_fee_proof (while active admin exists)
+        $returnResponse = $this->actingAs($customer)->post('/my-orders/' . $order->id . '/return', [
+            'return_method' => 'kurir',
+            'courier_name' => 'JNE',
+            'tracking_number' => 'JNE99887766',
+            'late_fee_proof' => $proofFile,
+            'notes' => 'Dikirim lengkap dengan baterai dan charger.',
+        ]);
+
+        $returnResponse->assertRedirect('/my-orders/' . $order->id);
+        $returnResponse->assertSessionHas('success');
+
+        $this->assertEquals('dikembalikan', $order->fresh()->status);
+        $this->assertDatabaseHas('returns', [
+            'order_id' => $order->id,
+            'return_method' => 'kurir',
+            'courier_name' => 'JNE',
+            'tracking_number' => 'JNE99887766',
+            'return_status' => 'diajukan',
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $admin->id,
+            'client_id' => $client->id,
+            'type' => 'return',
+        ]);
+
+        // 2. Admin can see the 'dikembalikan' order in Admin Returns page
+        $adminReturnsPage = $this->actingAs($admin)->get('/admin/returns');
+        $adminReturnsPage->assertStatus(200);
+        $adminReturnsPage->assertSee('ORD-SYNC-001');
+        $adminReturnsPage->assertSee('JNE99887766');
+
+        // 3. Admin can see the 'dikembalikan' order in Condition Check dropdown
+        $conditionCheckPage = $this->actingAs($admin)->get('/admin/condition-checks');
+        $conditionCheckPage->assertStatus(200);
+        $conditionCheckPage->assertSee('ORD-SYNC-001');
+
+        // 4. Admin processes the return -> preserves courier/tracking, sets late_fee_status = 'lunas', resets unit to 'tersedia'
+        $processResponse = $this->actingAs($admin)->post('/admin/returns/' . $order->id . '/process', [
+            'late_fee_amount' => 40000,
+            'action_type' => 'normal',
+        ]);
+
+        $processResponse->assertRedirect('/admin/returns');
+        $processResponse->assertSessionHas('success');
+
+        $this->assertEquals('selesai', $order->fresh()->status);
+        $this->assertEquals('tersedia', $unit->fresh()->status);
+        $this->assertDatabaseHas('returns', [
+            'order_id' => $order->id,
+            'return_method' => 'kurir',
+            'courier_name' => 'JNE',
+            'tracking_number' => 'JNE99887766',
+            'late_fee_status' => 'lunas',
+            'return_status' => 'selesai',
+        ]);
     }
 }
