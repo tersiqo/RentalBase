@@ -219,19 +219,6 @@
                 Pantau detail usaha toko, identitas pengelola, status akun operasional, dan status keanggotaan subscription.
             </p>
         </div>
-
-        <div class="flex items-center gap-2 flex-wrap">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                {{ $counts['aktif'] }} Tenant Aktif
-            </span>
-            @if($counts['suspended'] > 0)
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-800 border border-rose-200 shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                    {{ $counts['suspended'] }} Suspended
-                </span>
-            @endif
-        </div>
     </div>
 
     {{-- Ringkasan Kartu Metrik --}}
@@ -264,16 +251,16 @@
             </div>
         </div>
 
-        {{-- Langganan Segera Berakhir --}}
+        {{-- Akun Tidak Aktif / Nonaktif --}}
         <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold uppercase tracking-wider text-amber-600">Masa Aktif Kritis</p>
-                <h3 class="text-2xl font-black text-slate-900 mt-1">{{ number_format($counts['expiring_soon']) }}</h3>
-                <p class="text-[11px] text-amber-600 mt-0.5">Jatuh tempo &le; 7 hari</p>
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Akun Tidak Aktif</p>
+                <h3 class="text-2xl font-black text-slate-900 mt-1">{{ number_format($counts['nonaktif']) }}</h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">Toko dinonaktifkan</p>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                 </svg>
             </div>
         </div>
@@ -285,20 +272,20 @@
         <div class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/60 self-start sm:self-auto overflow-x-auto max-w-full">
             <a href="{{ route('owner.tenants.index', ['status' => 'all', 'plan' => request('plan'), 'search' => request('search')]) }}"
                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap {{ $status === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">
-                Semua ({{ $counts['total'] }})
+                Semua
             </a>
             <a href="{{ route('owner.tenants.index', ['status' => 'aktif', 'plan' => request('plan'), 'search' => request('search')]) }}"
                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap {{ $status === 'aktif' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">
-                Aktif ({{ $counts['aktif'] }})
+                Aktif
             </a>
             <a href="{{ route('owner.tenants.index', ['status' => 'suspended', 'plan' => request('plan'), 'search' => request('search')]) }}"
                class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap {{ $status === 'suspended' ? 'bg-white text-rose-600 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">
-                Suspended ({{ $counts['suspended'] }})
+                Suspended 
             </a>
             @if($counts['nonaktif'] > 0)
                 <a href="{{ route('owner.tenants.index', ['status' => 'nonaktif', 'plan' => request('plan'), 'search' => request('search')]) }}"
                    class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap {{ $status === 'nonaktif' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-600 hover:text-slate-900' }}">
-                    Nonaktif ({{ $counts['nonaktif'] }})
+                    Nonaktif
                 </a>
             @endif
         </div>
@@ -609,15 +596,6 @@
                                                 title="Lihat Detail Lengkap">
                                             Detail
                                         </button>
-                                        {{-- Tombol Kelola Subscription --}}
-                                        <button type="button"
-                                                @click="openSubscription({{ json_encode($tenantPayload) }})"
-                                                class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 border border-blue-200 transition-colors"
-                                                title="Kelola Paket & Subscription">
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                                            </svg>
-                                        </button>
 
                                         {{-- Tombol Ubah Status Akun --}}
                                         <button type="button"
@@ -821,11 +799,11 @@
 
                     <div class="text-xs text-slate-600 flex items-center justify-between bg-white/80 p-3 rounded-xl border border-slate-100">
                         <span>Periode: <strong x-text="activeTenant?.subscription?.start_date"></strong> s/d <strong x-text="activeTenant?.subscription?.end_date"></strong></span>
-                        <span class="font-semibold capitalize px-2 py-0.5 rounded-lg text-[11px]"
+                        <span class="font-semibold capitalize px-2.5 py-1 rounded-lg text-[11px]"
                               :class="{
-                                  'bg-emerald-50 text-emerald-700': activeTenant?.subscription?.status === 'aktif',
-                                  'bg-amber-50 text-amber-700': activeTenant?.subscription?.status === 'menunggu_verifikasi',
-                                  'bg-rose-50 text-rose-700': activeTenant?.subscription?.status === 'kadaluarsa'
+                                  'bg-emerald-50 text-emerald-700 border border-emerald-200': activeTenant?.subscription?.status === 'aktif',
+                                  'bg-amber-50 text-amber-700 border border-amber-200': activeTenant?.subscription?.status === 'menunggu_verifikasi',
+                                  'bg-rose-50 text-rose-700 border border-rose-200': activeTenant?.subscription?.status === 'kadaluarsa'
                               }"
                               x-text="'Status: ' + activeTenant?.subscription?.status"></span>
                     </div>
@@ -835,19 +813,21 @@
             {{-- Modal Footer --}}
             <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 shrink-0">
                 <button type="button" @click="showDetailModal = false"
-                        class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                        class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
                     Tutup
                 </button>
 
                 <div class="flex items-center gap-2">
-                    <button type="button"
-                            @click="showDetailModal = false; openSubscription(activeTenant)"
-                            class="px-4 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold border border-blue-200 transition-colors">
-                        Kelola Subscription
-                    </button>
+                    <a :href="'{{ route('owner.subscriptions.index') }}?search=' + encodeURIComponent(activeTenant?.subdomain)"
+                       class="px-4 py-2 rounded-xl bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs font-bold border border-orange-200 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                        <svg class="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        <span>Kelola &amp; Perpanjang di Subscriptions</span>
+                    </a>
                     <button type="button"
                             @click="showDetailModal = false; openEdit(activeTenant)"
-                            class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-xs transition-colors">
+                            class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer">
                         Edit Data Usaha
                     </button>
                 </div>
@@ -1116,6 +1096,22 @@
                     </div>
 
                     <div class="space-y-4 text-xs">
+                        {{-- Banner Petunjuk Menu Subscriptions --}}
+                        <div class="p-3 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-900 text-[11px] flex items-start justify-between gap-2.5">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span>
+                                    <strong>Pemberitahuan:</strong> Untuk perpanjangan masa aktif resmi dengan unggah bukti transfer dan pencatatan nomor invoice, gunakan <strong>Menu Subscriptions</strong>.
+                                </span>
+                            </div>
+                            <a :href="'{{ route('owner.subscriptions.index') }}?search=' + encodeURIComponent(subTenant.business_name)"
+                               class="shrink-0 px-2.5 py-1 bg-white border border-amber-300 text-amber-800 rounded-lg font-bold hover:bg-amber-100 transition-colors whitespace-nowrap">
+                                Buka Subscriptions &rarr;
+                            </a>
+                        </div>
+
                         {{-- Pilihan Paket --}}
                         <div>
                             <label class="font-bold text-slate-700 block mb-1.5">Pilih Paket Langganan</label>
