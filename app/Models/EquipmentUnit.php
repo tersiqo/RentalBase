@@ -41,10 +41,6 @@ class EquipmentUnit extends Model
 
     public function isActivelyRented(): bool
     {
-        if (in_array(strtolower((string) $this->status), ['disewa', 'rented'])) {
-            return true;
-        }
-
         return $this->orderItemUnits()
             ->whereHas('orderItem.order', function ($q) {
                 $q->whereIn('status', [
@@ -57,6 +53,42 @@ class EquipmentUnit extends Model
                 ]);
             })
             ->exists();
+    }
+
+    /**
+     * Periksa ketersediaan unit spesifik untuk rentang waktu sewa tertentu.
+     * Mencegah double-booking pada unit fisik antar pesanan yang saling tumpang-tindih.
+     */
+    public function isAvailableForPeriod($startDate, $endDate, $excludeOrderId = null): bool
+    {
+        if (in_array(strtolower((string) $this->status), ['rusak', 'maintenance'])) {
+            return false;
+        }
+
+        if (! $startDate || ! $endDate) {
+            return ! in_array(strtolower((string) $this->status), ['disewa', 'rented']);
+        }
+
+        $start = \Carbon\Carbon::parse($startDate);
+        $end = \Carbon\Carbon::parse($endDate);
+
+        if ($end->lt($start)) {
+            return false;
+        }
+
+        $hasConflict = $this->orderItemUnits()
+            ->whereHas('orderItem.order', function ($q) use ($start, $end, $excludeOrderId) {
+                $q->whereNotIn('status', ['batal', 'dibatalkan', 'ditolak', 'selesai'])
+                  ->where('rental_start_date', '<=', $end)
+                  ->where('rental_end_date', '>=', $start);
+
+                if ($excludeOrderId) {
+                    $q->where('id', '!=', $excludeOrderId);
+                }
+            })
+            ->exists();
+
+        return ! $hasConflict;
     }
 
     public function latestOrder()

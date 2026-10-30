@@ -7,7 +7,10 @@ use App\Models\EquipmentUnit;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -172,7 +175,6 @@ class OrderController extends Controller
      */
     public function confirm(Request $request, Order $order)
     {
-        // Pastikan order milik toko yang sedang login
         $user = Auth::user();
         if (! $user) {
             $user = \App\Models\User::whereNotNull('client_id')->first();
@@ -183,63 +185,82 @@ class OrderController extends Controller
             abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
         }
 
-        // Hanya boleh konfirmasi jika statusnya masih dalam proses pra-pengiriman
-        if (! in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran'])) {
-            return redirect()->back()
-                ->with('error', 'Pesanan ini tidak bisa dikonfirmasi karena statusnya sudah berubah.');
-        }
+        return DB::transaction(function () use ($request, $order, $user) {
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
-        $directReady = $request->boolean('direct_ready');
+            // Hanya boleh konfirmasi jika statusnya masih dalam proses pra-pengiriman
+            if (! in_array($lockedOrder->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran'])) {
+                return redirect()->back()
+                    ->with('error', 'Pesanan ini tidak bisa dikonfirmasi karena statusnya sudah berubah.');
+            }
 
-        // JIKA STATUS MENUNGGU KONFIRMASI (Verifikasi KTP) dan bukan directReady:
-        if ($order->status === 'menunggu_konfirmasi' && ! $directReady) {
-            // Setujui jaminan identitas
-            if ($order->identityGuarantee && $order->identityGuarantee->status !== 'diverifikasi') {
-                $order->identityGuarantee->update([
+            $directReady = $request->boolean('direct_ready');
+
+            // JIKA STATUS MENUNGGU KONFIRMASI (Verifikasi KTP) dan bukan directReady:
+            if ($lockedOrder->status === 'menunggu_konfirmasi' && ! $directReady) {
+                // Setujui jaminan identitas
+                if ($lockedOrder->identityGuarantee && $lockedOrder->identityGuarantee->status !== 'diverifikasi') {
+                    $lockedOrder->identityGuarantee()->lockForUpdate()->first()?->update([
+                        'status' => 'diverifikasi',
+                        'reviewed_by' => $user?->id,
+                    ]);
+                }
+
+                // Ubah status order menjadi menunggu_pembayaran
+                $lockedOrder->update(['status' => 'menunggu_pembayaran']);
+
+                if (class_exists(\App\Events\IdentityApproved::class)) {
+                    event(new \App\Events\IdentityApproved($lockedOrder));
+                }
+                if (class_exists(\App\Events\OrderConfirmed::class)) {
+                    event(new \App\Events\OrderConfirmed($lockedOrder));
+                }
+
+                return redirect()->back()
+                    ->with('success', 'Identitas pesanan #' . $lockedOrder->order_number . ' disetujui! Pesanan kini berstatus Menunggu Pembayaran dari customer.');
+            }
+
+            // JIKA VERIFIKASI PEMBAYARAN (menunggu_verifikasi / menunggu_pembayaran / directReady):
+            // 1. Pastikan identitas terverifikasi
+            if ($lockedOrder->identityGuarantee && $lockedOrder->identityGuarantee->status !== 'diverifikasi') {
+                $lockedOrder->identityGuarantee()->lockForUpdate()->first()?->update([
                     'status' => 'diverifikasi',
                     'reviewed_by' => $user?->id,
                 ]);
             }
 
-            // Ubah status order menjadi menunggu_pembayaran
-            $order->update(['status' => 'menunggu_pembayaran']);
+            // 2. Setujui bukti pembayaran
+            if ($lockedOrder->payments()->exists()) {
+                $lockedOrder->payments()->whereIn('status', ['menunggu_konfirmasi', 'pending', 'menunggu_verifikasi'])->lockForUpdate()->get()->each(function ($p) use ($user) {
+                    $p->update([
+                        'status' => 'terverifikasi',
+                        'verified_by' => $user?->id,
+                        'verified_at' => now(),
+                    ]);
+                });
+            }
+
+            // 3. Ubah status order ke siap_kirim
+            $lockedOrder->update(['status' => 'siap_kirim']);
+
+            if (class_exists(\App\Events\PaymentVerified::class)) {
+                event(new \App\Events\PaymentVerified($lockedOrder));
+            }
+            if (class_exists(\App\Events\OrderConfirmed::class)) {
+                event(new \App\Events\OrderConfirmed($lockedOrder));
+            }
 
             return redirect()->back()
-                ->with('success', 'Identitas pesanan #' . $order->order_number . ' disetujui! Pesanan kini berstatus Menunggu Pembayaran dari customer.');
-        }
-
-        // JIKA VERIFIKASI PEMBAYARAN (menunggu_verifikasi / menunggu_pembayaran / directReady):
-        // 1. Pastikan identitas terverifikasi
-        if ($order->identityGuarantee && $order->identityGuarantee->status !== 'diverifikasi') {
-            $order->identityGuarantee->update([
-                'status' => 'diverifikasi',
-                'reviewed_by' => $user?->id,
-            ]);
-        }
-
-        // 2. Setujui bukti pembayaran
-        if ($order->payments()->exists()) {
-            $order->payments()->whereIn('status', ['menunggu_konfirmasi', 'pending', 'menunggu_verifikasi'])->update([
-                'status' => 'terverifikasi',
-                'verified_by' => $user?->id,
-                'verified_at' => now(),
-            ]);
-        }
-
-        // 3. Ubah status order ke siap_kirim
-        $order->update(['status' => 'siap_kirim']);
-
-        return redirect()->back()
-            ->with('success', 'Pesanan #' . $order->order_number . ' berhasil dikonfirmasi dan masuk antrian pengiriman!');
+                ->with('success', 'Pesanan #' . $lockedOrder->order_number . ' berhasil dikonfirmasi dan masuk antrian pengiriman!');
+        });
     }
 
     /**
      * Admin menolak pesanan.
      * Status berubah dari menunggu_konfirmasi → dibatalkan
      */
-    public function reject(\Illuminate\Http\Request $request, Order $order)
+    public function reject(Request $request, Order $order)
     {
-        // Pastikan order milik toko yang sedang login
         $user = Auth::user();
         if (! $user) {
             $user = \App\Models\User::whereNotNull('client_id')->first();
@@ -250,31 +271,62 @@ class OrderController extends Controller
             abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
         }
 
-        // Boleh tolak jika statusnya masih dalam proses verifikasi atau menunggu pembayaran
-        if (! in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran', 'belum_dibayar'])) {
-            return redirect()->route('admin.orders.index')
-                ->with('error', 'Pesanan ini tidak bisa ditolak karena statusnya sudah berubah.');
-        }
+        return DB::transaction(function () use ($request, $order, $user) {
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
-        // Kembalikan status unit fisik ke 'tersedia' jika sudah dialokasikan sebelumnya
-        foreach ($order->orderItems as $item) {
-            foreach ($item->orderItemUnits as $oiu) {
-                $oiu->equipmentUnit?->update(['status' => 'tersedia']);
-                $oiu->delete();
+            // Boleh tolak jika statusnya masih dalam proses verifikasi atau menunggu pembayaran
+            if (! in_array($lockedOrder->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran', 'belum_dibayar'])) {
+                return redirect()->route('admin.orders.index')
+                    ->with('error', 'Pesanan ini tidak bisa ditolak karena statusnya sudah berubah.');
             }
-        }
 
-        $order->update([
-            'status'              => 'dibatalkan',
-            'cancellation_reason' => $request->input('cancellation_reason', 'Ditolak/dibatalkan oleh admin.'),
-        ]);
+            $isIdentityRejection = ($lockedOrder->status === 'menunggu_konfirmasi');
 
-        return redirect()->route('admin.orders.index')
-            ->with('success', 'Pesanan #' . $order->order_number . ' telah ditolak.');
+            if ($isIdentityRejection && $lockedOrder->identityGuarantee) {
+                $lockedOrder->identityGuarantee()->lockForUpdate()->first()?->update([
+                    'status' => 'ditolak',
+                    'reviewed_by' => $user?->id,
+                ]);
+                if (class_exists(\App\Events\IdentityRejected::class)) {
+                    event(new \App\Events\IdentityRejected($lockedOrder));
+                }
+            } else {
+                if ($lockedOrder->payments()->exists()) {
+                    $lockedOrder->payments()->whereIn('status', ['menunggu_konfirmasi', 'pending', 'menunggu_verifikasi'])->lockForUpdate()->get()->each(function ($p) use ($user) {
+                        $p->update([
+                            'status' => 'ditolak',
+                            'verified_by' => $user?->id,
+                        ]);
+                    });
+                    if (class_exists(\App\Events\PaymentRejected::class)) {
+                        event(new \App\Events\PaymentRejected($lockedOrder));
+                    }
+                }
+            }
+
+            // Kembalikan status unit fisik ke 'tersedia' jika sudah dialokasikan sebelumnya dan tidak aktif di order lain
+            foreach ($lockedOrder->orderItems as $item) {
+                foreach ($item->orderItemUnits as $oiu) {
+                    $unit = EquipmentUnit::where('id', $oiu->equipment_unit_id)->lockForUpdate()->first();
+                    $oiu->delete();
+                    if ($unit && ! $unit->isActivelyRented()) {
+                        $unit->update(['status' => 'tersedia']);
+                    }
+                }
+            }
+
+            $lockedOrder->update([
+                'status'              => 'dibatalkan',
+                'cancellation_reason' => $request->input('cancellation_reason', 'Ditolak/dibatalkan oleh admin.'),
+            ]);
+
+            return redirect()->route('admin.orders.index')
+                ->with('success', 'Pesanan #' . $lockedOrder->order_number . ' telah ditolak.');
+        });
     }
 
     /**
-     * Alokasi unit fisik ke item pesanan.
+     * Alokasi unit fisik ke item pesanan dengan transaksi atomik dan pessimistic locking.
      */
     public function allocate(Request $request, Order $order)
     {
@@ -293,35 +345,46 @@ class OrderController extends Controller
             'equipment_unit_id' => 'required|exists:equipment_units,id',
         ]);
 
-        $orderItem = $order->orderItems()->findOrFail($request->order_item_id);
-        $unit = EquipmentUnit::where('client_id', $client->id)->findOrFail($request->equipment_unit_id);
+        return DB::transaction(function () use ($request, $order, $client) {
+            $lockedOrder = Order::where('client_id', $client->id)->lockForUpdate()->findOrFail($order->id);
+            $unit = EquipmentUnit::where('client_id', $client->id)->lockForUpdate()->findOrFail($request->equipment_unit_id);
 
-        if ($unit->product_id !== $orderItem->product_id) {
-            return redirect()->back()->with('error', 'Unit fisik tidak cocok dengan produk pesanan.');
-        }
+            $orderItem = $lockedOrder->orderItems()->findOrFail($request->order_item_id);
 
-        // Cek jika sudah dialokasikan ke item ini
-        $alreadyAllocatedToThis = \App\Models\OrderItemUnit::where('order_item_id', $orderItem->id)
-            ->where('equipment_unit_id', $unit->id)
-            ->exists();
+            if ($unit->product_id !== $orderItem->product_id) {
+                return redirect()->back()->with('error', 'Unit fisik tidak cocok dengan produk pesanan.');
+            }
 
-        if ($alreadyAllocatedToThis) {
-            return redirect()->back()->with('error', 'Unit fisik ini sudah dialokasikan ke item ini.');
-        }
+            // Cek jika sudah dialokasikan ke item ini
+            $alreadyAllocatedToThis = \App\Models\OrderItemUnit::where('order_item_id', $orderItem->id)
+                ->where('equipment_unit_id', $unit->id)
+                ->exists();
 
-        // Cek kuota item
-        if ($orderItem->orderItemUnits()->count() >= $orderItem->quantity) {
-            return redirect()->back()->with('error', 'Kebutuhan unit untuk item ini sudah terpenuhi.');
-        }
+            if ($alreadyAllocatedToThis) {
+                return redirect()->back()->with('error', 'Unit fisik ini sudah dialokasikan ke item ini.');
+            }
 
-        \App\Models\OrderItemUnit::create([
-            'order_item_id' => $orderItem->id,
-            'equipment_unit_id' => $unit->id,
-        ]);
+            // Cek kuota item
+            if ($orderItem->orderItemUnits()->count() >= $orderItem->quantity) {
+                return redirect()->back()->with('error', 'Kebutuhan unit untuk item ini sudah terpenuhi.');
+            }
 
-        $unit->update(['status' => 'disewa']);
+            // Pessimistic Locking & Overlap Rentang Tanggal Sewa Check:
+            $isAvailable = $unit->isAvailableForPeriod($lockedOrder->rental_start_date, $lockedOrder->rental_end_date, $lockedOrder->id);
 
-        return redirect()->back()->with('success', 'Unit fisik ' . ($unit->unit_code ?? '#' . $unit->id) . ' berhasil dialokasikan ke pesanan!');
+            if (! $isAvailable) {
+                return redirect()->back()->with('error', 'Maaf, unit yang dipilih sudah tidak tersedia pada periode tersebut. Silakan pilih unit atau jadwal lain.');
+            }
+
+            \App\Models\OrderItemUnit::create([
+                'order_item_id' => $orderItem->id,
+                'equipment_unit_id' => $unit->id,
+            ]);
+
+            $unit->update(['status' => 'disewa']);
+
+            return redirect()->back()->with('success', 'Unit fisik ' . ($unit->unit_code ?? '#' . $unit->id) . ' berhasil dialokasikan ke pesanan!');
+        });
     }
 
     /**
@@ -339,26 +402,74 @@ class OrderController extends Controller
             abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
         }
 
-        // Hanya boleh batalkan alokasi jika pesanan belum dikirim / sedang disewa
-        if (! in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim'])) {
-            return redirect()->back()->with('error', 'Alokasi unit tidak dapat dibatalkan pada status pesanan saat ini.');
+        return DB::transaction(function () use ($order, $orderItemUnit, $client) {
+            $lockedOrder = Order::where('client_id', $client->id)->lockForUpdate()->findOrFail($order->id);
+
+            // Hanya boleh batalkan alokasi jika pesanan belum dikirim / sedang disewa
+            if (! in_array($lockedOrder->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim'])) {
+                return redirect()->back()->with('error', 'Alokasi unit tidak dapat dibatalkan pada status pesanan saat ini.');
+            }
+
+            // Pastikan orderItemUnit memang milik salah satu orderItem dari pesanan ini
+            $orderItem = $lockedOrder->orderItems()->where('id', $orderItemUnit->order_item_id)->first();
+            if (! $orderItem) {
+                abort(404, 'Item pesanan tidak ditemukan.');
+            }
+
+            $unit = EquipmentUnit::where('id', $orderItemUnit->equipment_unit_id)->lockForUpdate()->first();
+            $unitCode = $unit?->unit_code ?? $unit?->asset_code ?? ('#' . $orderItemUnit->equipment_unit_id);
+
+            $orderItemUnit->delete();
+
+            if ($unit && ! $unit->isActivelyRented()) {
+                $unit->update(['status' => 'tersedia']);
+            }
+
+            return redirect()->back()->with('success', "Alokasi unit {$unitCode} berhasil dibatalkan. Kamu bisa memilih unit pengganti sekarang.");
+        });
+    }
+
+    /**
+     * Verifikasi dan unggah bukti refund untuk pesanan yang dibatalkan.
+     */
+    public function processRefund(Request $request, Order $order)
+    {
+        $user = Auth::user();
+        if (! $user) {
+            $user = \App\Models\User::whereNotNull('client_id')->first();
+        }
+        $client = $user?->client;
+
+        if (! $client || $order->client_id !== $client->id) {
+            abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
         }
 
-        // Pastikan orderItemUnit memang milik salah satu orderItem dari pesanan ini
-        $orderItem = $order->orderItems()->where('id', $orderItemUnit->order_item_id)->first();
-        if (! $orderItem) {
-            abort(404, 'Item pesanan tidak ditemukan.');
-        }
+        $request->validate([
+            'refund_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+        ], [
+            'refund_proof.required' => 'Bukti transfer refund wajib diunggah.',
+            'refund_proof.mimes'    => 'Format bukti refund harus berupa file JPG, PNG, atau PDF.',
+            'refund_proof.max'      => 'Ukuran file bukti refund maksimal 2 MB.',
+        ]);
 
-        $unit = $orderItemUnit->equipmentUnit;
-        $unitCode = $unit?->unit_code ?? $unit?->asset_code ?? ('#' . $orderItemUnit->equipment_unit_id);
+        return DB::transaction(function () use ($request, $order, $client) {
+            $lockedOrder = Order::where('client_id', $client->id)->lockForUpdate()->findOrFail($order->id);
 
-        if ($unit) {
-            $unit->update(['status' => 'tersedia']);
-        }
+            $file = $request->file('refund_proof');
+            $fileName = 'refund_' . $lockedOrder->id . '_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('refund-proofs/' . $client->id, $fileName, 'public');
 
-        $orderItemUnit->delete();
+            // Hapus file bukti lama jika ada
+            if ($lockedOrder->refund_proof && Storage::disk('public')->exists($lockedOrder->refund_proof)) {
+                Storage::disk('public')->delete($lockedOrder->refund_proof);
+            }
 
-        return redirect()->back()->with('success', "Alokasi unit {$unitCode} berhasil dibatalkan. Kamu bisa memilih unit pengganti sekarang.");
+            $lockedOrder->update([
+                'refund_status' => 'refund_selesai',
+                'refund_proof'  => $path,
+            ]);
+
+            return redirect()->back()->with('success', 'Refund pesanan #' . $lockedOrder->order_number . ' berhasil diproses dan bukti tersimpan.');
+        });
     }
 }
