@@ -29,6 +29,7 @@ use App\Http\Controllers\Owner\OwnerDashboardController;
 use App\Http\Controllers\Owner\OwnerRegistrationController;
 use App\Http\Controllers\Owner\OwnerTenantController;
 use App\Http\Controllers\Owner\SubscriptionController;
+use App\Http\Controllers\Owner\ActivityLogController as OwnerActivityLogController;
 use App\Http\Controllers\PageController;
 use App\Livewire\Customer\CartPage;
 use Illuminate\Support\Facades\Route;
@@ -197,6 +198,10 @@ Route::prefix('owner')->name('owner.')->group(function () {
         Route::get('/notifications', [\App\Http\Controllers\Owner\NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Owner\NotificationController::class, 'markAsRead'])->name('notifications.read');
         Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Owner\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+
+        // Audit Trail Activity Log Platform Owner (Minggu 9.2-A2)
+        Route::get('/activity-logs', [OwnerActivityLogController::class, 'index'])->name('activity-logs.index');
+        Route::get('/activity-logs/{activityLog}', [OwnerActivityLogController::class, 'show'])->name('activity-logs.show');
     });
 });
 

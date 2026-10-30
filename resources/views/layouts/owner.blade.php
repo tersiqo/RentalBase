@@ -184,15 +184,17 @@
         </a>
 
         {{-- Activity Log --}}
-        <div class="group flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed select-none">
-            <span class="shrink-0 w-5 h-5 text-slate-400">
+        <a href="{{ route('owner.activity-logs.index') }}"
+           title="Memantau jejak audit aktivitas seluruh tenant dan Super Admin di platform."
+           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                  {{ request()->routeIs('owner.activity-logs.*') ? 'owner-nav-active' : 'text-slate-700 hover:bg-orange-100/70 hover:text-slate-900' }}">
+            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('owner.activity-logs.*') ? 'text-orange-600' : 'text-slate-500 group-hover:text-orange-600' }} transition-colors">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </span>
-            <span x-show="!collapsed || mobileOpen" class="truncate">Activity Log</span>
-            <span x-show="!collapsed || mobileOpen" class="ml-auto text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Segera</span>
-        </div>
+            <span x-show="!collapsed || mobileOpen" class="truncate font-medium">Activity Log</span>
+        </a>
 
         {{-- Notifikasi --}}
         @php
