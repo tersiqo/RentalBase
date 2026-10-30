@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Shipment;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -108,7 +109,7 @@ class ShipmentController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($order, $request, $isPickup) {
+        DB::transaction(function () use ($order, $request, $isPickup, $user) {
             $courierName    = $isPickup ? 'Ambil Sendiri di Toko' : ($request->courier_name ?? 'Kurir Toko');
             $trackingNumber = $isPickup ? ('PICKUP-' . ($order->order_number ?? $order->id)) : $request->tracking_number;
             $deliveryAddr   = $isPickup ? 'Pelanggan mengambil langsung di toko rental' : ($order->shipping_address ?: 'Alamat Pengiriman');
@@ -136,6 +137,19 @@ class ShipmentController extends Controller
                     $oiu->equipmentUnit?->update(['status' => 'disewa']);
                 }
             }
+
+            // Catat jejak audit aktivitas pengiriman logistik
+            ActivityLog::create([
+                'client_id'   => $order->client_id,
+                'user_id'     => $user->id,
+                'action'      => $isPickup ? 'order_handed_over' : 'order_shipped',
+                'module'      => 'shipments',
+                'description' => $isPickup
+                    ? sprintf('Pesanan #%s berhasil diserahkan langsung kepada pelanggan di toko.', $order->order_number ?? $order->id)
+                    : sprintf('Pesanan #%s berhasil diproses dan dikirim via %s (Resi: %s).', $order->order_number ?? $order->id, $courierName, $trackingNumber),
+                'ip_address'  => $request->ip(),
+                'user_agent'  => $request->userAgent(),
+            ]);
         });
 
         if (class_exists(\App\Events\OrderShipped::class)) {

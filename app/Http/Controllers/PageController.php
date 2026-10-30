@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\ReturnModel;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -424,6 +425,22 @@ class PageController extends Controller
                         'updated_at' => now(),
                     ]);
                 }
+
+                // Catat rekam jejak audit pengajuan pengembalian
+                ActivityLog::create([
+                    'client_id'   => $lockedOrder->client_id,
+                    'user_id'     => Auth::id(),
+                    'action'      => 'return_requested',
+                    'module'      => 'returns',
+                    'description' => sprintf(
+                        'Pelanggan mengajukan pengembalian pesanan #%s%s%s.',
+                        $lockedOrder->order_number,
+                        $isCourier ? ' via ' . ($validated['courier_name'] ?? '') . ' (Resi: ' . ($validated['tracking_number'] ?? '-') . ')' : ' (antar langsung ke toko)',
+                        $hasLateFee ? ' dengan denda keterlambatan terhitung Rp ' . number_format($lateFeeData['total_late_fee'], 0, ',', '.') : ''
+                    ),
+                    'ip_address'  => $request->ip(),
+                    'user_agent'  => $request->userAgent(),
+                ]);
 
                 if (class_exists(\App\Events\ReturnRequested::class)) {
                     event(new \App\Events\ReturnRequested($lockedOrder));

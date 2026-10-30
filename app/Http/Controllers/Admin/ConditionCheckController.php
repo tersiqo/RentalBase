@@ -125,9 +125,19 @@ class ConditionCheckController extends Controller
             return back()->with('error', 'Unit fisik tidak valid atau bukan milik toko Anda.');
         }
 
-        // Simpan foto jika ada
+        // Simpan foto (mendukung single file atau multiple files)
         $imagePath = null;
-        if ($request->hasFile('image')) {
+        if ($request->hasFile('images')) {
+            $paths = [];
+            foreach ($request->file('images') as $file) {
+                if ($file && $file->isValid()) {
+                    $paths[] = $file->store('condition-checks', 'public');
+                }
+            }
+            if (! empty($paths)) {
+                $imagePath = count($paths) === 1 ? $paths[0] : json_encode($paths);
+            }
+        } elseif ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('condition-checks', 'public');
         }
 
@@ -139,6 +149,24 @@ class ConditionCheckController extends Controller
             'notes'             => $request->notes,
             'image'             => $imagePath,
             'checked_by'        => $user->id,
+        ]);
+
+        // Catat jejak audit aktivitas inspeksi
+        \App\Models\ActivityLog::create([
+            'client_id'   => $client->id,
+            'user_id'     => $user->id,
+            'action'      => 'condition_check_recorded',
+            'module'      => 'inspections',
+            'description' => sprintf(
+                'Inspeksi fisik unit [%s] (%s) fase %s dicatat dengan kondisi: %s oleh %s.',
+                $equipmentUnit->unit_code,
+                $equipmentUnit->product?->name ?? 'Produk',
+                $request->check_type === 'sebelum_serah' ? 'Sebelum Kirim' : 'Saat Kembali',
+                ucfirst(str_replace('_', ' ', $request->condition)),
+                $user->name ?? 'Admin Toko'
+            ),
+            'ip_address'  => $request->ip(),
+            'user_agent'  => $request->userAgent(),
         ]);
 
         return redirect()->route('admin.condition-checks.index')
