@@ -11,6 +11,19 @@
             ? $storeLogo
             : \Illuminate\Support\Facades\Storage::url($storeLogo);
     }
+
+    // Notifikasi operasional untuk toko aktif
+    $adminNotifications = collect();
+    $adminUnreadNotificationsCount = 0;
+    if ($currentClient) {
+        $adminNotifications = \App\Models\Notification::where('client_id', $currentClient->id)
+            ->latest()
+            ->take(5)
+            ->get();
+        $adminUnreadNotificationsCount = \App\Models\Notification::where('client_id', $currentClient->id)
+            ->where('is_read', false)
+            ->count();
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="id" class="h-full">
@@ -154,6 +167,27 @@
                 </svg>
             </span>
             <span x-show="!collapsed || mobileOpen" class="truncate">Dashboard</span>
+        </a>
+
+        {{-- Notifikasi --}}
+        <a href="{{ route('admin.notifications.index') }}"
+           title="Pusat pemberitahuan operasional toko terkait pesanan baru, bukti pembayaran, verifikasi KTP, dan pengembalian unit."
+           class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                  {{ request()->routeIs('admin.notifications.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
+            <div class="flex items-center gap-3 min-w-0">
+                <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.notifications.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
+                    </svg>
+                </span>
+                <span x-show="!collapsed || mobileOpen" class="truncate">Notifikasi</span>
+            </div>
+            @if($adminUnreadNotificationsCount > 0)
+                <span x-show="!collapsed || mobileOpen"
+                      class="shrink-0 px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-100 text-orange-700">
+                    {{ $adminUnreadNotificationsCount > 99 ? '99+' : $adminUnreadNotificationsCount }}
+                </span>
+            @endif
         </a>
 
         {{-- Pesanan --}}
@@ -399,13 +433,104 @@
         <span class="text-xs font-bold text-orange-700">Paket: {{ $subscription->plan_name ?? 'Business' }} (Aktif)</span>
     </div>
 
-    {{-- Bell Notification Icon --}}
-    <button class="relative w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
-        </svg>
-        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white"></span>
-    </button>
+    {{-- Bell Notification Dropdown --}}
+    <div x-data="{ notifOpen: false }" class="relative" @keydown.escape.stop="notifOpen = false">
+        <button @click="notifOpen = !notifOpen"
+                type="button"
+                id="btn-admin-notifications"
+                title="Pemberitahuan Operasional Toko"
+                class="relative w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
+                :aria-expanded="notifOpen.toString()">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
+            </svg>
+            @if($adminUnreadNotificationsCount > 0)
+                <span class="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-orange-600 text-[10px] font-bold text-white ring-2 ring-white">
+                    {{ $adminUnreadNotificationsCount > 99 ? '99+' : $adminUnreadNotificationsCount }}
+                </span>
+            @endif
+        </button>
+
+        {{-- Dropdown Preview Menu --}}
+        <div x-show="notifOpen"
+             x-cloak
+             @click.away="notifOpen = false"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-100"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white shadow-xl border border-gray-100 py-2 z-50 text-xs font-medium divide-y divide-gray-100">
+
+            {{-- Header --}}
+            <div class="px-4 py-2.5 flex items-center justify-between bg-stone-50/60">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-gray-900 text-sm">Pemberitahuan</span>
+                    @if($adminUnreadNotificationsCount > 0)
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">
+                            {{ $adminUnreadNotificationsCount }} baru
+                        </span>
+                    @endif
+                </div>
+                @if($adminUnreadNotificationsCount > 0)
+                    <form action="{{ route('admin.notifications.mark-all-read') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="text-[11px] font-medium text-orange-600 hover:text-orange-700 transition">
+                            Tandai Semua Dibaca
+                        </button>
+                    </form>
+                @endif
+            </div>
+
+            {{-- 5 Latest Notifications List --}}
+            <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                @forelse($adminNotifications as $notif)
+                    <div class="p-3.5 hover:bg-stone-50 transition {{ ! $notif->is_read ? 'bg-orange-50/30' : '' }}">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-1.5">
+                                @if(! $notif->is_read)
+                                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0"></span>
+                                @endif
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold border {{ $notif->type_badge['bg'] }}">
+                                    {{ $notif->type_badge['label'] }}
+                                </span>
+                            </div>
+                            <span class="text-[10px] text-gray-400 shrink-0">
+                                {{ $notif->created_at ? $notif->created_at->diffForHumans() : '-' }}
+                            </span>
+                        </div>
+                        <form action="{{ route('admin.notifications.read', $notif->id) }}" method="POST" class="mt-1">
+                            @csrf
+                            <input type="hidden" name="redirect_to" value="{{ $notif->admin_target_url }}">
+                            <button type="submit" class="text-left font-semibold text-gray-800 hover:text-orange-600 transition truncate w-full">
+                                {{ $notif->title }}
+                            </button>
+                        </form>
+                        <p class="text-gray-500 text-[11px] mt-0.5 line-clamp-2 leading-relaxed">
+                            {{ $notif->message }}
+                        </p>
+                    </div>
+                @empty
+                    <div class="px-4 py-8 text-center text-gray-400">
+                        <svg class="w-8 h-8 mx-auto text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9" />
+                        </svg>
+                        <p class="font-medium text-xs text-gray-500">Belum ada pemberitahuan</p>
+                        <p class="text-[11px] text-gray-400 mt-0.5">Semua peringatan operasional akan muncul di sini</p>
+                    </div>
+                @endforelse
+            </div>
+
+            {{-- Footer --}}
+            <div class="p-2 text-center bg-stone-50/40">
+                <a href="{{ route('admin.notifications.index') }}"
+                   class="inline-flex items-center justify-center w-full py-1.5 text-xs font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50/60 rounded-xl transition">
+                    Lihat Semua Pemberitahuan
+                </a>
+            </div>
+        </div>
+    </div>
 
     {{-- Profile Dropdown --}}
     <div x-data="{ profileOpen: false }" class="relative" @keydown.escape.stop="profileOpen = false">

@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\EquipmentUnitController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\TenantRegistrationController;
@@ -153,6 +154,11 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::get('/admins', [AdminStaffController::class, 'index'])->name('admins.index');
     Route::post('/admins', [AdminStaffController::class, 'store'])->name('admins.store');
     Route::post('/admins/{user}/status', [AdminStaffController::class, 'toggleStatus'])->name('admins.toggle-status');
+
+    // Pusat Pemberitahuan Operasional Toko
+    Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [AdminNotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/mark-all-read', [AdminNotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
 });
 
 Route::prefix('owner')->name('owner.')->group(function () {
