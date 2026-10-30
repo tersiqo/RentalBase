@@ -58,19 +58,14 @@
             </span>
         </div>
 
-        <!-- Tag Status, Headline & Paragraf Deskripsi -->
+        <!-- Headline & Paragraf Deskripsi -->
         <div class="flex flex-col items-center gap-3 text-center">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide bg-rose-50 text-rose-700 border border-rose-200/80">
-                <span class="size-1.5 rounded-full bg-rose-500"></span>
-                Error 403 &bull; Akses Ditolak
-            </span>
-
-            <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">
-                Akses Dibatasi
+            <h1 class="text-3xl font-bold text-slate-800 tracking-tight text-center">
+                403 — Akses Ditolak
             </h1>
 
             <p class="text-sm sm:text-base text-slate-600 text-center leading-relaxed max-w-md">
-                {{ !empty($exception?->getMessage()) ? $exception->getMessage() : 'Mohon maaf, Anda tidak memiliki izin atau hak akses yang cukup untuk membuka halaman atau direktori ini.' }}
+                {{ !empty($exception?->getMessage()) ? $exception->getMessage() : 'Maaf, akun Anda tidak memiliki wewenang atau hak akses untuk melihat halaman ini.' }}
             </p>
         </div>
 

@@ -58,19 +58,14 @@
             </span>
         </div>
 
-        <!-- Tag Status, Headline & Paragraf Deskripsi -->
+        <!-- Headline & Paragraf Deskripsi -->
         <div class="flex flex-col items-center gap-3 text-center">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide bg-indigo-50 text-indigo-700 border border-indigo-200/80">
-                <span class="size-1.5 rounded-full bg-indigo-500"></span>
-                Error 404 &bull; Halaman Tidak Ditemukan
-            </span>
-
-            <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">
-                Halaman Tidak Ditemukan
+            <h1 class="text-3xl font-bold text-slate-800 tracking-tight text-center">
+                404 — Halaman Tidak Ditemukan
             </h1>
 
             <p class="text-sm sm:text-base text-slate-600 text-center leading-relaxed max-w-md">
-                Mohon maaf, halaman yang Anda cari tidak tersedia, telah dipindahkan, atau alamat URL yang Anda masukkan salah.
+                Maaf, halaman, produk, atau tautan yang Anda tuju mungkin telah dihapus, dipindahkan, atau salah ketik URL.
             </p>
         </div>
 
