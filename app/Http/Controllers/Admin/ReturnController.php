@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReturnProcessRequest;
 use App\Models\Order;
 use App\Models\ReturnModel;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -160,6 +161,19 @@ class ReturnController extends Controller
 
             $return->save();
             $order->save();
+
+            // Catat jejak audit pengembalian / denda
+            ActivityLog::create([
+                'client_id'   => $order->client_id,
+                'user_id'     => $user->id,
+                'action'      => ($actionType === 'denda' && $lateFeeAmount > 0 && empty($return->late_fee_proof)) ? 'late_fine_issued' : 'return_completed',
+                'module'      => 'returns',
+                'description' => ($actionType === 'denda' && $lateFeeAmount > 0 && empty($return->late_fee_proof))
+                    ? sprintf('Tagihan denda keterlambatan sebesar Rp %s (%d jam terlambat) diterbitkan untuk pesanan #%s oleh %s.', number_format($lateFeeAmount, 0, ',', '.'), $lateHours, $order->order_number, $user->name ?? 'Admin')
+                    : sprintf('Pengembalian pesanan #%s selesai diverifikasi dan unit barang kembali berstatus tersedia.', $order->order_number),
+                'ip_address'  => $request->ip(),
+                'user_agent'  => $request->userAgent(),
+            ]);
 
             DB::commit();
 

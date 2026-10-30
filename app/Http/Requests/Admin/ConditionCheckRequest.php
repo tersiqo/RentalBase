@@ -20,6 +20,8 @@ class ConditionCheckRequest extends FormRequest
             'condition'         => ['required', 'string', 'in:baik,rusak_ringan,rusak_berat'],
             'notes'             => ['nullable', 'string', 'max:2000'],
             'image'             => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'images'           => ['nullable', 'array', 'max:5'],
+            'images.*'         => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 

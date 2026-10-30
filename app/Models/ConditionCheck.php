@@ -26,4 +26,31 @@ class ConditionCheck extends Model
     {
         return $this->belongsTo(\App\Models\Order::class);
     }
+
+    /**
+     * Dapatkan daftar path foto (mendukung single string atau JSON array).
+     */
+    public function getImagesListAttribute(): array
+    {
+        if (empty($this->image)) {
+            return [];
+        }
+        $decoded = json_decode($this->image, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+        return [$this->image];
+    }
+
+    /**
+     * Dapatkan URL foto pertama untuk thumbnail/tampilan.
+     */
+    public function getFirstImageUrlAttribute(): ?string
+    {
+        $list = $this->images_list;
+        if (empty($list)) {
+            return null;
+        }
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($list[0]);
+    }
 }
