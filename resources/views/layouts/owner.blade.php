@@ -172,15 +172,16 @@
         </p>
 
         {{-- Subscriptions --}}
-        <div class="group flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed select-none">
-            <span class="shrink-0 w-5 h-5 text-slate-400">
+        <a href="{{ route('owner.subscriptions.index') }}"
+           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                  {{ request()->routeIs('owner.subscriptions.*') ? 'owner-nav-active' : 'text-slate-700 hover:bg-orange-100/70 hover:text-slate-900' }}">
+            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('owner.subscriptions.*') ? 'text-orange-600' : 'text-slate-500 group-hover:text-orange-600' }} transition-colors">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                 </svg>
             </span>
-            <span x-show="!collapsed || mobileOpen" class="truncate">Subscriptions</span>
-            <span x-show="!collapsed || mobileOpen" class="ml-auto text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Segera</span>
-        </div>
+            <span x-show="!collapsed || mobileOpen" class="truncate font-medium">Subscriptions</span>
+        </a>
 
         {{-- Activity Log --}}
         <div class="group flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed select-none">
