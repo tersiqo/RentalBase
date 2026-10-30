@@ -383,7 +383,7 @@ class TenantRegistrationController extends Controller
                     'payment_status' => 'menunggu',
                 ]);
 
-                ClientRegistration::create([
+                $reg = ClientRegistration::create([
                     'business_name' => $request->business_name,
                     'description' => $request->description,
                     'subdomain' => strtolower($request->subdomain),
@@ -397,6 +397,10 @@ class TenantRegistrationController extends Controller
                 ]);
 
                 DB::commit();
+
+                if (class_exists(\App\Events\TenantRegistrationSubmitted::class)) {
+                    event(new \App\Events\TenantRegistrationSubmitted($reg));
+                }
 
                 return redirect()->route('login')->with('success', 'Pendaftaran berhasil diajukan. Silakan tunggu verifikasi dari Owner. Informasi persetujuan akan dikirimkan melalui email Anda.');
 
@@ -748,11 +752,12 @@ class TenantRegistrationController extends Controller
                 'status' => 'menunggu_verifikasi',
             ]);
 
-            $client->update([
-                'status' => 'menunggu_verifikasi',
-            ]);
-
             DB::commit();
+
+            $sub = Subscription::where('client_id', $client->id)->first();
+            if ($sub && class_exists(\App\Events\SubscriptionRenewalUploaded::class)) {
+                event(new \App\Events\SubscriptionRenewalUploaded($sub));
+            }
 
             Auth::logout();
             $request->session()->invalidate();

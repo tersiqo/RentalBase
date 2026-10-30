@@ -138,6 +138,10 @@ class ShipmentController extends Controller
             }
         });
 
+        if (class_exists(\App\Events\OrderShipped::class)) {
+            event(new \App\Events\OrderShipped($order));
+        }
+
         $orderLabel = '#' . ($order->order_number ?? $order->id);
         $successMsg = $isPickup
             ? "Pesanan {$orderLabel} berhasil diserahkan kepada pelanggan!"

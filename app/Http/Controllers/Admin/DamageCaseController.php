@@ -275,6 +275,10 @@ class DamageCaseController extends Controller
             'condition' => 'rusak',
         ]);
 
+        if (class_exists(\App\Events\DamageCaseCreated::class)) {
+            event(new \App\Events\DamageCaseCreated($damageCase));
+        }
+
         return redirect()->route('admin.damage-cases.show', $damageCase->id)
             ->with('success', "Kasus kerusakan untuk unit [{$unit->unit_code}] berhasil diterbitkan dengan nomor tiket #{$damageCase->id}.");
     }
@@ -452,6 +456,10 @@ class DamageCaseController extends Controller
             'case_status' => 'selesai',
             'resolution_notes' => $updatedNotes,
         ]);
+
+        if (class_exists(\App\Events\DamageCaseResolved::class)) {
+            event(new \App\Events\DamageCaseResolved($damageCase));
+        }
 
         return back()->with('success', "Kasus kerusakan tiket #{$damageCase->id} telah resmi ditutup. Status unit fisik diperbarui.");
     }

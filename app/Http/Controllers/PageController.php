@@ -424,6 +424,10 @@ class PageController extends Controller
                         'updated_at' => now(),
                     ]);
                 }
+
+                if (class_exists(\App\Events\ReturnRequested::class)) {
+                    event(new \App\Events\ReturnRequested($lockedOrder));
+                }
             });
 
             return redirect()->route('customer.orders.show', $order->id)
@@ -476,6 +480,10 @@ class PageController extends Controller
             'status' => 'menunggu_verifikasi',
         ]);
 
+        if (class_exists(\App\Events\PaymentProofUploaded::class)) {
+            event(new \App\Events\PaymentProofUploaded($order));
+        }
+
         return back()->with('success', 'Bukti pembayaran pesanan #' . $order->order_number . ' berhasil diunggah. Toko akan segera memverifikasinya.');
     }
 
@@ -503,6 +511,10 @@ class PageController extends Controller
                 'face_image' => $facePath,
                 'status' => 'menunggu',
             ]);
+        }
+
+        if (class_exists(\App\Events\IdentityProofUploaded::class)) {
+            event(new \App\Events\IdentityProofUploaded($order));
         }
 
         return back()->with('success', 'Dokumen identitas berhasil diunggah ulang dan sedang ditinjau kembali oleh toko.');
