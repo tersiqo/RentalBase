@@ -97,6 +97,21 @@ class Notification extends Model
                 'bg' => 'bg-amber-50 text-amber-700 border-amber-200',
                 'dot' => 'bg-amber-500',
             ],
+            'registration', 'tenant_registration' => [
+                'label' => 'Pendaftaran Tenant',
+                'bg' => 'bg-orange-50 text-orange-700 border-orange-200',
+                'dot' => 'bg-orange-500',
+            ],
+            'subscription', 'subscription_renewal' => [
+                'label' => 'Subscription',
+                'bg' => 'bg-purple-50 text-purple-700 border-purple-200',
+                'dot' => 'bg-purple-500',
+            ],
+            'alert' => [
+                'label' => 'Peringatan',
+                'bg' => 'bg-red-50 text-red-700 border-red-200',
+                'dot' => 'bg-red-500',
+            ],
             'system' => [
                 'label' => 'Sistem Toko',
                 'bg' => 'bg-slate-50 text-slate-700 border-slate-200',
@@ -108,6 +123,26 @@ class Notification extends Model
                 'dot' => 'bg-gray-500',
             ],
         };
+    }
+
+    /**
+     * URL tautan target aksi untuk Owner Platform.
+     */
+    public function getOwnerTargetUrlAttribute(): string
+    {
+        if (in_array($this->type, ['registration', 'tenant_registration'])) {
+            return route('owner.registrations.index');
+        }
+
+        if (in_array($this->type, ['subscription', 'subscription_renewal'])) {
+            return route('owner.subscriptions.index');
+        }
+
+        if (in_array($this->type, ['quota', 'tenant_quota'])) {
+            return route('owner.tenants.index');
+        }
+
+        return route('owner.notifications.index');
     }
 
     /**
