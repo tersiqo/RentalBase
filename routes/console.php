@@ -2,6 +2,26 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schedule;
+
+/*
+|--------------------------------------------------------------------------
+| Console Commands & Task Scheduling (RentalBase)
+|--------------------------------------------------------------------------
+*/
+
+Schedule::command('orders:auto-cancel-unpaid')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping();
+
+Schedule::command('orders:auto-complete')
+    ->dailyAt('00:00')
+    ->withoutOverlapping();
+
+Schedule::command('subscriptions:check-expired')
+    ->dailyAt('00:01')
+    ->withoutOverlapping();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
