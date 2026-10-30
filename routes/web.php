@@ -107,6 +107,7 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::post('/orders/{order}/reject', [OrderController::class, 'reject'])->name('orders.reject');
     Route::post('/orders/{order}/allocate', [OrderController::class, 'allocate'])->name('orders.allocate');
     Route::delete('/orders/{order}/allocate/{orderItemUnit}', [OrderController::class, 'deallocate'])->name('orders.deallocate');
+    Route::post('/orders/{order}/refund', [OrderController::class, 'processRefund'])->name('orders.refund');
     Route::get('/shipments', [ShipmentController::class, 'index'])->name('shipments.index');
     Route::post('/shipments/{order}/process', [ShipmentController::class, 'process'])->name('shipments.process');
     Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
@@ -181,6 +182,11 @@ Route::prefix('owner')->name('owner.')->group(function () {
         Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
         Route::post('/subscriptions/{id}/renew', [SubscriptionController::class, 'renew'])->name('subscriptions.renew');
         Route::get('/subscriptions/{id}/history', [SubscriptionController::class, 'history'])->name('subscriptions.history');
+
+        // Pusat Notifikasi Platform Owner
+        Route::get('/notifications', [\App\Http\Controllers\Owner\NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Owner\NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Owner\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     });
 });
 

@@ -195,15 +195,26 @@
         </div>
 
         {{-- Notifikasi --}}
-        <div class="group flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm font-medium text-slate-400 cursor-not-allowed select-none">
-            <span class="shrink-0 w-5 h-5 text-slate-400">
+        @php
+            $ownerUnreadNotifs = Auth::check() ? \App\Models\Notification::where('user_id', Auth::id())->unread()->count() : 0;
+        @endphp
+        <a href="{{ route('owner.notifications.index') }}"
+           class="group flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
+                  {{ request()->routeIs('owner.notifications.*') ? 'owner-nav-active' : 'text-slate-700 hover:bg-orange-100/70 hover:text-slate-900' }}">
+            <span class="shrink-0 w-5 h-5 {{ request()->routeIs('owner.notifications.*') ? 'text-orange-600' : 'text-slate-500 group-hover:text-orange-600' }} transition-colors">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
                 </svg>
             </span>
-            <span x-show="!collapsed || mobileOpen" class="truncate">Notifikasi</span>
-            <span x-show="!collapsed || mobileOpen" class="ml-auto text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-600">Segera</span>
-        </div>
+            <span x-show="!collapsed || mobileOpen" class="truncate font-medium">Notifikasi</span>
+            @if($ownerUnreadNotifs > 0)
+                <span x-show="!collapsed || mobileOpen"
+                      class="ml-auto shrink-0 px-2 py-0.5 text-[10px] font-bold rounded-full text-white shadow-xs"
+                      style="background: #F97316;">
+                    {{ $ownerUnreadNotifs > 99 ? '99+' : $ownerUnreadNotifs }}
+                </span>
+            @endif
+        </a>
 
     </nav>
 
@@ -277,12 +288,18 @@
     </div>
 
     {{-- Bell --}}
-    <button class="relative w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors">
+    <a href="{{ route('owner.notifications.index') }}"
+       title="Pusat Notifikasi Platform"
+       class="relative w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
         </svg>
-        <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full ring-2 ring-white" style="background: #F97316;"></span>
-    </button>
+        @if(($ownerUnreadNotifs ?? 0) > 0)
+            <span class="absolute top-1 right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full text-[9px] font-bold text-white bg-orange-600 ring-2 ring-white">
+                {{ ($ownerUnreadNotifs ?? 0) > 99 ? '99+' : $ownerUnreadNotifs }}
+            </span>
+        @endif
+    </a>
 
     {{-- Avatar --}}
     <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm"
