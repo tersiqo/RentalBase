@@ -128,6 +128,27 @@
                     <livewire:customer.cart-icon :client="$client" />
 
                     @auth
+                        <!-- Bell Notification Icon Customer -->
+                        @php
+                            $unreadCustomerNotifs = \App\Models\Notification::where('user_id', auth()->id())
+                                ->where('is_read', false)
+                                ->count();
+                        @endphp
+                        <a href="{{ route('customer.notifications.index') }}"
+                           class="relative p-2 rounded-xl text-gray-600 hover:text-primary-500 hover:bg-gray-100 transition-colors"
+                           title="Pemberitahuan">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
+                            </svg>
+                            @if($unreadCustomerNotifs > 0)
+                                <span class="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-black text-white bg-orange-600 rounded-full ring-2 ring-white">
+                                    {{ $unreadCustomerNotifs > 99 ? '99+' : $unreadCustomerNotifs }}
+                                </span>
+                            @endif
+                        </a>
+                    @endauth
+
+                    @auth
                         <!-- Login / Avatar (Alpine Dropdown) -->
                         <div x-data="{ open: false }" class="relative flex items-center ml-1">
                             <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none cursor-pointer">
@@ -149,7 +170,13 @@
                                 <div class="px-4 py-2 border-b border-gray-100 mb-1">
                                     <p class="text-sm font-bold text-gray-900">Halo, {{ auth()->user()->name }}!</p>
                                 </div>
-                                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-4 py-2 text-sm font-semibold text-orange-600 bg-orange-50 transition">Pesanan Saya</a>
+                                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition">Pesanan Saya</a>
+                                <a href="{{ route('customer.notifications.index') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition flex items-center justify-between">
+                                    <span>Pemberitahuan</span>
+                                    @if(isset($unreadCustomerNotifs) && $unreadCustomerNotifs > 0)
+                                        <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">{{ $unreadCustomerNotifs }}</span>
+                                    @endif
+                                </a>
                                 <div class="border-t border-gray-100 mt-1"></div>
                                 <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</a>
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
@@ -187,6 +214,7 @@
                 @endif
                 @auth
                     <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
+                    <a href="{{ route('customer.notifications.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.notifications*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pemberitahuan</a>
                 @endauth
                 <a href="#bantuan" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Bantuan</a>
                 

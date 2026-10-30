@@ -75,4 +75,12 @@ class User extends Authenticatable
     {
         return $this->role === 'admin_rental' && ! $this->isPrimaryAdmin();
     }
+
+    /**
+     * Daftar notifikasi milik user ini.
+     */
+    public function customNotifications()
+    {
+        return $this->hasMany(Notification::class)->latest();
+    }
 }

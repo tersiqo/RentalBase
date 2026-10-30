@@ -49,6 +49,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-orders/{order}/damage', [DamageReportController::class, 'show'])->name('customer.orders.damage');
     Route::post('/my-orders/{order}/damage/respond', [DamageReportController::class, 'respond'])->name('customer.orders.damage.respond');
     Route::post('/my-orders/{order}/damage/pay', [DamageReportController::class, 'pay'])->name('customer.orders.damage.pay');
+
+    // Customer Notification Hub
+    Route::get('/notifications', [\App\Http\Controllers\Customer\NotificationController::class, 'index'])->name('customer.notifications.index');
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Customer\NotificationController::class, 'markAsRead'])->name('customer.notifications.read');
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Customer\NotificationController::class, 'markAllAsRead'])->name('customer.notifications.mark-all-read');
 });
 
 Route::get('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showRegister'])->name('tenant.register');
@@ -88,6 +93,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('customer.checkout.store');
     Route::get('/client/{subdomain}/checkout/{product}', [CustomerCheckoutController::class, 'direct'])
         ->name('customer.checkout.direct');
+    Route::get('/client/{subdomain}/notifications', [\App\Http\Controllers\Customer\NotificationController::class, 'index'])
+        ->name('customer.notifications.tenant');
 });
 
 Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function () {
