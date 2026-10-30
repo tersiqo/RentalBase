@@ -86,6 +86,25 @@
             </p>
         </div>
 
+        <!-- Tombol Call-to-Action (CTA) Utama -->
+        <div class="w-full flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
+            <a href="/" 
+               class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-lg shadow-sm shadow-indigo-200 transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm sm:text-base">
+                <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                </svg>
+                Kembali ke Beranda RentalBase
+            </a>
+            
+            <a href="mailto:support@rentalbase.id?subject=Bantuan%20Penangguhan%20Toko{{ isset($client) ? '%20-%20' . rawurlencode($client->nama_usaha ?? $client->business_name) : '' }}" 
+               class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-slate-300 text-sm sm:text-base">
+                <svg class="size-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                </svg>
+                Hubungi Bantuan
+            </a>
+        </div>
+
         <!-- Box Informasi Tambahan yang Sopan -->
         <div class="w-full bg-slate-50/80 rounded-2xl border border-slate-200/60 p-4 text-xs sm:text-sm text-slate-500 flex flex-col gap-2 text-left">
             <div class="flex items-start gap-2.5">
@@ -126,25 +145,6 @@
                 </div>
             @endif
         @endauth
-
-        <!-- Tombol Aksi / Navigasi -->
-        <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-1">
-            <a href="{{ route('landing.home') }}" 
-               class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold transition shadow-sm shadow-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-                </svg>
-                Kembali ke RentalBase
-            </a>
-            
-            <a href="mailto:support@rentalbase.id?subject=Bantuan%20Penangguhan%20Toko{{ isset($client) ? '%20-%20' . rawurlencode($client->nama_usaha ?? $client->business_name) : '' }}" 
-               class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-slate-300">
-                <svg class="size-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-                </svg>
-                Hubungi Bantuan
-            </a>
-        </div>
 
         <!-- Footer Kecil / Platform Branding -->
         <p class="text-xs text-slate-400 pt-1">
