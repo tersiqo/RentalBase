@@ -68,23 +68,21 @@
             </span>
         </div>
 
-        <!-- Tag Status & Judul Utama -->
-        <div class="flex flex-col items-center gap-2.5">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide bg-amber-50 text-amber-800 border border-amber-200/80">
-                <span class="size-1.5 rounded-full bg-amber-500"></span>
-                Status: Layanan Ditangguhkan
-            </span>
-
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">
-                @if(isset($client))
+        <!-- Tag Status, Headline & Paragraf Deskripsi -->
+        <div class="flex flex-col items-center gap-3 text-center">
+            @if(isset($client))
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide bg-amber-50 text-amber-800 border border-amber-200/80">
+                    <span class="size-1.5 rounded-full bg-amber-500"></span>
                     {{ $client->nama_usaha ?? ($client->business_name ?? 'Toko Rental') }}
-                @else
-                    Toko Rental Tidak Aktif
-                @endif
+                </span>
+            @endif
+
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 tracking-tight">
+                Toko Sewa Sedang Ditangguhkan
             </h1>
 
-            <p class="text-sm sm:text-base text-slate-600 leading-relaxed max-w-sm mt-1">
-                {{ $message ?? 'Maaf, akses operasional dan katalog sewa untuk toko ini sedang ditangguhkan sementara waktu oleh pengelola RentalBase.' }}
+            <p class="text-sm sm:text-base text-slate-600 text-center leading-relaxed max-w-md">
+                Mohon maaf, operasional toko ini sedang dinonaktifkan sementara oleh pengelola platform. Navigasi dan transaksi sewa tidak dapat dilakukan saat ini.
             </p>
         </div>
 
