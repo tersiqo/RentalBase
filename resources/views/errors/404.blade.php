@@ -32,7 +32,7 @@
     </div>
 
     <!-- Container Card (Persis di tengah layar - Vertikal & Horizontal) -->
-    <main class="w-full max-w-lg bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-200/60 p-8 sm:p-10 text-center flex flex-col items-center gap-6 relative z-10 transition-all">
+    <main class="w-full max-w-lg bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-200/60 p-6 sm:p-10 text-center flex flex-col items-center gap-6 relative z-10 transition-all">
 
         <!-- ========================================================= -->
         <!-- Ikon SVG Modern: Kaca Pembesar & Pencarian 404            -->
