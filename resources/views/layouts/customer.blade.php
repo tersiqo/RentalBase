@@ -38,6 +38,15 @@
             --tenant-text: {{ $textColor }};
             --color-primary-500: {{ $themeColor }};
             --color-primary-600: {{ $themeColor }};
+            --tenant-theme-50: color-mix(in srgb, var(--tenant-theme) 10%, white);
+            --tenant-theme-100: color-mix(in srgb, var(--tenant-theme) 18%, white);
+            --tenant-theme-200: color-mix(in srgb, var(--tenant-theme) 30%, white);
+            --tenant-theme-300: color-mix(in srgb, var(--tenant-theme) 48%, white);
+            --tenant-theme-400: color-mix(in srgb, var(--tenant-theme) 70%, white);
+            --tenant-theme-600: color-mix(in srgb, var(--tenant-theme) 85%, black);
+            --tenant-theme-700: color-mix(in srgb, var(--tenant-theme) 72%, black);
+            --tenant-theme-800: color-mix(in srgb, var(--tenant-theme) 60%, black);
+            --tenant-theme-900: color-mix(in srgb, var(--tenant-theme) 45%, black);
         }
 
         /* Override tombol checkout & elemen utama katalog customer */
@@ -60,8 +69,32 @@
             border-color: color-mix(in srgb, var(--tenant-theme) 25%, white) !important;
         }
 
+        .border-primary-200 {
+            border-color: color-mix(in srgb, var(--tenant-theme) 35%, white) !important;
+        }
+
+        .border-primary-300 {
+            border-color: color-mix(in srgb, var(--tenant-theme) 50%, white) !important;
+        }
+
         .bg-primary-50 {
             background-color: color-mix(in srgb, var(--tenant-theme) 10%, white) !important;
+        }
+
+        .bg-primary-100 {
+            background-color: color-mix(in srgb, var(--tenant-theme) 18%, white) !important;
+        }
+
+        .text-primary-700 {
+            color: color-mix(in srgb, var(--tenant-theme) 75%, black) !important;
+        }
+
+        .text-primary-800 {
+            color: color-mix(in srgb, var(--tenant-theme) 60%, black) !important;
+        }
+
+        .text-primary-900 {
+            color: color-mix(in srgb, var(--tenant-theme) 45%, black) !important;
         }
 
         .from-primary-500 {
@@ -76,6 +109,44 @@
 
         .hover\:bg-primary-600:hover {
             filter: brightness(0.92);
+        }
+
+        /* Dynamic Tenant Hero Banner & Card Theme */
+        .tenant-hero-bg {
+            background: radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--tenant-theme) 18%, white), transparent 45%),
+                        radial-gradient(circle at 95% 10%, color-mix(in srgb, var(--tenant-theme) 12%, white), transparent 45%),
+                        #fff !important;
+        }
+
+        .tenant-hero-card {
+            background: linear-gradient(145deg, 
+                color-mix(in srgb, var(--tenant-theme) 45%, white) 0%, 
+                color-mix(in srgb, var(--tenant-theme) 75%, white) 45%, 
+                var(--tenant-theme) 100%
+            ) !important;
+            box-shadow: 0 30px 60px -20px color-mix(in srgb, var(--tenant-theme) 45%, transparent) !important;
+        }
+
+        .tenant-hero-card:hover {
+            box-shadow: 0 36px 70px -18px color-mix(in srgb, var(--tenant-theme) 55%, transparent) !important;
+        }
+
+        .tenant-badge {
+            background-color: color-mix(in srgb, var(--tenant-theme) 10%, white) !important;
+            color: color-mix(in srgb, var(--tenant-theme) 80%, black) !important;
+            border: 1px solid color-mix(in srgb, var(--tenant-theme) 25%, white) !important;
+        }
+
+        .tenant-badge-dot {
+            background-color: var(--tenant-theme) !important;
+        }
+
+        .tenant-shadow-sm {
+            box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--tenant-theme) 60%, transparent) !important;
+        }
+
+        .tenant-shadow-lg {
+            box-shadow: 0 20px 45px -15px color-mix(in srgb, var(--tenant-theme) 35%, transparent) !important;
         }
     </style>
 </head>
@@ -141,7 +212,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
                             </svg>
                             @if($unreadCustomerNotifs > 0)
-                                <span class="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-black text-white bg-orange-600 rounded-full ring-2 ring-white">
+                                <span class="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-black text-white bg-primary-500 rounded-full ring-2 ring-white">
                                     {{ $unreadCustomerNotifs > 99 ? '99+' : $unreadCustomerNotifs }}
                                 </span>
                             @endif
@@ -170,11 +241,12 @@
                                 <div class="px-4 py-2 border-b border-gray-100 mb-1">
                                     <p class="text-sm font-bold text-gray-900">Halo, {{ auth()->user()->name }}!</p>
                                 </div>
-                                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition">Pesanan Saya</a>
-                                <a href="{{ route('customer.notifications.index') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-orange-600 hover:bg-orange-50 transition flex items-center justify-between">
+                                <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-4 py-2 text-sm font-semibold {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50' }} transition">Profil Saya</a>
+                                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition">Pesanan Saya</a>
+                                <a href="{{ route('customer.notifications.index') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition flex items-center justify-between">
                                     <span>Pemberitahuan</span>
                                     @if(isset($unreadCustomerNotifs) && $unreadCustomerNotifs > 0)
-                                        <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">{{ $unreadCustomerNotifs }}</span>
+                                        <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary-50 text-primary-600">{{ $unreadCustomerNotifs }}</span>
                                     @endif
                                 </a>
                                 <div class="border-t border-gray-100 mt-1"></div>
@@ -190,7 +262,7 @@
                     @else
                         <!-- Guest Actions -->
                         <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="hidden sm:inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 text-[14px] transition-colors">Masuk</a>
-                        <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-transparent bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 text-[14px] transition-all">Daftar</a>
+                        <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-transparent bg-primary-500 text-white tenant-shadow-sm hover:bg-primary-600 active:scale-95 text-[14px] transition-all">Daftar</a>
                     @endauth
                     
                     <!-- Mobile menu button -->
@@ -213,6 +285,7 @@
                     <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}#katalog" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Cara sewa</a>
                 @endif
                 @auth
+                    <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Profil Saya</a>
                     <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
                     <a href="{{ route('customer.notifications.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.notifications*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pemberitahuan</a>
                 @endauth
@@ -221,6 +294,7 @@
                 @auth
                     <div class="border-t border-gray-100 pt-2 mt-2">
                         <div class="px-3 py-1 text-xs font-bold text-gray-400 uppercase">Akun Saya</div>
+                        <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600' }}">Profil Saya</a>
                         <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-semibold text-primary-600 hover:bg-primary-50">Pesanan Saya</a>
                         <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50">Log out</a>
                     </div>

@@ -10,6 +10,12 @@ class CustomerProductController extends Controller
 {
     public function show(string $subdomain, int $id)
     {
+        if (! auth()->check()) {
+            return redirect()->route('login', [
+                'redirect' => request()->fullUrl(),
+            ]);
+        }
+
         $client = Client::where('subdomain', $subdomain)
             ->where('status', 'aktif')
             ->firstOrFail();

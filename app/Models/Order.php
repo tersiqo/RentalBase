@@ -109,17 +109,35 @@ class Order extends Model
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
 
         return match ($status) {
-            'menunggu_konfirmasi' => 'bg-orange-500 text-white',
-            'menunggu_pembayaran', 'belum_dibayar' => 'bg-amber-500 text-white',
-            'menunggu_verifikasi', 'verifikasi' => 'bg-yellow-500 text-white',
-            'siap_kirim' => 'bg-indigo-600 text-white',
-            'diproses', 'dikonfirmasi' => 'bg-indigo-600 text-white',
-            'dikirim' => 'bg-purple-600 text-white',
-            'sedang_disewa' => 'bg-blue-600 text-white',
-            'dikembalikan' => 'bg-cyan-600 text-white',
-            'selesai' => 'bg-green-600 text-white',
-            'batal', 'dibatalkan', 'ditolak' => 'bg-gray-500 text-white',
-            default => 'bg-gray-600 text-white',
+            'menunggu_konfirmasi' => 'bg-orange-50 text-orange-700 border border-orange-200/80',
+            'menunggu_pembayaran', 'belum_dibayar' => 'bg-amber-50 text-amber-700 border border-amber-200/80',
+            'menunggu_verifikasi', 'verifikasi' => 'bg-yellow-50 text-yellow-800 border border-yellow-200/80',
+            'siap_kirim' => 'bg-indigo-50 text-indigo-700 border border-indigo-200/80',
+            'diproses', 'dikonfirmasi' => 'bg-indigo-50 text-indigo-700 border border-indigo-200/80',
+            'dikirim' => 'bg-purple-50 text-purple-700 border border-purple-200/80',
+            'sedang_disewa' => 'bg-blue-50 text-blue-700 border border-blue-200/80',
+            'dikembalikan' => 'bg-cyan-50 text-cyan-700 border border-cyan-200/80',
+            'selesai' => 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
+            'batal', 'dibatalkan', 'ditolak' => 'bg-gray-100 text-gray-700 border border-gray-200/80',
+            default => 'bg-gray-100 text-gray-700 border border-gray-200/80',
+        };
+    }
+
+    public function getStatusDotColorAttribute(): string
+    {
+        $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        return match ($status) {
+            'menunggu_konfirmasi' => 'bg-orange-500',
+            'menunggu_pembayaran', 'belum_dibayar' => 'bg-amber-500',
+            'menunggu_verifikasi', 'verifikasi' => 'bg-yellow-500',
+            'siap_kirim', 'diproses', 'dikonfirmasi' => 'bg-indigo-500',
+            'dikirim' => 'bg-purple-500',
+            'sedang_disewa' => 'bg-blue-500',
+            'dikembalikan' => 'bg-cyan-500',
+            'selesai' => 'bg-emerald-500',
+            'batal', 'dibatalkan', 'ditolak' => 'bg-gray-400',
+            default => 'bg-gray-400',
         };
     }
 

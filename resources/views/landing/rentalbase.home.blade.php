@@ -82,6 +82,7 @@
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#fitur" class="text-gray-600 hover:text-brand font-medium transition">Fitur</a>
+                    <a href="#mitra-rental" class="text-gray-600 hover:text-brand font-medium transition">Mitra Rental</a>
                     <a href="#harga" class="text-gray-600 hover:text-brand font-medium transition">Harga</a>
                     <a href="#kontak" class="text-gray-600 hover:text-brand font-medium transition">Kontak</a>
                     <div class="h-6 w-px bg-gray-200"></div>
@@ -103,6 +104,7 @@
         <div x-show="open" class="md:hidden bg-white border-b border-gray-100 absolute w-full shadow-lg" x-transition x-cloak>
             <div class="px-4 pt-2 pb-6 space-y-2">
                 <a href="#fitur" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Fitur</a>
+                <a href="#mitra-rental" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Mitra Rental</a>
                 <a href="#harga" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Harga</a>
                 <a href="#kontak" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Kontak</a>
                 <div class="border-t border-gray-100 my-2"></div>
@@ -488,6 +490,237 @@
         </div>
     </section>
     <!-- FEATURES SECTION END -->
+
+    @php
+        $tenantSearchData = (isset($tenants) ? $tenants : collect())->map(function($t) {
+            $p = $t->tenantProfile;
+            return [
+                'id' => $t->id,
+                'name' => (string)($p?->name ?? $t->nama_usaha ?? $t->business_name ?? 'Mitra Rental'),
+                'subdomain' => (string)$t->subdomain,
+                'city' => (string)($p?->city ?? ''),
+                'desc' => (string)($p?->description ?: ($t->description ?: '')),
+            ];
+        })->values();
+    @endphp
+
+    <!-- TENANT SHOWCASE SECTION START -->
+    <section id="mitra-rental" class="py-24 bg-white relative border-b border-gray-100" 
+        x-data="{ 
+            shown: false,
+            search: '',
+            tenants: @js($tenantSearchData),
+            get filteredTenants() {
+                const q = this.search.trim().toLowerCase();
+                if (!q) return this.tenants;
+                return this.tenants.filter(t => 
+                    (t.name && t.name.toLowerCase().includes(q)) ||
+                    (t.subdomain && t.subdomain.toLowerCase().includes(q)) ||
+                    (t.city && t.city.toLowerCase().includes(q)) ||
+                    (t.desc && t.desc.toLowerCase().includes(q))
+                );
+            },
+            isMatch(id) {
+                if (!this.search.trim()) return true;
+                return this.filteredTenants.some(t => t.id === id);
+            },
+            setFilter(tag) {
+                this.search = (this.search.toLowerCase() === tag.toLowerCase()) ? '' : tag;
+            }
+        }" 
+        x-intersect.once="shown = true">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            {{-- Section Heading --}}
+            <div
+                class="text-center max-w-3xl mx-auto mb-10 transition-all duration-700 ease-out"
+                :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
+            >
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-brand border border-orange-200/80 mb-3 shadow-2xs">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span>
+                    Ekosistem RentalBase
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+                    Jelajahi Toko Mitra yang Telah Bergabung
+                </h2>
+                <p class="text-gray-600 text-base max-w-2xl mx-auto leading-relaxed">
+                    Lihat langsung bagaimana berbagai bisnis rental mengelola etalase digital mereka menggunakan RentalBase. Pilih toko untuk menjelajahi katalognya.
+                </p>
+            </div>
+
+            {{-- Tenant Search & Quick Filters --}}
+            @if(isset($tenants) && $tenants->isNotEmpty())
+                <div class="max-w-2xl mx-auto mb-10 transition-all duration-700 delay-100"
+                     :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'">
+                    {{-- Search Input Container --}}
+                    <div class="relative flex items-center">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                            <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                        </div>
+                        <input
+                            type="text"
+                            x-model="search"
+                            placeholder="Cari nama rental, kota, atau jenis alat (kamera, bayi, tenda)..."
+                            class="w-full pl-11 pr-24 py-3 bg-gray-50/80 hover:bg-white focus:bg-white border border-gray-200/90 hover:border-gray-300 focus:border-brand rounded-2xl text-sm text-gray-800 placeholder-gray-400 shadow-xs focus:ring-4 focus:ring-orange-500/10 transition-all outline-hidden"
+                        >
+                        {{-- Reset/Clear Button & Counter --}}
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                x-show="search.length > 0"
+                                @click="search = ''"
+                                class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                                title="Hapus pencarian"
+                                style="display: none;"
+                            >
+                                <i class="fa-solid fa-xmark text-sm"></i>
+                            </button>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-white border border-gray-200/80 text-gray-500 shadow-2xs pointer-events-none">
+                                <span x-text="filteredTenants.length"></span>/<span>{{ $tenants->count() }}</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Quick Search Filter Chips --}}
+                    <div class="flex items-center justify-center flex-wrap gap-2 mt-3.5 text-xs">
+                        <span class="text-gray-400 font-medium mr-1 flex items-center gap-1">
+                            <i class="fa-solid fa-tags text-brand/70 text-2xs"></i> Filter Cepat:
+                        </span>
+                        <button
+                            type="button"
+                            @click="search = ''"
+                            :class="search.trim() === '' ? 'bg-brand text-white border-brand shadow-xs font-bold' : 'bg-white hover:bg-gray-50 text-gray-600 border-gray-200'"
+                            class="px-3 py-1 rounded-full border transition-all text-xs cursor-pointer"
+                        >
+                            Semua
+                        </button>
+                        <template x-for="chip in ['Kamera', 'Bayi', 'Outdoor', 'Surabaya', 'Malang']" :key="chip">
+                            <button
+                                type="button"
+                                @click="setFilter(chip)"
+                                :class="search.toLowerCase() === chip.toLowerCase() ? 'bg-brand text-white border-brand shadow-xs font-bold' : 'bg-white hover:bg-gray-50 text-gray-600 border-gray-200'"
+                                class="px-3 py-1 rounded-full border transition-all text-xs cursor-pointer"
+                                x-text="chip"
+                            ></button>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- Tenant Grid --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    @foreach($tenants as $tenant)
+                        @php
+                            $profile = $tenant->tenantProfile;
+                            $tenantName = $profile?->name ?? $tenant->nama_usaha ?? $tenant->business_name ?? 'Mitra Rental';
+                            $desc = $profile?->description ?: ($tenant->description ?: 'Penyedia sewa perlengkapan terpercaya dengan layanan profesional.');
+                            $logoUrl = $profile?->logo_path ? \Illuminate\Support\Facades\Storage::url($profile->logo_path) : null;
+                            $themeColor = $profile?->theme_color ?? '#f97316';
+                            $textColor = $profile?->text_color ?? '#ffffff';
+                            $initial = strtoupper(substr($tenantName, 0, 1));
+                        @endphp
+
+                        <div x-show="isMatch({{ $tenant->id }})"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             class="group bg-white rounded-2xl p-6 border border-gray-200/80 hover:border-brand/40 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-1.5">
+                            <div>
+                                {{-- Card Header: Logo & Subdomain --}}
+                                <div class="flex items-start gap-4 mb-4">
+                                    <div class="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border border-gray-100 overflow-hidden shadow-xs relative"
+                                         style="background-color: {{ $themeColor }}; color: {{ $textColor }};">
+                                        @if($logoUrl)
+                                            <img src="{{ $logoUrl }}" 
+                                                 alt="{{ $tenantName }}"
+                                                 class="w-full h-full object-contain p-1 bg-white"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';">
+                                            <span class="hidden font-black text-xl w-full h-full items-center justify-center">{{ $initial }}</span>
+                                        @else
+                                            <span class="font-black text-xl">{{ $initial }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand transition-colors line-clamp-1 mb-1">
+                                            {{ $tenantName }}
+                                        </h3>
+                                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-50 px-2.5 py-0.5 rounded-full border border-gray-200/80">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            {{ $tenant->subdomain }}.rentalbase.id
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {{-- Description --}}
+                                <p class="text-sm text-gray-500 line-clamp-2 leading-relaxed mb-4">
+                                    {{ $desc }}
+                                </p>
+                            </div>
+
+                            <div>
+                                {{-- Meta Info (City & Products Count) --}}
+                                <div class="flex items-center justify-between pt-4 border-t border-gray-100 text-xs text-gray-500 font-medium mb-4">
+                                    <span class="flex items-center gap-1.5">
+                                        <i class="fa-solid fa-boxes-stacked text-brand"></i>
+                                        <strong>{{ $tenant->products_count ?? 0 }}</strong> Alat Siap Sewa
+                                    </span>
+                                    @if($profile?->city)
+                                        <span class="flex items-center gap-1 text-gray-400">
+                                            <i class="fa-solid fa-location-dot text-gray-400"></i>
+                                            {{ $profile->city }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                {{-- Action Button --}}
+                                <a href="{{ route('customer.home', ['subdomain' => $tenant->subdomain]) }}"
+                                   class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-orange-50 hover:bg-brand text-brand hover:text-white font-bold text-sm transition-all duration-200 group/btn shadow-2xs">
+                                    <span>Kunjungi Katalog</span>
+                                    <i class="fa-solid fa-arrow-right text-xs group-hover/btn:translate-x-1 transition-transform"></i>
+                                </a>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Empty Search State (When active filter returns 0 results) --}}
+                <div x-show="filteredTenants.length === 0" 
+                     x-cloak
+                     style="display: none;"
+                     class="text-center py-16 px-6 bg-gray-50/70 border border-dashed border-gray-200 rounded-3xl max-w-lg mx-auto my-4 transition-all">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-orange-50 text-brand flex items-center justify-center text-lg mb-3 border border-orange-100 shadow-2xs">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <h4 class="text-base font-bold text-gray-900 mb-1">Toko Tidak Ditemukan</h4>
+                    <p class="text-xs text-gray-500 mb-4 leading-relaxed max-w-sm mx-auto">
+                        Tidak ada mitra rental yang cocok dengan kata kunci &ldquo;<span class="font-semibold text-gray-700" x-text="search"></span>&rdquo;.
+                    </p>
+                    <button type="button" 
+                            @click="search = ''"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-gray-200 hover:border-brand text-gray-700 hover:text-brand font-semibold text-xs shadow-2xs transition-all cursor-pointer">
+                        <i class="fa-solid fa-rotate-left text-xs"></i>
+                        <span>Reset Pencarian</span>
+                    </button>
+                </div>
+            @else
+                {{-- Empty State --}}
+                <div class="text-center py-12 px-6 border-2 border-dashed border-gray-200 rounded-3xl max-w-lg mx-auto bg-gray-50/50">
+                    <div class="w-14 h-14 mx-auto rounded-2xl bg-orange-100 text-brand flex items-center justify-center text-2xl mb-4">
+                        <i class="fa-solid fa-store"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-1">Belum Ada Toko Terdaftar</h3>
+                    <p class="text-sm text-gray-500 mb-5 leading-relaxed">
+                        Jadilah yang pertama membuka etalase toko rental profesional Anda dengan RentalBase.
+                    </p>
+                    <button type="button" @click="showRoleModal = true" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-hover text-white font-bold text-sm shadow-md transition-all">
+                        <span>Daftar Jadi Tenant Sekarang</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            @endif
+
+        </div>
+    </section>
+    <!-- TENANT SHOWCASE SECTION END -->
 
     <!-- PRICING SECTION START -->
     <section id="harga" class="py-24 bg-white relative" x-data="{ shown: false }" x-intersect.once="shown = true">
