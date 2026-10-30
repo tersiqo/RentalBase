@@ -22,6 +22,7 @@ use App\Http\Controllers\Customer\CustomerCheckoutController;
 use App\Http\Controllers\Customer\CustomerHomeController;
 use App\Http\Controllers\Customer\CustomerProductController;
 use App\Http\Controllers\Customer\DamageReportController;
+use App\Http\Controllers\Customer\ProfileController;
 use App\Http\Controllers\Landing\RentalBaseHomeController;
 use App\Http\Controllers\Owner\OwnerAuthController;
 use App\Http\Controllers\Owner\OwnerDashboardController;
@@ -55,6 +56,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [\App\Http\Controllers\Customer\NotificationController::class, 'index'])->name('customer.notifications.index');
     Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Customer\NotificationController::class, 'markAsRead'])->name('customer.notifications.read');
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Customer\NotificationController::class, 'markAllAsRead'])->name('customer.notifications.mark-all-read');
+
+    // Customer Profile Global Alias
+    Route::get('/profile', [ProfileController::class, 'showGlobal'])->name('customer.profile.global');
 });
 
 Route::get('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showRegister'])->name('tenant.register');
@@ -96,6 +100,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('customer.checkout.direct');
     Route::get('/client/{subdomain}/notifications', [\App\Http\Controllers\Customer\NotificationController::class, 'index'])
         ->name('customer.notifications.tenant');
+    Route::get('/client/{subdomain}/profile', [ProfileController::class, 'show'])
+        ->name('customer.profile');
+    Route::put('/client/{subdomain}/profile', [ProfileController::class, 'updateProfile'])
+        ->name('customer.profile.update');
+    Route::put('/client/{subdomain}/profile/password', [ProfileController::class, 'updatePassword'])
+        ->name('customer.profile.password');
 });
 
 Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function () {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landing;
 
 use App\Http\Controllers\Controller;
+use App\Models\Client;
 
 class RentalBaseHomeController extends Controller
 {
@@ -52,9 +53,18 @@ class RentalBaseHomeController extends Controller
             ],
         ];
 
+        $tenants = Client::where('status', 'aktif')
+            ->with('tenantProfile')
+            ->withCount(['products' => function ($q) {
+                $q->where('status', 'aktif');
+            }])
+            ->orderByDesc('products_count')
+            ->latest('id')
+            ->get();
+
         return view()->file(
             resource_path('views/landing/rentalbase.home.blade.php'),
-            compact('packages')
+            compact('packages', 'tenants')
         );
     }
 }

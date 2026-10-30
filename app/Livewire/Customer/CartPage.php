@@ -27,6 +27,12 @@ class CartPage extends Component
 
     public function mount($subdomain)
     {
+        if (! auth()->check()) {
+            return $this->redirect(route('login', [
+                'redirect' => request()->fullUrl(),
+            ]));
+        }
+
         $this->client = Client::where('subdomain', $subdomain)
             ->where('status', 'aktif')
             ->firstOrFail();
