@@ -26,6 +26,7 @@ use App\Http\Controllers\Owner\OwnerAuthController;
 use App\Http\Controllers\Owner\OwnerDashboardController;
 use App\Http\Controllers\Owner\OwnerRegistrationController;
 use App\Http\Controllers\Owner\OwnerTenantController;
+use App\Http\Controllers\Owner\SubscriptionController;
 use App\Http\Controllers\PageController;
 use App\Livewire\Customer\CartPage;
 use Illuminate\Support\Facades\Route;
@@ -163,6 +164,10 @@ Route::prefix('owner')->name('owner.')->group(function () {
         Route::put('/tenants/{client}', [OwnerTenantController::class, 'update'])->name('tenants.update');
         Route::post('/tenants/{client}/status', [OwnerTenantController::class, 'updateStatus'])->name('tenants.status');
         Route::put('/tenants/{client}/subscription', [OwnerTenantController::class, 'updateSubscription'])->name('tenants.subscription');
+
+        Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
+        Route::post('/subscriptions/{id}/renew', [SubscriptionController::class, 'renew'])->name('subscriptions.renew');
+        Route::get('/subscriptions/{id}/history', [SubscriptionController::class, 'history'])->name('subscriptions.history');
     });
 });
 
