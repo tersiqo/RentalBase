@@ -92,12 +92,52 @@ class Notification extends Model
                 'bg' => 'bg-red-50 text-red-700 border-red-200',
                 'dot' => 'bg-red-500',
             ],
+            'quota' => [
+                'label' => 'Kuota Toko',
+                'bg' => 'bg-amber-50 text-amber-700 border-amber-200',
+                'dot' => 'bg-amber-500',
+            ],
+            'system' => [
+                'label' => 'Sistem Toko',
+                'bg' => 'bg-slate-50 text-slate-700 border-slate-200',
+                'dot' => 'bg-slate-500',
+            ],
             default => [
                 'label' => 'Informasi',
                 'bg' => 'bg-gray-50 text-gray-700 border-gray-200',
                 'dot' => 'bg-gray-500',
             ],
         };
+    }
+
+    /**
+     * URL tautan target aksi untuk Admin.
+     */
+    public function getAdminTargetUrlAttribute(): string
+    {
+        if (in_array($this->type, ['order', 'payment', 'identity'])) {
+            if (preg_match('/#(\d+)/', $this->title . ' ' . $this->message, $matches)) {
+                return route('admin.orders.show', $matches[1]);
+            }
+            return route('admin.orders.index');
+        }
+
+        if ($this->type === 'return') {
+            return route('admin.returns.index');
+        }
+
+        if ($this->type === 'damage') {
+            if (preg_match('/#(\d+)/', $this->title . ' ' . $this->message, $matches)) {
+                return route('admin.damage-cases.show', $matches[1]);
+            }
+            return route('admin.damage-cases.index');
+        }
+
+        if (in_array($this->type, ['quota', 'system'])) {
+            return route('admin.settings.profile');
+        }
+
+        return route('admin.notifications.index');
     }
 }
 
