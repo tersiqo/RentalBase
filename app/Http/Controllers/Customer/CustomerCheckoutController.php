@@ -268,6 +268,10 @@ class CustomerCheckoutController extends Controller
             ]);
 
             DB::commit();
+
+            if (class_exists(\App\Events\NewOrderPlaced::class)) {
+                event(new \App\Events\NewOrderPlaced($order));
+            }
         } catch (\Throwable $e) {
             DB::rollBack();
 

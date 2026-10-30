@@ -101,6 +101,16 @@ class ProductController extends Controller
             }
         }
 
+        // Peringatan kuota tenant hampir penuh (>= 80%) untuk Owner
+        $activeSub = $client->activeSubscription ?? $client->latestSubscription;
+        $maxLimit = $activeSub?->max_products ?? 50;
+        $currentCount = Product::where('client_id', $client->id)->count();
+        $percentage = $maxLimit > 0 ? round(($currentCount / $maxLimit) * 100, 1) : 0;
+
+        if ($percentage >= 80 && class_exists(\App\Events\TenantQuotaAlert::class)) {
+            event(new \App\Events\TenantQuotaAlert($client, $currentCount, $maxLimit, $percentage));
+        }
+
         return redirect()
             ->route('admin.products.index')
             ->with('success', 'Produk "' . $product->name . '" berhasil ditambahkan.');

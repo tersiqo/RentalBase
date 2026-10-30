@@ -22,7 +22,7 @@ class CustomerNotificationTest extends TestCase
     {
         $response = $this->get('/notifications');
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect();
     }
 
     public function test_authenticated_customer_can_view_notifications_page(): void

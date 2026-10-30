@@ -163,6 +163,14 @@ class ReturnController extends Controller
 
             DB::commit();
 
+            if (class_exists(\App\Events\ReturnAccepted::class)) {
+                event(new \App\Events\ReturnAccepted($order));
+            }
+
+            if ($actionType === 'denda' && $lateFeeAmount > 0 && class_exists(\App\Events\FineIssued::class)) {
+                event(new \App\Events\FineIssued($order, $lateFeeAmount));
+            }
+
             return redirect()->route('admin.returns.index')->with('success', $msg);
         } catch (\Exception $e) {
             DB::rollBack();
