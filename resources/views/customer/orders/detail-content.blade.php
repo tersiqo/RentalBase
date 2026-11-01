@@ -203,7 +203,13 @@
                     <div class="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
                         <span class="text-xs text-gray-500 block mb-0.5">Periode Sewa</span>
                         <b class="text-gray-900 font-bold text-orange-600">{{ $order->date_range }}</b>
-                        <small class="text-xs text-gray-500 block mt-0.5">Durasi sewa: {{ $order->duration_days ?? 1 }} hari</small>
+                        @php
+                            $isPreHandover = in_array($order->status, ['menunggu_konfirmasi', 'menunggu_pembayaran', 'menunggu_verifikasi', 'siap_kirim']);
+                            $timeLabel = $isPreHandover ? 'Rencana Mulai & Kembali' : 'Jam Sewa & Jatuh Tempo Aktif';
+                        @endphp
+                        <small class="text-xs text-gray-500 block mt-0.5">
+                            Durasi sewa: {{ $order->duration_days ?? 1 }} hari &bull; {{ $timeLabel }}: Pukul {{ $order->rental_start_date?->format('H:i') ?? '00:00' }} WIB
+                        </small>
                     </div>
                     <div class="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
                         <span class="text-xs text-gray-500 block mb-0.5">Toko Penyedia</span>
@@ -272,24 +278,50 @@
 
                 @if($identity)
                     @php
-                        $rawIdStatus = strtolower($identity->status ?? 'menunggu');
+                        $rawIdStatus = strtolower(trim($identity->status ?? 'menunggu'));
                         $orderStatusNormalized = strtolower(trim(str_replace(['-', ' '], '_', $order->status ?? '')));
                         $isOrderApproved = in_array($orderStatusNormalized, ['siap_kirim', 'diproses', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan', 'selesai']);
                         
-                        // Jika pesanan sudah disetujui toko dan jaminan tidak ditolak, jaminan otomatis dianggap diverifikasi
-                        $idStatus = ($isOrderApproved && $rawIdStatus !== 'ditolak') ? 'diverifikasi' : $rawIdStatus;
+                        // Penting: Status dititipkan, dikembalikan, dan ditolak tidak boleh tertimpa diverifikasi
+                        if (in_array($rawIdStatus, ['dititipkan', 'dikembalikan', 'ditolak'])) {
+                            $idStatus = $rawIdStatus;
+                        } elseif ($isOrderApproved && $rawIdStatus !== 'ditolak') {
+                            $idStatus = 'diverifikasi';
+                        } else {
+                            $idStatus = $rawIdStatus;
+                        }
                         
-                        $docImg = $identity->identity_document_image ? (str_starts_with($identity->identity_document_image, 'http') ? $identity->identity_document_image : Storage::url($identity->identity_document_image)) : null;
-                        $faceImg = $identity->face_image ? (str_starts_with($identity->face_image, 'http') ? $identity->face_image : Storage::url($identity->face_image)) : null;
+                        $docImg = storage_url($identity->identity_document_image);
+                        $faceImg = storage_url($identity->face_image);
                     @endphp
 
-                    @if($idStatus === 'diverifikasi')
+                    @if($idStatus === 'dikembalikan')
                         <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-3 mb-4 shadow-sm">
                             <span class="text-lg shrink-0 mt-0.5">✅</span>
                             <div>
-                                <strong class="font-bold text-emerald-950 block">Identitas Terverifikasi</strong>
+                                <strong class="font-bold text-emerald-950 block">KTP Fisik Telah Dikembalikan</strong>
                                 <span class="text-xs sm:text-sm text-emerald-800">
-                                    Dokumen KTP & selfie Anda telah diverifikasi oleh admin toko.
+                                    Jaminan identitas asli Anda telah diserahkan kembali setelah masa sewa selesai. Terima kasih telah menyewa di {{ $client->nama_usaha ?? 'toko kami' }}.
+                                </span>
+                            </div>
+                        </div>
+                    @elseif($idStatus === 'dititipkan')
+                        <div class="p-4 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 flex items-start gap-3 mb-4 shadow-sm">
+                            <span class="text-lg shrink-0 mt-0.5">🔒</span>
+                            <div>
+                                <strong class="font-bold text-purple-950 block">KTP Fisik Sedang Dititipkan di Toko</strong>
+                                <span class="text-xs sm:text-sm text-purple-800">
+                                    Dokumen KTP asli Anda saat ini disimpan dengan aman di toko sebagai jaminan selama masa sewa dan akan diserahkan kembali saat barang dikembalikan dalam kondisi baik.
+                                </span>
+                            </div>
+                        </div>
+                    @elseif($idStatus === 'diverifikasi')
+                        <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex items-start gap-3 mb-4 shadow-sm">
+                            <span class="text-lg shrink-0 mt-0.5">🪪</span>
+                            <div>
+                                <strong class="font-bold text-blue-950 block">Identitas Terverifikasi</strong>
+                                <span class="text-xs sm:text-sm text-blue-800">
+                                    Dokumen KTP & selfie Anda telah diverifikasi oleh admin toko. <strong>Wajib menyerahkan KTP asli sebagai jaminan</strong> saat serah terima alat.
                                     @if(in_array($orderStatusNormalized, ['menunggu_pembayaran', 'belum_dibayar']))
                                         Pembayaran dapat dilanjutkan.
                                     @endif
@@ -305,11 +337,11 @@
                             </div>
                         </div>
                     @else
-                        <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex items-start gap-3 mb-4 shadow-sm">
+                        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 mb-4 shadow-sm">
                             <span class="text-lg shrink-0 mt-0.5">🔎</span>
                             <div>
-                                <strong class="font-bold text-blue-950 block">Sedang Diperiksa</strong>
-                                <span class="text-xs sm:text-sm text-blue-800">Dokumen KTP & selfie Anda sedang dalam proses peninjauan oleh toko rental (maksimal 1×24 jam).</span>
+                                <strong class="font-bold text-amber-950 block">Sedang Diperiksa</strong>
+                                <span class="text-xs sm:text-sm text-amber-800">Dokumen KTP & selfie Anda sedang dalam proses peninjauan oleh toko rental (maksimal 1×24 jam).</span>
                             </div>
                         </div>
                     @endif
@@ -473,7 +505,7 @@
 
                     @php
                         $refundStatus = strtolower($order->refund_status ?? 'tidak_ada');
-                        $refundProof = $order->refund_proof ? (str_starts_with($order->refund_proof, 'http') ? $order->refund_proof : Storage::url($order->refund_proof)) : null;
+                        $refundProof = storage_url($order->refund_proof);
                     @endphp
 
                     <div class="space-y-3 text-xs sm:text-sm">
@@ -563,7 +595,7 @@
                         </p>
                         @if($payment?->payment_proof)
                             @php
-                                $proofImg = str_starts_with($payment->payment_proof, 'http') ? $payment->payment_proof : Storage::url($payment->payment_proof);
+                                $proofImg = storage_url($payment->payment_proof);
                             @endphp
                             <button type="button" @click="openLightbox('{{ $proofImg }}', 'Bukti Pembayaran')" class="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 underline">
                                 🔍 Lihat Bukti Pembayaran
@@ -581,7 +613,7 @@
                         </p>
                         @if($payment?->payment_proof)
                             @php
-                                $proofImg = str_starts_with($payment->payment_proof, 'http') ? $payment->payment_proof : Storage::url($payment->payment_proof);
+                                $proofImg = storage_url($payment->payment_proof);
                             @endphp
                             <button type="button" @click="openLightbox('{{ $proofImg }}', 'Bukti Pembayaran Terunggah')" class="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-800 underline">
                                 🔍 Lihat Bukti Pembayaran
@@ -655,7 +687,7 @@
                     <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-3 border border-gray-200 rounded-xl mb-4 bg-white">
                         @php
                             $qrisMethod = $activePaymentMethods->first(fn($m) => !empty($m->qris_image));
-                            $qrisImg = $qrisMethod?->qris_image ? (str_starts_with($qrisMethod->qris_image, 'http') ? $qrisMethod->qris_image : Storage::url($qrisMethod->qris_image)) : null;
+                            $qrisImg = storage_url($qrisMethod?->qris_image);
                         @endphp
 
                         @if($qrisImg)
@@ -736,7 +768,7 @@
                             @endif
                             @if($return->late_fee_proof)
                                 @php
-                                    $feeProofImg = str_starts_with($return->late_fee_proof, 'http') ? $return->late_fee_proof : Storage::url($return->late_fee_proof);
+                                    $feeProofImg = storage_url($return->late_fee_proof);
                                 @endphp
                                 <button type="button" @click="openLightbox('{{ $feeProofImg }}', 'Bukti Pembayaran Denda')" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:underline pt-1">
                                     🔍 Lihat Bukti Pembayaran Denda

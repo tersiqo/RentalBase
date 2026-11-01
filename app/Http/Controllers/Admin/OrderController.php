@@ -128,23 +128,20 @@ class OrderController extends Controller
             'shipment',
         ]);
 
-        // Ambil daftar unit fisik milik toko ini yang statusnya 'available'
-        // untuk keperluan dropdown alokasi unit
+        // Ambil daftar unit fisik milik toko ini yang tidak rusak/maintenance
+        // dan lolos pengecekan ketersediaan kalender untuk periode pesanan ini
         $availableUnits = EquipmentUnit::where('client_id', $client->id)
-            ->whereIn('status', ['tersedia', 'available'])
+            ->whereNotIn('status', ['rusak', 'maintenance'])
             ->with('product')
-            ->get();
+            ->get()
+            ->filter(function ($u) use ($order) {
+                return $u->isAvailableForPeriod($order->rental_start_date, $order->rental_end_date, $order->id);
+            })
+            ->values();
 
-        // Helper: ambil URL file dari storage (disk public atau s3)
-        // Mengembalikan null jika path kosong
-        $getFileUrl = function (?string $path, string $disk = 'public'): ?string {
-            if (! $path) {
-                return null;
-            }
-            if (str_starts_with($path, 'http')) {
-                return $path;
-            }
-            return Storage::disk($disk)->url($path);
+        // Helper: ambil URL file dari storage (Supabase S3 atau fallback lokal)
+        $getFileUrl = function (?string $path): ?string {
+            return storage_url($path);
         };
 
         // URL preview foto identitas (KTP dan selfie)
@@ -381,7 +378,8 @@ class OrderController extends Controller
                 'equipment_unit_id' => $unit->id,
             ]);
 
-            $unit->update(['status' => 'disewa']);
+            // Sinkronkan status fisik: unit hanya 'disewa' jika periode sewa mencakup hari ini / sedang disewa
+            $unit->syncPhysicalStatus();
 
             return redirect()->back()->with('success', 'Unit fisik ' . ($unit->unit_code ?? '#' . $unit->id) . ' berhasil dialokasikan ke pesanan!');
         });
@@ -421,8 +419,8 @@ class OrderController extends Controller
 
             $orderItemUnit->delete();
 
-            if ($unit && ! $unit->isActivelyRented()) {
-                $unit->update(['status' => 'tersedia']);
+            if ($unit) {
+                $unit->syncPhysicalStatus();
             }
 
             return redirect()->back()->with('success', "Alokasi unit {$unitCode} berhasil dibatalkan. Kamu bisa memilih unit pengganti sekarang.");
@@ -457,11 +455,12 @@ class OrderController extends Controller
 
             $file = $request->file('refund_proof');
             $fileName = 'refund_' . $lockedOrder->id . '_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('refund-proofs/' . $client->id, $fileName, 'public');
+            $disk = config('filesystems.default', 'public');
+            $path = $file->storeAs('refund-proofs/' . $client->id, $fileName, $disk);
 
             // Hapus file bukti lama jika ada
-            if ($lockedOrder->refund_proof && Storage::disk('public')->exists($lockedOrder->refund_proof)) {
-                Storage::disk('public')->delete($lockedOrder->refund_proof);
+            if ($lockedOrder->refund_proof) {
+                \App\Services\StorageHelper::delete($lockedOrder->refund_proof);
             }
 
             $lockedOrder->update([

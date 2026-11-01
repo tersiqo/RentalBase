@@ -340,7 +340,8 @@ class TenantRegistrationController extends Controller
 
             $logoPath = null;
             if ($request->hasFile('logo')) {
-                $logoPath = $request->file('logo')->store('clients/logos', 'public');
+                $disk = config('filesystems.default', 'public');
+                $logoPath = $request->file('logo')->store('clients/logos', $disk);
             }
 
             DB::beginTransaction();
@@ -510,7 +511,8 @@ class TenantRegistrationController extends Controller
 
         $logoPath = $user ? $user->avatar : null;
         if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('clients/logos', 'public');
+            $disk = config('filesystems.default', 'public');
+            $logoPath = $request->file('logo')->store('clients/logos', $disk);
         }
 
         DB::beginTransaction();
@@ -725,8 +727,9 @@ class TenantRegistrationController extends Controller
             'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
         ]);
 
+        $disk = config('filesystems.default', 'public');
         $proofPath = $request->hasFile('payment_proof')
-            ? $request->file('payment_proof')->store('subscriptions/proofs', 'public')
+            ? $request->file('payment_proof')->store('subscriptions/proofs', $disk)
             : $existingProof;
 
         DB::beginTransaction();

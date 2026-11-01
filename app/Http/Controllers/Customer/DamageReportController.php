@@ -130,7 +130,8 @@ class DamageReportController extends Controller
         }
 
         // Simpan bukti transfer ke storage
-        $path = $request->file('payment_proof')->store('payments/damage', 'public');
+        $disk = config('filesystems.default', 'public');
+        $path = $request->file('payment_proof')->store('payments/damage', $disk);
 
         $paymentMethodId = $request->input('client_payment_method_id')
             ?? $order->client?->clientPaymentMethods()->where('is_active', true)->value('id')

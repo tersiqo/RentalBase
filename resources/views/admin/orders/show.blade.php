@@ -79,11 +79,18 @@
 
         {{-- Tombol Tindakan Cepat ke Pengiriman jika sudah siap kirim --}}
         @if(in_array($order->status, ['siap_kirim', 'diproses']))
-            <a href="{{ route('admin.shipments.index', ['search' => $order->order_number]) }}"
-               class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition shadow-xs">
-                <span>Buka di Daftar Pengiriman</span>
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </a>
+            <div class="flex items-center gap-2">
+                @if(! $order->canProcessHandover())
+                    <span class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5" title="{{ $order->handover_blocked_reason }}">
+                        <span>🔒 Belum Jadwal Serah Terima</span>
+                    </span>
+                @endif
+                <a href="{{ route('admin.shipments.index', ['search' => $order->order_number]) }}"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition shadow-xs">
+                    <span>Buka di Daftar Pengiriman</span>
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            </div>
         @endif
     </div>
 </div>
@@ -175,7 +182,13 @@
                 <div>
                     <p class="text-xs text-gray-400 uppercase font-bold mb-1">Periode Sewa</p>
                     <p class="font-semibold text-gray-900">{{ $order->date_range }}</p>
-                    <p class="text-xs text-gray-500 mt-0.5">{{ $order->duration_days }} hari sewa</p>
+                    @php
+                        $isPreHandover = in_array($order->status, ['menunggu_konfirmasi', 'menunggu_pembayaran', 'menunggu_verifikasi', 'siap_kirim']);
+                        $timeLabel = $isPreHandover ? 'Rencana' : 'Jam Aktif';
+                    @endphp
+                    <p class="text-xs text-gray-500 mt-0.5">
+                        {{ $order->duration_days }} hari sewa &bull; {{ $timeLabel }}: Pukul {{ $order->rental_start_date?->format('H:i') }} - {{ $order->rental_end_date?->format('H:i') }} WIB
+                    </p>
                 </div>
                 <div>
                     <p class="text-xs text-gray-400 uppercase font-bold mb-1">Total Tagihan</p>
@@ -513,16 +526,32 @@
                     <h2 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Review Jaminan Identitas</h2>
                 </div>
                 @if($order->identityGuarantee)
-                    <span class="px-2 py-0.5 rounded text-[11px] font-semibold
-                        @if($order->identityGuarantee->status === 'diverifikasi') bg-emerald-100 text-emerald-800 border border-emerald-200
-                        @elseif($order->identityGuarantee->status === 'ditolak') bg-red-100 text-red-800 border border-red-200
-                        @else bg-amber-100 text-amber-800 border border-amber-200 @endif">
-                        {{ ucfirst(str_replace('_', ' ', $order->identityGuarantee->status ?? '-')) }}
+                    <span class="px-2 py-0.5 rounded text-[11px] font-semibold {{ $order->identityGuarantee->status_color }}">
+                        {{ $order->identityGuarantee->status_label }}
                     </span>
                 @endif
             </div>
 
             @if($order->identityGuarantee)
+                {{-- Status Penitipan Fisik KTP --}}
+                @if($order->identityGuarantee->status === 'dititipkan')
+                    <div class="mb-3 p-2.5 rounded-lg bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-start gap-2 shadow-2xs">
+                        <span class="text-sm shrink-0 mt-0.5">🔒</span>
+                        <div>
+                            <strong class="font-bold block text-purple-950">KTP Fisik Dititipkan di Toko</strong>
+                            <p class="text-purple-800 text-[11px] mt-0.5 leading-relaxed">Fisik kartu KTP/identitas asli penyewa saat ini ditahan di toko sebagai jaminan sewa dan wajib diserahkan kembali saat pengembalian selesai.</p>
+                        </div>
+                    </div>
+                @elseif($order->identityGuarantee->status === 'dikembalikan')
+                    <div class="mb-3 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-2 shadow-2xs">
+                        <span class="text-sm shrink-0 mt-0.5">✅</span>
+                        <div>
+                            <strong class="font-bold block text-emerald-950">KTP Fisik Telah Dikembalikan</strong>
+                            <p class="text-emerald-800 text-[11px] mt-0.5 leading-relaxed">Fisik kartu KTP/identitas asli telah diserahkan kembali kepada penyewa setelah sewa selesai.</p>
+                        </div>
+                    </div>
+                @endif
+
                 {{-- Data Identitas Customer --}}
                 <div class="text-xs space-y-2 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
                     <div class="flex justify-between items-start">

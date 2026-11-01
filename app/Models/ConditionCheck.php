@@ -51,6 +51,6 @@ class ConditionCheck extends Model
         if (empty($list)) {
             return null;
         }
-        return \Illuminate\Support\Facades\Storage::disk('public')->url($list[0]);
+        return storage_url($list[0]);
     }
 }

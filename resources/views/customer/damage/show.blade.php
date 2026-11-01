@@ -367,7 +367,7 @@
                             </p>
                             @if($compensationPayment && $compensationPayment->payment_proof)
                                 <div class="mt-3 pt-3 border-t border-purple-200/60">
-                                    <a href="{{ str_starts_with($compensationPayment->payment_proof, 'http') ? $compensationPayment->payment_proof : asset('storage/' . $compensationPayment->payment_proof) }}" 
+                                    <a href="{{ storage_url($compensationPayment->payment_proof) }}" 
                                        target="_blank"
                                        class="inline-flex items-center gap-1.5 text-xs text-purple-800 hover:text-purple-900 font-bold underline">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
@@ -397,7 +397,7 @@
 
                                                 @if($pm->qris_image)
                                                     <div class="mt-2 pt-2 border-t border-gray-100 text-center">
-                                                        <img src="{{ str_starts_with($pm->qris_image, 'http') ? $pm->qris_image : asset('storage/' . $pm->qris_image) }}" alt="QRIS" class="w-32 h-32 mx-auto object-contain border rounded-md">
+                                                        <img src="{{ storage_url($pm->qris_image) }}" alt="QRIS" class="w-32 h-32 mx-auto object-contain border rounded-md">
                                                         <span class="text-[10px] text-gray-400 block mt-1">Pindai QRIS di atas</span>
                                                     </div>
                                                 @endif

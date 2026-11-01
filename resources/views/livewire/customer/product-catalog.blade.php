@@ -42,20 +42,149 @@
                 </div>
             </div>
             
-            <div class="relative h-[400px] hidden lg:block animate-fade-in-up" style="animation-delay: 180ms;" aria-hidden="true">
-                <div class="animate-float h-full w-full relative">
-                    <div class="absolute inset-0 right-[30px] bottom-[40px] rounded-[28px] overflow-hidden flex items-center justify-center tenant-hero-card group cursor-pointer transition-all duration-500 hover:scale-[1.01]">
-                        <div class="absolute w-[340px] h-[340px] rounded-full bg-white/25 -top-[90px] -right-[90px] transition-transform duration-700 ease-out group-hover:scale-110"></div>
-                        <div class="absolute w-[220px] h-[220px] rounded-full bg-white/20 -bottom-[70px] -left-[50px] transition-transform duration-700 ease-out group-hover:scale-110"></div>
-                        <svg width="230" height="230" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 filter drop-shadow-[0_18px_20px_rgba(0,0,0,0.18)] transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-rotate-2"><path d="M14 30h14l8 42h46" /><path d="M30 44h60c0 18-12 28-30 28H36"/><path d="M60 44V30c14 0 24 6 28 14"/><circle cx="42" cy="90" r="9" fill="currentColor" style="color: color-mix(in srgb, var(--tenant-theme) 25%, white);"/><circle cx="82" cy="90" r="9" fill="currentColor" style="color: color-mix(in srgb, var(--tenant-theme) 25%, white);"/></svg>
-                    </div>
-                    <div class="absolute -right-1.5 top-5 animate-float-slow">
-                        <div class="bg-white/95 backdrop-blur-md border border-gray-100 rounded-full px-4 py-2 text-[13px] font-bold text-gray-800 shadow-[0_14px_28px_-10px_rgba(0,0,0,0.25)] flex items-center gap-2 hover:scale-105 transition-transform">
-                            <span class="w-2 h-2 rounded-full bg-primary-500 animate-pulse" style="box-shadow: 0 0 0 4px color-mix(in srgb, var(--tenant-theme) 22%, white);"></span>Unit siap antar
+            @if($this->heroShowcaseMode === 'featured' && $this->featuredProduct)
+                @php
+                    $feat = $this->featuredProduct;
+                    $featAvailable = (int) ($feat->available_units_count ?? 0);
+                    $featImageUrl = $feat->main_image ? storage_url($feat->main_image) : null;
+                @endphp
+                <div class="relative h-[400px] hidden lg:block animate-fade-in-up" style="animation-delay: 180ms;">
+                    <div class="animate-float h-full w-full relative">
+                        <!-- Main Card -->
+                        <div class="absolute inset-0 right-[20px] bottom-[30px] rounded-[28px] overflow-hidden tenant-hero-card group transition-all duration-500 hover:shadow-2xl flex flex-col justify-between p-6 border border-white/20">
+                            <!-- Background Decorative Circles -->
+                            <div class="absolute w-[320px] h-[320px] rounded-full bg-white/15 -top-[80px] -right-[80px] transition-transform duration-700 ease-out group-hover:scale-110 pointer-events-none"></div>
+                            <div class="absolute w-[200px] h-[200px] rounded-full bg-white/10 -bottom-[60px] -left-[40px] transition-transform duration-700 ease-out group-hover:scale-110 pointer-events-none"></div>
+
+                            <!-- Top Bar: Category & Status Badge -->
+                            <div class="relative z-10 flex items-center justify-between gap-2">
+                                <div class="inline-flex items-center gap-1.5 bg-black/25 backdrop-blur-md border border-white/20 text-white rounded-full px-3 py-1 text-[12px] font-bold shadow-xs">
+                                    <span>⭐ Produk Unggulan</span>
+                                    @if($feat->category)
+                                        <span class="text-white/60">·</span>
+                                        <span class="text-white/90 truncate max-w-[120px]">{{ $feat->category->name }}</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Center: Image or Visual Fallback -->
+                            <div class="relative z-10 flex-1 flex items-center justify-center my-3 overflow-hidden">
+                                <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $feat->id]) }}"
+                                   wire:navigate
+                                   class="relative w-full h-[175px] rounded-2xl overflow-hidden flex items-center justify-center group/img">
+                                    @if($featImageUrl)
+                                        <img src="{{ $featImageUrl }}"
+                                             alt="{{ $feat->name }}"
+                                             class="w-full h-full object-contain filter drop-shadow-[0_12px_16px_rgba(0,0,0,0.2)] transition-transform duration-500 ease-out group-hover/img:scale-108"
+                                             loading="lazy"
+                                             onerror="this.onerror=null; this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden');">
+                                        <div class="hidden text-white/90 text-center p-4">
+                                            <svg class="w-16 h-16 mx-auto mb-2 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                            <span class="text-xs font-bold">{{ $feat->name }}</span>
+                                        </div>
+                                    @else
+                                        <div class="text-white text-center p-4 flex flex-col items-center justify-center">
+                                            <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-2 shadow-inner">
+                                                <svg class="w-8 h-8 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                </svg>
+                                            </div>
+                                            <span class="text-xs font-bold text-white/90 line-clamp-1">{{ $feat->name }}</span>
+                                        </div>
+                                    @endif
+                                </a>
+                            </div>
+
+                            <!-- Bottom Glass Card: Name, Price & CTA Buttons -->
+                            <div class="relative z-10 bg-white/95 backdrop-blur-md rounded-2xl p-3.5 border border-white/60 shadow-[0_12px_24px_-6px_rgba(0,0,0,0.18)]">
+                                <div class="flex items-start justify-between gap-3 mb-2.5">
+                                    <div class="min-w-0">
+                                        <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $feat->id]) }}"
+                                           wire:navigate
+                                           class="text-[14px] font-extrabold text-gray-900 truncate block hover:text-primary-600 transition-colors"
+                                           title="{{ $feat->name }}">
+                                            {{ $feat->name }}
+                                        </a>
+                                        <div class="text-[13px] font-bold text-primary-600 mt-0.5">
+                                            Rp {{ number_format($feat->rental_price_per_day, 0, ',', '.') }}
+                                            <span class="text-[11px] font-medium text-gray-500">/ hari</span>
+                                        </div>
+                                    </div>
+                                    @if($featAvailable > 0)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            {{ $featAvailable }} Tersedia
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                                            Booking Penuh
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div class="flex items-center gap-2 pt-1 border-t border-gray-100">
+                                    <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $feat->id]) }}"
+                                       wire:navigate
+                                       class="flex-1 inline-flex justify-center items-center py-2 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-[12px] font-bold transition-colors">
+                                        Lihat Detail
+                                    </a>
+                                    @if($featAvailable > 0)
+                                        @auth
+                                            <button type="button"
+                                                    wire:click="openAddToCartModal({{ $feat->id }})"
+                                                    class="inline-flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-[12px] font-extrabold shadow-sm active:scale-95 transition-all cursor-pointer">
+                                                <span>+ Sewa</span>
+                                            </button>
+                                        @else
+                                            <a href="{{ route('login') }}"
+                                               class="inline-flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-[12px] font-extrabold shadow-sm active:scale-95 transition-all">
+                                                <span>+ Sewa</span>
+                                            </a>
+                                        @endauth
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Top-Right Floating Pill -->
+                        <div class="absolute -right-1 top-4 animate-float-slow z-20">
+                            <div class="bg-white/95 backdrop-blur-md border border-gray-100 rounded-full px-3.5 py-1.5 text-[12px] font-bold text-gray-800 shadow-[0_14px_28px_-10px_rgba(0,0,0,0.25)] flex items-center gap-2 hover:scale-105 transition-transform">
+                                <span class="w-2 h-2 rounded-full bg-primary-500 animate-pulse" style="box-shadow: 0 0 0 4px color-mix(in srgb, var(--tenant-theme) 22%, white);"></span>
+                                {{ $featAvailable > 0 ? 'Unit siap antar' : 'Koleksi Unggulan' }}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            @else
+                <div class="relative h-[400px] hidden lg:block animate-fade-in-up" style="animation-delay: 180ms;" aria-hidden="true">
+                    <div class="animate-float h-full w-full relative">
+                        <div class="absolute inset-0 right-[30px] bottom-[40px] rounded-[28px] overflow-hidden flex items-center justify-center tenant-hero-card group cursor-pointer transition-all duration-500 hover:scale-[1.01]">
+                            <div class="absolute w-[340px] h-[340px] rounded-full bg-white/25 -top-[90px] -right-[90px] transition-transform duration-700 ease-out group-hover:scale-110"></div>
+                            <div class="absolute w-[220px] h-[220px] rounded-full bg-white/20 -bottom-[70px] -left-[50px] transition-transform duration-700 ease-out group-hover:scale-110"></div>
+                            <svg width="230" height="230" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 filter drop-shadow-[0_18px_20px_rgba(0,0,0,0.18)] transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-rotate-2">
+                                <!-- Store Roof / Awning -->
+                                <path d="M22 46L31 24h58l9 22H22z" fill="#fff" fill-opacity="0.22" />
+                                <path d="M22 46c0 4.5 4.5 7 9 7s9-2.5 9-7 4.5-7 9-7 9 2.5 9 7 4.5 7 9 7 9-2.5 9-7 4.5-7 9-7 9 2.5 9 7" />
+                                <!-- Store Base -->
+                                <rect x="26" y="53" width="68" height="45" rx="6" />
+                                <!-- Door -->
+                                <rect x="35" y="65" width="22" height="33" rx="3" stroke-width="2.6" />
+                                <circle cx="51" cy="81" r="2" fill="#fff" />
+                                <!-- Display Window with Rental Items -->
+                                <rect x="63" y="65" width="23" height="22" rx="3" stroke-width="2.6" fill="#fff" fill-opacity="0.18" />
+                                <line x1="63" y1="76" x2="86" y2="76" stroke-width="2" stroke-dasharray="2 3" />
+                                <!-- Shop Sign / Star -->
+                                <circle cx="60" cy="35" r="4" fill="#fff" />
+                            </svg>
+                        </div>
+                        <div class="absolute -right-1.5 top-5 animate-float-slow">
+                            <div class="bg-white/95 backdrop-blur-md border border-gray-100 rounded-full px-4 py-2 text-[13px] font-bold text-gray-800 shadow-[0_14px_28px_-10px_rgba(0,0,0,0.25)] flex items-center gap-2 hover:scale-105 transition-transform">
+                                <span class="w-2 h-2 rounded-full bg-primary-500 animate-pulse" style="box-shadow: 0 0 0 4px color-mix(in srgb, var(--tenant-theme) 22%, white);"></span>Unit siap antar
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </section>
 
@@ -165,8 +294,8 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>
                 </span>
                 <div>
-                    <b class="text-primary-900 block text-[14px] mb-0.5 leading-tight font-bold">Tanpa menahan uang tunai</b>
-                    <p class="text-[12.5px] text-primary-700 leading-[1.5]">Admin memeriksa KTP dan swafoto sebelum Anda membayar.</p>
+                    <b class="text-primary-900 block text-[14px] mb-0.5 leading-tight font-bold">Jaminan KTP Asli (Tanpa Uang Tunai)</b>
+                    <p class="text-[12.5px] text-primary-700 leading-[1.5]">Verifikasi foto KTP saat booking online, dan titipkan fisik KTP asli saat serah terima alat.</p>
                 </div>
             </div>
         </aside>
@@ -260,14 +389,30 @@
                                      <div class="hidden absolute inset-0" style="background: linear-gradient(135deg, color-mix(in srgb, var(--tenant-theme) 25%, white), color-mix(in srgb, var(--tenant-theme) 60%, white));">
                                          <div class="absolute w-[180px] h-[180px] rounded-full bg-white/35 -top-[60px] -right-[40px]"></div>
                                          <div class="h-full w-full flex items-center justify-center">
-                                             <svg width="120" height="120" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="relative filter drop-shadow-[0_12px_12px_rgba(0,0,0,0.18)] transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-2"><path d="M14 30h14l8 42h46"/><path d="M30 44h60c0 18-12 28-30 28H36"/><circle cx="42" cy="90" r="9"/><circle cx="82" cy="90" r="9"/></svg>
+                                             <svg width="90" height="90" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="relative filter drop-shadow-[0_12px_12px_rgba(0,0,0,0.18)] transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-2">
+                                                 <path d="M22 46L31 24h58l9 22H22z" fill="#fff" fill-opacity="0.22" />
+                                                 <path d="M22 46c0 4.5 4.5 7 9 7s9-2.5 9-7 4.5-7 9-7 9 2.5 9 7 4.5 7 9 7 9-2.5 9-7 4.5-7 9-7 9 2.5 9 7" />
+                                                 <rect x="26" y="53" width="68" height="45" rx="6" />
+                                                 <rect x="35" y="65" width="22" height="33" rx="3" stroke-width="2.6" />
+                                                 <circle cx="51" cy="81" r="2" fill="#fff" />
+                                                 <rect x="63" y="65" width="23" height="22" rx="3" stroke-width="2.6" fill="#fff" fill-opacity="0.18" />
+                                                 <circle cx="60" cy="35" r="4" fill="#fff" />
+                                             </svg>
                                          </div>
                                      </div>
                                 @else
                                     <div class="absolute inset-0" style="background: linear-gradient(135deg, color-mix(in srgb, var(--tenant-theme) 25%, white), color-mix(in srgb, var(--tenant-theme) 60%, white));">
                                         <div class="absolute w-[180px] h-[180px] rounded-full bg-white/35 -top-[60px] -right-[40px]"></div>
                                         <div class="h-full w-full flex items-center justify-center">
-                                             <svg width="120" height="120" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="relative filter drop-shadow-[0_12px_12px_rgba(0,0,0,0.18)] transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-2"><path d="M14 30h14l8 42h46"/><path d="M30 44h60c0 18-12 28-30 28H36"/><circle cx="42" cy="90" r="9"/><circle cx="82" cy="90" r="9"/></svg>
+                                             <svg width="90" height="90" viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" class="relative filter drop-shadow-[0_12px_12px_rgba(0,0,0,0.18)] transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-2">
+                                                 <path d="M22 46L31 24h58l9 22H22z" fill="#fff" fill-opacity="0.22" />
+                                                 <path d="M22 46c0 4.5 4.5 7 9 7s9-2.5 9-7 4.5-7 9-7 9 2.5 9 7 4.5 7 9 7 9-2.5 9-7 4.5-7 9-7 9 2.5 9 7" />
+                                                 <rect x="26" y="53" width="68" height="45" rx="6" />
+                                                 <rect x="35" y="65" width="22" height="33" rx="3" stroke-width="2.6" />
+                                                 <circle cx="51" cy="81" r="2" fill="#fff" />
+                                                 <rect x="63" y="65" width="23" height="22" rx="3" stroke-width="2.6" fill="#fff" fill-opacity="0.18" />
+                                                 <circle cx="60" cy="35" r="4" fill="#fff" />
+                                             </svg>
                                         </div>
                                     </div>
                                 @endif

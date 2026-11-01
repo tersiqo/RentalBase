@@ -31,6 +31,8 @@ class TenantProfileRequest extends FormRequest
             // Validasi file logo maksimal 2MB dengan mimes: jpg, jpeg, png, webp
             'logo'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'theme_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/i'],
+            'hero_showcase_mode' => ['nullable', 'string', 'in:illustration,featured'],
+            'hero_featured_product_id' => ['nullable', 'integer'],
         ];
     }
 

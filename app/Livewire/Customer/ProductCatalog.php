@@ -9,6 +9,7 @@ use Livewire\Attributes\Computed;
 use App\Models\Product;
 use App\Models\Order;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class ProductCatalog extends Component
 {
@@ -254,42 +255,34 @@ class ProductCatalog extends Component
             ->where('status', 'aktif')
             ->with('category');
 
-        if ($this->startDate && $this->endDate) {
-            $start = Carbon::parse($this->startDate)->startOfDay();
-            $end = Carbon::parse($this->endDate)->endOfDay();
+        $start = $this->startDate && $this->endDate
+            ? Carbon::parse($this->startDate)->startOfDay()
+            : Carbon::now()->startOfDay();
+        $end = $this->startDate && $this->endDate
+            ? Carbon::parse($this->endDate)->endOfDay()
+            : Carbon::now()->endOfDay();
 
-            $productsQuery->select('products.*')
-                ->withCount(['units as total_units_count' => function ($query) {
-                    $query->where('status', '!=', 'rusak');
-                }])
-                ->selectRaw('(
-                    SELECT COALESCE(SUM(oi.quantity), 0)
-                    FROM order_items oi
-                    JOIN orders o ON o.id = oi.order_id
-                    WHERE oi.product_id = products.id
-                      AND o.client_id = products.client_id
-                      AND o.status NOT IN (\'batal\', \'dibatalkan\', \'ditolak\', \'selesai\')
-                      AND o.rental_start_date <= ?
-                      AND o.rental_end_date >= ?
-                ) as booked_units_count', [$end, $start]);
+        $productsQuery->select('products.*')
+            ->withCount(['units as total_units_count' => function ($query) {
+                $query->whereNotIn('status', ['rusak', 'maintenance']);
+            }])
+            ->selectRaw('(
+                SELECT COALESCE(SUM(oi.quantity), 0)
+                FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                WHERE oi.product_id = products.id
+                  AND o.client_id = products.client_id
+                  AND o.status NOT IN (\'batal\', \'dibatalkan\', \'ditolak\', \'selesai\')
+                  AND o.rental_start_date <= ?
+                  AND o.rental_end_date >= ?
+            ) as booked_units_count', [$end, $start]);
 
-            if ($this->availableOnly) {
-                $productsQuery->havingRaw('(
-                    (SELECT COUNT(*) FROM equipment_units eu WHERE eu.product_id = products.id AND eu.status != \'rusak\')
-                    -
-                    (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_id = products.id AND o.client_id = products.client_id AND o.status NOT IN (\'batal\', \'dibatalkan\', \'ditolak\', \'selesai\') AND o.rental_start_date <= ? AND o.rental_end_date >= ?)
-                ) > 0', [$end, $start]);
-            }
-        } else {
-            $productsQuery->withCount(['units as available_units_count' => function ($query) {
-                $query->where('status', 'tersedia');
-            }]);
-
-            if ($this->availableOnly) {
-                $productsQuery->whereHas('units', function ($query) {
-                    $query->where('status', 'tersedia');
-                });
-            }
+        if ($this->availableOnly) {
+            $productsQuery->havingRaw('(
+                (SELECT COUNT(*) FROM equipment_units eu WHERE eu.product_id = products.id AND eu.status NOT IN (\'rusak\', \'maintenance\'))
+                -
+                (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_id = products.id AND o.client_id = products.client_id AND o.status NOT IN (\'batal\', \'dibatalkan\', \'ditolak\', \'selesai\') AND o.rental_start_date <= ? AND o.rental_end_date >= ?)
+            ) > 0', [$end, $start]);
         }
 
         if ($this->search) {
@@ -319,14 +312,67 @@ class ProductCatalog extends Component
 
         $paginated = $productsQuery->paginate(9);
 
-        if ($this->startDate && $this->endDate) {
-            $paginated->getCollection()->transform(function ($item) {
-                $item->available_units_count = max(0, (int)($item->total_units_count ?? 0) - (int)($item->booked_units_count ?? 0));
-                return $item;
-            });
-        }
+        $paginated->getCollection()->transform(function ($item) {
+            $item->available_units_count = max(0, (int)($item->total_units_count ?? 0) - (int)($item->booked_units_count ?? 0));
+            return $item;
+        });
 
         return $paginated;
+    }
+
+    #[Computed]
+    public function heroShowcase(): array
+    {
+        return Cache::get("tenant_hero_showcase_{$this->client->id}", [
+            'mode' => 'illustration',
+            'product_id' => null,
+        ]);
+    }
+
+    #[Computed]
+    public function heroShowcaseMode(): string
+    {
+        return $this->heroShowcase['mode'] ?? 'illustration';
+    }
+
+    #[Computed]
+    public function featuredProduct(): ?Product
+    {
+        if ($this->heroShowcaseMode !== 'featured') {
+            return null;
+        }
+
+        $specificId = $this->heroShowcase['product_id'] ?? null;
+
+        if ($specificId) {
+            $product = Product::with(['category'])
+                ->where('id', $specificId)
+                ->where('client_id', $this->client->id)
+                ->where('status', 'aktif')
+                ->first();
+
+            if ($product) {
+                $product->available_units_count = $product->getAvailableUnitsForPeriod($this->startDate, $this->endDate);
+                return $product;
+            }
+        }
+
+        // Automatic mode:
+        // Prioritize: has available units, has main_image, then most popular (orderItems count) or latest
+        $product = Product::with(['category'])
+            ->withCount(['orderItems'])
+            ->where('client_id', $this->client->id)
+            ->where('status', 'aktif')
+            ->orderByRaw("CASE WHEN main_image IS NOT NULL AND main_image != '' THEN 0 ELSE 1 END ASC")
+            ->orderBy('order_items_count', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($product) {
+            $product->available_units_count = $product->getAvailableUnitsForPeriod($this->startDate, $this->endDate);
+        }
+
+        return $product;
     }
 
     public function render()

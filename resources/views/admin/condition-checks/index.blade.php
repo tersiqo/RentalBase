@@ -244,7 +244,7 @@
                                 @if($check->image)
                                     <button 
                                         type="button" 
-                                        @click="openImageModal('{{ Storage::disk('public')->url($check->image) }}')" 
+                                        @click="openImageModal('{{ storage_url($check->image) }}')" 
                                         class="text-orange-600 hover:text-orange-700 hover:underline text-xs font-semibold focus:outline-none"
                                     >
                                         Lihat Foto

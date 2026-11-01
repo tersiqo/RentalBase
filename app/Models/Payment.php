@@ -28,4 +28,9 @@ class Payment extends Model
     {
         return $this->belongsTo(ClientPaymentMethod::class, 'client_payment_method_id');
     }
+
+    public function getPaymentProofUrlAttribute(): ?string
+    {
+        return storage_url($this->payment_proof ?? $this->proof_of_payment);
+    }
 }
