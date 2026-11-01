@@ -197,7 +197,7 @@
                         @foreach($pendingRegistrations as $reg)
                             @php
                                 $logo = $reg->client?->logo;
-                                $logoUrl = $logo ? asset('storage/' . $logo) : null;
+                                $logoUrl = storage_url($logo);
                                 $words = array_values(array_filter(explode(' ', trim($reg->business_name))));
                                 if (count($words) >= 2) {
                                     $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
@@ -275,7 +275,7 @@
                                                     status: '{{ $reg->status }}',
                                                     description: '{{ addslashes($reg->description ?? '') }}',
                                                     rejection_reason: '{{ addslashes($reg->rejection_reason ?? '') }}',
-                                                    payment_proof: '{{ $reg->payment_proof ? asset('storage/' . $reg->payment_proof) : '' }}',
+                                                    payment_proof: '{{ storage_url($reg->payment_proof) ?: '' }}',
                                                     logo_url: '{{ $logoUrl ?: '' }}',
                                                     created_at: '{{ $reg->created_at ? $reg->created_at->translatedFormat('d F Y, H:i') : '-' }}',
                                                     verify_url: '{{ route('owner.registrations.verify', $reg->id) }}',
@@ -351,7 +351,7 @@
                         @foreach($tenants as $tenant)
                             @php
                                 $sub = $tenant->latestSubscription ?: $tenant->activeSubscription;
-                                $logoUrl = $tenant->logo ? asset('storage/' . $tenant->logo) : null;
+                                $logoUrl = storage_url($tenant->logo);
                                 $initials = strtoupper(substr($tenant->business_name ?: ($tenant->nama_usaha ?: 'R'), 0, 1));
                             @endphp
                             <tr class="hover:bg-slate-50/70 transition-colors group">

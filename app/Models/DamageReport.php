@@ -47,14 +47,6 @@ class DamageReport extends Model
             $images = array_filter(array_map('trim', explode(',', $this->image)));
         }
 
-        return array_map(function ($img) {
-            if (str_starts_with($img, 'http')) {
-                return $img;
-            }
-            if (file_exists(public_path('storage/' . $img))) {
-                return asset('storage/' . $img);
-            }
-            return Storage::url($img);
-        }, $images);
+        return array_map(fn ($img) => storage_url($img), $images);
     }
 }

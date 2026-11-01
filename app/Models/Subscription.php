@@ -18,4 +18,9 @@ class Subscription extends Model
     {
         return $this->belongsTo(Client::class);
     }
+
+    public function getPaymentProofUrlAttribute(): ?string
+    {
+        return $this->payment_proof ? storage_url($this->payment_proof) : null;
+    }
 }

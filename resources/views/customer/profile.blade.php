@@ -259,15 +259,28 @@
 
                 {{-- Alamat Pengiriman Utama --}}
                 <div>
-                    <label for="address" class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                        Alamat Pengiriman Utama
-                    </label>
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="address" class="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                            Template Alamat Pengiriman Utama
+                        </label>
+                        @if(!empty(trim($user->address ?? '')))
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                Tersimpan sebagai Template Checkout
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                Belum diatur
+                            </span>
+                        @endif
+                    </div>
                     <textarea id="address"
                               name="address"
                               rows="3"
                               class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition @error('address') border-red-300 ring-1 ring-red-200 @enderror"
                               placeholder="Tuliskan nama jalan, nomor rumah, RT/RW, kelurahan, dan kota domisili">{{ old('address', $user->address) }}</textarea>
-                    <p class="text-[11px] text-gray-400 mt-1">Alamat ini akan otomatis digunakan saat kamu melakukan checkout barang.</p>
+                    <p class="text-[11px] text-gray-400 mt-1">Alamat ini akan otomatis digunakan sebagai template awal saat kamu melakukan checkout barang.</p>
                     @error('address')
                         <p class="text-xs text-red-600 mt-1 font-medium">{{ $message }}</p>
                     @enderror

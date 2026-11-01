@@ -17,4 +17,9 @@ class ClientRegistration extends Model
     {
         return $this->belongsTo(Client::class, 'subdomain', 'subdomain');
     }
+
+    public function getPaymentProofUrlAttribute(): ?string
+    {
+        return $this->payment_proof ? storage_url($this->payment_proof) : null;
+    }
 }

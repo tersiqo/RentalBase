@@ -88,6 +88,12 @@ class ShipmentController extends Controller
             abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
         }
 
+        // Kunci Jadwal Pengiriman / Penyerahan: Ambil di Toko = Hari-H, Kurir = mulai H-1
+        if (! $order->canProcessHandover()) {
+            return redirect()->back()
+                ->with('error', $order->handover_blocked_reason ?? 'Belum memasuki jadwal penyerahan atau pengiriman barang.');
+        }
+
         // SOP Rental: Wajib pastikan seluruh unit fisik sudah dialokasikan sebelum dikirim
         $totalRequired = $order->orderItems->sum('quantity');
         $totalAllocated = $order->orderItems->sum(fn ($item) => $item->orderItemUnits->count());
@@ -99,15 +105,23 @@ class ShipmentController extends Controller
 
         $isPickup = $order->isPickup();
 
+        $validationRules = [];
+        $validationMessages = [];
+
         if (! $isPickup) {
-            $request->validate([
-                'courier_name'    => 'required|string|max:100',
-                'tracking_number' => 'required|string|max:100',
-            ], [
-                'courier_name.required'    => 'Pilihan ekspedisi kurir wajib diisi.',
-                'tracking_number.required' => 'Nomor resi atau tautan pelacakan wajib diisi.',
-            ]);
+            $validationRules['courier_name'] = 'required|string|max:100';
+            $validationRules['tracking_number'] = 'required|string|max:100';
+            $validationMessages['courier_name.required'] = 'Pilihan ekspedisi kurir wajib diisi.';
+            $validationMessages['tracking_number.required'] = 'Nomor resi atau tautan pelacakan wajib diisi.';
         }
+
+        // Validasi konfirmasi penerimaan fisik KTP sebagai jaminan (wajib jika ada jaminan identitas)
+        if ($order->identityGuarantee) {
+            $validationRules['ktp_deposited'] = 'accepted';
+            $validationMessages['ktp_deposited.accepted'] = 'Konfirmasi penerimaan & penitipan fisik KTP / identitas asli wajib dicentang sebelum barang diserahkan.';
+        }
+
+        $request->validate($validationRules, $validationMessages);
 
         DB::transaction(function () use ($order, $request, $isPickup, $user) {
             $courierName    = $isPickup ? 'Ambil Sendiri di Toko' : ($request->courier_name ?? 'Kurir Toko');
@@ -131,6 +145,13 @@ class ShipmentController extends Controller
                 'status' => 'dikirim',
             ]);
 
+            // Update status jaminan KTP menjadi "dititipkan"
+            if ($order->identityGuarantee) {
+                $order->identityGuarantee->update([
+                    'status' => 'dititipkan',
+                ]);
+            }
+
             // Pastikan seluruh unit fisik yang dialokasikan berubah status menjadi 'disewa'
             foreach ($order->orderItems as $item) {
                 foreach ($item->orderItemUnits as $oiu) {
@@ -138,15 +159,24 @@ class ShipmentController extends Controller
                 }
             }
 
-            // Catat jejak audit aktivitas pengiriman logistik
+            // Auto-sync jam sewa jika waktu serah terima melewati jadwal rencana sewa awal
+            $wasSynced = $order->syncRentalHoursOnHandover(now());
+
+            // Catat jejak audit aktivitas pengiriman logistik & penitipan KTP fisik
+            $syncNote = $wasSynced
+                ? sprintf(' Jam mulai & batas kembali sewa otomatis disinkronkan ke waktu serah terima (%s WIB).', now()->format('H:i'))
+                : '';
+
+            $activityDesc = $isPickup
+                ? sprintf('Pesanan #%s berhasil diserahkan langsung kepada pelanggan di toko. Fisik KTP/identitas penyewa resmi dititipkan sebagai jaminan.%s', $order->order_number ?? $order->id, $syncNote)
+                : sprintf('Pesanan #%s berhasil diproses dan dikirim via %s (Resi: %s). Fisik KTP/identitas penyewa resmi dicatat dititipkan sebagai jaminan.%s', $order->order_number ?? $order->id, $courierName, $trackingNumber, $syncNote);
+
             ActivityLog::create([
                 'client_id'   => $order->client_id,
                 'user_id'     => $user->id,
                 'action'      => $isPickup ? 'order_handed_over' : 'order_shipped',
                 'module'      => 'shipments',
-                'description' => $isPickup
-                    ? sprintf('Pesanan #%s berhasil diserahkan langsung kepada pelanggan di toko.', $order->order_number ?? $order->id)
-                    : sprintf('Pesanan #%s berhasil diproses dan dikirim via %s (Resi: %s).', $order->order_number ?? $order->id, $courierName, $trackingNumber),
+                'description' => $activityDesc,
                 'ip_address'  => $request->ip(),
                 'user_agent'  => $request->userAgent(),
             ]);

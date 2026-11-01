@@ -177,6 +177,8 @@ class PageController extends Controller
             'status' => 'sedang_disewa',
         ]);
 
+        $order->syncRentalHoursOnHandover(now());
+
         if ($order->shipment) {
             $order->shipment->update([
                 'status' => 'diterima',
@@ -372,10 +374,11 @@ class PageController extends Controller
 
         try {
             if ($request->hasFile('late_fee_proof')) {
-                $proofPath = $request->file('late_fee_proof')->store('returns', 'public');
+                $disk = config('filesystems.default', 'public');
+                $proofPath = $request->file('late_fee_proof')->store('returns', $disk);
             }
 
-            DB::transaction(function () use ($order, $validated, $lateFeeData, $hasLateFee, $proofPath) {
+            DB::transaction(function () use ($order, $validated, $lateFeeData, $hasLateFee, $proofPath, $request) {
                 $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
 
                 if (! $lockedOrder || ! $lockedOrder->can_return) {
@@ -451,8 +454,8 @@ class PageController extends Controller
                 ->with('success', 'Pengajuan pengembalian barang pesanan #' . $order->order_number . ' berhasil dikirim ke toko!');
 
         } catch (\Throwable $e) {
-            if ($proofPath && Storage::disk('public')->exists($proofPath)) {
-                Storage::disk('public')->delete($proofPath);
+            if ($proofPath) {
+                \App\Services\StorageHelper::delete($proofPath);
             }
 
             return back()
@@ -476,7 +479,8 @@ class PageController extends Controller
             'client_payment_method_id' => 'nullable|exists:client_payment_methods,id',
         ]);
 
-        $path = $request->file('payment_proof')->store('payments', 'public');
+        $disk = config('filesystems.default', 'public');
+        $path = $request->file('payment_proof')->store('payments', $disk);
 
         $paymentMethodId = $request->input('client_payment_method_id') 
             ?? $order->client?->clientPaymentMethods()->where('is_active', true)->value('id')
@@ -519,8 +523,9 @@ class PageController extends Controller
             'face_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $docPath = $request->file('identity_document_image')->store('identity_guarantees', 'public');
-        $facePath = $request->file('face_image')->store('identity_guarantees', 'public');
+        $disk = config('filesystems.default', 'public');
+        $docPath = $request->file('identity_document_image')->store('identity_guarantees', $disk);
+        $facePath = $request->file('face_image')->store('identity_guarantees', $disk);
 
         if ($order->identityGuarantee) {
             $order->identityGuarantee->update([

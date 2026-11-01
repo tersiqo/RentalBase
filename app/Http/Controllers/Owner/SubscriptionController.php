@@ -203,10 +203,11 @@ class SubscriptionController extends Controller
             $newEndDate = $now->copy()->addMonths($durationMonths);
         }
 
-        // Simpan file bukti pembayaran ke storage publik
+        // Simpan file bukti pembayaran ke storage
         $file = $request->file('payment_proof');
         $fileName = 'proof_' . $subscription->id . '_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
-        $storedPath = $file->storeAs('subscriptions/proofs', $fileName, 'public');
+        $disk = config('filesystems.default', 'public');
+        $storedPath = $file->storeAs('subscriptions/proofs', $fileName, $disk);
 
         // Jalankan transaksi database
         DB::transaction(function () use (

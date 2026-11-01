@@ -41,18 +41,44 @@ class EquipmentUnit extends Model
 
     public function isActivelyRented(): bool
     {
+        $todayStart = \Carbon\Carbon::now()->startOfDay()->format('Y-m-d H:i:s');
+        $todayEnd = \Carbon\Carbon::now()->endOfDay()->format('Y-m-d H:i:s');
+
         return $this->orderItemUnits()
-            ->whereHas('orderItem.order', function ($q) {
-                $q->whereIn('status', [
-                    'menunggu_pembayaran',
-                    'pembayaran_terverifikasi',
-                    'dikonfirmasi',
-                    'siap_kirim',
-                    'sedang_dikirim',
-                    'sedang_disewa',
-                ]);
+            ->whereHas('orderItem.order', function ($q) use ($todayStart, $todayEnd) {
+                $q->whereNotIn('status', ['batal', 'dibatalkan', 'ditolak', 'selesai'])
+                  ->where(function ($sub) use ($todayStart, $todayEnd) {
+                      $sub->whereIn('status', ['dikirim', 'sedang_disewa'])
+                          ->orWhere(function ($period) use ($todayStart, $todayEnd) {
+                              $period->where('rental_start_date', '<=', $todayEnd)
+                                     ->where('rental_end_date', '>=', $todayStart);
+                          });
+                  });
             })
             ->exists();
+    }
+
+    /**
+     * Sinkronisasi status fisik unit di database ('disewa' vs 'tersedia')
+     * berdasarkan apakah unit saat ini sedang aktif disewa/berada di tangan customer.
+     */
+    public function syncPhysicalStatus(): void
+    {
+        $currentStatus = strtolower((string) ($this->status ?? 'tersedia'));
+
+        if (in_array($currentStatus, ['rusak', 'maintenance'])) {
+            return;
+        }
+
+        if ($this->isActivelyRented()) {
+            if ($currentStatus !== 'disewa') {
+                $this->update(['status' => 'disewa']);
+            }
+        } else {
+            if ($currentStatus !== 'tersedia') {
+                $this->update(['status' => 'tersedia']);
+            }
+        }
     }
 
     /**
@@ -66,11 +92,11 @@ class EquipmentUnit extends Model
         }
 
         if (! $startDate || ! $endDate) {
-            return ! in_array(strtolower((string) $this->status), ['disewa', 'rented']);
+            return ! $this->isActivelyRented();
         }
 
-        $start = \Carbon\Carbon::parse($startDate);
-        $end = \Carbon\Carbon::parse($endDate);
+        $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+        $end = \Carbon\Carbon::parse($endDate)->endOfDay();
 
         if ($end->lt($start)) {
             return false;

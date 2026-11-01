@@ -142,10 +142,11 @@ class OwnerTenantController extends Controller
 
             if ($request->hasFile('logo')) {
                 // Hapus logo lama jika ada
-                if ($client->logo && Storage::disk('public')->exists($client->logo)) {
-                    Storage::disk('public')->delete($client->logo);
+                if ($client->logo) {
+                    \App\Services\StorageHelper::delete($client->logo);
                 }
-                $clientData['logo'] = $request->file('logo')->store('clients/logos', 'public');
+                $disk = config('filesystems.default', 'public');
+                $clientData['logo'] = $request->file('logo')->store('clients/logos', $disk);
             }
 
             $client->update($clientData);

@@ -7,7 +7,9 @@
      x-data="tenantProfileApp({
          initialLogo: @js($profile->logo_path ? Storage::url($profile->logo_path) : ($client->logo ? Storage::url($client->logo) : null)),
          initialColor: @js(old('theme_color', $profile->theme_color ?? $client->theme_color ?? '#F97316')),
-         isStarter: @js(str_contains(strtolower($client->plan ?? $subscription?->plan_name ?? 'starter'), 'starter'))
+         isStarter: @js(str_contains(strtolower($client->plan ?? $subscription?->plan_name ?? 'starter'), 'starter')),
+         initialHeroMode: @js(old('hero_showcase_mode', $heroShowcase['mode'] ?? 'illustration')),
+         initialHeroProductId: @js(old('hero_featured_product_id', $heroShowcase['product_id'] ?? ''))
      })">
 
     {{-- Breadcrumb & Header --}}
@@ -481,6 +483,100 @@
             </div>
         </div>
 
+        {{-- Section 4: Tampilan Kartu Hero Katalog --}}
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100 bg-stone-50/60 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-gray-900">Tampilan Kartu Hero Katalog</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Pilih tampilan elemen visual utama pada sisi kanan Hero Section katalog publik customer Anda.</p>
+                </div>
+                <span class="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">
+                    04
+                </span>
+            </div>
+
+            <div class="p-6 lg:p-8 space-y-6">
+                {{-- Mode Selection Cards --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Option 1: Ilustrasi Default --}}
+                    <label class="relative rounded-2xl border-2 p-5 cursor-pointer transition-all duration-200 flex flex-col justify-between {{ !Auth::user()?->isPrimaryAdmin() ? 'opacity-60 pointer-events-none' : '' }}"
+                           :class="heroMode === 'illustration' ? 'border-orange-500 bg-orange-50/30 shadow-xs' : 'border-gray-200 bg-white hover:border-gray-300'">
+                        <div class="flex items-start justify-between gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                            </div>
+                            <input type="radio"
+                                   name="hero_showcase_mode"
+                                   value="illustration"
+                                   x-model="heroMode"
+                                   class="w-4 h-4 text-orange-600 border-gray-300 focus:ring-orange-500 mt-1">
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-gray-900 mb-1">Ilustrasi Etalase Toko (Storefront)</div>
+                            <p class="text-xs text-gray-500 leading-relaxed">
+                                Menampilkan grafis ilustrasi etalase toko rental bersih dengan lingkaran dekoratif bertema warna toko dan badge melayang <em>"Unit siap antar"</em>.
+                            </p>
+                        </div>
+                    </label>
+
+                    {{-- Option 2: Kartu Produk Unggulan --}}
+                    <label class="relative rounded-2xl border-2 p-5 cursor-pointer transition-all duration-200 flex flex-col justify-between {{ !Auth::user()?->isPrimaryAdmin() ? 'opacity-60 pointer-events-none' : '' }}"
+                           :class="heroMode === 'featured' ? 'border-orange-500 bg-orange-50/30 shadow-xs' : 'border-gray-200 bg-white hover:border-gray-300'">
+                        <div class="flex items-start justify-between gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                </svg>
+                            </div>
+                            <input type="radio"
+                                   name="hero_showcase_mode"
+                                   value="featured"
+                                   x-model="heroMode"
+                                   class="w-4 h-4 text-orange-600 border-gray-300 focus:ring-orange-500 mt-1">
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-gray-900 mb-1">Kartu Produk Unggulan (Featured Product)</div>
+                            <p class="text-xs text-gray-500 leading-relaxed">
+                                Menampilkan foto produk asli, badge kategori, harga sewa per hari, ketersediaan unit, dan tombol sewa langsung di Hero Section.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+
+                {{-- Dropdown Pilih Produk (hanya muncul saat heroMode === 'featured') --}}
+                <div x-show="heroMode === 'featured'"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="p-5 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-3">
+                    <label for="select-hero-product" class="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                        Pilih Produk yang Ditampilkan
+                    </label>
+
+                    <div class="relative">
+                        <select id="select-hero-product"
+                                name="hero_featured_product_id"
+                                x-model="heroProductId"
+                                {{ !Auth::user()?->isPrimaryAdmin() ? 'disabled' : '' }}
+                                class="w-full px-4 py-2.5 rounded-xl border border-amber-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors {{ !Auth::user()?->isPrimaryAdmin() ? 'bg-gray-50 cursor-not-allowed' : '' }}">
+                            <option value="">✨ Otomatis (Produk Terpopuler / Terbaru yang Tersedia)</option>
+                            @foreach ($products as $prod)
+                                <option value="{{ $prod->id }}">
+                                    {{ $prod->name }} — Rp {{ number_format($prod->rental_price_per_day, 0, ',', '.') }}/hari
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <p class="text-xs text-amber-800 leading-relaxed">
+                        Jika memilih <strong>Otomatis</strong>, sistem secara cerdas akan memilih 1 produk aktif toko Anda yang memiliki stok unit tersedia, dilengkapi foto produk, dan paling sering disewa customer.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         {{-- Form Actions (Submit & Batal) --}}
         <div class="flex items-center justify-end gap-3 pt-2">
             <a href="{{ route('admin.dashboard') }}"
@@ -515,6 +611,8 @@
             logoPreview: config.initialLogo || null,
             themeColor: config.initialColor || '#F97316',
             isStarter: Boolean(config.isStarter),
+            heroMode: config.initialHeroMode || 'illustration',
+            heroProductId: config.initialHeroProductId || '',
             removeLogo: false,
             fileError: '',
 

@@ -12,19 +12,32 @@
         return $item;
     });
     $shopLabel = $client->business_name ?? 'Outlet Rental';
+
+    $profileAddress = $profileAddress ?? auth()->user()?->address;
+    $lastOrderAddress = $lastOrderAddress ?? null;
+    $lastIdentity = $lastIdentity ?? (auth()->check() ? \App\Models\IdentityGuarantee::where('customer_id', auth()->id())->latest('id')->first() : null);
+
+    $defaultShippingAddress = old('shipping_address', $profileAddress ?: ($lastOrderAddress ?: ''));
+    $defaultIdentityNumber = old('identity_number', $lastIdentity?->identity_number ?: '');
+    $defaultIdentityAddress = old('identity_address', $lastIdentity?->identity_address ?: ($profileAddress ?: ''));
+    $defaultSaveToProfile = empty(trim($profileAddress ?? ''));
 @endphp
 <div class="max-w-[1260px] mx-auto px-6 py-8" x-data="{
     currentStep: {{ $errors->hasAny(['full_name', 'identity_number', 'identity_address', 'identity_document_image', 'face_image']) ? 3 : ($errors->hasAny(['shipping_address', 'shipping_method']) ? 2 : ($errors->hasAny(['terms']) ? 4 : 1)) }},
     periodStart: {{ json_encode(old('start_date', $period['start_date'])) }},
     periodEnd: {{ json_encode(old('end_date', $period['end_date'])) }},
+    rentalTime: {{ json_encode(old('rental_time', now()->format('H:i'))) }},
     items: {{ json_encode($itemsList->all()) }},
     ship: {{ json_encode(old('shipping_method') === \App\Models\Order::SHIPPING_AMBIL_TOKO ? 'ambil' : 'antar') }},
     shopName: {{ json_encode($shopLabel) }},
-    addressText: {{ json_encode(old('shipping_address', '')) }},
+    profileAddress: {{ json_encode($profileAddress ?? '') }},
+    lastOrderAddress: {{ json_encode($lastOrderAddress ?? '') }},
+    addressText: {{ json_encode($defaultShippingAddress) }},
+    saveToProfile: {{ json_encode(old('save_address_to_profile', $defaultSaveToProfile ? '1' : '0') === '1' || old('save_address_to_profile') === true) }},
     whatsapp: {{ json_encode(old('whatsapp_number', auth()->user()->phone ?? '')) }},
-    fullName: {{ json_encode(old('full_name', auth()->user()->name ?? '')) }},
-    identityNumber: {{ json_encode(old('identity_number', '')) }},
-    identityAddress: {{ json_encode(old('identity_address', '')) }},
+    fullName: {{ json_encode(old('full_name', $lastIdentity?->full_name ?? auth()->user()->name ?? '')) }},
+    identityNumber: {{ json_encode($defaultIdentityNumber) }},
+    identityAddress: {{ json_encode($defaultIdentityAddress) }},
     agree: false,
     stepErrors: [],
 
@@ -50,6 +63,27 @@
 
     rp(n) {
         return 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
+    },
+
+    setNowTime() {
+        const d = new Date();
+        const h = String(d.getHours()).padStart(2, '0');
+        const m = String(d.getMinutes()).padStart(2, '0');
+        this.rentalTime = `${h}:${m}`;
+    },
+
+    formatDateIndo(dateStr) {
+        if (!dateStr) return '-';
+        try {
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+            return dateStr;
+        } catch (e) {
+            return dateStr;
+        }
     },
 
     init() {
@@ -444,6 +478,81 @@
                         <span class="block text-[12.5px] text-gray-400 font-medium mt-2">Perhitungan otomatis: (Tanggal Selesai − Tanggal Mulai) × harga/hari. Minimal 1 hari.</span>
                     </div>
 
+                    <!-- Rental Time & Due Time Section -->
+                    <div class="pt-4 border-t border-gray-100 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <label for="rental_time" class="block text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5">
+                                <span>⏰ Rencana Jam Pengambilan / Pengiriman &amp; Batas Kembali</span>
+                                <span class="text-primary-500">*</span>
+                            </label>
+                            <span class="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                                Hitungan Tetap Harian (1 Hari = 24 Jam)
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-start">
+                            <!-- Time Input & Shortcuts -->
+                            <div class="space-y-2">
+                                <div class="relative">
+                                    <input type="time"
+                                           id="rental_time"
+                                           name="rental_time"
+                                           x-model="rentalTime"
+                                           required
+                                           class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-base font-bold text-gray-900 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-2xs">
+                                </div>
+
+                                <!-- Shortcut chips -->
+                                <div class="flex flex-wrap gap-1.5 text-[11px]">
+                                    <button type="button"
+                                            @click="setNowTime()"
+                                            class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
+                                        ⌚ Sekarang
+                                    </button>
+                                    <button type="button"
+                                            @click="rentalTime = '09:00'"
+                                            class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
+                                        🌅 09:00
+                                    </button>
+                                    <button type="button"
+                                            @click="rentalTime = '13:00'"
+                                            class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
+                                        ☀️ 13:00
+                                    </button>
+                                    <button type="button"
+                                            @click="rentalTime = '16:00'"
+                                            class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
+                                        🌇 16:00
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Live Time Summary Box -->
+                            <div class="bg-stone-50 border border-gray-200/80 rounded-xl p-3.5 space-y-2 text-xs">
+                                <div class="flex items-center justify-between pb-2 border-b border-gray-200/60">
+                                    <span class="text-gray-500 font-medium">Mulai Sewa:</span>
+                                    <span class="font-bold text-gray-900">
+                                        <span x-text="formatDateIndo(periodStart)"></span> • Pukul <span x-text="rentalTime" class="text-primary-600"></span> WIB
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-500 font-medium">Batas Waktu Pengembalian:</span>
+                                    <span class="font-bold text-gray-900">
+                                        <span x-text="formatDateIndo(periodEnd)"></span> • Pukul <span x-text="rentalTime" class="text-primary-600"></span> WIB
+                                    </span>
+                                </div>
+                                <div class="text-[11px] text-gray-600 pt-1 leading-relaxed space-y-1.5">
+                                    <p>
+                                        💡 <em>Jam batas pengembalian otomatis disamakan dengan jam mulai sewa. Keterlambatan retur baru dihitung jika melewati pukul <strong x-text="rentalTime + ' WIB'"></strong> pada tanggal selesai.</em>
+                                    </p>
+                                    <p class="text-primary-800 bg-primary-50/80 p-2.5 rounded-lg border border-primary-100 text-[11px]">
+                                        🛡️ <strong>Jaminan Durasi Utuh:</strong> Jika proses verifikasi, pembayaran, atau serah terima selesai melewati jam rencana di atas, jam mulai &amp; batas kembali akan otomatis disesuaikan saat barang diserahkan agar waktu sewa Anda tidak terpotong.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Notice Info Box -->
                     <div class="bg-primary-50/70 border border-primary-100 rounded-2xl p-4 flex gap-3.5 items-start">
                         <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-primary-500 shrink-0 shadow-2xs">
@@ -529,8 +638,82 @@
                     <!-- Hidden shipping method (server always expects it) -->
                     <input type="hidden" name="shipping_method" :value="ship === 'ambil' ? '{{ \App\Models\Order::SHIPPING_AMBIL_TOKO }}' : '{{ \App\Models\Order::SHIPPING_KURIR }}'">
 
+                    <!-- Hidden WhatsApp number (server receives it) -->
+                    <input type="hidden" name="whatsapp_number" :value="whatsapp">
+
                     <!-- Antar mode -->
                     <div x-show="ship === 'antar'" class="space-y-4">
+                        @if($profileAddress || $lastOrderAddress)
+                        <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-primary-500"></span>
+                                    <span class="text-xs font-bold text-gray-800 uppercase tracking-wider">Pilih Template Alamat Tersimpan</span>
+                                </div>
+                                <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain]) }}" target="_blank" class="text-xs font-semibold text-primary-600 hover:text-primary-700 hover:underline flex items-center gap-1">
+                                    <span>Kelola di Profil</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                </a>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                @if($profileAddress)
+                                <button type="button" 
+                                        @click="addressText = profileAddress"
+                                        class="p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between group cursor-pointer"
+                                        :class="addressText.trim() === profileAddress.trim() ? 'border-primary-500 bg-white ring-2 ring-primary-500/20 shadow-sm' : 'border-gray-200 bg-white/70 hover:border-gray-300 hover:bg-white'">
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-900">
+                                                <span>🏠</span> Alamat Utama Profil
+                                            </span>
+                                            <span x-show="addressText.trim() === profileAddress.trim()" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary-100 text-primary-700">
+                                                ✓ Aktif
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 line-clamp-2 leading-relaxed">{{ $profileAddress }}</p>
+                                    </div>
+                                    <div class="mt-2 text-[11px] font-semibold text-primary-600 group-hover:text-primary-700">
+                                        Gunakan alamat ini &rarr;
+                                    </div>
+                                </button>
+                                @endif
+
+                                @if($lastOrderAddress)
+                                <button type="button" 
+                                        @click="addressText = lastOrderAddress"
+                                        class="p-3 rounded-xl border text-left transition-all relative flex flex-col justify-between group cursor-pointer"
+                                        :class="addressText.trim() === lastOrderAddress.trim() ? 'border-primary-500 bg-white ring-2 ring-primary-500/20 shadow-sm' : 'border-gray-200 bg-white/70 hover:border-gray-300 hover:bg-white'">
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-900">
+                                                <span>📦</span> Pengiriman Terakhir
+                                            </span>
+                                            <span x-show="addressText.trim() === lastOrderAddress.trim()" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary-100 text-primary-700">
+                                                ✓ Aktif
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 line-clamp-2 leading-relaxed">{{ $lastOrderAddress }}</p>
+                                    </div>
+                                    <div class="mt-2 text-[11px] font-semibold text-primary-600 group-hover:text-primary-700">
+                                        Gunakan alamat ini &rarr;
+                                    </div>
+                                </button>
+                                @endif
+                            </div>
+
+                            <div class="flex items-center justify-between pt-1">
+                                <button type="button" 
+                                        @click="addressText = ''; $nextTick(() => document.getElementById('addressText').focus())"
+                                        class="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 transition cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    <span>✏️ Ketik Alamat Baru</span>
+                                </button>
+                                <span class="text-[11px] text-gray-400">Atau edit langsung textarea di bawah</span>
+                            </div>
+                        </div>
+                        @endif
+
                         <div>
                             <label for="addressText" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Alamat Pengiriman Lengkap <span class="text-red-500">*</span></label>
                             <textarea id="addressText" x-model="addressText" rows="3" class="w-full border border-gray-200 rounded-xl p-3.5 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-400" placeholder="Jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota, kode pos"></textarea>
@@ -538,6 +721,20 @@
                                 <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                             @enderror
                         </div>
+
+                        {{-- Checkbox simpan ke profil --}}
+                        <div class="flex items-start gap-2.5 pt-0.5">
+                            <input type="checkbox" 
+                                   id="save_address_to_profile" 
+                                   name="save_address_to_profile" 
+                                   value="1" 
+                                   x-model="saveToProfile"
+                                   class="w-4 h-4 mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer">
+                            <label for="save_address_to_profile" class="text-xs text-gray-700 font-medium cursor-pointer select-none">
+                                <span class="font-bold text-gray-900">Jadikan sebagai Template Alamat Utama</span> di profil saya untuk checkout berikutnya.
+                            </label>
+                        </div>
+
                         <div>
                             <label for="patokan" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Patokan Lokasi <span class="text-gray-400 font-medium normal-case">(opsional, memudahkan kurir)</span></label>
                             <input type="text" id="patokan" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-400" placeholder="Contoh: sebelah minimarket, pagar hitam, gang setelah masjid">
@@ -592,7 +789,7 @@
                         </div>
                         <div>
                             <h2 class="text-lg font-extrabold text-gray-900 tracking-tight">Identitas &amp; Jaminan Penyewa</h2>
-                            <p class="text-xs text-gray-500 font-medium mt-0.5">Data sesuai KTP digunakan sebagai jaminan sewa tanpa deposit uang.</p>
+                            <p class="text-xs text-gray-500 font-medium mt-0.5">Jaminan KTP Asli (Tanpa Deposit Uang): Cukup titipkan identitas asli saat serah terima barang, tanpa perlu deposit uang tunai.</p>
                         </div>
                     </div>
 
@@ -614,22 +811,32 @@
                     <!-- Notice Box -->
                     <div class="bg-primary-50 border border-primary-100 rounded-xl p-4 flex gap-3">
                         <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        <div class="text-xs text-[#7C2D12]">
-                            <b>Ketentuan Verifikasi:</b> Data identitas Anda dijamin aman dan hanya digunakan oleh admin rental untuk memverifikasi kelayakan penyewaan sebelum instruksi pembayaran dibuka.
+                        <div class="text-xs text-primary-900 leading-relaxed">
+                            <b>Ketentuan Jaminan KTP Asli:</b> Unggah foto KTP &amp; selfie untuk verifikasi awal saat booking online. Saat serah terima barang (ambil di toko/antar kurir), <strong>KTP fisik asli wajib diserahkan kepada pihak rental sebagai jaminan sewa</strong> dan akan dikembalikan utuh saat masa sewa selesai.
                         </div>
                     </div>
+
+                    @if($lastIdentity)
+                    <div class="bg-emerald-50 border border-emerald-200/80 rounded-xl p-3 flex items-center justify-between text-xs text-emerald-800">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Data NIK &amp; Alamat otomatis diisi dari riwayat verifikasi KTP Anda sebelumnya.</span>
+                        </div>
+                        <span class="font-bold bg-white text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0">Auto-Filled</span>
+                    </div>
+                    @endif
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="full_name" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nama Lengkap (Sesuai KTP) <span class="text-red-500">*</span></label>
-                            <input type="text" id="full_name" name="full_name" x-model="fullName" value="{{ old('full_name', auth()->user()->name ?? '') }}" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Nama sesuai identitas" required>
+                            <input type="text" id="full_name" name="full_name" x-model="fullName" value="{{ old('full_name', $lastIdentity?->full_name ?? auth()->user()->name ?? '') }}" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Nama sesuai identitas" required>
                             @error('full_name')
                                 <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                             @enderror
                         </div>
                         <div>
                             <label for="identity_number" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nomor KTP / NIK <span class="text-red-500">*</span></label>
-                            <input type="text" id="identity_number" name="identity_number" x-model="identityNumber" value="{{ old('identity_number') }}" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="16 digit nomor NIK KTP" required>
+                            <input type="text" id="identity_number" name="identity_number" x-model="identityNumber" value="{{ old('identity_number', $defaultIdentityNumber) }}" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="16 digit nomor NIK KTP" required>
                             @error('identity_number')
                                 <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                             @enderror
@@ -637,8 +844,27 @@
                     </div>
 
                     <div>
-                        <label for="identity_address" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Alamat Sesuai KTP <span class="text-red-500">*</span></label>
-                        <textarea id="identity_address" name="identity_address" x-model="identityAddress" rows="2" class="w-full border border-gray-200 rounded-xl p-3 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Alamat domisili sesuai KTP..." required>{{ old('identity_address') }}</textarea>
+                        <div class="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                            <label for="identity_address" class="block text-xs font-bold text-gray-700 uppercase">Alamat Sesuai KTP <span class="text-red-500">*</span></label>
+                            
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" 
+                                        @click="if (addressText && addressText.trim().length > 0) { identityAddress = addressText }"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200 transition cursor-pointer"
+                                        title="Salin alamat dari Step 2">
+                                    <span>🔄</span> Sama dengan Alamat Pengiriman
+                                </button>
+                                @if($profileAddress)
+                                <button type="button" 
+                                        @click="identityAddress = profileAddress"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
+                                        title="Gunakan alamat dari profil">
+                                    <span>🏠</span> Gunakan Alamat Utama Profil
+                                </button>
+                                @endif
+                            </div>
+                        </div>
+                        <textarea id="identity_address" name="identity_address" x-model="identityAddress" rows="2" class="w-full border border-gray-200 rounded-xl p-3 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Alamat domisili sesuai KTP..." required>{{ old('identity_address', $defaultIdentityAddress) }}</textarea>
                         @error('identity_address')
                             <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                         @enderror
@@ -737,7 +963,10 @@
                         </template>
                         <div class="flex justify-between border-b border-gray-200/60 pb-2">
                             <span class="text-gray-500">Periode Sewa:</span>
-                            <span class="text-gray-900" x-text="durationDays + ' hari (' + periodStart + ' s/d ' + periodEnd + ')'"></span>
+                            <div class="text-right">
+                                <div class="text-gray-900 font-bold" x-text="durationDays + ' hari (' + periodStart + ' s/d ' + periodEnd + ')'"></div>
+                                <div class="text-[11px] text-primary-600 font-semibold" x-text="'Rencana Mulai & Kembali: Pukul ' + rentalTime + ' WIB'"></div>
+                            </div>
                         </div>
                         <div class="flex justify-between border-b border-gray-200/60 pb-2">
                             <span class="text-gray-500">Metode Penerimaan:</span>
@@ -793,9 +1022,12 @@
                                 <span class="font-bold text-gray-900 shrink-0" x-text="rp(itemSubtotal(item))"></span>
                             </div>
                         </template>
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-start">
                             <span>Durasi Sewa</span>
-                            <span class="font-bold text-gray-900" x-text="durationDays + ' hari'"></span>
+                            <div class="text-right">
+                                <span class="font-bold text-gray-900" x-text="durationDays + ' hari'"></span>
+                                <div class="text-[10px] text-gray-500 font-medium" x-text="'Rencana Pukul ' + rentalTime + ' WIB'"></div>
+                            </div>
                         </div>
                         <div class="flex justify-between">
                             <span>Ongkos Kirim</span>

@@ -145,10 +145,10 @@
                                 {{-- Preview Foto Dokumen seperti di Pemeriksaan Kondisi Fisik --}}
                                 @php
                                     $ktpImage = $order->identityGuarantee?->identity_document_image ?? $order->identityGuarantee?->ktp_photo;
-                                    $ktpUrl = $ktpImage ? (str_starts_with($ktpImage, 'http') ? $ktpImage : Storage::disk('public')->url($ktpImage)) : null;
+                                    $ktpUrl = storage_url($ktpImage);
 
                                     $proofImage = $order->latestPayment?->payment_proof ?? $order->latestPayment?->proof_of_payment;
-                                    $proofUrl = $proofImage ? (str_starts_with($proofImage, 'http') ? $proofImage : Storage::disk('public')->url($proofImage)) : null;
+                                    $proofUrl = storage_url($proofImage);
                                 @endphp
 
                                 @if($ktpUrl)

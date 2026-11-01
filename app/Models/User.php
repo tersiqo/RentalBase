@@ -83,4 +83,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class)->latest();
     }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->avatar ? storage_url($this->avatar) : null;
+    }
 }

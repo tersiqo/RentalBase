@@ -77,4 +77,10 @@ class Client extends Model
     {
         return $this->hasOne(TenantProfile::class);
     }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        $logo = $this->tenantProfile?->logo_path ?? $this->logo;
+        return $logo ? storage_url($logo) : null;
+    }
 }

@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TenantProfileRequest;
 use App\Models\Client;
+use App\Models\Product;
 use App\Models\TenantProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -41,7 +43,17 @@ class TenantProfileController extends Controller
             ? 'admin.settings.profile'
             : (view()->exists('admin.profile.edit') ? 'admin.profile.edit' : 'admin.theme.index');
 
-        return view($viewName, compact('profile', 'client', 'subscription', 'allowsCustomTheme'));
+        $products = Product::where('client_id', $client->id)
+            ->where('status', 'aktif')
+            ->orderBy('name')
+            ->get();
+
+        $heroShowcase = Cache::get("tenant_hero_showcase_{$client->id}", [
+            'mode' => 'illustration',
+            'product_id' => null,
+        ]);
+
+        return view($viewName, compact('profile', 'client', 'subscription', 'allowsCustomTheme', 'products', 'heroShowcase'));
     }
 
     /**
@@ -106,8 +118,33 @@ class TenantProfileController extends Controller
             $validated['logo_path'] = null;
         }
 
-        // Hapus input temporary 'logo' dari data update model
-        unset($validated['logo']);
+        // Handle pengaturan Tampilan Kartu Hero Katalog (Zero Migration via Cache)
+        if ($request->has('hero_showcase_mode')) {
+            $heroMode = $request->input('hero_showcase_mode', 'illustration');
+            if (! in_array($heroMode, ['illustration', 'featured'])) {
+                $heroMode = 'illustration';
+            }
+
+            $featuredProductId = $request->input('hero_featured_product_id');
+            if ($featuredProductId) {
+                $exists = Product::where('id', $featuredProductId)
+                    ->where('client_id', $client->id)
+                    ->where('status', 'aktif')
+                    ->exists();
+                if (! $exists) {
+                    $featuredProductId = null;
+                }
+            } else {
+                $featuredProductId = null;
+            }
+
+            Cache::forever("tenant_hero_showcase_{$client->id}", [
+                'mode' => $heroMode,
+                'product_id' => $featuredProductId ? (int) $featuredProductId : null,
+            ]);
+        }
+
+        unset($validated['hero_showcase_mode'], $validated['hero_featured_product_id']);
 
         // Update data TenantProfile yang ter-scoped
         $profile->update($validated);

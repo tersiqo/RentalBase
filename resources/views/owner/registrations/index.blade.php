@@ -381,7 +381,7 @@
                         @foreach($registrations as $reg)
                             @php
                                 $logo = $reg->client?->logo;
-                                $logoUrl = $logo ? asset('storage/' . $logo) : null;
+                                $logoUrl = storage_url($logo);
                                 $words = array_values(array_filter(explode(' ', trim($reg->business_name))));
                                 if (count($words) >= 2) {
                                     $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
@@ -473,7 +473,7 @@
                                                     status: '{{ $reg->status }}',
                                                     description: '{{ addslashes($reg->description ?? '') }}',
                                                     rejection_reason: '{{ addslashes($reg->rejection_reason ?? '') }}',
-                                                    payment_proof: '{{ $reg->payment_proof ? asset('storage/' . $reg->payment_proof) : '' }}',
+                                                    payment_proof: '{{ storage_url($reg->payment_proof) ?: '' }}',
                                                     created_at: '{{ $reg->created_at ? $reg->created_at->translatedFormat('d F Y, H:i') : '-' }}',
                                                     verify_url: '{{ route('owner.registrations.verify', $reg->id) }}',
                                                     reject_url: '{{ route('owner.registrations.reject', $reg->id) }}'

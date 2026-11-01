@@ -126,19 +126,20 @@ class ConditionCheckController extends Controller
         }
 
         // Simpan foto (mendukung single file atau multiple files)
+        $disk = config('filesystems.default', 'public');
         $imagePath = null;
         if ($request->hasFile('images')) {
             $paths = [];
             foreach ($request->file('images') as $file) {
                 if ($file && $file->isValid()) {
-                    $paths[] = $file->store('condition-checks', 'public');
+                    $paths[] = $file->store('condition-checks', $disk);
                 }
             }
             if (! empty($paths)) {
                 $imagePath = count($paths) === 1 ? $paths[0] : json_encode($paths);
             }
         } elseif ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('condition-checks', 'public');
+            $imagePath = $request->file('image')->store('condition-checks', $disk);
         }
 
         // Simpan rekaman kondisi ke database

@@ -23,10 +23,10 @@ class CustomerProductController extends Controller
         $product = Product::where('client_id', $client->id)
             ->where('id', $id)
             ->where('status', 'aktif')
-            ->with(['category', 'units' => function ($query) {
-                $query->where('status', 'tersedia');
-            }])
+            ->with(['category'])
             ->firstOrFail();
+
+        $product->available_units_count = $product->getAvailableUnitsForPeriod();
 
         session()->put('active_client_id', $client->id);
         session()->put('active_client_subdomain', $client->subdomain);

@@ -178,7 +178,7 @@
                 @if(!empty($existingProof))
                     <div style="margin-bottom: 12px; padding: 10px 14px; background-color: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; font-size: 12px; color: var(--slate-600); display: flex; align-items: center; justify-content: space-between;">
                         <span>Bukti pembayaran sebelumnya telah tersimpan. Pilih file baru jika ingin menggantinya.</span>
-                        <a href="{{ asset('storage/' . $existingProof) }}" target="_blank" style="color: var(--orange-600); font-weight: 600; text-decoration: none;">Lihat Bukti &rarr;</a>
+                        <a href="{{ storage_url($existingProof) }}" target="_blank" style="color: var(--orange-600); font-weight: 600; text-decoration: none;">Lihat Bukti &rarr;</a>
                     </div>
                 @endif
                 <input type="file" id="payment_proof" name="payment_proof" accept="image/png,image/jpeg,image/jpg" class="input @error('payment_proof') is-invalid @enderror" style="padding: 10px;" {{ empty($existingProof) ? 'required' : '' }}>

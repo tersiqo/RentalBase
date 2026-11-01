@@ -52,7 +52,37 @@ class CustomerCheckoutController extends Controller
 
         session()->put('checkout_items', $selectedHashes);
 
-        return view('customer.checkout', compact('client', 'items', 'period', 'total'));
+        $user = auth()->user();
+        $profileAddress = $user?->address ? trim($user->address) : null;
+
+        $lastOrder = null;
+        if ($user) {
+            $lastOrder = Order::where('user_id', $user->id)
+                ->where('shipping_method', Order::SHIPPING_KURIR)
+                ->whereNotNull('shipping_address')
+                ->where('shipping_address', '!=', '')
+                ->where('shipping_address', 'not like', 'Ambil di toko%')
+                ->latest('id')
+                ->first();
+        }
+
+        $lastOrderAddress = ($lastOrder && trim($lastOrder->shipping_address) !== $profileAddress)
+            ? trim($lastOrder->shipping_address)
+            : null;
+
+        $lastIdentity = $user
+            ? IdentityGuarantee::where('customer_id', $user->id)->latest('id')->first()
+            : null;
+
+        return view('customer.checkout', compact(
+            'client',
+            'items',
+            'period',
+            'total',
+            'profileAddress',
+            'lastOrderAddress',
+            'lastIdentity'
+        ));
     }
 
     public function direct(string $subdomain, Product $product)
@@ -120,8 +150,11 @@ class CustomerCheckoutController extends Controller
             'items.*.quantity' => 'nullable|integer|min:1',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
+            'rental_time' => ['nullable', 'date_format:H:i'],
             'shipping_address' => 'required|string|min:10',
             'shipping_method' => ['required', Rule::in([Order::SHIPPING_KURIR, Order::SHIPPING_AMBIL_TOKO])],
+            'whatsapp_number' => 'nullable|string|max:30',
+            'save_address_to_profile' => 'nullable',
             'full_name' => 'required|string|max:255',
             'identity_number' => 'required|string|min:8|max:30',
             'identity_address' => 'required|string|min:10',
@@ -135,6 +168,7 @@ class CustomerCheckoutController extends Controller
             'start_date.required' => 'Tanggal mulai sewa wajib diisi.',
             'end_date.required' => 'Tanggal selesai sewa wajib diisi.',
             'end_date.after_or_equal' => 'Tanggal selesai harus setelah tanggal mulai.',
+            'rental_time.date_format' => 'Format jam sewa harus berupa jam:menit (contoh 14:00).',
             'shipping_address.required' => 'Alamat pengiriman / rincian lokasi wajib diisi.',
             'shipping_address.min' => 'Alamat pengiriman terlalu singkat.',
             'shipping_method.required' => 'Metode penerimaan wajib dipilih.',
@@ -183,9 +217,16 @@ class CustomerCheckoutController extends Controller
             return back()->withErrors(['period' => 'Semua item yang dipilih harus memiliki periode tanggal sewa yang sama.']);
         }
 
-        $startDate = Carbon::parse($request->start_date);
-        $endDate = Carbon::parse($request->end_date);
-        $durationDays = max(1, $startDate->diffInDays($endDate) + 1);
+        $rentalTime = $request->filled('rental_time')
+            ? (string) $request->input('rental_time')
+            : now()->format('H:i');
+
+        $startDay = Carbon::parse($request->start_date)->startOfDay();
+        $endDay = Carbon::parse($request->end_date)->startOfDay();
+        $durationDays = max(1, (int) $startDay->diffInDays($endDay) + 1);
+
+        $startDate = Carbon::parse($request->start_date)->setTimeFromTimeString($rentalTime);
+        $endDate = Carbon::parse($request->end_date)->setTimeFromTimeString($rentalTime);
 
         $requested = $request->input('items', []);
         $lines = [];
@@ -228,8 +269,9 @@ class CustomerCheckoutController extends Controller
 
         DB::beginTransaction();
         try {
-            $docPath = $request->file('identity_document_image')->store('identity_guarantees', 'public');
-            $facePath = $request->file('face_image')->store('identity_guarantees', 'public');
+            $disk = config('filesystems.default', 'public');
+            $docPath = $request->file('identity_document_image')->store('identity_guarantees', $disk);
+            $facePath = $request->file('face_image')->store('identity_guarantees', $disk);
 
             $orderNumber = 'ORD-'.strtoupper(Str::random(5)).'-'.date('Ymd');
 
@@ -266,6 +308,28 @@ class CustomerCheckoutController extends Controller
                 'identity_address' => $request->identity_address,
                 'status' => 'menunggu',
             ]);
+
+            $user = auth()->user();
+            if ($user) {
+                $userUpdates = [];
+
+                $isKurir = $request->shipping_method === Order::SHIPPING_KURIR;
+                $userAddressEmpty = empty(trim($user->address ?? ''));
+                $shouldSaveAddress = $request->boolean('save_address_to_profile') || $userAddressEmpty;
+
+                if ($isKurir && $shouldSaveAddress && ! empty($request->shipping_address)) {
+                    $userUpdates['address'] = $request->shipping_address;
+                }
+
+                $waNumber = $request->input('whatsapp_number');
+                if (! empty($waNumber) && empty(trim($user->phone ?? ''))) {
+                    $userUpdates['phone'] = $waNumber;
+                }
+
+                if (! empty($userUpdates)) {
+                    $user->update($userUpdates);
+                }
+            }
 
             DB::commit();
 

@@ -458,9 +458,7 @@
                             <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-3 border border-gray-200 rounded-xl bg-gray-50/70">
                                 @php
                                     $qrisMethod = $allMethods->first(fn($m) => !empty($m->qris_image));
-                                    $qrisImg = $qrisMethod?->qris_image
-                                        ? (str_starts_with($qrisMethod->qris_image, 'http') ? $qrisMethod->qris_image : Storage::url($qrisMethod->qris_image))
-                                        : null;
+                                    $qrisImg = storage_url($qrisMethod?->qris_image);
                                 @endphp
                                 @if($qrisImg)
                                     <img src="{{ $qrisImg }}" alt="QRIS Toko" class="w-40 h-40 mx-auto object-contain mb-2 rounded-lg bg-white p-1 border border-gray-200">

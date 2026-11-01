@@ -169,9 +169,7 @@ class Order extends Model
         $image = $firstItem?->product?->main_image;
 
         if ($image) {
-            return str_starts_with($image, 'http')
-                ? $image
-                : Storage::url($image);
+            return storage_url($image);
         }
 
         return 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=200';
@@ -281,5 +279,89 @@ class Order extends Model
         }
 
         return $this->identityGuarantee && $this->identityGuarantee->status === 'ditolak';
+    }
+
+    /**
+     * Menyesuaikan jam mulai sewa & batas waktu pengembalian saat serah terima barang
+     * jika proses verifikasi/pembayaran/pengiriman melewati jadwal rencana sewa awal.
+     */
+    public function syncRentalHoursOnHandover(?\Carbon\CarbonInterface $handoverTime = null): bool
+    {
+        if (! $this->rental_start_date || ! $this->rental_end_date) {
+            return false;
+        }
+
+        $effectiveTime = ($handoverTime ? \Illuminate\Support\Carbon::instance($handoverTime) : \Illuminate\Support\Carbon::now())->copy()->second(0);
+
+        // Hanya sinkronkan jika serah terima riil melewati jadwal rencana awal
+        if (! $effectiveTime->greaterThan($this->rental_start_date)) {
+            return false;
+        }
+
+        $durationDays = max(1, (int) ($this->duration_days ?? 1));
+        $daySpan = max(0, $durationDays - 1);
+
+        $newStart = $effectiveTime->copy();
+        $newEnd = $effectiveTime->copy()->addDays($daySpan);
+
+        $this->update([
+            'rental_start_date' => $newStart,
+            'rental_end_date' => $newEnd,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Waktu paling cepat serah terima / pengiriman barang dapat diproses:
+     * - Ambil Sendiri di Toko: Hari-H tanggal mulai sewa
+     * - Kirim via Kurir: H-1 sebelum tanggal mulai sewa
+     */
+    public function earliestHandoverDate(): \Illuminate\Support\Carbon
+    {
+        if ($this->isPickup()) {
+            return $this->rental_start_date
+                ? $this->rental_start_date->copy()->startOfDay()
+                : \Illuminate\Support\Carbon::now()->startOfDay();
+        }
+
+        return $this->rental_start_date
+            ? $this->rental_start_date->copy()->subDay()->startOfDay()
+            : \Illuminate\Support\Carbon::now()->startOfDay();
+    }
+
+    /**
+     * Mengecek apakah pesanan sudah boleh diserahkan atau dikirim.
+     */
+    public function canProcessHandover(?\Carbon\CarbonInterface $now = null): bool
+    {
+        $current = $now ? \Illuminate\Support\Carbon::instance($now) : \Illuminate\Support\Carbon::now();
+
+        return $current->gte($this->earliestHandoverDate());
+    }
+
+    /**
+     * Alasan informatif jika serah terima belum dapat diproses karena mendahului jadwal.
+     */
+    public function getHandoverBlockedReasonAttribute(): ?string
+    {
+        if ($this->canProcessHandover()) {
+            return null;
+        }
+
+        $startDateFormatted = $this->rental_start_date ? $this->rental_start_date->translatedFormat('d M Y') : '-';
+
+        if ($this->isPickup()) {
+            return sprintf(
+                'Penyerahan di toko baru dibuka pada Hari-H (%s).',
+                $startDateFormatted
+            );
+        }
+
+        return sprintf(
+            'Pengiriman kurir baru dibuka mulai H-1 (%s) untuk jadwal mulai sewa %s.',
+            $this->earliestHandoverDate()->translatedFormat('d M Y'),
+            $startDateFormatted
+        );
     }
 }
