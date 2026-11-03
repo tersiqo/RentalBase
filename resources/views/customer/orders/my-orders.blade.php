@@ -233,34 +233,18 @@
                         </div>
 
                         <!-- Footer Card Action Buttons -->
-                        <div class="flex flex-wrap sm:flex-nowrap gap-3 mt-4 pt-3 border-t border-gray-50">
-                            <!-- Tombol Lihat Detail: Buka View Detail Lengkap -->
-                            <button type="button"
-                                    @click="openDetail({{ $order->id }})" 
-                                    class="flex-1 bg-orange-500 text-white font-bold py-2.5 rounded-xl hover:bg-orange-600 transition text-sm flex items-center justify-center gap-1.5 shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                <span>Lihat Detail</span>
-                            </button>
-
-                            @if($order->damageReports()->exists())
-                                <a href="{{ route('customer.orders.damage', $order->id) }}"
-                                   class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold py-2.5 rounded-xl transition text-sm flex items-center justify-center gap-1.5 shadow-2xs">
-                                    <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                    <span>Lihat Klaim Kerusakan</span>
-                                </a>
-                            @endif
-                            
+                        <div class="flex flex-wrap items-center justify-end gap-2.5 sm:gap-3 mt-4 pt-3.5 border-t border-gray-100">
                             @if($order->can_cancel)
                                 <button type="button" 
                                         @click="openCancelModal('{{ $order->order_number ?? ('ORD-' . $order->id) }}', '{{ route('customer.orders.cancel', $order->id) }}')" 
-                                        class="flex-1 bg-white text-red-600 border border-red-300 font-bold py-2.5 rounded-xl hover:bg-red-50 transition text-sm flex items-center justify-center gap-1">
+                                        class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-red-200 bg-white text-red-600 font-semibold hover:bg-red-50 hover:border-red-300 transition text-sm">
                                     <span>Batalkan Pesanan</span>
                                 </button>
                             @endif
 
                             @if($order->can_return)
                                 <a href="{{ route('customer.orders.return.form', $order->id) }}" 
-                                   class="flex-1 bg-white text-orange-600 border border-orange-300 font-bold py-2.5 rounded-xl hover:bg-orange-50 transition text-sm flex items-center justify-center gap-1">
+                                   class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-orange-200 bg-white text-orange-600 font-semibold hover:bg-orange-50 hover:border-orange-300 transition text-sm">
                                     <span>Ajukan Pengembalian</span>
                                 </a>
                             @endif
@@ -268,10 +252,26 @@
                             @if($order->can_receive)
                                 <button type="button" 
                                         @click="openReceiveModal('{{ $order->order_number ?? ('ORD-' . $order->id) }}', '{{ route('customer.orders.receive', $order->id) }}')" 
-                                        class="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl hover:bg-emerald-700 transition text-sm flex items-center justify-center gap-1 shadow-sm">
+                                        class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition text-sm shadow-xs">
                                     <span>Terima Barang</span>
                                 </button>
                             @endif
+
+                            @if($order->damageReports()->exists())
+                                <a href="{{ route('customer.orders.damage', $order->id) }}"
+                                   class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-rose-300 bg-white hover:bg-rose-50 text-rose-600 font-bold transition text-sm shadow-2xs">
+                                    <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <span>Lihat klaim kerusakan</span>
+                                </a>
+                            @endif
+
+                            <!-- Tombol Lihat Detail: Buka View Detail Lengkap -->
+                            <button type="button"
+                                    @click="openDetail({{ $order->id }})" 
+                                    class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-xs transition text-sm">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <span>Lihat detail</span>
+                            </button>
                         </div>
 
                     </div>

@@ -777,6 +777,25 @@
                         </div>
                     @endif
 
+                    @if($order->can_pay_late_fee)
+                        <button type="button" 
+                                @click="lateFeeModalOpen = true" 
+                                class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            <span>Bayar & Unggah Bukti Denda</span>
+                        </button>
+                    @endif
+
+                    @if($return && $return->late_fee_status === 'menunggu_verifikasi')
+                        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+                            <span class="text-base">⏳</span>
+                            <div>
+                                <p class="font-bold">Bukti Pembayaran Denda Telah Dikirim</p>
+                                <p class="text-[11px] mt-0.5">Toko sedang memverifikasi bukti transfer denda Anda. Fisik KTP akan diserahkan kembali setelah verifikasi selesai.</p>
+                            </div>
+                        </div>
+                    @endif
+
                     @if($order->can_cancel)
                         <button type="button" 
                                 @click="openCancelModal('{{ $order->order_number ?? ('ORD-' . $order->id) }}', '{{ route('customer.orders.cancel', $order->id) }}')" 
@@ -788,7 +807,7 @@
 
                     @if($order->can_return)
                         <a href="{{ route('customer.orders.return.form', $order->id) }}" 
-                           class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-1.5">
+                            class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-1.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                             <span>Ajukan Pengembalian</span>
                         </a>
@@ -803,7 +822,7 @@
                         </button>
                     @endif
 
-                    @if(!$order->can_cancel && !$order->can_return && !$order->can_receive)
+                    @if(!$order->can_cancel && !$order->can_return && !$order->can_receive && !$order->can_pay_late_fee && (!isset($return) || $return->late_fee_status !== 'menunggu_verifikasi'))
                         <p class="text-xs text-gray-400 italic text-center py-1">
                             Tidak ada aksi lanjutan yang perlu dilakukan untuk status pesanan ini.
                         </p>

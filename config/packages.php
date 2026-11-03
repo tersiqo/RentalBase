@@ -65,4 +65,17 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Kata Cadangan Subdomain Sistem (Reserved Subdomains)
+    |--------------------------------------------------------------------------
+    | Subdomain berikut tidak boleh didaftarkan atau digunakan oleh tenant
+    | untuk mencegah bentrok dengan rute core platform dan layanan sistem.
+    */
+    'reserved_subdomains' => [
+        'admin', 'owner', 'api', 'www', 'app', 'system', 'root', 'mail',
+        'support', 'help', 'login', 'register', 'auth', 'dashboard',
+        'billing', 'payment', 'public', 'assets', 'static', 'cdn',
+    ],
+
 ];

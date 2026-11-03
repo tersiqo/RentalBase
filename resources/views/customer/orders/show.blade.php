@@ -15,6 +15,7 @@
         receiveModalOpen: false,
         receiveActionUrl: '',
         receiveOrderNumber: '',
+        lateFeeModalOpen: false,
         toastMessage: '',
         showToast: false,
 
@@ -171,6 +172,72 @@
                 <button type="submit" class="flex-1 py-2.5 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm">
                     Ya, Sudah Diterima
                 </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 5: Unggah Bukti Pembayaran Denda -->
+    <div x-show="lateFeeModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" style="display: none;" x-transition>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 text-left" @click.away="lateFeeModalOpen = false">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">💳</span>
+                    <h3 class="font-bold text-base text-gray-900">Pelunasan Denda Keterlambatan</h3>
+                </div>
+                <button type="button" @click="lateFeeModalOpen = false" class="text-gray-400 hover:text-gray-600 font-bold">✕</button>
+            </div>
+
+            @php
+                $lateFeeAmount = (float) ($order->returnModel?->late_fee_amount ?? 0);
+                $clientPaymentMethods = ($client?->clientPaymentMethods()->where('is_active', true)->exists())
+                    ? $client->clientPaymentMethods()->where('is_active', true)->get()
+                    : ($client?->paymentMethods()->where('is_active', true)->get() ?? collect());
+            @endphp
+
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4 text-xs space-y-1">
+                <div class="flex justify-between items-center">
+                    <span class="text-amber-800 font-medium">Tagihan Denda Keterlambatan:</span>
+                    <span class="font-bold text-amber-900 font-mono text-sm">Rp {{ number_format($lateFeeAmount, 0, ',', '.') }}</span>
+                </div>
+                <p class="text-[11px] text-amber-700">Silakan transfer nominal di atas ke salah satu rekening toko di bawah ini, lalu unggah struk/bukti transfer.</p>
+            </div>
+
+            @if($clientPaymentMethods->isNotEmpty())
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-700 mb-2">Rekening Pembayaran Toko:</label>
+                    <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        @foreach($clientPaymentMethods as $pm)
+                            <div class="p-2.5 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-between text-xs">
+                                <div>
+                                    <span class="font-bold text-gray-800 uppercase">{{ $pm->bank_name ?? $pm->provider_name ?? 'Bank' }}</span>
+                                    <span class="block font-mono text-gray-900 font-bold">{{ $pm->account_number }}</span>
+                                    <span class="text-[10px] text-gray-500">a.n. {{ $pm->account_holder_name ?? $pm->account_name }}</span>
+                                </div>
+                                <button type="button" @click="copyToClipboard('{{ $pm->account_number }}')" class="px-2 py-1 bg-white border border-gray-300 rounded text-[11px] font-semibold text-gray-700 hover:bg-gray-100">
+                                    Salin
+                                </button>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <form action="{{ route('customer.orders.pay-late-fee', $order->id) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Unggah Bukti Transfer / Struk <span class="text-red-500">*</span></label>
+                    <input type="file" name="late_fee_proof" accept="image/jpeg,image/png,image/jpg,application/pdf" required class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 border border-gray-200 rounded-xl p-1.5 focus:outline-none">
+                    <span class="text-[10px] text-gray-400 mt-1 block">Format: JPG, PNG, atau PDF (Maks. 2 MB)</span>
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="button" @click="lateFeeModalOpen = false" class="flex-1 py-2 rounded-xl font-bold text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="flex-1 py-2 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-700 text-white transition shadow-sm">
+                        Kirim Bukti Bayar
+                    </button>
+                </div>
             </form>
         </div>
     </div>

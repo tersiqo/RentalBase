@@ -540,6 +540,12 @@
                         <div>
                             <strong class="font-bold block text-purple-950">KTP Fisik Dititipkan di Toko</strong>
                             <p class="text-purple-800 text-[11px] mt-0.5 leading-relaxed">Fisik kartu KTP/identitas asli penyewa saat ini ditahan di toko sebagai jaminan sewa dan wajib diserahkan kembali saat pengembalian selesai.</p>
+                            @if($order->identityGuarantee->deposited_at)
+                                <p class="text-purple-700 text-[10px] mt-1 font-semibold flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    Diterima fisik: {{ \Carbon\Carbon::parse($order->identityGuarantee->deposited_at)->translatedFormat('d M Y, H:i') }} WIB
+                                </p>
+                            @endif
                         </div>
                     </div>
                 @elseif($order->identityGuarantee->status === 'dikembalikan')
@@ -548,6 +554,12 @@
                         <div>
                             <strong class="font-bold block text-emerald-950">KTP Fisik Telah Dikembalikan</strong>
                             <p class="text-emerald-800 text-[11px] mt-0.5 leading-relaxed">Fisik kartu KTP/identitas asli telah diserahkan kembali kepada penyewa setelah sewa selesai.</p>
+                            @if($order->identityGuarantee->returned_at)
+                                <p class="text-emerald-700 text-[10px] mt-1 font-semibold flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    Dikembalikan: {{ \Carbon\Carbon::parse($order->identityGuarantee->returned_at)->translatedFormat('d M Y, H:i') }} WIB
+                                </p>
+                            @endif
                         </div>
                     </div>
                 @endif

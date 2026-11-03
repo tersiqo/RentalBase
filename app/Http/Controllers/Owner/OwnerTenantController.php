@@ -77,7 +77,9 @@ class OwnerTenantController extends Controller
         ];
 
         $pendaftaranMenunggu = ClientRegistration::where('status', 'menunggu_verifikasi')->count();
-        $packages = config('packages', []);
+        $packages = collect(config('packages', []))->filter(function ($pkg, $k) {
+            return is_array($pkg) && isset($pkg['name']) && $k !== 'reserved_subdomains';
+        })->all();
 
         return view('owner.tenants.index', compact(
             'tenants',
@@ -105,6 +107,7 @@ class OwnerTenantController extends Controller
                 'max:255',
                 'alpha_dash',
                 Rule::unique('clients', 'subdomain')->ignore($client->id),
+                Rule::notIn(config('packages.reserved_subdomains', [])),
             ],
             'description'   => 'nullable|string',
             'theme_color'   => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/i',
@@ -123,6 +126,7 @@ class OwnerTenantController extends Controller
             'subdomain.required'     => 'Subdomain wajib diisi.',
             'subdomain.unique'       => 'Subdomain sudah digunakan oleh tenant lain.',
             'subdomain.alpha_dash'   => 'Subdomain hanya boleh berupa huruf, angka, dan strip (-).',
+            'subdomain.not_in'       => 'Subdomain :input merupakan kata cadangan sistem RentalBase dan tidak dapat digunakan sebagai nama toko.',
             'admin_name.required'    => 'Nama PIC / Pengelola wajib diisi.',
             'admin_email.required'   => 'Email PIC wajib diisi.',
             'admin_email.unique'     => 'Email ini sudah terdaftar pada user lain.',
@@ -220,9 +224,9 @@ class OwnerTenantController extends Controller
      */
     public function updateSubscription(Request $request, Client $client)
     {
-        $availablePlans = array_keys(config('packages', [
-            'starter' => [], 'business' => [], 'professional' => []
-        ]));
+        $availablePlans = array_keys(collect(config('packages', []))->filter(function ($pkg, $k) {
+            return is_array($pkg) && isset($pkg['name']) && $k !== 'reserved_subdomains';
+        })->all());
 
         $request->validate([
             'plan_name'     => ['required', 'string', Rule::in($availablePlans)],

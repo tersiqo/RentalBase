@@ -47,7 +47,7 @@ class SubscriptionController extends Controller
             $query->whereRaw('LOWER(plan_name) = ?', [$planFilter]);
         }
 
-        // Filter berdasarkan Status (active, expiring_soon, expired, suspended)
+        // Filter berdasarkan Status (active, expiring_soon, expired, suspended, pending)
         if ($statusFilter !== 'all') {
             if ($statusFilter === 'active') {
                 $query->where('status', 'aktif')
@@ -67,6 +67,11 @@ class SubscriptionController extends Controller
                       ->orWhereHas('client', function ($cq) {
                           $cq->where('status', 'suspended');
                       });
+                });
+            } elseif ($statusFilter === 'pending' || $statusFilter === 'menunggu_konfirmasi') {
+                $query->where(function ($q) {
+                    $q->whereIn('status', ['menunggu_konfirmasi', 'menunggu'])
+                      ->orWhere('payment_status', 'menunggu');
                 });
             }
         }
@@ -122,7 +127,9 @@ class SubscriptionController extends Controller
             ->whereHas('client', fn ($q) => $q->where('status', '!=', 'menunggu_verifikasi'))
             ->get();
 
-        $packagesConfig = config('packages', []);
+        $packagesConfig = collect(config('packages', []))->filter(function ($pkg, $k) {
+            return is_array($pkg) && isset($pkg['name']) && $k !== 'reserved_subdomains';
+        })->all();
         $totalMrr = 0;
 
         foreach ($activeSubscriptions as $sub) {
@@ -145,6 +152,7 @@ class SubscriptionController extends Controller
         ];
 
         $pendaftaranMenunggu = ClientRegistration::where('status', 'menunggu_verifikasi')->count();
+        $pendingSubscriptionsCount = Subscription::where('status', 'menunggu_konfirmasi')->orWhere('payment_status', 'menunggu')->count();
 
         return view('owner.subscriptions.index', compact(
             'subscriptions',
@@ -153,7 +161,8 @@ class SubscriptionController extends Controller
             'statusFilter',
             'search',
             'packagesConfig',
-            'pendaftaranMenunggu'
+            'pendaftaranMenunggu',
+            'pendingSubscriptionsCount'
         ));
     }
 
@@ -292,5 +301,136 @@ class SubscriptionController extends Controller
         }
 
         return view('owner.subscriptions.history', compact('subscription', 'logs', 'allSubscriptions'));
+    }
+
+    /**
+     * Memverifikasi pengajuan perpanjangan / upgrade dari Admin Tenant.
+     */
+    public function verifyPayment(Request $request, $id)
+    {
+        $timezone = config('app.timezone', 'Asia/Jakarta');
+        $now = Carbon::now($timezone);
+
+        $subscription = Subscription::with('client')->findOrFail($id);
+
+        if ($subscription->status === 'aktif' && $subscription->payment_status === 'diverifikasi') {
+            return redirect()->route('owner.subscriptions.index')
+                ->with('error', 'Langganan ini sudah diverifikasi dan berstatus aktif.');
+        }
+
+        $planKey = strtolower($subscription->plan_name);
+        $packageConfig = config("packages.{$planKey}", [
+            'duration_months' => 6,
+            'price' => 0,
+            'limits' => ['products' => 50, 'admins' => 3],
+        ]);
+        $durationMonths = $packageConfig['duration_months'] ?? 6;
+
+        // Ambil subscription aktif sebelumnya (jika ada)
+        $previousActive = Subscription::where('client_id', $subscription->client_id)
+            ->where('status', 'aktif')
+            ->where('id', '!=', $subscription->id)
+            ->latest('id')
+            ->first();
+
+        $isUpgrade = $previousActive && strtolower($previousActive->plan_name) !== $planKey;
+        $isCurrentlyActive = $previousActive && $previousActive->end_date && Carbon::parse($previousActive->end_date, $timezone)->isFuture();
+
+        // Model Pilihan A:
+        // 1. Jika Upgrade: Reset periode penuh terhitung dari HARI INI (now() s/d now() + duration_months)
+        // 2. Jika Perpanjang (Paket Sama):
+        //    - Jika masih aktif: Tanggal akhir baru = end_date_lama + duration_months (sisa hari TIDAK hangus)
+        //    - Jika sudah expired: start_date = now(), end_date = now() + duration_months
+        if ($isUpgrade || ! $isCurrentlyActive) {
+            $newStartDate = $now->copy();
+            $newEndDate = $now->copy()->addMonths($durationMonths);
+        } else {
+            $newStartDate = Carbon::parse($previousActive->start_date, $timezone);
+            $newEndDate = Carbon::parse($previousActive->end_date, $timezone)->copy()->addMonths($durationMonths);
+        }
+
+        DB::transaction(function () use ($subscription, $previousActive, $newStartDate, $newEndDate, $durationMonths, $packageConfig, $isUpgrade, $request) {
+            // Tandai subscription sebelumnya sebagai diperbarui
+            if ($previousActive) {
+                $previousActive->update(['status' => 'diperbarui']);
+            }
+
+            // Aktifkan subscription ini
+            $subscription->update([
+                'start_date' => $newStartDate,
+                'end_date' => $newEndDate,
+                'status' => 'aktif',
+                'payment_status' => 'diverifikasi',
+                'rejection_reason' => null,
+                'max_products' => $packageConfig['limits']['products'] ?? $subscription->max_products,
+                'max_users' => $packageConfig['limits']['admins'] ?? $subscription->max_users,
+            ]);
+
+            // Re-aktifkan client jika ditangguhkan/suspended
+            if ($subscription->client && $subscription->client->status !== 'aktif') {
+                $subscription->client->update(['status' => 'aktif']);
+            }
+
+            // Catat log audit
+            ActivityLog::create([
+                'client_id' => $subscription->client_id,
+                'user_id' => Auth::id(),
+                'action' => $isUpgrade ? 'subscription_upgraded' : 'subscription_renewed',
+                'module' => 'subscriptions',
+                'description' => sprintf(
+                    '%s langganan paket %s (%d bulan) telah diverifikasi dan diaktifkan. Ref: %s. Masa aktif: %s s/d %s.',
+                    $isUpgrade ? 'Upgrade' : 'Perpanjangan',
+                    ucfirst($subscription->plan_name),
+                    $durationMonths,
+                    $subscription->notes ?? '-',
+                    $newStartDate->format('d/m/Y'),
+                    $newEndDate->format('d/m/Y')
+                ),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        });
+
+        $actionType = $isUpgrade ? 'Upgrade' : 'Perpanjangan';
+        return redirect()->route('owner.subscriptions.index')
+            ->with('success', "{$actionType} paket '{$subscription->plan_name}' untuk toko '{$subscription->client?->business_name}' berhasil disetujui & diaktifkan hingga " . $newEndDate->translatedFormat('d F Y') . ".");
+    }
+
+    /**
+     * Menolak pengajuan perpanjangan / upgrade dari Admin Tenant dengan alasan.
+     */
+    public function rejectPayment(Request $request, $id)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ], [
+            'rejection_reason.required' => 'Alasan penolakan bukti pembayaran wajib diisi.',
+            'rejection_reason.max' => 'Alasan penolakan maksimal 500 karakter.',
+        ]);
+
+        $subscription = Subscription::with('client')->findOrFail($id);
+
+        $subscription->update([
+            'status' => 'ditolak',
+            'payment_status' => 'ditolak',
+            'rejection_reason' => $request->rejection_reason,
+        ]);
+
+        ActivityLog::create([
+            'client_id' => $subscription->client_id,
+            'user_id' => Auth::id(),
+            'action' => 'subscription_rejected',
+            'module' => 'subscriptions',
+            'description' => sprintf(
+                'Pengajuan langganan paket %s ditolak oleh Owner. Alasan: %s',
+                ucfirst($subscription->plan_name),
+                $request->rejection_reason
+            ),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return redirect()->route('owner.subscriptions.index')
+            ->with('success', "Pengajuan langganan toko '{$subscription->client?->business_name}' telah ditolak dengan alasan tersimpan.");
     }
 }

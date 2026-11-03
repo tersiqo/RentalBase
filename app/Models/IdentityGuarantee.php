@@ -8,6 +8,11 @@ class IdentityGuarantee extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'deposited_at' => 'datetime',
+        'returned_at'  => 'datetime',
+    ];
+
     public const STATUS_MENUNGGU = 'menunggu';
     public const STATUS_DIVERIFIKASI = 'diverifikasi';
     public const STATUS_DITOLAK = 'ditolak';

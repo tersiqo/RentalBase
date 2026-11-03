@@ -8,6 +8,15 @@ class Product extends Model
 {
     protected $guarded = [];
 
+    protected $casts = [
+        'images' => 'array',
+    ];
+
+    protected $appends = [
+        'cover_image_url',
+        'gallery_images',
+    ];
+
     public function category()
     {
         return $this->belongsTo(Category::class);
@@ -56,6 +65,37 @@ class Product extends Model
         }
 
         return 'https://placehold.co/400x300/f8fafc/64748b?text=' . urlencode($this->name ?? 'No Image');
+    }
+
+    public function getGalleryImagesAttribute(): array
+    {
+        $gallery = [];
+
+        if (! empty($this->main_image)) {
+            $gallery[] = storage_url($this->main_image);
+        }
+
+        $extraImages = $this->images ?? [];
+        if (is_string($extraImages)) {
+            $extraImages = json_decode($extraImages, true) ?? [];
+        }
+
+        if (is_array($extraImages)) {
+            foreach ($extraImages as $img) {
+                if (! empty($img)) {
+                    $url = storage_url($img);
+                    if ($url && ! in_array($url, $gallery, true)) {
+                        $gallery[] = $url;
+                    }
+                }
+            }
+        }
+
+        if (empty($gallery)) {
+            $gallery[] = 'https://placehold.co/800x600/f8fafc/64748b?text=' . urlencode($this->name ?? 'No Image');
+        }
+
+        return $gallery;
     }
 
     public function getAvailableUnitsForPeriod($startDate = null, $endDate = null): int

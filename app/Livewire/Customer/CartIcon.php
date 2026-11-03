@@ -20,7 +20,16 @@ class CartIcon extends Component
     public function updateCount()
     {
         $cart = session()->get('cart', []);
-        $this->count = collect($cart)->sum('quantity');
+        $this->count = collect($cart)->filter(function ($item) {
+            if ($this->client && isset($item['client_id'])) {
+                return (int) $item['client_id'] === (int) $this->client->id;
+            }
+            if ($this->client && isset($item['product_id'])) {
+                $prod = \App\Models\Product::find($item['product_id']);
+                return $prod && (int) $prod->client_id === (int) $this->client->id;
+            }
+            return true;
+        })->sum('quantity');
     }
 
     public function render()

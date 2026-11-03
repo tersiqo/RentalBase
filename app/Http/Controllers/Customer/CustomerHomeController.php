@@ -11,10 +11,15 @@ class CustomerHomeController extends Controller
 {
     public function index(string $subdomain)
     {
-        // Query aslinya kita nyalakan lagi
-        $client = Client::where('subdomain', $subdomain)
-            ->where('status', 'aktif')
-            ->firstOrFail();
+        $client = Client::where('subdomain', $subdomain)->firstOrFail();
+
+        if (in_array($client->status, ['suspended', 'nonaktif'])) {
+            return response()->view('errors.tenant-suspended', compact('client'), 503);
+        }
+
+        if ($client->status !== 'aktif') {
+            abort(404, 'Toko sedang tidak aktif.');
+        }
 
         $categories = Category::where('client_id', $client->id)
             ->orderBy('name')

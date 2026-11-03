@@ -169,6 +169,7 @@ class ProductCatalog extends Component
         } else {
             $cart[$hash] = [
                 'hash' => $hash,
+                'client_id' => $this->client->id,
                 'product_id' => $this->modalProduct->id,
                 'name' => $this->modalProduct->name,
                 'price' => $this->modalProduct->rental_price_per_day,
@@ -228,6 +229,7 @@ class ProductCatalog extends Component
         } else {
             $cart[$hash] = [
                 'hash' => $hash,
+                'client_id' => $this->client->id,
                 'product_id' => $product->id,
                 'name' => $product->name,
                 'price' => $product->rental_price_per_day,
@@ -323,6 +325,14 @@ class ProductCatalog extends Component
     #[Computed]
     public function heroShowcase(): array
     {
+        $profile = $this->client->tenantProfile;
+        if ($profile && $profile->hero_showcase_mode) {
+            return [
+                'mode' => $profile->hero_showcase_mode,
+                'product_id' => $profile->hero_featured_product_id,
+            ];
+        }
+
         return Cache::get("tenant_hero_showcase_{$this->client->id}", [
             'mode' => 'illustration',
             'product_id' => null,

@@ -43,29 +43,88 @@
 
     <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-0">
-            <!-- Product Image -->
-            <div class="relative bg-gray-50 p-8 flex items-center justify-center border-b md:border-b-0 md:border-r border-gray-200">
-                <img src="{{ $product->main_image ? Storage::url($product->main_image) : 'https://placehold.co/800x600/e2e8f0/475569?text=No+Image' }}" alt="{{ $product->name }}" class="w-full h-auto object-contain max-h-[500px] drop-shadow-xl rounded-lg" onerror="this.src='https://placehold.co/800x600/e2e8f0/475569?text=Image+Error'">
+            <!-- Product Image Gallery -->
+            @php
+                $galleryImages = $product->gallery_images;
+            @endphp
+            <div class="relative bg-gray-50/70 p-6 sm:p-8 flex flex-col items-center justify-between border-b md:border-b-0 md:border-r border-gray-200"
+                 x-data="{
+                     activeIdx: 0,
+                     images: {{ json_encode($galleryImages) }},
+                     next() { this.activeIdx = (this.activeIdx + 1) % this.images.length; },
+                     prev() { this.activeIdx = (this.activeIdx - 1 + this.images.length) % this.images.length; }
+                 }">
                 
+                {{-- Stock Badge (Top Left) --}}
                 @php
                     $availCount = $product->available_units_count ?? $product->getAvailableUnitsForPeriod();
                 @endphp
                 @if($availCount > 0)
-                <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-green-200 shadow-sm flex items-center gap-1.5">
+                <div class="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-green-200 shadow-sm flex items-center gap-1.5">
                     <span class="relative flex h-2.5 w-2.5">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                     </span>
-                    <span class="text-sm font-semibold text-green-600">{{ $availCount }} Unit Tersedia</span>
+                    <span class="text-xs font-bold text-green-700">{{ $availCount }} Unit Tersedia</span>
                 </div>
                 @else
-                <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-red-200 shadow-sm flex items-center gap-1.5">
+                <div class="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-red-200 shadow-sm flex items-center gap-1.5">
                     <span class="relative flex h-2.5 w-2.5">
                       <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
                     </span>
-                    <span class="text-sm font-semibold text-red-600">Stok Kosong</span>
+                    <span class="text-xs font-bold text-red-700">Stok Kosong</span>
                 </div>
                 @endif
+
+                {{-- Photo Counter Badge (Top Right when > 1 image) --}}
+                <div x-show="images.length > 1" class="absolute top-4 right-4 z-10 bg-slate-900/75 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span x-text="(activeIdx + 1) + ' / ' + images.length"></span>
+                </div>
+
+                {{-- Main Image Viewport with Chevron Navigation --}}
+                <div class="w-full flex-1 flex items-center justify-center min-h-[320px] max-h-[460px] relative group my-auto">
+                    <img :src="images[activeIdx]" 
+                         alt="{{ $product->name }}" 
+                         class="w-full h-auto object-contain max-h-[420px] drop-shadow-md rounded-xl transition-all duration-300"
+                         onerror="this.src='https://placehold.co/800x600/e2e8f0/475569?text=Image+Error'">
+
+                    {{-- Prev Button --}}
+                    <button type="button"
+                            x-show="images.length > 1"
+                            @click="prev()"
+                            class="absolute left-2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-slate-700 shadow-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-105 focus:outline-none"
+                            aria-label="Foto Sebelumnya">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+
+                    {{-- Next Button --}}
+                    <button type="button"
+                            x-show="images.length > 1"
+                            @click="next()"
+                            class="absolute right-2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-slate-700 shadow-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-105 focus:outline-none"
+                            aria-label="Foto Berikutnya">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+
+                {{-- Thumbnail Strip (Only shown when > 1 image) --}}
+                <div x-show="images.length > 1" class="w-full mt-4 pt-3 border-t border-gray-200/70">
+                    <div class="flex items-center justify-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+                        <template x-for="(imgUrl, idx) in images" :key="idx">
+                            <button type="button"
+                                    @click="activeIdx = idx"
+                                    class="relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 bg-white"
+                                    :class="activeIdx === idx ? 'border-orange-500 ring-2 ring-orange-500/30 scale-105 shadow-sm' : 'border-gray-200 hover:border-orange-300 opacity-70 hover:opacity-100'">
+                                <img :src="imgUrl" 
+                                     alt="Thumbnail" 
+                                     class="w-full h-full object-cover"
+                                     onerror="this.src='https://placehold.co/100x100/e2e8f0/475569?text=IMG'">
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Product Info -->

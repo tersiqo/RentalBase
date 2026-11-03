@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-orders/{order}/return', [PageController::class, 'returnForm'])->name('customer.orders.return.form');
     Route::post('/my-orders/{order}/return', [PageController::class, 'returnOrder'])->name('customer.orders.return');
     Route::post('/my-orders/{order}/payment', [PageController::class, 'uploadPayment'])->name('customer.orders.payment');
+    Route::post('/my-orders/{order}/pay-late-fee', [PageController::class, 'uploadLateFeePayment'])->name('customer.orders.pay-late-fee');
     Route::post('/my-orders/{order}/identity', [PageController::class, 'reuploadIdentity'])->name('customer.orders.identity');
     Route::get('/my-orders/{order}/damage', [DamageReportController::class, 'show'])->name('customer.orders.damage');
     Route::post('/my-orders/{order}/damage/respond', [DamageReportController::class, 'respond'])->name('customer.orders.damage.respond');
@@ -168,6 +169,11 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::post('/admins', [AdminStaffController::class, 'store'])->name('admins.store');
     Route::post('/admins/{user}/status', [AdminStaffController::class, 'toggleStatus'])->name('admins.toggle-status');
 
+    // Manajemen Langganan & Upgrade Paket Toko
+    Route::get('/subscriptions', [\App\Http\Controllers\Admin\SubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::post('/subscriptions/renew', [\App\Http\Controllers\Admin\SubscriptionController::class, 'requestRenew'])->name('subscriptions.renew');
+    Route::post('/subscriptions/upgrade', [\App\Http\Controllers\Admin\SubscriptionController::class, 'requestUpgrade'])->name('subscriptions.upgrade');
+
     // Pusat Pemberitahuan Operasional Toko
     Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [AdminNotificationController::class, 'markAsRead'])->name('notifications.read');
@@ -197,6 +203,8 @@ Route::prefix('owner')->name('owner.')->group(function () {
 
         Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
         Route::post('/subscriptions/{id}/renew', [SubscriptionController::class, 'renew'])->name('subscriptions.renew');
+        Route::post('/subscriptions/{id}/verify', [SubscriptionController::class, 'verifyPayment'])->name('subscriptions.verify');
+        Route::post('/subscriptions/{id}/reject', [SubscriptionController::class, 'rejectPayment'])->name('subscriptions.reject');
         Route::get('/subscriptions/{id}/history', [SubscriptionController::class, 'history'])->name('subscriptions.history');
 
         // Pusat Notifikasi Platform Owner

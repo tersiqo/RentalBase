@@ -161,9 +161,12 @@ class ReturnController extends Controller
                     }
                 }
 
-                // Otomatis ubah status jaminan fisik KTP menjadi dikembalikan ke penyewa
+                // Otomatis ubah status jaminan fisik KTP menjadi dikembalikan dan catat timestamp pengembalian
                 if ($order->identityGuarantee) {
-                    $order->identityGuarantee->update(['status' => 'dikembalikan']);
+                    $order->identityGuarantee->update([
+                        'status' => 'dikembalikan',
+                        'returned_at' => now(),
+                    ]);
                 }
 
                 $msg = "Pengembalian pesanan #{$order->order_number} selesai diproses. Fisik KTP jaminan telah dikembalikan dan status unit telah diperbarui.";

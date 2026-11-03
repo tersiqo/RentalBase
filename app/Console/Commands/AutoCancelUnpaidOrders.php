@@ -32,12 +32,11 @@ class AutoCancelUnpaidOrders extends Command
     {
         $this->info('Memulai pengecekan pesanan belum dibayar yang melewati batas waktu 2 jam...');
 
-        // Batas waktu: 2 jam yang lalu
-        $deadline = Carbon::now()->subHours(2);
+        // 1. Batalkan pesanan menunggu pembayaran yang melewati batas waktu 2 jam
+        $unpaidDeadline = Carbon::now()->subHours(2);
 
-        // Ambil order dengan status menunggu pembayaran yang terakhir diperbarui/dibuat sebelum deadline
-        $orders = Order::whereIn('status', ['menunggu_pembayaran', 'belum_dibayar'])
-            ->where('updated_at', '<=', $deadline)
+        $unpaidOrders = Order::whereIn('status', ['menunggu_pembayaran', 'belum_dibayar'])
+            ->where('updated_at', '<=', $unpaidDeadline)
             ->whereDoesntHave('payments', function ($query) {
                 $query->where('status', 'terverifikasi');
             })
@@ -47,9 +46,9 @@ class AutoCancelUnpaidOrders extends Command
         $cancelledCount = 0;
         $failedCount = 0;
 
-        foreach ($orders as $order) {
+        foreach ($unpaidOrders as $order) {
             try {
-                $processed = DB::transaction(function () use ($order, $deadline) {
+                $processed = DB::transaction(function () use ($order, $unpaidDeadline) {
                     $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
 
                     if (! $lockedOrder || ! in_array($lockedOrder->status, ['menunggu_pembayaran', 'belum_dibayar'])) {
@@ -62,7 +61,7 @@ class AutoCancelUnpaidOrders extends Command
                     }
 
                     // Re-check: pastikan batas waktu benar-benar sudah lewat
-                    if ($lockedOrder->updated_at->gt($deadline)) {
+                    if ($lockedOrder->updated_at->gt($unpaidDeadline)) {
                         return false;
                     }
 
@@ -89,7 +88,7 @@ class AutoCancelUnpaidOrders extends Command
 
                 if ($processed) {
                     $cancelledCount++;
-                    $this->line("Pesanan #{$order->order_number} berhasil dibatalkan otomatis.");
+                    $this->line("Pesanan belum dibayar #{$order->order_number} berhasil dibatalkan otomatis.");
                 }
             } catch (\Throwable $e) {
                 $failedCount++;
@@ -101,7 +100,68 @@ class AutoCancelUnpaidOrders extends Command
             }
         }
 
-        $this->info("Pemeriksaan selesai. Berhasil membatalkan {$cancelledCount} pesanan. Gagal: {$failedCount}.");
+        // 2. Batalkan pesanan menunggu konfirmasi yang menggantung lebih dari 48 jam (Stale Orders)
+        $this->info('Memulai pengecekan pesanan menunggu konfirmasi yang melewati batas waktu 48 jam...');
+        $staleDeadline = Carbon::now()->subHours(48);
+
+        $staleOrders = Order::where('status', 'menunggu_konfirmasi')
+            ->where('created_at', '<=', $staleDeadline)
+            ->with(['orderItems.orderItemUnits.equipmentUnit'])
+            ->lazyById(100);
+
+        $staleCancelledCount = 0;
+
+        foreach ($staleOrders as $order) {
+            try {
+                $processed = DB::transaction(function () use ($order, $staleDeadline) {
+                    $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+
+                    if (! $lockedOrder || $lockedOrder->status !== 'menunggu_konfirmasi') {
+                        return false;
+                    }
+
+                    if ($lockedOrder->created_at->gt($staleDeadline)) {
+                        return false;
+                    }
+
+                    // Lepaskan alokasi unit fisik jika sempat dialokasikan
+                    foreach ($lockedOrder->orderItems as $item) {
+                        foreach ($item->orderItemUnits as $oiu) {
+                            $unit = EquipmentUnit::where('id', $oiu->equipment_unit_id)->lockForUpdate()->first();
+                            $oiu->delete();
+
+                            if ($unit && ! $unit->isActivelyRented()) {
+                                $unit->update(['status' => 'tersedia']);
+                            }
+                        }
+                    }
+
+                    if ($lockedOrder->identityGuarantee && $lockedOrder->identityGuarantee->status === 'menunggu') {
+                        $lockedOrder->identityGuarantee->update(['status' => 'ditolak']);
+                    }
+
+                    $lockedOrder->update([
+                        'status'              => 'dibatalkan',
+                        'cancellation_reason' => 'Dibatalkan otomatis oleh sistem karena melewati batas waktu konfirmasi awal (48 jam).',
+                    ]);
+
+                    return true;
+                });
+
+                if ($processed) {
+                    $staleCancelledCount++;
+                    $this->line("Pesanan stale #{$order->order_number} berhasil dibatalkan otomatis.");
+                }
+            } catch (\Throwable $e) {
+                $failedCount++;
+                Log::error("Gagal membatalkan pesanan stale #{$order->id}: " . $e->getMessage(), [
+                    'order_id' => $order->id,
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+        }
+
+        $this->info("Pemeriksaan selesai. Berhasil membatalkan {$cancelledCount} pesanan belum bayar dan {$staleCancelledCount} pesanan stale. Gagal: {$failedCount}.");
 
         return Command::SUCCESS;
     }

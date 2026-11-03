@@ -27,6 +27,8 @@ class TenantProfile extends Model
         'subdomain',
         'logo_path',
         'theme_color',
+        'hero_showcase_mode',
+        'hero_featured_product_id',
     ];
 
     /**
@@ -47,6 +49,7 @@ class TenantProfile extends Model
     {
         return [
             'client_id' => 'integer',
+            'hero_featured_product_id' => 'integer',
         ];
     }
 
@@ -64,6 +67,14 @@ class TenantProfile extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    /**
+     * Relasi ke Produk Unggulan Hero Showcase.
+     */
+    public function heroFeaturedProduct(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'hero_featured_product_id');
     }
 
     /**
