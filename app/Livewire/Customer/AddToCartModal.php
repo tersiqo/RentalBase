@@ -76,6 +76,7 @@ class AddToCartModal extends Component
             } else {
                 $cart[$hash] = [
                     'hash' => $hash,
+                    'client_id' => $this->product->client_id,
                     'product_id' => $this->product->id,
                     'name' => $this->product->name,
                     'price' => $this->product->rental_price_per_day,
@@ -145,6 +146,7 @@ class AddToCartModal extends Component
             
             $cart[$hash] = [
                 'hash' => $hash,
+                'client_id' => $this->product->client_id,
                 'product_id' => $this->product->id,
                 'name' => $this->product->name,
                 'price' => $this->product->rental_price_per_day,

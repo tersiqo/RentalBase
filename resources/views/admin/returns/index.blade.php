@@ -474,6 +474,31 @@
                                    required
                                    x-model.number="overrideFee"
                                    class="w-full border-gray-300 rounded-md shadow-sm text-sm font-semibold text-gray-900 focus:ring-orange-500 focus:border-orange-500 px-3 py-2 border">
+                        </div>
+
+                        {{-- Bukti Pembayaran Denda dari Customer jika Ada --}}
+                        <template x-if="activeOrder.late_fee_proof_url">
+                            <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-md text-xs space-y-1.5">
+                                <div class="flex items-center justify-between font-bold text-blue-900 text-[11px] uppercase tracking-wide">
+                                    <span class="flex items-center gap-1.5">
+                                        <span>📄</span>
+                                        <span>Bukti Pembayaran Denda Customer</span>
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                                        Perlu Verifikasi
+                                    </span>
+                                </div>
+                                <p class="text-blue-800 text-[11.5px] leading-relaxed">
+                                    Customer telah mengunggah bukti pembayaran denda keterlambatan. Periksa bukti transfer sebelum menyelesaikan pengembalian.
+                                </p>
+                                <div class="pt-1 flex items-center gap-2">
+                                    <a :href="activeOrder.late_fee_proof_url" target="_blank" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-900 underline text-xs">
+                                        🔍 Buka Bukti Pembayaran Denda (Tab Baru)
+                                    </a>
+                                </div>
+                            </div>
+                        </template>
+
                         {{-- Pengingat Pengembalian Jaminan KTP Fisik --}}
                         <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-md text-xs space-y-1.5">
                             <div class="flex items-center gap-2 font-bold text-purple-900 text-[11px] uppercase tracking-wide">

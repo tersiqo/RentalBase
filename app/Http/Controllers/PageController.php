@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class PageController extends Controller
 {
@@ -153,14 +154,42 @@ class PageController extends Controller
             return back()->with('error', 'Pesanan ini tidak dapat dibatalkan.');
         }
 
-        $hasPayment = $order->payments()->exists();
-        $order->update([
-            'status' => 'batal',
-            'cancellation_reason' => $request->input('reason', 'Dibatalkan oleh pelanggan.'),
-            'refund_status' => $hasPayment ? 'menunggu_refund' : 'tidak_ada',
-        ]);
+        return DB::transaction(function () use ($order, $request) {
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
-        return back()->with('success', 'Pesanan #' . $order->order_number . ' berhasil dibatalkan.');
+            // Lepaskan alokasi unit fisik jika sempat dialokasikan
+            foreach ($lockedOrder->orderItems as $item) {
+                foreach ($item->orderItemUnits as $oiu) {
+                    $unit = \App\Models\EquipmentUnit::where('id', $oiu->equipment_unit_id)->lockForUpdate()->first();
+                    $oiu->delete();
+
+                    if ($unit && ! $unit->isActivelyRented()) {
+                        $unit->update(['status' => 'tersedia']);
+                    }
+                }
+            }
+
+            $hasPayment = $lockedOrder->payments()->exists();
+            $reason = $request->input('reason', 'Dibatalkan oleh pelanggan.');
+
+            $lockedOrder->update([
+                'status' => 'batal',
+                'cancellation_reason' => $reason,
+                'refund_status' => $hasPayment ? 'menunggu_refund' : 'tidak_ada',
+            ]);
+
+            \App\Models\ActivityLog::create([
+                'client_id'   => $lockedOrder->client_id,
+                'user_id'     => Auth::id(),
+                'action'      => 'order_cancelled_by_customer',
+                'module'      => 'orders',
+                'description' => sprintf('Pelanggan membatalkan pesanan #%s dengan alasan: %s. Alokasi unit telah dikembalikan ke inventaris.', $lockedOrder->order_number, $reason),
+                'ip_address'  => $request->ip(),
+                'user_agent'  => $request->userAgent(),
+            ]);
+
+            return back()->with('success', 'Pesanan #' . $lockedOrder->order_number . ' berhasil dibatalkan.');
+        });
     }
 
     public function receiveOrder(Request $request, Order $order)
@@ -476,7 +505,12 @@ class PageController extends Controller
 
         $request->validate([
             'payment_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
-            'client_payment_method_id' => 'nullable|exists:client_payment_methods,id',
+            'client_payment_method_id' => [
+                'nullable',
+                Rule::exists('client_payment_methods', 'id')->where(function ($query) use ($order) {
+                    $query->where('client_id', $order->client_id)->where('is_active', true);
+                }),
+            ],
         ]);
 
         $disk = config('filesystems.default', 'public');
@@ -535,10 +569,64 @@ class PageController extends Controller
             ]);
         }
 
+        $order->update([
+            'status' => 'menunggu_konfirmasi',
+        ]);
+
         if (class_exists(\App\Events\IdentityProofUploaded::class)) {
             event(new \App\Events\IdentityProofUploaded($order));
         }
 
         return back()->with('success', 'Dokumen identitas berhasil diunggah ulang dan sedang ditinjau kembali oleh toko.');
+    }
+
+    public function uploadLateFeePayment(Request $request, Order $order)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if (! $order->can_pay_late_fee) {
+            return back()->with('error', 'Pembayaran denda tidak dapat diproses untuk pesanan ini.');
+        }
+
+        $request->validate([
+            'late_fee_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
+        ], [
+            'late_fee_proof.required' => 'File bukti pembayaran denda wajib diunggah.',
+            'late_fee_proof.mimes'    => 'Format file bukti pembayaran harus jpeg, png, jpg, atau pdf.',
+            'late_fee_proof.max'      => 'Ukuran file bukti pembayaran denda maksimal 2MB.',
+        ]);
+
+        $disk = config('filesystems.default', 'public');
+        $path = $request->file('late_fee_proof')->store('returns', $disk);
+
+        $return = $order->returnModel;
+        if (! $return) {
+            $return = \App\Models\ReturnModel::create([
+                'order_id'         => $order->id,
+                'return_method'    => $order->isPickup() ? 'ambil_toko' : 'kurir',
+                'return_date'      => now(),
+                'return_status'    => 'diterima',
+                'late_fee_amount'  => 0,
+            ]);
+        }
+
+        $return->update([
+            'late_fee_proof'  => $path,
+            'late_fee_status' => 'menunggu_verifikasi',
+        ]);
+
+        ActivityLog::create([
+            'client_id'   => $order->client_id,
+            'user_id'     => Auth::id(),
+            'action'      => 'late_fee_payment_uploaded',
+            'module'      => 'returns',
+            'description' => sprintf('Pelanggan mengunggah bukti pembayaran denda keterlambatan untuk pesanan #%s.', $order->order_number),
+            'ip_address'  => $request->ip(),
+            'user_agent'  => $request->userAgent(),
+        ]);
+
+        return back()->with('success', 'Bukti pembayaran denda pesanan #' . $order->order_number . ' berhasil diunggah dan sedang diverifikasi oleh toko.');
     }
 }

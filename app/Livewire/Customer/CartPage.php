@@ -45,7 +45,18 @@ class CartPage extends Component
 
     public function loadCart()
     {
-        $this->cart = session()->get('cart', []);
+        $allCart = session()->get('cart', []);
+
+        $this->cart = collect($allCart)->filter(function ($item) {
+            if (isset($item['client_id'])) {
+                return (int) $item['client_id'] === (int) $this->client->id;
+            }
+            if (isset($item['product_id'])) {
+                $prod = \App\Models\Product::find($item['product_id']);
+                return $prod && (int) $prod->client_id === (int) $this->client->id;
+            }
+            return false;
+        })->all();
 
         // Ensure selectedItems only contains valid hashes and is sequentially indexed
         $validHashes = array_keys($this->cart);

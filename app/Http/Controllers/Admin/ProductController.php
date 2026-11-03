@@ -65,7 +65,24 @@ class ProductController extends Controller
             ]);
         }
 
-        $mainImagePath = $this->handleImageUpload($request);
+        $disk = config('filesystems.default', 'public');
+        $uploadedImages = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $uploadedImages[] = $file->store('products', $disk);
+                }
+            }
+        }
+
+        $mainImagePath = null;
+        $coverFile = $request->file('image') ?? $request->file('main_image');
+        if ($coverFile && $coverFile->isValid()) {
+            $mainImagePath = $coverFile->store('products', $disk);
+        } elseif (! empty($uploadedImages)) {
+            $mainImagePath = array_shift($uploadedImages);
+        }
 
         $productData = [
             'client_id' => $client->id,
@@ -77,6 +94,7 @@ class ProductController extends Controller
             'deposit_fee' => $validated['deposit_fee'] ?? 0,
             'late_fee_per_hour' => $validated['late_fee_per_hour'],
             'main_image' => $mainImagePath,
+            'images' => ! empty($uploadedImages) ? array_values($uploadedImages) : null,
             'identity_guarantee_requirements' => $validated['identity_guarantee_requirements'] ?? null,
             'status' => $validated['status'],
         ];
@@ -133,7 +151,25 @@ class ProductController extends Controller
             ]);
         }
 
-        $mainImagePath = $this->handleImageUpload($request);
+        $disk = config('filesystems.default', 'public');
+        $existingImages = is_array($product->images) ? $product->images : (json_decode($product->images, true) ?? []);
+
+        // Handle penghapusan gambar tertentu jika ada
+        if ($request->filled('deleted_images') && is_array($request->deleted_images)) {
+            foreach ($request->deleted_images as $delImg) {
+                \App\Services\StorageHelper::delete($delImg);
+                $existingImages = array_values(array_filter($existingImages, fn ($img) => $img !== $delImg));
+            }
+        }
+
+        // Upload foto-foto galeri baru
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                if ($file->isValid()) {
+                    $existingImages[] = $file->store('products', $disk);
+                }
+            }
+        }
 
         $updateData = [
             'category_id' => $category->id,
@@ -147,18 +183,19 @@ class ProductController extends Controller
             'late_fee_per_hour' => $validated['late_fee_per_hour'],
             'identity_guarantee_requirements' => $validated['identity_guarantee_requirements'] ?? null,
             'status' => $validated['status'],
+            'images' => ! empty($existingImages) ? array_values($existingImages) : null,
         ];
 
-        if ($mainImagePath) {
-            $disk = config('filesystems.default', 'public');
+        // Jika foto cover utama diganti
+        $coverFile = $request->file('image') ?? $request->file('main_image');
+        if ($coverFile && $coverFile->isValid()) {
             if ($product->main_image) {
-                if (Storage::disk($disk)->exists($product->main_image)) {
-                    Storage::disk($disk)->delete($product->main_image);
-                } elseif (Storage::disk('public')->exists($product->main_image)) {
-                    Storage::disk('public')->delete($product->main_image);
-                }
+                \App\Services\StorageHelper::delete($product->main_image);
             }
-            $updateData['main_image'] = $mainImagePath;
+            $updateData['main_image'] = $coverFile->store('products', $disk);
+        } elseif (empty($product->main_image) && ! empty($existingImages)) {
+            $updateData['main_image'] = array_shift($existingImages);
+            $updateData['images'] = ! empty($existingImages) ? array_values($existingImages) : null;
         }
 
         $product->update($updateData);
@@ -202,11 +239,11 @@ class ProductController extends Controller
 
         // Hapus file gambar jika ada di storage
         if ($product->main_image) {
-            $disk = config('filesystems.default', 'public');
-            if (Storage::disk($disk)->exists($product->main_image)) {
-                Storage::disk($disk)->delete($product->main_image);
-            } elseif (Storage::disk('public')->exists($product->main_image)) {
-                Storage::disk('public')->delete($product->main_image);
+            \App\Services\StorageHelper::delete($product->main_image);
+        }
+        if (! empty($product->images) && is_array($product->images)) {
+            foreach ($product->images as $img) {
+                \App\Services\StorageHelper::delete($img);
             }
         }
 
@@ -230,8 +267,11 @@ class ProductController extends Controller
             'identity_guarantee_requirements' => 'nullable|string|max:1000',
             'status' => 'required|in:aktif,nonaktif',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'main_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            'deleted_images' => 'nullable|array',
+            'deleted_images.*' => 'string',
         ], [
             'name.required' => 'Nama produk wajib diisi.',
             'name.max' => 'Nama produk maksimal 150 karakter.',

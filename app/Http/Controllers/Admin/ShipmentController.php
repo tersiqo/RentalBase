@@ -145,10 +145,11 @@ class ShipmentController extends Controller
                 'status' => 'dikirim',
             ]);
 
-            // Update status jaminan KTP menjadi "dititipkan"
+            // Update status jaminan KTP menjadi "dititipkan" dan catat waktu serah terima fisik KTP
             if ($order->identityGuarantee) {
                 $order->identityGuarantee->update([
                     'status' => 'dititipkan',
+                    'deposited_at' => now(),
                 ]);
             }
 

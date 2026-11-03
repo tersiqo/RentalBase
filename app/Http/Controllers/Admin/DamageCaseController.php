@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Client;
 use App\Models\DamageCase;
 use App\Models\DamageReport;
@@ -457,6 +458,46 @@ class DamageCaseController extends Controller
             'case_status' => 'selesai',
             'resolution_notes' => $updatedNotes,
         ]);
+
+        $order = $damageCase->damageReport?->order;
+        if ($order) {
+            $return = $order->returnModel;
+            // Cek apakah masih ada kasus kerusakan lain pada order ini yang belum selesai/lunas
+            $hasOtherPendingDamage = DamageCase::whereHas('damageReport', function ($q) use ($order) {
+                $q->where('order_id', $order->id);
+            })->where('id', '!=', $damageCase->id)
+              ->where(function ($q) {
+                  $q->whereNotIn('case_status', ['selesai', 'dibatalkan', 'lunas'])
+                    ->orWhere('payment_status', 'belum_dibayar');
+              })->exists();
+
+            $isReturnReceived = $return && in_array($return->return_status, ['diterima', 'selesai']);
+            $isLateFeeSettled = ! $return || in_array($return->late_fee_status, ['lunas', 'tidak_ada']);
+
+            if (! $hasOtherPendingDamage && $isReturnReceived && $isLateFeeSettled) {
+                $order->update(['status' => 'selesai']);
+                if ($return && $return->return_status !== 'selesai') {
+                    $return->update(['return_status' => 'selesai']);
+                }
+
+                if ($order->identityGuarantee && in_array($order->identityGuarantee->status, ['dititipkan', 'menunggu', 'diverifikasi'])) {
+                    $order->identityGuarantee->update([
+                        'status' => 'dikembalikan',
+                        'returned_at' => now(),
+                    ]);
+                }
+
+                ActivityLog::create([
+                    'client_id'   => $order->client_id,
+                    'user_id'     => $user->id,
+                    'action'      => 'order_completed_post_damage_case',
+                    'module'      => 'damage_cases',
+                    'description' => sprintf('Pesanan #%s otomatis diselesaikan dan KTP fisik jaminan telah dikembalikan pasca penutupan kasus kerusakan tiket #%d.', $order->order_number, $damageCase->id),
+                    'ip_address'  => $request->ip(),
+                    'user_agent'  => $request->userAgent(),
+                ]);
+            }
+        }
 
         if (class_exists(\App\Events\DamageCaseResolved::class)) {
             event(new \App\Events\DamageCaseResolved($damageCase));

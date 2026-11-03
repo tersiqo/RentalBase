@@ -117,10 +117,16 @@ class Order extends Model
             'dikirim' => 'bg-purple-50 text-purple-700 border border-purple-200/80',
             'sedang_disewa' => 'bg-blue-50 text-blue-700 border border-blue-200/80',
             'dikembalikan' => 'bg-cyan-50 text-cyan-700 border border-cyan-200/80',
+            'menunggu_pembayaran_denda' => 'bg-amber-50 text-amber-800 border border-amber-300',
             'selesai' => 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
             'batal', 'dibatalkan', 'ditolak' => 'bg-gray-100 text-gray-700 border border-gray-200/80',
             default => 'bg-gray-100 text-gray-700 border border-gray-200/80',
         };
+    }
+
+    public function getStatusBadgeColorAttribute(): string
+    {
+        return $this->status_color;
     }
 
     public function getStatusDotColorAttribute(): string
@@ -135,6 +141,7 @@ class Order extends Model
             'dikirim' => 'bg-purple-500',
             'sedang_disewa' => 'bg-blue-500',
             'dikembalikan' => 'bg-cyan-500',
+            'menunggu_pembayaran_denda' => 'bg-amber-500',
             'selesai' => 'bg-emerald-500',
             'batal', 'dibatalkan', 'ditolak' => 'bg-gray-400',
             default => 'bg-gray-400',
@@ -194,6 +201,7 @@ class Order extends Model
             'dikirim' => 3,
             'sedang_disewa' => 4,
             'dikembalikan' => 5,
+            'menunggu_pembayaran_denda' => 5,
             'selesai' => 6,
             'batal', 'dibatalkan', 'ditolak' => 1,
             default => 0,
@@ -203,6 +211,15 @@ class Order extends Model
     public function getStatusNoteAttribute(): string
     {
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        if ($status === 'menunggu_pembayaran_denda') {
+            $feeAmount = (float) ($this->returnModel?->late_fee_amount ?? 0);
+            if ($this->returnModel?->late_fee_status === 'menunggu_verifikasi') {
+                return 'Bukti pembayaran denda telah dikirim. Toko sedang memverifikasi pembayaran denda Anda.';
+            }
+
+            return 'Pesanan memiliki tagihan denda keterlambatan pengembalian sebesar Rp ' . number_format($feeAmount, 0, ',', '.') . '. Silakan lakukan pembayaran dan unggah bukti transfer agar KTP jaminan fisik Anda dapat diambil kembali.';
+        }
 
         return match ($status) {
             'menunggu_konfirmasi' => 'Toko sedang memeriksa data pesanan dan verifikasi jaminan identitas Anda.',
@@ -216,6 +233,17 @@ class Order extends Model
             'batal', 'dibatalkan', 'ditolak' => 'Pesanan ini telah dibatalkan / ditolak.',
             default => 'Status pesanan Anda sedang diproses oleh sistem.',
         };
+    }
+
+    public function getCanPayLateFeeAttribute(): bool
+    {
+        $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
+
+        if ($status !== 'menunggu_pembayaran_denda') {
+            return false;
+        }
+
+        return $this->returnModel && in_array($this->returnModel->late_fee_status, ['menunggu_pembayaran', 'ditolak']);
     }
 
     public function getCanCancelAttribute(): bool
@@ -274,7 +302,7 @@ class Order extends Model
     {
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
 
-        if (in_array($status, ['selesai', 'batal', 'dibatalkan', 'ditolak'])) {
+        if (in_array($status, ['selesai', 'batal', 'dibatalkan', 'ditolak', 'dikirim', 'sedang_disewa'])) {
             return false;
         }
 

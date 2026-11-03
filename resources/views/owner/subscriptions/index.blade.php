@@ -169,6 +169,7 @@
                         name="status"
                         class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all">
                     <option value="all" {{ $statusFilter === 'all' ? 'selected' : '' }}>Semua Status</option>
+                    <option value="pending" {{ $statusFilter === 'pending' ? 'selected' : '' }}>Menunggu Verifikasi ({{ $pendingSubscriptionsCount ?? 0 }})</option>
                     <option value="active" {{ $statusFilter === 'active' ? 'selected' : '' }}>Active</option>
                     <option value="expiring_soon" {{ $statusFilter === 'expiring_soon' ? 'selected' : '' }}>Expiring Soon</option>
                     <option value="expired" {{ $statusFilter === 'expired' ? 'selected' : '' }}>Expired</option>
@@ -267,12 +268,20 @@
                             }
 
                             // Penentuan Status Badge
-                            // Active, Expiring Soon, Expired, Suspended
+                            // Active, Expiring Soon, Expired, Suspended, Menunggu Verifikasi, Ditolak
                             $badgeLabel = 'Active';
                             $badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
                             $dotClass = 'bg-emerald-500';
 
-                            if ($client && $client->status === 'suspended') {
+                            if ($sub->status === 'menunggu_konfirmasi' || $sub->payment_status === 'menunggu') {
+                                $badgeLabel = 'Menunggu Verifikasi';
+                                $badgeClass = 'bg-amber-50 text-amber-800 border border-amber-300 animate-pulse';
+                                $dotClass = 'bg-amber-500';
+                            } elseif ($sub->status === 'ditolak' || $sub->payment_status === 'ditolak') {
+                                $badgeLabel = 'Ditolak';
+                                $badgeClass = 'bg-rose-50 text-rose-700 border border-rose-200';
+                                $dotClass = 'bg-rose-500';
+                            } elseif ($client && $client->status === 'suspended') {
                                 $badgeLabel = 'Suspended';
                                 $badgeClass = 'bg-slate-100 text-slate-700 border border-slate-300';
                                 $dotClass = 'bg-slate-500';
@@ -382,7 +391,45 @@
                             {{-- Aksi --}}
                             <td class="px-5 py-4 whitespace-nowrap text-center">
                                 <div class="inline-flex items-center gap-1.5">
-                                    {{-- Tombol Perpanjang --}}
+                                    @if($sub->status === 'menunggu_konfirmasi' || $sub->payment_status === 'menunggu')
+                                        {{-- Tombol Verifikasi --}}
+                                        <button type="button"
+                                                @click="openVerify({
+                                                    id: {{ $sub->id }},
+                                                    business_name: '{{ addslashes($client?->business_name ?? 'Tenant') }}',
+                                                    subdomain: '{{ $client?->subdomain }}',
+                                                    plan_name: '{{ $planLabel }}',
+                                                    plan_key: '{{ $planKey }}',
+                                                    price_formatted: 'Rp {{ number_format($sub->price ?? 0, 0, ',', '.') }}',
+                                                    notes: '{{ addslashes($sub->notes ?? '-') }}',
+                                                    proof_url: '{{ $sub->payment_proof_url }}',
+                                                    created_at: '{{ $sub->created_at ? $sub->created_at->translatedFormat('d M Y H:i') : '-' }}'
+                                                })"
+                                                title="Verifikasi Bukti Transfer & Aktifkan Paket"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all active:scale-95 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            <span>Verifikasi</span>
+                                        </button>
+
+                                        {{-- Tombol Tolak --}}
+                                        <button type="button"
+                                                @click="openReject({
+                                                    id: {{ $sub->id }},
+                                                    business_name: '{{ addslashes($client?->business_name ?? 'Tenant') }}',
+                                                    plan_name: '{{ $planLabel }}'
+                                                })"
+                                                title="Tolak Pengajuan Bukti Transfer"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-all active:scale-95 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                            <span>Tolak</span>
+                                        </button>
+                                    @endif
+
+                                    {{-- Tombol Perpanjang Manual --}}
                                     <button type="button"
                                             @click="openRenew({
                                                 id: {{ $sub->id }},
@@ -396,8 +443,8 @@
                                                 is_expired: {{ $isExpired ? 'true' : 'false' }},
                                                 days_left: '{{ $daysLeftText }}'
                                             })"
-                                            title="Perpanjang masa aktif subscription"
-                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-xs transition-all active:scale-95 cursor-pointer">
+                                            title="Perpanjang manual masa aktif subscription"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-xs transition-all active:scale-95 cursor-pointer">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                                         </svg>
@@ -408,7 +455,7 @@
                                     <button type="button"
                                             @click="openHistory({{ $sub->id }}, '{{ addslashes($client?->business_name ?? 'Tenant') }}')"
                                             title="Lihat riwayat perpanjangan dan log aktivitas"
-                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer">
+                                            class="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer">
                                         <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
@@ -662,6 +709,205 @@
         </div>
     </div>
 
+    {{-- MODAL VERIFIKASI PEMBAYARAN SUBSCRIPTION --}}
+    <div x-show="showVerifyModal"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         aria-labelledby="modal-verify-title" role="dialog" aria-modal="true">
+        
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+             @click="closeVerify()"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-slate-200"
+                 @click.outside="closeVerify()">
+
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900" id="modal-verify-title">Verifikasi &amp; Aktifkan Paket</h3>
+                            <p class="text-xs text-slate-500">Periksa bukti transfer dan setujui aktivasi subscription tenant</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="closeVerify()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form :action="'{{ url('/owner/subscriptions') }}/' + verifyData.id + '/verify'"
+                      method="POST"
+                      @submit="isSubmitting = true">
+                    @csrf
+
+                    <div class="p-6 space-y-4">
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-500">Toko / Tenant:</span>
+                                <span class="font-bold text-slate-900" x-text="verifyData.business_name"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-500">Subdomain:</span>
+                                <span class="font-mono font-semibold text-slate-700" x-text="verifyData.subdomain"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-500">Paket Diajukan:</span>
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-orange-50 text-orange-700 border border-orange-200" x-text="verifyData.plan_name"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-500">Nominal Transfer:</span>
+                                <span class="font-bold text-emerald-700" x-text="verifyData.price_formatted"></span>
+                            </div>
+                            <div class="pt-2 border-t border-slate-200">
+                                <span class="text-slate-500 block mb-0.5">Catatan / Referensi Tenant:</span>
+                                <span class="font-medium text-slate-800" x-text="verifyData.notes"></span>
+                            </div>
+                        </div>
+
+                        {{-- Bukti Transfer Preview --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Bukti Transfer Pembayaran
+                            </label>
+                            <template x-if="verifyData.proof_url">
+                                <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 p-2">
+                                    <template x-if="verifyData.proof_url.endsWith('.pdf')">
+                                        <a :href="verifyData.proof_url" target="_blank" class="flex items-center justify-center gap-2 p-4 text-xs font-bold text-orange-600 hover:underline">
+                                            <svg class="w-6 h-6 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                            Buka Dokumen Bukti Transfer (PDF)
+                                        </a>
+                                    </template>
+                                    <template x-if="!verifyData.proof_url.endsWith('.pdf')">
+                                        <div class="text-center">
+                                            <a :href="verifyData.proof_url" target="_blank" title="Klik untuk memperbesar">
+                                                <img :src="verifyData.proof_url" alt="Bukti Transfer" class="max-h-56 mx-auto rounded-lg object-contain shadow-xs hover:opacity-95 transition-opacity" />
+                                            </a>
+                                            <p class="text-[11px] text-slate-400 mt-1">Klik gambar untuk melihat resolusi penuh di tab baru.</p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="!verifyData.proof_url">
+                                <div class="p-4 rounded-xl bg-slate-100 text-center text-xs text-slate-500 italic">
+                                    Tidak ada file bukti pembayaran terlampir.
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 space-y-1">
+                            <p class="font-bold flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Efek Verifikasi (Model Pilihan A):
+                            </p>
+                            <ul class="list-disc list-inside text-[11px] text-emerald-700 space-y-0.5">
+                                <li><strong>Upgrade:</strong> Periode paket baru terhitung penuh hari ini & kuota/fitur langsung aktif.</li>
+                                <li><strong>Perpanjangan:</strong> Sisa masa aktif yang ada diakumulasikan ke masa aktif baru.</li>
+                                <li>Status tenant otomatis diaktifkan kembali jika sebelumnya dibekukan/kadaluarsa.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                        <button type="button"
+                                @click="closeVerify()"
+                                :disabled="isSubmitting"
+                                class="px-4 py-2.5 rounded-xl font-bold text-sm bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition-all cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="submit"
+                                :disabled="isSubmitting"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer">
+                            <svg class="w-4 h-4" :class="{ 'animate-spin': isSubmitting }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span x-text="isSubmitting ? 'Memproses...' : 'Verifikasi & Aktifkan Paket'"></span>
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- MODAL TOLAK PENGAJUAN SUBSCRIPTION --}}
+    <div x-show="showRejectModal"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         aria-labelledby="modal-reject-title" role="dialog" aria-modal="true">
+        
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+             @click="closeReject()"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-200"
+                 @click.outside="closeReject()">
+
+                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900" id="modal-reject-title">Tolak Pengajuan Langganan</h3>
+                            <p class="text-xs text-slate-500">Berikan alasan jelas agar tenant dapat memperbaiki bukti pembayaran</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="closeReject()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <form :action="'{{ url('/owner/subscriptions') }}/' + rejectData.id + '/reject'"
+                      method="POST"
+                      @submit="isSubmitting = true">
+                    @csrf
+
+                    <div class="p-6 space-y-4">
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs">
+                            <p class="text-slate-500">Toko: <strong class="text-slate-800" x-text="rejectData.business_name"></strong></p>
+                            <p class="text-slate-500 mt-0.5">Paket: <strong class="text-orange-700" x-text="rejectData.plan_name"></strong></p>
+                        </div>
+
+                        <div>
+                            <label for="rejection_reason" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Alasan Penolakan <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea id="rejection_reason"
+                                      name="rejection_reason"
+                                      rows="3"
+                                      required
+                                      maxlength="500"
+                                      placeholder="Contoh: Bukti transfer buram/tidak terbaca, nominal tidak sesuai paket, atau dana belum masuk rekening."
+                                      class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all"></textarea>
+                            <p class="text-[11px] text-slate-400 mt-1">Alasan ini akan langsung tampil di dashboard Admin Tenant bersangkutan.</p>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                        <button type="button"
+                                @click="closeReject()"
+                                :disabled="isSubmitting"
+                                class="px-4 py-2.5 rounded-xl font-bold text-sm bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition-all cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="submit"
+                                :disabled="isSubmitting"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer">
+                            <span x-text="isSubmitting ? 'Memproses...' : 'Tolak Pengajuan'"></span>
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 {{-- SCRIPT ALPINE.JS INTERAKSI SUBSCRIPTION --}}
@@ -670,6 +916,8 @@
         return {
             showRenewModal: false,
             showHistoryModal: false,
+            showVerifyModal: false,
+            showRejectModal: false,
             isSubmitting: false,
             isLoadingHistory: false,
             historyTenantName: '',
@@ -686,6 +934,22 @@
                 is_expired: false,
                 days_left: ''
             },
+            verifyData: {
+                id: null,
+                business_name: '',
+                subdomain: '',
+                plan_name: '',
+                plan_key: '',
+                price_formatted: '',
+                notes: '',
+                proof_url: '',
+                created_at: ''
+            },
+            rejectData: {
+                id: null,
+                business_name: '',
+                plan_name: ''
+            },
 
             openRenew(sub) {
                 this.currentSub = { ...sub };
@@ -695,6 +959,26 @@
 
             closeRenew() {
                 this.showRenewModal = false;
+            },
+
+            openVerify(data) {
+                this.verifyData = { ...data };
+                this.isSubmitting = false;
+                this.showVerifyModal = true;
+            },
+
+            closeVerify() {
+                this.showVerifyModal = false;
+            },
+
+            openReject(data) {
+                this.rejectData = { ...data };
+                this.isSubmitting = false;
+                this.showRejectModal = true;
+            },
+
+            closeReject() {
+                this.showRejectModal = false;
             },
 
             async openHistory(subId, tenantName) {

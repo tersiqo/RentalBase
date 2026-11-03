@@ -277,6 +277,30 @@ class OrderController extends Controller
                     ->with('error', 'Pesanan ini tidak bisa ditolak karena statusnya sudah berubah.');
             }
 
+            $actionType = $request->input('action_type');
+            $reason = $request->input('cancellation_reason', 'Ditolak/dibatalkan oleh admin.');
+
+            // Jika admin hanya meminta unggah ulang KTP (tidak membatalkan order)
+            if ($actionType === 'request_reupload' || $request->boolean('request_reupload')) {
+                if ($lockedOrder->identityGuarantee) {
+                    $lockedOrder->identityGuarantee()->lockForUpdate()->first()?->update([
+                        'status' => 'ditolak',
+                        'reviewed_by' => $user?->id,
+                    ]);
+                    if (class_exists(\App\Events\IdentityRejected::class)) {
+                        event(new \App\Events\IdentityRejected($lockedOrder));
+                    }
+                }
+
+                $lockedOrder->update([
+                    'status' => 'menunggu_konfirmasi',
+                    'cancellation_reason' => $reason,
+                ]);
+
+                return redirect()->back()
+                    ->with('success', 'Permintaan unggah ulang identitas untuk pesanan #' . $lockedOrder->order_number . ' telah dikirim ke customer.');
+            }
+
             $isIdentityRejection = ($lockedOrder->status === 'menunggu_konfirmasi');
 
             if ($isIdentityRejection && $lockedOrder->identityGuarantee) {

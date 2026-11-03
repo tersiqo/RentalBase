@@ -48,10 +48,10 @@ class TenantProfileController extends Controller
             ->orderBy('name')
             ->get();
 
-        $heroShowcase = Cache::get("tenant_hero_showcase_{$client->id}", [
-            'mode' => 'illustration',
-            'product_id' => null,
-        ]);
+        $heroShowcase = [
+            'mode' => $profile->hero_showcase_mode ?: (Cache::get("tenant_hero_showcase_{$client->id}")['mode'] ?? 'illustration'),
+            'product_id' => $profile->hero_featured_product_id ?: (Cache::get("tenant_hero_showcase_{$client->id}")['product_id'] ?? null),
+        ];
 
         return view($viewName, compact('profile', 'client', 'subscription', 'allowsCustomTheme', 'products', 'heroShowcase'));
     }
@@ -118,7 +118,7 @@ class TenantProfileController extends Controller
             $validated['logo_path'] = null;
         }
 
-        // Handle pengaturan Tampilan Kartu Hero Katalog (Zero Migration via Cache)
+        // Handle pengaturan Tampilan Kartu Hero Showcase (Permanen di PostgreSQL)
         if ($request->has('hero_showcase_mode')) {
             $heroMode = $request->input('hero_showcase_mode', 'illustration');
             if (! in_array($heroMode, ['illustration', 'featured'])) {
@@ -138,15 +138,17 @@ class TenantProfileController extends Controller
                 $featuredProductId = null;
             }
 
+            $validated['hero_showcase_mode'] = $heroMode;
+            $validated['hero_featured_product_id'] = $featuredProductId ? (int) $featuredProductId : null;
+
+            // Sinkronkan juga ke Cache sebagai cache-layer performa tinggi
             Cache::forever("tenant_hero_showcase_{$client->id}", [
                 'mode' => $heroMode,
                 'product_id' => $featuredProductId ? (int) $featuredProductId : null,
             ]);
         }
 
-        unset($validated['hero_showcase_mode'], $validated['hero_featured_product_id']);
-
-        // Update data TenantProfile yang ter-scoped
+        // Update data TenantProfile yang ter-scoped secara permanen ke database
         $profile->update($validated);
 
         // Sinkronisasi perubahan penting ke tabel clients untuk kompatibilitas modul legacy

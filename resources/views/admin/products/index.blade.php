@@ -500,11 +500,46 @@
                                             <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 mx-auto flex items-center justify-center mb-2">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                             </div>
-                                            <p class="text-xs font-bold text-slate-700">Klik untuk upload foto produk</p>
-                                            <p class="text-[11px] text-slate-400 mt-0.5">Format JPG, PNG, WEBP (Maks 2MB). Foto pertama otomatis jadi cover.</p>
+                                            <p class="text-xs font-bold text-slate-700">Klik untuk upload foto cover produk</p>
+                                            <p class="text-[11px] text-slate-400 mt-0.5">Format JPG, PNG, WEBP (Maks 2MB). Foto ini akan jadi cover utama.</p>
                                         </div>
                                     </template>
                                 </label>
+                            </div>
+                        </div>
+
+                        {{-- Foto Galeri Tambahan (Opsional) --}}
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                                <span>Foto Galeri Tambahan (Maks. 5 Foto)</span>
+                                <span class="text-[10px] text-slate-400 font-normal">Tampak samping, aksesoris, lipatan</span>
+                            </label>
+                            <div class="border border-dashed border-slate-200 rounded-2xl p-3.5 bg-slate-50/50">
+                                <input type="file" 
+                                       name="images[]" 
+                                       id="add-product-gallery"
+                                       multiple
+                                       accept="image/jpeg,image/png,image/jpg,image/webp" 
+                                       @change="previewAddGallery($event)"
+                                       class="hidden">
+                                <label for="add-product-gallery" class="cursor-pointer block text-center py-2.5 hover:bg-orange-50/60 rounded-xl transition bg-white border border-slate-200">
+                                    <div class="flex items-center justify-center gap-1.5 text-xs font-bold text-orange-600">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        Pilih Beberapa Foto Galeri Sekaligus
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Bisa pilih hingga 5 foto tambahan (JPG/PNG/WEBP, maks 2MB per foto)</p>
+                                </label>
+                                
+                                {{-- Preview Grid --}}
+                                <template x-if="addGalleryPreviews.length > 0">
+                                    <div class="flex flex-wrap gap-2.5 mt-3 pt-3 border-t border-slate-200/60">
+                                        <template x-for="(prevUrl, idx) in addGalleryPreviews" :key="idx">
+                                            <div class="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-xs">
+                                                <img :src="prevUrl" class="w-full h-full object-cover">
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
                             </div>
                         </div>
 
@@ -668,10 +703,10 @@
                             </div>
                         </div>
 
-                        {{-- Ganti Foto Produk --}}
+                        {{-- Ganti Foto Cover Produk --}}
                         <div class="sm:col-span-2">
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                                Foto Produk
+                                Foto Cover Utama
                             </label>
                             <div class="border-2 border-dashed border-slate-200 hover:border-orange-400 rounded-2xl p-4 text-center transition bg-slate-50/50">
                                 <input type="file" 
@@ -683,10 +718,72 @@
                                 <label for="edit-product-image" class="cursor-pointer block">
                                     <div class="flex flex-col items-center">
                                         <img :src="editImagePreview || editForm.cover_url" class="w-28 h-28 object-cover rounded-xl shadow-md border border-slate-200 mb-2">
-                                        <span class="text-xs text-orange-600 font-bold hover:underline">Klik untuk Ganti Foto</span>
-                                        <span class="text-[10px] text-slate-400 mt-0.5">Biarkan kosong jika tidak ingin mengubah foto</span>
+                                        <span class="text-xs text-orange-600 font-bold hover:underline">Klik untuk Ganti Foto Cover</span>
+                                        <span class="text-[10px] text-slate-400 mt-0.5">Biarkan kosong jika tidak ingin mengubah foto cover</span>
                                     </div>
                                 </label>
+                            </div>
+                        </div>
+
+                        {{-- Foto Galeri Tambahan (Edit Modal) --}}
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                                <span>Foto Galeri Produk</span>
+                                <span class="text-[10px] text-slate-400 font-normal">Sudut lain & aksesoris</span>
+                            </label>
+                            <div class="border border-dashed border-slate-200 rounded-2xl p-3.5 bg-slate-50/50 space-y-3">
+                                {{-- Foto Existing --}}
+                                <template x-if="existingGalleryImages.length > 0">
+                                    <div>
+                                        <p class="text-[11px] font-bold text-slate-500 mb-2">Foto Galeri Saat Ini:</p>
+                                        <div class="flex flex-wrap gap-2.5">
+                                            <template x-for="(imgRel, idx) in existingGalleryImages" :key="idx">
+                                                <div class="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-xs group">
+                                                    <img :src="'/storage/' + imgRel" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100/e2e8f0/475569?text=IMG'">
+                                                    <button type="button" 
+                                                            @click="removeExistingGalleryImage(imgRel)"
+                                                            class="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            title="Hapus foto ini">
+                                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    </button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                {{-- Hidden Inputs for Deleted Images --}}
+                                <template x-for="delImg in deletedImages" :key="delImg">
+                                    <input type="hidden" name="deleted_images[]" :value="delImg">
+                                </template>
+
+                                {{-- Input Tambah Foto Galeri Baru --}}
+                                <div>
+                                    <input type="file" 
+                                           name="images[]" 
+                                           id="edit-product-gallery"
+                                           multiple
+                                           accept="image/jpeg,image/png,image/jpg,image/webp" 
+                                           @change="previewEditGallery($event)"
+                                           class="hidden">
+                                    <label for="edit-product-gallery" class="cursor-pointer block text-center py-2 border border-slate-200 hover:border-orange-300 hover:bg-orange-50/40 rounded-xl transition bg-white">
+                                        <div class="flex items-center justify-center gap-1.5 text-xs font-semibold text-orange-600">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                            Tambah Foto Galeri Baru
+                                        </div>
+                                    </label>
+                                    
+                                    {{-- Preview New Gallery Images --}}
+                                    <template x-if="editGalleryPreviews.length > 0">
+                                        <div class="flex flex-wrap gap-2.5 mt-2.5">
+                                            <template x-for="(prevUrl, idx) in editGalleryPreviews" :key="idx">
+                                                <div class="relative w-16 h-16 rounded-xl overflow-hidden border border-orange-200 shadow-xs ring-1 ring-orange-400">
+                                                    <img :src="prevUrl" class="w-full h-full object-cover">
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
                         </div>
 
@@ -855,7 +952,11 @@
             showQuotaAlert: false,
 
             addImagePreview: null,
+            addGalleryPreviews: [],
             editImagePreview: null,
+            editGalleryPreviews: [],
+            existingGalleryImages: [],
+            deletedImages: [],
 
             editActionUrl: '',
             editForm: {
@@ -875,6 +976,7 @@
 
             openAddModal() {
                 this.addImagePreview = null;
+                this.addGalleryPreviews = [];
                 this.addModalOpen = true;
             },
 
@@ -882,6 +984,16 @@
                 const file = e.target.files[0];
                 if (file) {
                     this.addImagePreview = URL.createObjectURL(file);
+                }
+            },
+
+            previewAddGallery(e) {
+                this.addGalleryPreviews = [];
+                const files = e.target.files;
+                if (files) {
+                    for (let i = 0; i < files.length; i++) {
+                        this.addGalleryPreviews.push(URL.createObjectURL(files[i]));
+                    }
                 }
             },
 
@@ -899,13 +1011,34 @@
                     cover_url: product.cover_image_url || ''
                 };
                 this.editImagePreview = null;
+                this.editGalleryPreviews = [];
+                this.deletedImages = [];
+                const imgs = Array.isArray(product.images) ? product.images : (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : []);
+                this.existingGalleryImages = imgs;
                 this.editModalOpen = true;
+            },
+
+            removeExistingGalleryImage(imgPath) {
+                if (!this.deletedImages.includes(imgPath)) {
+                    this.deletedImages.push(imgPath);
+                }
+                this.existingGalleryImages = this.existingGalleryImages.filter(img => img !== imgPath);
             },
 
             previewEditImage(e) {
                 const file = e.target.files[0];
                 if (file) {
                     this.editImagePreview = URL.createObjectURL(file);
+                }
+            },
+
+            previewEditGallery(e) {
+                this.editGalleryPreviews = [];
+                const files = e.target.files;
+                if (files) {
+                    for (let i = 0; i < files.length; i++) {
+                        this.editGalleryPreviews.push(URL.createObjectURL(files[i]));
+                    }
                 }
             },
 

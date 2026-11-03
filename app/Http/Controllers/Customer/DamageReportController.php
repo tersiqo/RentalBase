@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class DamageReportController extends Controller
 {
@@ -115,7 +116,12 @@ class DamageReportController extends Controller
 
         $request->validate([
             'damage_case_id' => 'required|exists:damage_cases,id',
-            'client_payment_method_id' => 'nullable|exists:client_payment_methods,id',
+            'client_payment_method_id' => [
+                'nullable',
+                Rule::exists('client_payment_methods', 'id')->where(function ($query) use ($order) {
+                    $query->where('client_id', $order->client_id)->where('is_active', true);
+                }),
+            ],
             'payment_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
         ]);
 

@@ -20,13 +20,30 @@ class CustomerCheckoutController extends Controller
 {
     public function create(Request $request, string $subdomain)
     {
+        if (auth()->check() && auth()->user()->role !== 'customer') {
+            return redirect()->route('customer.home', $subdomain)
+                ->with('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
+        }
+
         $client = $this->resolveClient($subdomain);
 
         $cart = session()->get('cart', []);
 
+        // Filter item keranjang khusus milik tenant ini
+        $cart = collect($cart)->filter(function ($item) use ($client) {
+            if (isset($item['client_id'])) {
+                return (int) $item['client_id'] === (int) $client->id;
+            }
+            if (isset($item['product_id'])) {
+                $prod = Product::find($item['product_id']);
+                return $prod && (int) $prod->client_id === (int) $client->id;
+            }
+            return false;
+        })->all();
+
         if (empty($cart)) {
             return redirect()->route('customer.home', $subdomain)
-                ->with('error', 'Keranjang kamu masih kosong. Pilih alat dulu sebelum checkout.');
+                ->with('error', 'Keranjang belanja kamu di toko ini masih kosong.');
         }
 
         $requestedHashes = $request->query('items');
@@ -87,6 +104,11 @@ class CustomerCheckoutController extends Controller
 
     public function direct(string $subdomain, Product $product)
     {
+        if (auth()->check() && auth()->user()->role !== 'customer') {
+            return redirect()->route('customer.home', $subdomain)
+                ->with('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
+        }
+
         $client = $this->resolveClient($subdomain);
 
         if ($product->client_id !== $client->id || $product->status !== 'aktif') {
@@ -122,6 +144,7 @@ class CustomerCheckoutController extends Controller
 
         $cart[$hash] = [
             'hash' => $hash,
+            'client_id' => $client->id,
             'product_id' => $product->id,
             'name' => $product->name,
             'price' => $product->rental_price_per_day,
@@ -142,6 +165,11 @@ class CustomerCheckoutController extends Controller
 
     public function store(Request $request, string $subdomain)
     {
+        if (auth()->check() && auth()->user()->role !== 'customer') {
+            return redirect()->route('customer.home', $subdomain)
+                ->with('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
+        }
+
         $client = $this->resolveClient($subdomain);
 
         $request->validate([
@@ -185,7 +213,28 @@ class CustomerCheckoutController extends Controller
             'terms.accepted' => 'Anda harus menyetujui ketentuan dan jaminan sewa.',
         ]);
 
-        $cart = session()->get('cart', []);
+        $startDay = Carbon::parse($request->start_date)->startOfDay();
+        if ($startDay->isToday() && $request->filled('rental_time')) {
+            $selectedDateTime = Carbon::parse($request->start_date . ' ' . $request->rental_time);
+            if ($selectedDateTime->isPast()) {
+                return back()->withErrors([
+                    'rental_time' => 'Jam mulai sewa tidak boleh menggunakan waktu yang sudah lewat untuk penyewaan hari ini.',
+                ])->withInput();
+            }
+        }
+
+        $rawCart = session()->get('cart', []);
+        $cart = collect($rawCart)->filter(function ($item) use ($client) {
+            if (isset($item['client_id'])) {
+                return (int) $item['client_id'] === (int) $client->id;
+            }
+            if (isset($item['product_id'])) {
+                $prod = Product::find($item['product_id']);
+                return $prod && (int) $prod->client_id === (int) $client->id;
+            }
+            return false;
+        })->all();
+
         $selectedHashes = $request->input('selected_hashes', []);
 
         // Filter out empty/null/undefined values
@@ -221,7 +270,6 @@ class CustomerCheckoutController extends Controller
             ? (string) $request->input('rental_time')
             : now()->format('H:i');
 
-        $startDay = Carbon::parse($request->start_date)->startOfDay();
         $endDay = Carbon::parse($request->end_date)->startOfDay();
         $durationDays = max(1, (int) $startDay->diffInDays($endDay) + 1);
 
@@ -273,7 +321,9 @@ class CustomerCheckoutController extends Controller
             $docPath = $request->file('identity_document_image')->store('identity_guarantees', $disk);
             $facePath = $request->file('face_image')->store('identity_guarantees', $disk);
 
-            $orderNumber = 'ORD-'.strtoupper(Str::random(5)).'-'.date('Ymd');
+            do {
+                $orderNumber = 'ORD-' . strtoupper(Str::random(6)) . '-' . date('Ymd');
+            } while (Order::where('order_number', $orderNumber)->exists());
 
             $order = Order::create([
                 'client_id' => $client->id,
@@ -343,10 +393,11 @@ class CustomerCheckoutController extends Controller
         }
 
         // Remove processed items from cart
+        $globalCart = session()->get('cart', []);
         foreach ($selectedHashes as $hash) {
-            unset($cart[$hash]);
+            unset($globalCart[$hash]);
         }
-        session()->put('cart', $cart);
+        session()->put('cart', $globalCart);
         session()->forget('checkout_items');
 
         return redirect()->route('customer.orders')
@@ -355,9 +406,15 @@ class CustomerCheckoutController extends Controller
 
     protected function resolveClient(string $subdomain): Client
     {
-        $client = Client::where('subdomain', $subdomain)
-            ->where('status', 'aktif')
-            ->firstOrFail();
+        $client = Client::where('subdomain', $subdomain)->firstOrFail();
+
+        if (in_array($client->status, ['suspended', 'nonaktif'])) {
+            abort(response()->view('errors.tenant-suspended', compact('client'), 503));
+        }
+
+        if ($client->status !== 'aktif') {
+            abort(404, 'Toko sedang tidak aktif.');
+        }
 
         session()->put('active_client_id', $client->id);
 

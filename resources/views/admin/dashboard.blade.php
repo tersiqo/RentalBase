@@ -167,11 +167,11 @@
         </div>
     </div>
     <div class="shrink-0 flex gap-3 mt-2 md:mt-0">
-        <a href="#" class="px-4 py-2.5 bg-stone-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-stone-200 transition-colors border border-stone-200/60 inline-flex items-center">
+        <a href="{{ route('admin.units.index') }}" class="px-4 py-2.5 bg-stone-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-stone-200 transition-colors border border-stone-200/60 inline-flex items-center">
             Kelola Unit
         </a>
-        <a href="#" class="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold shadow-sm shadow-gray-900/30 hover:bg-gray-800 transition-colors flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <a href="{{ route('admin.subscriptions.index') }}" class="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold shadow-sm shadow-gray-900/30 hover:bg-gray-800 transition-colors flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
             Upgrade Paket

@@ -15,7 +15,7 @@ class ReturnProcessRequest extends FormRequest
     {
         return [
             'late_fee_amount' => ['required', 'numeric', 'min:0'],
-            'action_type'     => ['required', 'in:normal,denda']
+            'action_type'     => ['required', 'in:normal,denda,selesaikan']
         ];
     }
 }
