@@ -70,8 +70,11 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         opcache \
         pcntl
 
-# Use production PHP settings
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+# Use production PHP settings & increase upload limits to match Nginx (64M)
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && sed -i 's/upload_max_filesize = 2M/upload_max_filesize = 32M/g' "$PHP_INI_DIR/php.ini" \
+    && sed -i 's/post_max_size = 8M/post_max_size = 64M/g' "$PHP_INI_DIR/php.ini" \
+    && sed -i 's/memory_limit = 128M/memory_limit = 256M/g' "$PHP_INI_DIR/php.ini"
 
 # Copy application source code
 COPY . /var/www/html
