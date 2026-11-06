@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Category;
 use App\Models\Client;
+use App\Models\ClientPaymentMethod;
 use App\Models\EquipmentUnit;
 use App\Models\Order;
 use App\Models\Payment;
@@ -21,6 +23,8 @@ class AdminDashboardTest extends TestCase
 
     private Client $clientA;
     private Client $clientB;
+    private Category $categoryA;
+    private Category $categoryB;
     private User $adminA;
     private User $adminB;
     private User $customer;
@@ -36,6 +40,12 @@ class AdminDashboardTest extends TestCase
             'business_name' => 'Kamera Jaya Rental',
             'subdomain' => 'kamerajaya',
             'status' => 'aktif',
+        ]);
+
+        $this->categoryA = Category::create([
+            'client_id' => $this->clientA->id,
+            'name' => 'Kamera',
+            'slug' => 'kamera',
         ]);
 
         $this->adminA = User::create([
@@ -66,6 +76,12 @@ class AdminDashboardTest extends TestCase
             'business_name' => 'Outdoor Malang Rental',
             'subdomain' => 'outdoormalang',
             'status' => 'aktif',
+        ]);
+
+        $this->categoryB = Category::create([
+            'client_id' => $this->clientB->id,
+            'name' => 'Outdoor',
+            'slug' => 'outdoor',
         ]);
 
         $this->adminB = User::create([
@@ -168,6 +184,7 @@ class AdminDashboardTest extends TestCase
         // 1. Buat data Produk & Unit untuk Toko A
         $product = Product::create([
             'client_id' => $this->clientA->id,
+            'category_id' => $this->categoryA->id,
             'name' => 'Sony Alpha A7 IV',
             'slug' => 'sony-alpha-a7-iv',
             'rental_price' => 250000,
@@ -188,9 +205,12 @@ class AdminDashboardTest extends TestCase
             'client_id' => $this->clientA->id,
             'user_id' => $this->customer->id,
             'order_number' => 'ORD-TEST-001',
-            'start_date' => Carbon::today(),
-            'end_date' => Carbon::today()->addDays(2),
+            'rental_start_date' => Carbon::today(),
+            'rental_end_date' => Carbon::today()->addDays(2),
+            'duration_days' => 2,
             'total_amount' => 500000,
+            'shipping_address' => 'Jl. Kamera No. 1 Malang',
+            'shipping_method' => 'kurir',
             'status' => 'menunggu_pembayaran',
         ]);
 
@@ -199,9 +219,12 @@ class AdminDashboardTest extends TestCase
             'client_id' => $this->clientA->id,
             'user_id' => $this->customer->id,
             'order_number' => 'ORD-TEST-002',
-            'start_date' => Carbon::yesterday(),
-            'end_date' => Carbon::tomorrow(),
+            'rental_start_date' => Carbon::yesterday(),
+            'rental_end_date' => Carbon::tomorrow(),
+            'duration_days' => 2,
             'total_amount' => 300000,
+            'shipping_address' => 'Jl. Kamera No. 2 Malang',
+            'shipping_method' => 'kurir',
             'status' => 'sedang_disewa',
         ]);
 
@@ -210,18 +233,29 @@ class AdminDashboardTest extends TestCase
             'client_id' => $this->clientA->id,
             'user_id' => $this->customer->id,
             'order_number' => 'ORD-TEST-003',
-            'start_date' => Carbon::today(),
-            'end_date' => Carbon::today()->addDays(1),
+            'rental_start_date' => Carbon::today(),
+            'rental_end_date' => Carbon::today()->addDays(1),
+            'duration_days' => 1,
             'total_amount' => 250000,
+            'shipping_address' => 'Jl. Kamera No. 3 Malang',
+            'shipping_method' => 'kurir',
             'status' => 'menunggu_verifikasi',
+        ]);
+
+        $paymentMethod = ClientPaymentMethod::create([
+            'client_id' => $this->clientA->id,
+            'bank_name' => 'BCA',
+            'account_number' => '1234567890',
+            'account_holder' => 'Toko Kamera',
+            'is_active' => true,
         ]);
 
         Payment::create([
             'order_id' => $order3->id,
-            'payment_method_id' => null,
+            'client_payment_method_id' => $paymentMethod->id,
             'amount' => 250000,
+            'payment_proof' => 'proof.jpg',
             'status' => 'menunggu_konfirmasi',
-            'payment_type' => 'sewa',
         ]);
 
         $response = $this->actingAs($this->adminA)->get(route('admin.dashboard'));
@@ -249,6 +283,7 @@ class AdminDashboardTest extends TestCase
         // Data Toko A
         Product::create([
             'client_id' => $this->clientA->id,
+            'category_id' => $this->categoryA->id,
             'name' => 'Lensa Canon Toko A',
             'slug' => 'lensa-canon-toko-a',
             'rental_price' => 100000,
@@ -259,15 +294,19 @@ class AdminDashboardTest extends TestCase
             'client_id' => $this->clientA->id,
             'user_id' => $this->customer->id,
             'order_number' => 'ORD-TOKO-A-999',
-            'start_date' => Carbon::today(),
-            'end_date' => Carbon::today()->addDays(2),
+            'rental_start_date' => Carbon::today(),
+            'rental_end_date' => Carbon::today()->addDays(2),
+            'duration_days' => 2,
             'total_amount' => 200000,
+            'shipping_address' => 'Jl. Toko A No. 1',
+            'shipping_method' => 'kurir',
             'status' => 'sedang_disewa',
         ]);
 
         // Data Toko B (Harus tidak terlihat oleh Admin Toko A)
         Product::create([
             'client_id' => $this->clientB->id,
+            'category_id' => $this->categoryB->id,
             'name' => 'Tenda Dome Toko B',
             'slug' => 'tenda-dome-toko-b',
             'rental_price' => 75000,
@@ -278,9 +317,12 @@ class AdminDashboardTest extends TestCase
             'client_id' => $this->clientB->id,
             'user_id' => $this->customer->id,
             'order_number' => 'ORD-TOKO-B-888',
-            'start_date' => Carbon::today(),
-            'end_date' => Carbon::today()->addDays(2),
+            'rental_start_date' => Carbon::today(),
+            'rental_end_date' => Carbon::today()->addDays(2),
+            'duration_days' => 2,
             'total_amount' => 500000,
+            'shipping_address' => 'Jl. Toko B No. 1',
+            'shipping_method' => 'kurir',
             'status' => 'sedang_disewa',
         ]);
 

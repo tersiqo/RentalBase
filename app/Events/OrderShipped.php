@@ -39,11 +39,15 @@ class OrderShipped implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
+        $isPickup = $this->order->isPickup();
+
         return [
             'order_id' => $this->order->id,
             'order_number' => $this->order->order_number,
-            'status' => 'dikirim',
-            'message' => 'Pesanan #' . $this->order->order_number . ' sedang dalam perjalanan oleh kurir!',
+            'status' => $this->order->status,
+            'message' => $isPickup
+                ? 'Pesanan #' . $this->order->order_number . ' telah diserahkan di toko. Masa sewa resmi aktif!'
+                : 'Pesanan #' . $this->order->order_number . ' sedang dalam perjalanan oleh kurir!',
         ];
     }
 }

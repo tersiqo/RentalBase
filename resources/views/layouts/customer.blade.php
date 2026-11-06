@@ -716,7 +716,8 @@
                         .listen('.order.shipped', (e) => {
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Barang Sedang Dikirim!', e.message || `Pesanan #${e.order_number} sedang dalam perjalanan.`, targetUrl);
+                            const title = (e.status === 'sedang_disewa') ? 'Barang Telah Diserahkan!' : 'Barang Sedang Dikirim!';
+                            this.addToast(title, e.message || `Pesanan #${e.order_number} sedang dalam perjalanan.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
                                 setTimeout(() => window.location.reload(), 800);
                             }

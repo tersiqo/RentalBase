@@ -132,6 +132,8 @@ class AdminStaffTest extends TestCase
 
     public function test_staff_admin_cannot_access_admin_staff_management(): void
     {
+        $this->staffAdminA->update(['status' => 'aktif']);
+
         // Staf admin (bukan Primary Admin) harus ditolak dengan 403
         $response = $this->actingAs($this->staffAdminA)->get(route('admin.admins.index'));
 

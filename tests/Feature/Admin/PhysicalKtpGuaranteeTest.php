@@ -160,8 +160,8 @@ class PhysicalKtpGuaranteeTest extends TestCase
         $successResponse->assertRedirect(route('admin.shipments.index'));
         $successResponse->assertSessionHas('success');
 
-        // Status pesanan menjadi dikirim & jaminan KTP menjadi dititipkan beserta timestamp fisik
-        $this->assertEquals('dikirim', $this->order->fresh()->status);
+        // Status pesanan menjadi sedang_disewa (karena ambil_toko) & jaminan KTP menjadi dititipkan beserta timestamp fisik
+        $this->assertEquals('sedang_disewa', $this->order->fresh()->status);
         $this->assertEquals('dititipkan', $this->guarantee->fresh()->status);
         $this->assertNotNull($this->guarantee->fresh()->deposited_at);
     }
