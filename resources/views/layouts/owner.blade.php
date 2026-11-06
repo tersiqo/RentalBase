@@ -367,5 +367,103 @@
     }
 </script>
 
+@if(config('broadcasting.connections.pusher.key'))
+{{-- Pusher & Laravel Echo Runtime Client for Owner Platform --}}
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+<script>
+    if (!window.Echo && typeof Pusher !== 'undefined' && typeof Echo !== 'undefined') {
+        window.Pusher = Pusher;
+        window.Echo = new Echo({
+            broadcaster: 'pusher',
+            key: '{{ config('broadcasting.connections.pusher.key') }}',
+            cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+            forceTLS: true
+        });
+    }
+</script>
+
+{{-- Real-Time Owner Toast Notification Container --}}
+<div x-data="ownerRealtimeNotification()" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none max-w-sm w-full">
+    <template x-for="toast in toasts" :key="toast.id">
+        <div class="pointer-events-auto bg-white border border-orange-200 rounded-xl shadow-2xl p-4 flex items-start gap-3 transform transition-all duration-300 ease-out"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 translate-y-2">
+            <div class="w-9 h-9 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-bold text-gray-900" x-text="toast.title"></h4>
+                <p class="text-xs text-gray-600 mt-0.5" x-text="toast.message"></p>
+                <div class="mt-2 flex items-center gap-2">
+                    <a x-show="toast.url" :href="toast.url" class="text-xs font-semibold text-orange-600 hover:text-orange-700">Tinjau &rarr;</a>
+                    <button @click="removeToast(toast.id)" class="text-xs text-gray-400 hover:text-gray-600 ml-auto">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<script>
+    function ownerRealtimeNotification() {
+        return {
+            toasts: [],
+            init() {
+                if (!window.Echo) {
+                    return;
+                }
+
+                window.Echo.private('owner.platform')
+                    .listen('.tenant.registered', (e) => {
+                        this.playChime();
+                        this.addToast('Pendaftaran Toko Baru!', e.message || `Toko "${e.business_name}" (${e.subdomain}) baru saja mendaftar.`, '/owner/registrations');
+                        if (window.location.pathname.includes('/owner/registrations')) {
+                            setTimeout(() => window.location.reload(), 800);
+                        }
+                    })
+                    .listen('.subscription.renewal_uploaded', (e) => {
+                        this.playChime();
+                        this.addToast('Pengajuan Langganan Baru!', e.message || `Toko "${e.client_name}" mengajukan paket ${e.plan_name}.`, '/owner/subscriptions');
+                        if (window.location.pathname.includes('/owner/subscriptions')) {
+                            setTimeout(() => window.location.reload(), 800);
+                        }
+                    });
+            },
+            addToast(title, message, url = null) {
+                const id = Date.now();
+                this.toasts.push({ id, title, message, url });
+                setTimeout(() => this.removeToast(id), 7000);
+            },
+            removeToast(id) {
+                this.toasts = this.toasts.filter(t => t.id !== id);
+            },
+            playChime() {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.12);
+                    osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.24);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.6);
+                } catch (err) {}
+            }
+        };
+    }
+</script>
+@endif
+
 </body>
 </html>

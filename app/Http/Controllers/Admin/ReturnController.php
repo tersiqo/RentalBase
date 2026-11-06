@@ -194,6 +194,8 @@ class ReturnController extends Controller
                 event(new \App\Events\ReturnAccepted($order));
             }
 
+            \App\Jobs\AutoCompleteOrderJob::dispatch($order->id)->delay(now()->addHours(24));
+
             if ($actionType === 'denda' && $lateFeeAmount > 0 && class_exists(\App\Events\FineIssued::class)) {
                 event(new \App\Events\FineIssued($order, $lateFeeAmount));
             }

@@ -213,6 +213,8 @@ class OrderController extends Controller
                     event(new \App\Events\OrderConfirmed($lockedOrder));
                 }
 
+                \App\Jobs\CancelUnpaidOrderJob::dispatch($lockedOrder->id)->delay(now()->addHours(2));
+
                 return redirect()->back()
                     ->with('success', 'Identitas pesanan #' . $lockedOrder->order_number . ' disetujui! Pesanan kini berstatus Menunggu Pembayaran dari customer.');
             }

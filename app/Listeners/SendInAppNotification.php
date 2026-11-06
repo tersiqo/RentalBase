@@ -22,9 +22,10 @@ use App\Events\TenantRegistrationSubmitted;
 use App\Models\Notification;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 
-class SendInAppNotification
+class SendInAppNotification implements ShouldQueue
 {
     /**
      * Handle incoming notification events.

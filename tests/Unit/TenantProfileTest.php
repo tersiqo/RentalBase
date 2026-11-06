@@ -22,6 +22,8 @@ class TenantProfileTest extends TestCase
             'subdomain',
             'logo_path',
             'theme_color',
+            'hero_showcase_mode',
+            'hero_featured_product_id',
         ];
 
         $this->assertEqualsCanonicalizing($expectedFillable, $profile->getFillable());

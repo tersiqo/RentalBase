@@ -7,5 +7,8 @@ window.Alpine = Alpine;
 // Tambah plugin Alpine jika ada
 // Alpine.plugin(...);
 
+// Inisialisasi WebSocket Echo (Pusher) jika env tersedia
+import './echo';
+
 // Jalankan Livewire (ini otomatis meng-start Alpine yang sudah dilengkapi fitur Livewire)
 Livewire.start();
