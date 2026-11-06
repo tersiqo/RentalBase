@@ -721,4 +721,71 @@ class OwnerRegistrationVerificationTest extends TestCase
         $user->refresh();
         $this->assertEquals('pending_setup', $user->status);
     }
+
+    public function test_unauthenticated_user_cannot_access_owner_registrations_queue(): void
+    {
+        $response = $this->get(route('owner.registrations.index'));
+
+        $response->assertRedirect(route('owner.login'));
+    }
+
+    public function test_admin_rental_cannot_access_owner_registrations_queue(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Rental Toko C',
+            'subdomain' => 'tokoc',
+            'status' => 'aktif',
+        ]);
+
+        $admin = User::create([
+            'client_id' => $client->id,
+            'name' => 'Admin C',
+            'email' => 'admin.c@tokoc.test',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('owner.registrations.index'));
+
+        $response->assertRedirect(route('admin.dashboard'));
+        $response->assertSessionHas('error');
+    }
+
+    public function test_customer_cannot_access_owner_registrations_queue(): void
+    {
+        $customer = User::create([
+            'name' => 'Customer Biasa',
+            'email' => 'cust@example.test',
+            'password' => Hash::make('password123'),
+            'role' => 'customer',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->actingAs($customer)->get(route('owner.registrations.index'));
+
+        $response->assertRedirect(route('owner.login'));
+        $response->assertSessionHas('error');
+    }
+
+    public function test_owner_reject_fails_if_rejection_reason_is_empty(): void
+    {
+        $reg = ClientRegistration::create([
+            'business_name' => 'Kamera Reject Test',
+            'subdomain' => 'rejecttest',
+            'plan_name' => 'starter',
+            'admin_name' => 'Reject PIC',
+            'admin_email' => 'reject@test.id',
+            'admin_password' => Hash::make('password123'),
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post(route('owner.registrations.reject', $reg->id), [
+            'rejection_reason' => '',
+        ]);
+
+        $response->assertSessionHasErrors(['rejection_reason']);
+        $reg->refresh();
+        $this->assertEquals('menunggu_verifikasi', $reg->status);
+    }
 }
