@@ -74,18 +74,6 @@ class AdminStaffController extends Controller
         $maxAdmins = $planInfo['maxAdmins'];
         $planName  = $planInfo['planName'];
 
-        // Validasi kuota backend: tolak jika kuota admin aktif sudah penuh
-        $activeAdminsCount = User::where('client_id', $client->id)
-            ->where('role', 'admin_rental')
-            ->where('status', 'aktif')
-            ->count();
-
-        if ($activeAdminsCount >= $maxAdmins) {
-            return back()
-                ->withInput($request->except('password', 'password_confirmation'))
-                ->with('error', "Kuota Admin aktif untuk paket {$planName} telah mencapai batas ({$maxAdmins} akun aktif). Nonaktifkan staf yang tidak aktif atau hubungi Owner untuk upgrade paket.");
-        }
-
         $validated = $request->validate([
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
@@ -100,6 +88,18 @@ class AdminStaffController extends Controller
             'password.min'      => 'Password minimal harus 8 karakter.',
             'password.confirmed'=> 'Konfirmasi password tidak cocok dengan password yang dimasukkan.',
         ]);
+
+        // Validasi kuota backend: tolak jika kuota admin aktif sudah penuh
+        $activeAdminsCount = User::where('client_id', $client->id)
+            ->where('role', 'admin_rental')
+            ->where('status', 'aktif')
+            ->count();
+
+        if ($activeAdminsCount >= $maxAdmins) {
+            return back()
+                ->withInput($request->except('password', 'password_confirmation'))
+                ->with('error', "Kuota Admin aktif untuk paket {$planName} telah mencapai batas ({$maxAdmins} akun aktif). Nonaktifkan staf yang tidak aktif atau hubungi Owner untuk upgrade paket.");
+        }
 
         // Buat akun staf admin baru dengan role admin_rental terikat ke client_id toko login
         User::create([

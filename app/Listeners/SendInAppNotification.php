@@ -134,11 +134,17 @@ class SendInAppNotification implements ShouldQueue
     protected function handleOrderShipped(OrderShipped $event): void
     {
         $order = $event->order;
+        $isPickup = $order->isPickup();
+        $title = $isPickup ? ('Sewa Aktif #' . $order->order_number) : ('Barang Dikirim #' . $order->order_number);
+        $message = $isPickup
+            ? "Barang pesanan #{$order->order_number} telah diserahkan di toko. Masa sewa resmi aktif."
+            : "Barang pesanan #{$order->order_number} sedang dalam pengiriman atau siap diambil sesuai metode yang dipilih.";
+
         $this->createNotificationIfNotDuplicate(
             userId: $order->user_id,
             clientId: $order->client_id,
-            title: 'Barang Dikirim #' . $order->order_number,
-            message: "Barang pesanan #{$order->order_number} sedang dalam pengiriman atau siap diambil sesuai metode yang dipilih.",
+            title: $title,
+            message: $message,
             type: 'shipment'
         );
     }

@@ -128,6 +128,8 @@ class ShipmentController extends Controller
             $trackingNumber = $isPickup ? ('PICKUP-' . ($order->order_number ?? $order->id)) : $request->tracking_number;
             $deliveryAddr   = $isPickup ? 'Pelanggan mengambil langsung di toko rental' : ($order->shipping_address ?: 'Alamat Pengiriman');
 
+            $targetStatus = $isPickup ? 'sedang_disewa' : 'dikirim';
+
             Shipment::updateOrCreate(
                 ['order_id' => $order->id],
                 [
@@ -135,14 +137,15 @@ class ShipmentController extends Controller
                     'courier_name'     => $courierName,
                     'tracking_number'  => $trackingNumber,
                     'delivery_address' => $deliveryAddr,
-                    'status'           => 'dikirim',
+                    'status'           => $isPickup ? 'diterima' : 'dikirim',
                     'shipped_at'       => now(),
+                    'delivered_at'     => $isPickup ? now() : null,
                 ]
             );
 
-            // Mengubah status order menjadi "dikirim"
+            // Mengubah status order menjadi "sedang_disewa" jika ambil di toko, atau "dikirim" jika kurir
             $order->update([
-                'status' => 'dikirim',
+                'status' => $targetStatus,
             ]);
 
             // Update status jaminan KTP menjadi "dititipkan" dan catat waktu serah terima fisik KTP

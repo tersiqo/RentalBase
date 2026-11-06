@@ -190,7 +190,7 @@ class LogisticsAndActivityIntegrationTest extends TestCase
         $response->assertRedirect(route('admin.shipments.index'));
 
         $order->refresh();
-        $this->assertSame('dikirim', $order->status);
+        $this->assertSame('sedang_disewa', $order->status);
 
         // Jam mulai & batas kembali otomatis di-sync ke waktu sekarang (handover)
         $this->assertTrue($order->rental_start_date->greaterThan($plannedStart));

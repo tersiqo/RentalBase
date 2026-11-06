@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $client->nama_usaha ?? 'RentalBase Tenant' }} - Katalog Sewa</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
@@ -631,7 +632,15 @@
                 broadcaster: 'pusher',
                 key: '{{ config('broadcasting.connections.pusher.key') }}',
                 cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
-                forceTLS: true
+                forceTLS: true,
+                csrfToken: '{{ csrf_token() }}',
+                authEndpoint: '/broadcasting/auth',
+                auth: {
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                }
             });
         }
     </script>
@@ -673,6 +682,9 @@
                     }
 
                     window.Echo.private(`customer.${userId}.orders`)
+                        .error((error) => {
+                            console.error('[RentalBase Realtime] Gagal autentikasi channel customer:', error);
+                        })
                         .listen('.identity.approved', (e) => {
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
@@ -716,7 +728,8 @@
                         .listen('.order.shipped', (e) => {
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Barang Sedang Dikirim!', e.message || `Pesanan #${e.order_number} sedang dalam perjalanan.`, targetUrl);
+                            const title = (e.status === 'sedang_disewa') ? 'Barang Telah Diserahkan!' : 'Barang Sedang Dikirim!';
+                            this.addToast(title, e.message || `Pesanan #${e.order_number} sedang dalam perjalanan.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
                                 setTimeout(() => window.location.reload(), 800);
                             }

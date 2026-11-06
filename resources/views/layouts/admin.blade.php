@@ -708,7 +708,15 @@
             broadcaster: 'pusher',
             key: '{{ config('broadcasting.connections.pusher.key') }}',
             cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
-            forceTLS: true
+            forceTLS: true,
+            csrfToken: '{{ csrf_token() }}',
+            authEndpoint: '/broadcasting/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }
         });
     }
 </script>
@@ -751,6 +759,9 @@
                 }
 
                 window.Echo.private(`tenant.${clientId}.orders`)
+                    .error((error) => {
+                        console.error('[RentalBase Realtime] Gagal autentikasi channel tenant:', error);
+                    })
                     .listen('.order.placed', (e) => {
                         this.playChime();
                         this.addToast('Pesanan Baru Masuk!', e.message || `Pesanan #${e.order_number} baru saja dibuat oleh customer.`, `/admin/orders/${e.order_id}`);
