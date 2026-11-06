@@ -215,4 +215,46 @@ class NotificationTest extends TestCase
         $this->assertTrue($n2->fresh()->is_read);
         $this->assertFalse($otherNotif->fresh()->is_read);
     }
+
+    public function test_owner_mark_as_read_via_ajax_returns_json(): void
+    {
+        $owner = User::factory()->create(['role' => 'owner', 'status' => 'aktif']);
+
+        $notif = Notification::create([
+            'user_id' => $owner->id,
+            'title' => 'Test Ajax Notif',
+            'message' => 'Pesan Ajax',
+            'type' => 'subscription',
+            'is_read' => false,
+        ]);
+
+        $response = $this->actingAs($owner)->postJson("/owner/notifications/{$notif->id}/read");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'unread_count' => 0,
+        ]);
+        $this->assertTrue($notif->fresh()->is_read);
+    }
+
+    public function test_owner_mark_as_read_redirects_to_internal_owner_link_safely(): void
+    {
+        $owner = User::factory()->create(['role' => 'owner', 'status' => 'aktif']);
+
+        $notif = Notification::create([
+            'user_id' => $owner->id,
+            'title' => 'Deep Link Notif',
+            'message' => 'Pesan Deep Link',
+            'type' => 'registration',
+            'is_read' => false,
+        ]);
+
+        $response = $this->actingAs($owner)->post("/owner/notifications/{$notif->id}/read", [
+            'redirect_to' => '/owner/registrations',
+        ]);
+
+        $response->assertRedirect('/owner/registrations');
+        $this->assertTrue($notif->fresh()->is_read);
+    }
 }

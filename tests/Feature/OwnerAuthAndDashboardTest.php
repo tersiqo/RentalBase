@@ -270,4 +270,90 @@ class OwnerAuthAndDashboardTest extends TestCase
         $response->assertRedirect('/owner/login');
         $this->assertGuest();
     }
+
+    public function test_customer_cannot_access_owner_dashboard(): void
+    {
+        $customer = User::create([
+            'name' => 'Customer Biasa',
+            'email' => 'customer@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'customer',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->actingAs($customer)->get('/owner/dashboard');
+
+        $response->assertRedirect('/owner/login');
+        $response->assertSessionHas('error');
+    }
+
+    public function test_owner_dashboard_auto_expires_past_subscriptions_and_calculates_counts(): void
+    {
+        $this->withoutVite();
+
+        $owner = User::create([
+            'name' => 'Owner Platform',
+            'email' => 'owner@rentalbase.id',
+            'password' => Hash::make('password'),
+            'role' => 'owner',
+            'status' => 'aktif',
+        ]);
+
+        $activeClient = Client::create([
+            'business_name' => 'Tenant Aktif 1',
+            'subdomain' => 'tenantaktif1',
+            'status' => 'aktif',
+        ]);
+
+        $suspendedClient = Client::create([
+            'business_name' => 'Tenant Suspended 1',
+            'subdomain' => 'tenantsuspended1',
+            'status' => 'suspended',
+        ]);
+
+        // Subscription that is expired in the past, status still 'aktif' in db
+        $pastSubscription = Subscription::create([
+            'client_id' => $activeClient->id,
+            'plan_name' => 'business',
+            'price' => 99000,
+            'billing_cycle' => 'monthly',
+            'start_date' => now()->subMonths(2),
+            'end_date' => now()->subDay(),
+            'status' => 'aktif',
+        ]);
+
+        // Subscription expiring within 7 days
+        $expiringSubscription = Subscription::create([
+            'client_id' => $suspendedClient->id,
+            'plan_name' => 'starter',
+            'price' => 0,
+            'billing_cycle' => 'monthly',
+            'start_date' => now()->subMonth(),
+            'end_date' => now()->addDays(3),
+            'status' => 'aktif',
+        ]);
+
+        ClientRegistration::create([
+            'business_name' => 'Pendaftar Baru Menunggu',
+            'subdomain' => 'barumenunggu',
+            'plan_name' => 'starter',
+            'admin_name' => 'Admin Baru',
+            'admin_email' => 'baru@menunggu.test',
+            'admin_password' => Hash::make('password123'),
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $response = $this->actingAs($owner)->get('/owner/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertViewHas('totalTenant', 2);
+        $response->assertViewHas('tenantAktif', 1);
+        $response->assertViewHas('tenantSuspended', 1);
+        $response->assertViewHas('subscriptionSegera', 1);
+        $response->assertViewHas('pendaftaranMenunggu', 1);
+
+        // Assert past subscription is automatically transitioned to 'kadaluarsa'
+        $pastSubscription->refresh();
+        $this->assertEquals('kadaluarsa', $pastSubscription->status);
+    }
 }
