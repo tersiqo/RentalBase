@@ -152,7 +152,7 @@ class ProductManagementTest extends TestCase
         $response->assertDontSee('Produk Toko Sebelah');
     }
 
-    public function test_admin_can_create_product_with_valid_data(): void
+    public function test_it_05_002_admin_can_create_product_with_valid_data(): void
     {
         $file = UploadedFile::fake()->image('stroller.jpg');
 

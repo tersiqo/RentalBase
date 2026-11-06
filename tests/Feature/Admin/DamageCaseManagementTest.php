@@ -210,7 +210,7 @@ class DamageCaseManagementTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_store_new_damage_case_with_photos_and_updates_unit_status(): void
+    public function test_it_10_001_admin_can_store_new_damage_case_with_photos_and_updates_unit_status(): void
     {
         $unit2 = EquipmentUnit::create([
             'client_id' => $this->clientA->id,

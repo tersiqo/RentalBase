@@ -141,7 +141,7 @@ class CustomerDamageReportTest extends TestCase
         $response->assertRedirect('/');
     }
 
-    public function test_customer_can_view_damage_report_for_their_own_order(): void
+    public function test_it_10_002_customer_can_view_damage_report_for_their_own_order(): void
     {
         $response = $this->actingAs($this->customer)
             ->get(route('customer.orders.damage', $this->order->id));
@@ -175,7 +175,7 @@ class CustomerDamageReportTest extends TestCase
         $response->assertStatus(404);
     }
 
-    public function test_customer_can_submit_response_to_damage_case(): void
+    public function test_it_10_003_customer_can_submit_response_to_damage_case(): void
     {
         $response = $this->actingAs($this->customer)
             ->post(route('customer.orders.damage.respond', $this->order->id), [
@@ -216,7 +216,7 @@ class CustomerDamageReportTest extends TestCase
         $response->assertSessionHas('error');
     }
 
-    public function test_customer_can_upload_compensation_payment_proof(): void
+    public function test_it_10_004_customer_can_upload_compensation_payment_proof(): void
     {
         $file = UploadedFile::fake()->image('bukti_transfer_kompensasi.jpg', 600, 800);
 

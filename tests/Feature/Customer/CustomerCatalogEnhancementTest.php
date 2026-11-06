@@ -8,10 +8,12 @@ use App\Models\Client;
 use App\Models\EquipmentUnit;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderItemUnit;
 use App\Models\Product;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -74,7 +76,7 @@ class CustomerCatalogEnhancementTest extends TestCase
             ->assertSee('Sony A7 IV Body Only');
     }
 
-    public function test_quick_add_to_cart_adds_product_to_session_and_dispatches_event()
+    public function test_it_06_001_quick_add_to_cart_adds_product_to_session_and_dispatches_event()
     {
         $product = Product::create([
             'client_id' => $this->client->id,
@@ -111,7 +113,7 @@ class CustomerCatalogEnhancementTest extends TestCase
         $this->assertEquals(3, $cartItem['duration_days']);
     }
 
-    public function test_date_filter_checks_availability_against_overlapping_orders()
+    public function test_it_05_005_date_filter_checks_availability_against_overlapping_orders()
     {
         $product = Product::create([
             'client_id' => $this->client->id,
@@ -299,7 +301,7 @@ class CustomerCatalogEnhancementTest extends TestCase
         $this->assertEquals(3, $product->getAvailableUnitsForPeriod('2026-12-10', '2026-12-12'));
     }
 
-    public function test_add_to_cart_modal_validates_period_availability()
+    public function test_it_06_002_add_to_cart_modal_validates_period_availability()
     {
         $product = Product::create([
             'client_id' => $this->client->id,
@@ -404,7 +406,7 @@ class CustomerCatalogEnhancementTest extends TestCase
         $this->assertEquals(1350000, $cartItem['subtotal']);
     }
 
-    public function test_cart_page_can_edit_rental_dates_and_updates_period()
+    public function test_it_06_003_cart_page_can_edit_rental_dates_and_updates_period()
     {
         $product = Product::create([
             'client_id' => $this->client->id,
@@ -442,6 +444,15 @@ class CustomerCatalogEnhancementTest extends TestCase
             ],
         ]);
 
+        $user = User::create([
+            'name' => 'Cart Customer',
+            'email' => 'cart_customer@test.com',
+            'password' => bcrypt('password'),
+            'role' => 'customer',
+            'status' => 'aktif',
+        ]);
+        $this->actingAs($user);
+
         $newStart = '2026-12-05';
         $newEnd = '2026-12-08'; // 4 days
         $newHash = md5($product->id . $newStart . $newEnd);
@@ -465,4 +476,355 @@ class CustomerCatalogEnhancementTest extends TestCase
         $this->assertEquals($newStart, $cart[$newHash]['start_date']);
         $this->assertEquals($newEnd, $cart[$newHash]['end_date']);
     }
+
+    public function test_guest_sees_limited_preview_and_locked_catalog_notice()
+    {
+        for ($i = 1; $i <= 6; $i++) {
+            Product::create([
+                'client_id' => $this->client->id,
+                'category_id' => $this->category->id,
+                'name' => "Peralatan Bayi {$i}",
+                'slug' => "peralatan-bayi-{$i}",
+                'rental_price_per_day' => 50000 * $i,
+                'status' => 'aktif',
+            ]);
+        }
+
+        $categories = Category::where('client_id', $this->client->id)->get();
+
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->assertSee('Buka Akses Penuh')
+            ->assertSee('Mau Lihat Pilihan Alat Lainnya?')
+            ->assertSee('Masuk ke Akun')
+            ->assertSee('Daftar Akun Baru')
+            ->assertSee('Peralatan Bayi 1')
+            ->assertSee('Peralatan Bayi 2')
+            ->assertSee('Peralatan Bayi 3');
+    }
+
+    public function test_authenticated_customer_sees_all_products_without_lock()
+    {
+        for ($i = 1; $i <= 6; $i++) {
+            Product::create([
+                'client_id' => $this->client->id,
+                'category_id' => $this->category->id,
+                'name' => "Peralatan Lengkap {$i}",
+                'slug' => "peralatan-lengkap-{$i}",
+                'rental_price_per_day' => 60000 * $i,
+                'status' => 'aktif',
+            ]);
+        }
+
+        $user = User::create([
+            'name' => 'Customer Login',
+            'email' => 'customer_login@test.com',
+            'password' => bcrypt('password'),
+            'role' => 'customer',
+            'status' => 'aktif',
+        ]);
+
+        $this->actingAs($user);
+
+        $categories = Category::where('client_id', $this->client->id)->get();
+
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->assertDontSee('Buka Akses Penuh')
+            ->assertDontSee('Mau Lihat Pilihan Alat Lainnya?')
+            ->assertSee('Peralatan Lengkap 1')
+            ->assertSee('Peralatan Lengkap 6');
+    }
+
+    public function test_guest_cannot_access_product_detail_and_is_redirected_to_login()
+    {
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Detail Test Product',
+            'slug' => 'detail-test-product',
+            'rental_price_per_day' => 150000,
+            'status' => 'aktif',
+        ]);
+
+        $url = route('customer.product.show', ['subdomain' => $this->client->subdomain, 'product' => $product->id]);
+
+        $response = $this->get($url);
+
+        $response->assertRedirect();
+        $this->assertStringContainsString('/login', $response->headers->get('Location'));
+    }
+
+    public function test_it_06_004_guest_cannot_access_cart_and_is_redirected_to_login()
+    {
+        $url = route('customer.cart', ['subdomain' => $this->client->subdomain]);
+
+        $response = $this->get($url);
+
+        $response->assertRedirect();
+        $this->assertStringContainsString('/login', $response->headers->get('Location'));
+    }
+
+    public function test_catalog_page_applies_custom_theme_color_to_hero_and_badges()
+    {
+        \App\Models\TenantProfile::create([
+            'client_id' => $this->client->id,
+            'name' => 'Kamera Malang Rental',
+            'subdomain' => $this->client->subdomain,
+            'theme_color' => '#1D4ED8',
+            'text_color' => '#ffffff',
+        ]);
+
+        $response = $this->get(route('customer.home', ['subdomain' => $this->client->subdomain]));
+
+        $response->assertStatus(200);
+        $response->assertSee('--tenant-theme: #1D4ED8;', false);
+        $response->assertSee('tenant-hero-bg');
+        $response->assertSee('tenant-hero-card');
+        $response->assertSee('tenant-badge');
+    }
+
+    public function test_customer_layout_renders_interactive_cara_sewa_and_bantuan_modals()
+    {
+        $response = $this->get(route('customer.home', ['subdomain' => $this->client->subdomain]));
+
+        $response->assertStatus(200);
+        $response->assertSee('howToRentModalOpen');
+        $response->assertSee('helpModalOpen');
+        $response->assertSee('Panduan Cara Sewa &amp; Jaminan Identitas', false);
+        $response->assertSee('Wajib Titip KTP');
+        $response->assertSee('Pusat Bantuan &amp; Tanya Jawab', false);
+        $response->assertSee('Apakah perlu membayar uang deposit jaminan?');
+    }
+
+    public function test_catalog_hero_renders_default_illustration_when_mode_is_illustration()
+    {
+        Cache::forever("tenant_hero_showcase_{$this->client->id}", [
+            'mode' => 'illustration',
+            'product_id' => null,
+        ]);
+
+        Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Sony FX3 Cinema Line',
+            'slug' => 'sony-fx3-cinema-line',
+            'rental_price_per_day' => 450000,
+            'status' => 'aktif',
+        ]);
+
+        $categories = Category::where('client_id', $this->client->id)->get();
+
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->assertSeeHtml('<svg width="230" height="230"')
+            ->assertDontSee('⭐ Produk Unggulan');
+    }
+
+    public function test_catalog_hero_renders_featured_product_showcase_when_mode_is_featured()
+    {
+        Cache::forever("tenant_hero_showcase_{$this->client->id}", [
+            'mode' => 'featured',
+            'product_id' => null,
+        ]);
+
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Sony A7 IV Body Only',
+            'slug' => 'sony-a7-iv-body-only',
+            'rental_price_per_day' => 250000,
+            'status' => 'aktif',
+        ]);
+
+        EquipmentUnit::create([
+            'client_id' => $this->client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'SNY-HERO-01',
+            'status' => 'tersedia',
+        ]);
+
+        $categories = Category::where('client_id', $this->client->id)->get();
+
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->assertSee('⭐ Produk Unggulan')
+            ->assertSee('Sony A7 IV Body Only')
+            ->assertSee('250.000')
+            ->assertSee('1 Tersedia')
+            ->assertSee('Lihat Detail')
+            ->assertSee('+ Sewa');
+    }
+
+    public function test_catalog_hero_renders_specific_featured_product_when_specified_by_admin()
+    {
+        $productA = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Produk A Biasa',
+            'slug' => 'produk-a-biasa',
+            'rental_price_per_day' => 100000,
+            'status' => 'aktif',
+        ]);
+
+        $productB = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Produk B Pilihan Admin',
+            'slug' => 'produk-b-pilihan-admin',
+            'rental_price_per_day' => 350000,
+            'status' => 'aktif',
+        ]);
+
+        Cache::forever("tenant_hero_showcase_{$this->client->id}", [
+            'mode' => 'featured',
+            'product_id' => $productB->id,
+        ]);
+
+        $categories = Category::where('client_id', $this->client->id)->get();
+
+        $component = Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories]);
+
+        $component->assertSee('⭐ Produk Unggulan')
+            ->assertSee('Produk B Pilihan Admin')
+            ->assertSee('350.000');
+
+        $this->assertEquals($productB->id, $component->get('featuredProduct')->id);
+    }
+
+    public function test_catalog_hero_falls_back_to_illustration_when_featured_mode_but_no_active_products()
+    {
+        Cache::forever("tenant_hero_showcase_{$this->client->id}", [
+            'mode' => 'featured',
+            'product_id' => null,
+        ]);
+
+        // Toko tidak memiliki produk aktif sama sekali
+        $categories = Category::where('client_id', $this->client->id)->get();
+
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->assertSeeHtml('<svg width="230" height="230"')
+            ->assertDontSee('⭐ Produk Unggulan');
+    }
+
+    public function test_admin_can_update_hero_showcase_settings_via_tenant_profile_controller()
+    {
+        $admin = User::create([
+            'name' => 'Admin Utama',
+            'email' => 'admin_hero@test.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin_rental',
+            'client_id' => $this->client->id,
+            'status' => 'aktif',
+        ]);
+
+        $this->client->update(['primary_admin_id' => $admin->id]);
+
+        $this->actingAs($admin);
+
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Kamera Spesifik Highlight',
+            'slug' => 'kamera-spesifik-highlight',
+            'rental_price_per_day' => 200000,
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->post(route('admin.settings.profile.update'), [
+            'name' => 'Kamera Malang Rental Baru',
+            'hero_showcase_mode' => 'featured',
+            'hero_featured_product_id' => $product->id,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $savedCache = Cache::get("tenant_hero_showcase_{$this->client->id}");
+        $this->assertNotNull($savedCache);
+        $this->assertEquals('featured', $savedCache['mode']);
+        $this->assertEquals($product->id, $savedCache['product_id']);
+
+        // Test switch back to illustration
+        $response2 = $this->post(route('admin.settings.profile.update'), [
+            'name' => 'Kamera Malang Rental Baru',
+            'hero_showcase_mode' => 'illustration',
+            'hero_featured_product_id' => null,
+        ]);
+
+        $response2->assertRedirect();
+        $savedCache2 = Cache::get("tenant_hero_showcase_{$this->client->id}");
+        $this->assertEquals('illustration', $savedCache2['mode']);
+        $this->assertNull($savedCache2['product_id']);
+    }
+
+    public function test_advance_booking_preserves_availability_for_prior_non_conflicting_dates(): void
+    {
+        $user = User::factory()->create([
+            'client_id' => $this->client->id,
+            'role' => 'customer',
+        ]);
+
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Stroller Bayi Fleksibel',
+            'slug' => 'stroller-bayi-fleksibel',
+            'rental_price_per_day' => 50000,
+            'status' => 'aktif',
+        ]);
+
+        $unit = EquipmentUnit::create([
+            'client_id' => $this->client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'STR-FLEKS-01',
+            'status' => 'tersedia',
+        ]);
+
+        // Customer A memesan untuk Tanggal 10 - 11 November 2026
+        $order = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $user->id,
+            'order_number' => 'ORD-NOV-10-11',
+            'rental_start_date' => '2026-11-10 10:00:00',
+            'rental_end_date' => '2026-11-11 10:00:00',
+            'duration_days' => 2,
+            'shipping_address' => 'Jl. Ijen No. 10, Malang',
+            'total_amount' => 100000,
+            'status' => 'siap_kirim',
+        ]);
+
+        $item = OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price_per_day' => 50000,
+            'subtotal' => 100000,
+        ]);
+
+        OrderItemUnit::create([
+            'order_item_id' => $item->id,
+            'equipment_unit_id' => $unit->id,
+        ]);
+
+        $categories = Category::where('client_id', $this->client->id)->get();
+
+        // 1. Saat buka katalog tanpa memilih tanggal (hari ini: tgl 1 Nov):
+        // Unit tetap terlihat 'Tersedia 1' karena tidak ada yang menyewa hari ini
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->assertSee($product->name)
+            ->assertSee('Tersedia 1');
+
+        // 2. Saat Customer B mencari tanggal 8 - 9 November (tidak bentrok):
+        // Unit tetap 'Tersedia 1' sehingga Customer B BISA MENYEWA!
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->set('startDate', '2026-11-08')
+            ->set('endDate', '2026-11-09')
+            ->assertSee('Tersedia 1');
+
+        // 3. Saat mencari tanggal 10 - 11 November (bentrok dengan Customer A):
+        // Unit tampil 'Unit Kosong'
+        Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
+            ->set('startDate', '2026-11-10')
+            ->set('endDate', '2026-11-11')
+            ->assertSee('Unit Kosong');
+    }
 }
+
+

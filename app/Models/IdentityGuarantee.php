@@ -6,7 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class IdentityGuarantee extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'order_id',
+        'customer_id',
+        'full_name',
+        'identity_number',
+        'identity_document_image',
+        'face_image',
+        'id_card_photo',
+        'selfie_photo',
+        'identity_address',
+        'status',
+        'reviewed_by',
+        'deposited_at',
+        'returned_at',
+    ];
 
     protected $casts = [
         'deposited_at' => 'datetime',
@@ -59,11 +73,21 @@ class IdentityGuarantee extends Model
 
     public function getIdentityDocumentUrlAttribute(): ?string
     {
-        return storage_url($this->identity_document_image ?? $this->ktp_photo);
+        return storage_url($this->identity_document_image ?? $this->ktp_photo ?? $this->id_card_photo);
     }
 
     public function getFaceImageUrlAttribute(): ?string
     {
         return storage_url($this->face_image ?? $this->selfie_photo);
+    }
+
+    public function getIdCardPhotoUrlAttribute(): ?string
+    {
+        return $this->identity_document_url;
+    }
+
+    public function getSelfiePhotoUrlAttribute(): ?string
+    {
+        return $this->face_image_url;
     }
 }
