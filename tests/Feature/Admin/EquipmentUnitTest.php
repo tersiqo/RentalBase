@@ -194,7 +194,7 @@ class EquipmentUnitTest extends TestCase
         $response->assertDontSee('YOYO-GOOD');
     }
 
-    public function test_admin_can_store_new_unit_within_quota(): void
+    public function test_it_05_003_admin_can_store_new_unit_within_quota(): void
     {
         $payload = [
             'product_id' => $this->product->id,
@@ -369,7 +369,7 @@ class EquipmentUnitTest extends TestCase
         ]);
     }
 
-    public function test_unit_with_active_order_cannot_be_deleted(): void
+    public function test_it_05_004_unit_with_active_order_cannot_be_deleted(): void
     {
         $unit = EquipmentUnit::create([
             'client_id' => $this->client->id,

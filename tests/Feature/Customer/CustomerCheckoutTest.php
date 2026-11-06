@@ -11,7 +11,9 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use App\Livewire\Customer\AddToCartModal;
+use App\Models\IdentityGuarantee;
 use App\Models\OrderItem;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -176,7 +178,7 @@ class CustomerCheckoutTest extends TestCase
             ->assertSessionHasErrors('period');
     }
 
-    public function test_store_creates_order_with_matching_item_count(): void
+    public function test_it_07_001_store_creates_order_with_matching_item_count(): void
     {
         $productA = $this->makeProduct('Box Bayi', 35000);
         $productB = $this->makeProduct('Stroller Lipat', 40000);
@@ -299,7 +301,7 @@ class CustomerCheckoutTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
-    public function test_direct_finds_next_available_period_when_tomorrow_is_booked(): void
+    public function test_it_07_004_direct_finds_next_available_period_when_tomorrow_is_booked(): void
     {
         $product = $this->makeProduct('Box Bayi', 35000);
 
@@ -384,4 +386,349 @@ class CustomerCheckoutTest extends TestCase
         $this->assertNotEmpty($cart);
         $this->assertNotEmpty(session('checkout_items'));
     }
+
+    public function test_checkout_view_provides_address_templates_and_previous_identity(): void
+    {
+        $this->user->update([
+            'address' => 'Jl. Veteran No. 10, Malang',
+            'phone' => '081234567890',
+        ]);
+
+        $prevOrder = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $this->user->id,
+            'order_number' => 'ORD-PREV-001',
+            'status' => 'selesai',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'shipping_address' => 'Jl. Soekarno Hatta No. 45, Malang',
+            'rental_start_date' => now()->subDays(5)->format('Y-m-d'),
+            'rental_end_date' => now()->subDays(3)->format('Y-m-d'),
+            'duration_days' => 2,
+            'total_amount' => 100000,
+        ]);
+
+        IdentityGuarantee::create([
+            'order_id' => $prevOrder->id,
+            'customer_id' => $this->user->id,
+            'full_name' => 'Tersiqo Iqbal',
+            'identity_number' => '3579012345678901',
+            'identity_document_image' => 'identity_guarantees/fake-ktp.jpg',
+            'face_image' => 'identity_guarantees/fake-selfie.jpg',
+            'identity_address' => 'Jl. KTP Asli No. 99, Surabaya',
+            'status' => 'dikembalikan',
+        ]);
+
+        $product = $this->makeProduct('Stroller Bayi Premium', 50000);
+        $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+
+        $response = $this->actingAs($this->user)
+            ->get(route('customer.checkout', ['subdomain' => $this->client->subdomain]));
+
+        $response->assertOk()
+            ->assertViewIs('customer.checkout')
+            ->assertViewHas('profileAddress', 'Jl. Veteran No. 10, Malang')
+            ->assertViewHas('lastOrderAddress', 'Jl. Soekarno Hatta No. 45, Malang')
+            ->assertViewHas('lastIdentity')
+            ->assertSee('Alamat Utama Profil')
+            ->assertSee('Pengiriman Terakhir')
+            ->assertSee('Sama dengan Alamat Pengiriman')
+            ->assertSee('Auto-Filled');
+    }
+
+    public function test_it_07_002_checkout_store_auto_saves_address_and_phone_to_profile_when_empty(): void
+    {
+        $this->user->update([
+            'address' => null,
+            'phone' => null,
+        ]);
+
+        $product = $this->makeProduct('Baby Car Seat', 45000);
+        $hashes = $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+
+        $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+            'subdomain' => $this->client->subdomain,
+        ]), [
+            'selected_hashes' => $hashes,
+            'items' => [
+                $hashes[0] => ['quantity' => 1],
+            ],
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDay()->format('Y-m-d'),
+            'shipping_address' => 'Jl. Danau Toba No. 77, Sawojajar, Kota Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'whatsapp_number' => '082233445566',
+            'full_name' => $this->user->name,
+            'identity_number' => '3578901234567890',
+            'identity_address' => 'Jl. Danau Toba No. 77, Sawojajar, Kota Malang',
+            'identity_document_image' => UploadedFile::fake()->image('ktp.jpg'),
+            'face_image' => UploadedFile::fake()->image('face.jpg'),
+            'terms' => '1',
+        ]);
+
+        $response->assertRedirect(route('customer.orders'));
+
+        $this->user->refresh();
+        $this->assertSame('Jl. Danau Toba No. 77, Sawojajar, Kota Malang', $this->user->address);
+        $this->assertSame('082233445566', $this->user->phone);
+    }
+
+    public function test_checkout_store_updates_profile_address_when_save_checkbox_checked(): void
+    {
+        $this->user->update([
+            'address' => 'Jl. Alamat Lama No. 1, Malang',
+            'phone' => '081234567890',
+        ]);
+
+        $product = $this->makeProduct('Stroller Compact', 40000);
+        $hashes = $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+
+        $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+            'subdomain' => $this->client->subdomain,
+        ]), [
+            'selected_hashes' => $hashes,
+            'items' => [
+                $hashes[0] => ['quantity' => 1],
+            ],
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDay()->format('Y-m-d'),
+            'shipping_address' => 'Jl. Alamat Baru No. 99, Klojen, Kota Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'save_address_to_profile' => '1',
+            'full_name' => $this->user->name,
+            'identity_number' => '3578901234567890',
+            'identity_address' => 'Jl. Alamat Baru No. 99, Klojen, Kota Malang',
+            'identity_document_image' => UploadedFile::fake()->image('ktp.jpg'),
+            'face_image' => UploadedFile::fake()->image('face.jpg'),
+            'terms' => '1',
+        ]);
+
+        $response->assertRedirect(route('customer.orders'));
+
+        $this->user->refresh();
+        $this->assertSame('Jl. Alamat Baru No. 99, Klojen, Kota Malang', $this->user->address);
+    }
+
+    public function test_checkout_store_does_not_overwrite_profile_address_when_unchecked(): void
+    {
+        $this->user->update([
+            'address' => 'Jl. Alamat Utama Tetap No. 5, Malang',
+            'phone' => '081234567890',
+        ]);
+
+        $product = $this->makeProduct('Box Tidur Bayi', 35000);
+        $hashes = $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+
+        $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+            'subdomain' => $this->client->subdomain,
+        ]), [
+            'selected_hashes' => $hashes,
+            'items' => [
+                $hashes[0] => ['quantity' => 1],
+            ],
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDay()->format('Y-m-d'),
+            'shipping_address' => 'Jl. Villa Penginapan Sementara No. 100, Batu',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'save_address_to_profile' => '0',
+            'full_name' => $this->user->name,
+            'identity_number' => '3578901234567890',
+            'identity_address' => 'Jl. Alamat Utama Tetap No. 5, Malang',
+            'identity_document_image' => UploadedFile::fake()->image('ktp.jpg'),
+            'face_image' => UploadedFile::fake()->image('face.jpg'),
+            'terms' => '1',
+        ]);
+
+        $response->assertRedirect(route('customer.orders'));
+
+        $this->user->refresh();
+        $this->assertSame('Jl. Alamat Utama Tetap No. 5, Malang', $this->user->address);
+    }
+
+    public function test_it_07_003_checkout_sets_rental_start_and_end_time_matching_rental_time_input(): void
+    {
+        $product = $this->makeProduct('Stroller Praktis', 40000);
+        $startDate = now()->addDays(2)->format('Y-m-d');
+        $endDate = now()->addDays(4)->format('Y-m-d');
+        $hashes = $this->seedCart([$product], $startDate, $endDate);
+
+        $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+            'subdomain' => $this->client->subdomain,
+        ]), [
+            'selected_hashes' => $hashes,
+            'items' => [
+                $hashes[0] => ['quantity' => 1],
+            ],
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'rental_time' => '14:30',
+            'shipping_address' => 'Jl. Ijen No. 12, Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'full_name' => $this->user->name,
+            'identity_number' => '3578901234567890',
+            'identity_address' => 'Jl. Ijen No. 12, Malang',
+            'identity_document_image' => UploadedFile::fake()->image('ktp.jpg'),
+            'face_image' => UploadedFile::fake()->image('face.jpg'),
+            'terms' => '1',
+        ]);
+
+        $response->assertRedirect(route('customer.orders'));
+
+        $order = Order::where('user_id', $this->user->id)->latest('id')->first();
+        $this->assertNotNull($order);
+        $this->assertSame(3, (int) $order->duration_days);
+        $this->assertSame($startDate.' 14:30:00', $order->rental_start_date->format('Y-m-d H:i:s'));
+        $this->assertSame($endDate.' 14:30:00', $order->rental_end_date->format('Y-m-d H:i:s'));
+    }
+
+    public function test_checkout_defaults_rental_time_to_current_time_when_not_provided(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-11-05 10:45:00'));
+
+        try {
+            $product = $this->makeProduct('Baby Car Seat', 50000);
+            $startDate = '2026-11-06';
+            $endDate = '2026-11-07';
+            $hashes = $this->seedCart([$product], $startDate, $endDate);
+
+            $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+                'subdomain' => $this->client->subdomain,
+            ]), [
+                'selected_hashes' => $hashes,
+                'items' => [
+                    $hashes[0] => ['quantity' => 1],
+                ],
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'shipping_address' => 'Jl. Suhat No. 88, Malang',
+                'shipping_method' => Order::SHIPPING_KURIR,
+                'full_name' => $this->user->name,
+                'identity_number' => '3578901234567890',
+                'identity_address' => 'Jl. Suhat No. 88, Malang',
+                'identity_document_image' => UploadedFile::fake()->image('ktp.jpg'),
+                'face_image' => UploadedFile::fake()->image('face.jpg'),
+                'terms' => '1',
+            ]);
+
+            $response->assertRedirect(route('customer.orders'));
+
+            $order = Order::where('user_id', $this->user->id)->latest('id')->first();
+            $this->assertNotNull($order);
+            $this->assertSame(2, (int) $order->duration_days);
+            $this->assertSame('2026-11-06 10:45:00', $order->rental_start_date->format('Y-m-d H:i:s'));
+            $this->assertSame('2026-11-07 10:45:00', $order->rental_end_date->format('Y-m-d H:i:s'));
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_checkout_validates_rental_time_format(): void
+    {
+        $product = $this->makeProduct('Stroller Lipat', 45000);
+        $hashes = $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+
+        $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+            'subdomain' => $this->client->subdomain,
+        ]), [
+            'selected_hashes' => $hashes,
+            'items' => [
+                $hashes[0] => ['quantity' => 1],
+            ],
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDay()->format('Y-m-d'),
+            'rental_time' => 'invalid-time',
+            'shipping_address' => 'Jl. Malang No. 1',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'full_name' => $this->user->name,
+            'identity_number' => '3578901234567890',
+            'identity_address' => 'Jl. Malang No. 1',
+            'identity_document_image' => UploadedFile::fake()->image('ktp.jpg'),
+            'face_image' => UploadedFile::fake()->image('face.jpg'),
+            'terms' => '1',
+        ]);
+
+        $response->assertSessionHasErrors('rental_time');
+    }
+
+    public function test_order_sync_rental_hours_on_handover_adjusts_dates_when_handover_is_late(): void
+    {
+        $order = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $this->user->id,
+            'order_number' => 'ORD-SYNC-M1',
+            'rental_start_date' => Carbon::parse('2026-11-01 10:00:00'),
+            'rental_end_date' => Carbon::parse('2026-11-03 10:00:00'),
+            'duration_days' => 3,
+            'total_amount' => 100000,
+            'shipping_address' => 'Jl. Ijen No. 1 Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'status' => 'siap_kirim',
+        ]);
+
+        // Handover terjadi jam 15:30 (telat 5.5 jam dari jadwal 10:00)
+        $handoverTime = Carbon::parse('2026-11-01 15:30:25');
+        $synced = $order->syncRentalHoursOnHandover($handoverTime);
+
+        $this->assertTrue($synced);
+        $order->refresh();
+        $this->assertSame('2026-11-01 15:30:00', $order->rental_start_date->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-03 15:30:00', $order->rental_end_date->format('Y-m-d H:i:s'));
+        $this->assertSame(3, (int) $order->duration_days);
+    }
+
+    public function test_order_sync_rental_hours_on_handover_does_not_modify_future_bookings(): void
+    {
+        $order = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $this->user->id,
+            'order_number' => 'ORD-SYNC-M2',
+            'rental_start_date' => Carbon::parse('2026-11-10 09:00:00'),
+            'rental_end_date' => Carbon::parse('2026-11-12 09:00:00'),
+            'duration_days' => 3,
+            'total_amount' => 100000,
+            'shipping_address' => 'Jl. Ijen No. 1 Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'status' => 'siap_kirim',
+        ]);
+
+        // Handover diproses sebelum jadwal mulai (misal tgl 1 Nov)
+        $handoverTime = Carbon::parse('2026-11-01 14:00:00');
+        $synced = $order->syncRentalHoursOnHandover($handoverTime);
+
+        $this->assertFalse($synced);
+        $order->refresh();
+        $this->assertSame('2026-11-10 09:00:00', $order->rental_start_date->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-11-12 09:00:00', $order->rental_end_date->format('Y-m-d H:i:s'));
+        $this->assertSame(3, (int) $order->duration_days);
+    }
+
+    public function test_customer_receive_order_auto_syncs_rental_hours(): void
+    {
+        $order = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $this->user->id,
+            'order_number' => 'ORD-SYNC-M3',
+            'rental_start_date' => now()->subHours(4)->second(0),
+            'rental_end_date' => now()->subHours(4)->addDays(2)->second(0),
+            'duration_days' => 3,
+            'total_amount' => 100000,
+            'shipping_address' => 'Jl. Ijen No. 1 Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'status' => 'dikirim',
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('customer.orders.receive', [
+            'subdomain' => $this->client->subdomain,
+            'order' => $order->id,
+        ]));
+
+        $response->assertSessionHas('success');
+        $order->refresh();
+        $this->assertSame('sedang_disewa', $order->status);
+        $this->assertSame(
+            $order->rental_start_date->format('H:i'),
+            $order->rental_end_date->format('H:i')
+        );
+        $this->assertSame(3, (int) $order->duration_days);
+    }
 }
+

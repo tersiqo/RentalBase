@@ -102,6 +102,10 @@ class EquipmentUnit extends Model
             return false;
         }
 
+        if (! $this->exists) {
+            return true;
+        }
+
         $hasConflict = $this->orderItemUnits()
             ->whereHas('orderItem.order', function ($q) use ($start, $end, $excludeOrderId) {
                 $q->whereNotIn('status', ['batal', 'dibatalkan', 'ditolak', 'selesai'])
