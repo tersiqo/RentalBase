@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TenantRegistrationTest extends TestCase
@@ -225,7 +226,7 @@ class TenantRegistrationTest extends TestCase
 
     public function test_setup_tenant_saves_logo_to_both_client_and_user_avatar(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
 
         $user = User::create([
             'name' => 'johndoe',
@@ -254,7 +255,9 @@ class TenantRegistrationTest extends TestCase
         $client = Client::where('subdomain', 'kameracepat')->first();
         $this->assertNotNull($client);
         $this->assertNotNull($client->logo);
-        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($client->logo);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
+        $storage = Storage::disk('public');
+        $storage->assertExists((string) $client->logo);
 
         $user->refresh();
         $this->assertEquals($client->logo, $user->avatar);
@@ -262,7 +265,7 @@ class TenantRegistrationTest extends TestCase
 
     public function test_direct_registration_saves_logo_to_both_client_and_user_avatar(): void
     {
-        \Illuminate\Support\Facades\Storage::fake('public');
+        Storage::fake('public');
 
         $file = \Illuminate\Http\UploadedFile::fake()->create('logo.png', 100, 'image/png');
 
@@ -286,10 +289,82 @@ class TenantRegistrationTest extends TestCase
         $client = Client::where('subdomain', 'suryarental')->first();
         $this->assertNotNull($client);
         $this->assertNotNull($client->logo);
-        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($client->logo);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
+        $storage = Storage::disk('public');
+        $storage->assertExists((string) $client->logo);
 
         $user = User::where('email', 'surya@example.com')->first();
         $this->assertNotNull($user);
         $this->assertEquals($client->logo, $user->avatar);
+    }
+
+    public function test_direct_registration_fails_if_subdomain_is_already_taken(): void
+    {
+        Client::create([
+            'business_name' => 'Existing Rental',
+            'subdomain' => 'suryarental',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->post('/register-tenant', [
+            'username' => 'suryaadmin2',
+            'email' => 'surya2@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'business_name' => 'Surya Rental Baru',
+            'subdomain' => 'suryarental',
+            'description' => 'Sewa alat outdoor',
+            'phone' => '081234567891',
+            'address' => 'Jl. Pahlawan No. 2',
+            'plan_name' => 'starter',
+            'terms' => '1',
+        ]);
+
+        $response->assertSessionHasErrors(['subdomain']);
+        $this->assertDatabaseMissing('users', [
+            'email' => 'surya2@example.com',
+        ]);
+    }
+
+    public function test_direct_registration_fails_if_email_is_already_registered(): void
+    {
+        User::create([
+            'name' => 'existinguser',
+            'email' => 'surya@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->post('/register-tenant', [
+            'username' => 'suryabaru',
+            'email' => 'surya@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'business_name' => 'Surya Rental Unik',
+            'subdomain' => 'suryarentalunik',
+            'phone' => '081234567891',
+            'plan_name' => 'starter',
+            'terms' => '1',
+        ]);
+
+        $response->assertSessionHasErrors(['email']);
+    }
+
+    public function test_direct_registration_fails_if_password_confirmation_mismatches(): void
+    {
+        $response = $this->post('/register-tenant', [
+            'username' => 'suryabaru',
+            'email' => 'surya.valid@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'mismatched123',
+            'business_name' => 'Surya Rental Unik',
+            'subdomain' => 'suryarentalunik',
+            'phone' => '081234567891',
+            'plan_name' => 'starter',
+            'terms' => '1',
+        ]);
+
+        $response->assertSessionHasErrors(['password']);
     }
 }
