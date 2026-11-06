@@ -619,7 +619,170 @@
                 </div>
             </div>
         </div>
+    @auth
+    @if(config('broadcasting.connections.pusher.key'))
+    {{-- Pusher & Echo Client for Customer Real-Time Order Tracking --}}
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+    <script>
+        if (!window.Echo && typeof Pusher !== 'undefined' && typeof Echo !== 'undefined') {
+            window.Pusher = Pusher;
+            window.Echo = new Echo({
+                broadcaster: 'pusher',
+                key: '{{ config('broadcasting.connections.pusher.key') }}',
+                cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+                forceTLS: true
+            });
+        }
+    </script>
+
+    {{-- Real-Time Customer Toast Notification --}}
+    <div x-data="customerRealtimeNotification({{ auth()->id() }})" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none max-w-sm w-full">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div class="pointer-events-auto bg-white border border-emerald-200 rounded-2xl shadow-2xl p-4 flex items-start gap-3 transform transition-all duration-300 ease-out"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 translate-y-2">
+                <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-bold text-gray-900" x-text="toast.title"></h4>
+                    <p class="text-xs text-gray-600 mt-0.5" x-text="toast.message"></p>
+                    <div class="mt-2 flex items-center gap-2">
+                        <a x-show="toast.url" :href="toast.url" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Buka Pesanan &rarr;</a>
+                        <button @click="removeToast(toast.id)" class="text-xs text-gray-400 hover:text-gray-600 ml-auto">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </template>
     </div>
+
+    <script>
+        function customerRealtimeNotification(userId) {
+            return {
+                toasts: [],
+                init() {
+                    if (!window.Echo) {
+                        return;
+                    }
+
+                    window.Echo.private(`customer.${userId}.orders`)
+                        .listen('.identity.approved', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                            this.addToast('Identitas KTP Disetujui!', e.message || `KTP pesanan #${e.order_number} disetujui. Silakan selesaikan pembayaran.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.identity.rejected', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                            this.addToast('Identitas KTP Ditolak!', e.message || `KTP pesanan #${e.order_number} perlu direvisi.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.payment.verified', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                            this.addToast('Pembayaran Diterima!', e.message || `Pembayaran pesanan #${e.order_number} telah diverifikasi admin.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.payment.rejected', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                            this.addToast('Pembayaran Ditolak!', e.message || `Bukti bayar pesanan #${e.order_number} ditolak. Silakan unggah bukti yang benar.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.order.confirmed', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                            this.addToast('Pesanan Dikonfirmasi!', e.message || `Pesanan #${e.order_number} telah dikonfirmasi oleh toko.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.order.shipped', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                            this.addToast('Barang Sedang Dikirim!', e.message || `Pesanan #${e.order_number} sedang dalam perjalanan.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.return.accepted', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                            this.addToast('Pengembalian Diterima!', e.message || `Pengembalian pesanan #${e.order_number} telah diverifikasi toko.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.fine.issued', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                            this.addToast('Denda Keterlambatan!', e.message || `Tagihan denda keterlambatan terbit untuk pesanan #${e.order_number}.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.damage.created', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id + '/damage') : '/my-orders';
+                            this.addToast('Klaim Kerusakan!', e.message || `Laporan klaim kerusakan diterbitkan untuk pesanan #${e.order_number}.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.damage.resolved', (e) => {
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                            this.addToast('Klaim Kerusakan Selesai!', e.message || `Klaim kerusakan pesanan #${e.order_number} telah diselesaikan.`, targetUrl);
+                            if (window.location.pathname.includes('/my-orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        });
+                },
+                addToast(title, message, url = null) {
+                    const id = Date.now();
+                    this.toasts.push({ id, title, message, url });
+                    setTimeout(() => this.removeToast(id), 7000);
+                },
+                removeToast(id) {
+                    this.toasts = this.toasts.filter(t => t.id !== id);
+                },
+                playChime() {
+                    try {
+                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+                        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
+                        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.5);
+                    } catch (err) {}
+                }
+            };
+        }
+    </script>
+    @endif
+    @endauth
 
     @livewireScriptConfig
 </body>

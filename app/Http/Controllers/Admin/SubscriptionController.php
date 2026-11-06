@@ -134,6 +134,10 @@ class SubscriptionController extends Controller
             'user_agent'  => $request->userAgent(),
         ]);
 
+        if (class_exists(\App\Events\SubscriptionRenewalUploaded::class)) {
+            event(new \App\Events\SubscriptionRenewalUploaded($newSubscription));
+        }
+
         return redirect()->route('admin.subscriptions.index')
             ->with('success', 'Pengajuan perpanjangan langganan berhasil dikirim. Tim Owner akan segera memverifikasi pembayaran Anda.');
     }
@@ -202,6 +206,10 @@ class SubscriptionController extends Controller
             'ip_address'  => $request->ip(),
             'user_agent'  => $request->userAgent(),
         ]);
+
+        if (class_exists(\App\Events\SubscriptionRenewalUploaded::class)) {
+            event(new \App\Events\SubscriptionRenewalUploaded($newSubscription));
+        }
 
         return redirect()->route('admin.subscriptions.index')
             ->with('success', "Pengajuan upgrade ke paket {$newSubscription->plan_name} berhasil dikirim. Kuota paket baru akan langsung aktif setelah disetujui Owner.");

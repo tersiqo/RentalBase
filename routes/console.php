@@ -23,6 +23,15 @@ Schedule::command('subscriptions:check-expired')
     ->dailyAt('00:01')
     ->withoutOverlapping();
 
+Schedule::command('auth:clear-resets')
+    ->everyFifteenMinutes();
+
+Schedule::command('queue:prune-failed --hours=48')
+    ->daily();
+
+Schedule::command('queue:prune-batches --hours=48')
+    ->daily();
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
