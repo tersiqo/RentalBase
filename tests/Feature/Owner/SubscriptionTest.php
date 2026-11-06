@@ -465,4 +465,94 @@ class SubscriptionTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Riwayat &amp; Log Perpanjangan', false);
     }
+
+    public function test_owner_can_verify_tenant_subscription_payment(): void
+    {
+        $sub = Subscription::create([
+            'client_id'      => $this->clientA->id,
+            'plan_name'      => 'business',
+            'price'          => 99000,
+            'billing_cycle'  => 'monthly',
+            'start_date'     => Carbon::now(),
+            'end_date'       => Carbon::now()->addMonths(6),
+            'status'         => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post(route('owner.subscriptions.verify', $sub->id));
+
+        $response->assertRedirect(route('owner.subscriptions.index'));
+        $response->assertSessionHas('success');
+
+        $sub->refresh();
+        $this->assertEquals('aktif', $sub->status);
+        $this->assertEquals('diverifikasi', $sub->payment_status);
+    }
+
+    public function test_owner_cannot_verify_already_active_and_verified_subscription(): void
+    {
+        $sub = Subscription::create([
+            'client_id'      => $this->clientA->id,
+            'plan_name'      => 'business',
+            'price'          => 99000,
+            'billing_cycle'  => 'monthly',
+            'start_date'     => Carbon::now(),
+            'end_date'       => Carbon::now()->addMonths(6),
+            'status'         => 'aktif',
+            'payment_status' => 'diverifikasi',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post(route('owner.subscriptions.verify', $sub->id));
+
+        $response->assertRedirect(route('owner.subscriptions.index'));
+        $response->assertSessionHas('error', 'Langganan ini sudah diverifikasi dan berstatus aktif.');
+    }
+
+    public function test_owner_can_reject_tenant_subscription_payment_with_reason(): void
+    {
+        $sub = Subscription::create([
+            'client_id'      => $this->clientA->id,
+            'plan_name'      => 'business',
+            'price'          => 99000,
+            'billing_cycle'  => 'monthly',
+            'start_date'     => Carbon::now(),
+            'end_date'       => Carbon::now()->addMonths(6),
+            'status'         => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post(route('owner.subscriptions.reject', $sub->id), [
+            'rejection_reason' => 'Nominal transfer tidak sesuai dengan tagihan.',
+        ]);
+
+        $response->assertRedirect(route('owner.subscriptions.index'));
+        $response->assertSessionHas('success');
+
+        $sub->refresh();
+        $this->assertEquals('ditolak', $sub->status);
+        $this->assertEquals('ditolak', $sub->payment_status);
+        $this->assertEquals('Nominal transfer tidak sesuai dengan tagihan.', $sub->rejection_reason);
+    }
+
+    public function test_owner_reject_fails_if_rejection_reason_is_missing(): void
+    {
+        $sub = Subscription::create([
+            'client_id'      => $this->clientA->id,
+            'plan_name'      => 'business',
+            'price'          => 99000,
+            'billing_cycle'  => 'monthly',
+            'start_date'     => Carbon::now(),
+            'end_date'       => Carbon::now()->addMonths(6),
+            'status'         => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post(route('owner.subscriptions.reject', $sub->id), [
+            'rejection_reason' => '',
+        ]);
+
+        $response->assertSessionHasErrors(['rejection_reason']);
+        $sub->refresh();
+        $this->assertEquals('menunggu_verifikasi', $sub->status);
+    }
 }
