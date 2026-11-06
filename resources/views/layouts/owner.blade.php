@@ -378,7 +378,15 @@
             broadcaster: 'pusher',
             key: '{{ config('broadcasting.connections.pusher.key') }}',
             cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
-            forceTLS: true
+            forceTLS: true,
+            csrfToken: '{{ csrf_token() }}',
+            authEndpoint: '/broadcasting/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }
         });
     }
 </script>
@@ -420,6 +428,9 @@
                 }
 
                 window.Echo.private('owner.platform')
+                    .error((error) => {
+                        console.error('[RentalBase Realtime] Gagal autentikasi channel owner:', error);
+                    })
                     .listen('.tenant.registered', (e) => {
                         this.playChime();
                         this.addToast('Pendaftaran Toko Baru!', e.message || `Toko "${e.business_name}" (${e.subdomain}) baru saja mendaftar.`, '/owner/registrations');
