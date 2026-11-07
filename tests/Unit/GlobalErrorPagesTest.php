@@ -17,7 +17,7 @@ class GlobalErrorPagesTest extends TestCase
         });
     }
 
-    public function test_404_not_found_view_renders_clean_error_layout_and_headline(): void
+    public function test_ut_02_008_global_error_pages_403_and_404_layout(): void
     {
         $response = $this->get('/non-existent-url-path-test-404');
 
