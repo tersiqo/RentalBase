@@ -169,6 +169,10 @@ class DamageReportController extends Controller
             'resolution_notes' => $updatedNotes,
         ]);
 
+        if (class_exists(\App\Events\DamageCasePaymentUploaded::class)) {
+            event(new \App\Events\DamageCasePaymentUploaded($damageCase));
+        }
+
         return back()->with('success', 'Bukti pembayaran kompensasi sebesar ' . $damageCase->formatted_total . ' berhasil dikirim. Toko akan segera memverifikasinya.');
     }
 }

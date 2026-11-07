@@ -626,23 +626,35 @@
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
     <script>
-        if (!window.Echo && typeof Pusher !== 'undefined' && typeof Echo !== 'undefined') {
-            window.Pusher = Pusher;
-            window.Echo = new Echo({
-                broadcaster: 'pusher',
-                key: '{{ config('broadcasting.connections.pusher.key') }}',
-                cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
-                forceTLS: true,
-                csrfToken: '{{ csrf_token() }}',
-                authEndpoint: '/broadcasting/auth',
-                auth: {
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    }
+        (function() {
+            window.ensureCustomerEcho = function() {
+                if (window.Echo && typeof window.Echo.private === 'function') {
+                    return window.Echo;
                 }
-            });
-        }
+                const EchoCtor = (typeof window.Echo === 'function') ? window.Echo : (typeof Echo !== 'undefined' ? Echo : null);
+                if (EchoCtor && typeof Pusher !== 'undefined') {
+                    window.Pusher = Pusher;
+                    window.Echo = new EchoCtor({
+                        broadcaster: 'pusher',
+                        key: '{{ config('broadcasting.connections.pusher.key') }}',
+                        cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+                        forceTLS: true,
+                        csrfToken: '{{ csrf_token() }}',
+                        authEndpoint: '/broadcasting/auth',
+                        auth: {
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            }
+                        }
+                    });
+                    return window.Echo;
+                }
+                return null;
+            };
+            window.ensureCustomerEcho();
+            window.addEventListener('load', window.ensureCustomerEcho);
+        })();
     </script>
 
     {{-- Real-Time Customer Toast Notification --}}
@@ -677,14 +689,19 @@
             return {
                 toasts: [],
                 init() {
-                    if (!window.Echo) {
-                        return;
-                    }
+                    const startListening = () => {
+                        const echo = (typeof window.ensureCustomerEcho === 'function')
+                            ? window.ensureCustomerEcho()
+                            : (window.Echo && typeof window.Echo.private === 'function' ? window.Echo : null);
 
-                    window.Echo.private(`customer.${userId}.orders`)
-                        .error((error) => {
-                            console.error('[RentalBase Realtime] Gagal autentikasi channel customer:', error);
-                        })
+                        if (!echo) {
+                            return false;
+                        }
+
+                        echo.private(`customer.${userId}.orders`)
+                            .error((error) => {
+                                console.error('[RentalBase Realtime] Gagal autentikasi channel customer:', error);
+                            })
                         .listen('.identity.approved', (e) => {
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
@@ -766,7 +783,19 @@
                                 setTimeout(() => window.location.reload(), 800);
                             }
                         });
-                },
+                    return true;
+                };
+
+                if (!startListening()) {
+                    let attempts = 0;
+                    const poll = setInterval(() => {
+                        attempts++;
+                        if (startListening() || attempts >= 30) {
+                            clearInterval(poll);
+                        }
+                    }, 150);
+                }
+            },
                 addToast(title, message, url = null) {
                     const id = Date.now();
                     this.toasts.push({ id, title, message, url });
