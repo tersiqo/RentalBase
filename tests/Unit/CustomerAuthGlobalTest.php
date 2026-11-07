@@ -18,7 +18,7 @@ class CustomerAuthGlobalTest extends TestCase
         $this->withoutVite();
     }
 
-    public function test_login_page_renders_with_login_and_register_tabs(): void
+    public function test_ut_01_009_customer_global_auth_and_tampering_protection(): void
     {
         $response = $this->get('/login');
 

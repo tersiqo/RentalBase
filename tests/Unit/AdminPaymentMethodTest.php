@@ -39,7 +39,7 @@ class AdminPaymentMethodTest extends TestCase
         return [$client, $admin];
     }
 
-    public function test_admin_can_view_payment_methods_page(): void
+    public function test_ut_04_009_admin_payment_methods_bank_and_qris_management(): void
     {
         [$client, $admin] = $this->createTenantWithAdmin('toko1');
 

@@ -49,7 +49,7 @@ class AdminTenantProfileThemeTest extends TestCase
         return [$client, $admin];
     }
 
-    public function test_admin_can_view_profile_settings_page_with_scoped_client_data(): void
+    public function test_ut_04_010_admin_tenant_profile_logo_and_theme_customization(): void
     {
         [$client, $admin] = $this->createTenantWithPrimaryAdmin('viewtoko', 'starter');
 

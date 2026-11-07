@@ -18,7 +18,7 @@ class TenantSuspendedInterceptorTest extends TestCase
         $this->withoutVite();
     }
 
-    public function test_suspended_tenant_catalog_access_is_intercepted_with_503_and_suspended_view(): void
+    public function test_ut_02_007_tenant_suspended_interceptor_and_catalog_blocking(): void
     {
         $suspendedTenant = Client::create([
             'business_name' => 'Toko Rental Suspended',

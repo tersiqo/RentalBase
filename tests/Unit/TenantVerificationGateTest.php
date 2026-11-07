@@ -18,7 +18,7 @@ class TenantVerificationGateTest extends TestCase
         $this->withoutVite();
     }
 
-    public function test_pending_tenant_registration_login_is_held_with_review_notification(): void
+    public function test_ut_02_002_tenant_verification_gate_and_approval_status(): void
     {
         $client = Client::create([
             'business_name' => 'Toko Rental Pending',
