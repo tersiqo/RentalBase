@@ -54,13 +54,29 @@
                 </svg>
             </div>
         </div>
-        <p class="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">{{ $totalBookingBaru ?? 12 }}</p>
-        <p class="mt-2 text-xs text-orange-600 font-medium flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
-            </svg>
-            +3 pengajuan sewa baru
-        </p>
+        <p class="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">{{ $totalBookingBaru ?? 0 }}</p>
+        @if(($totalBookingBaru ?? 0) > 0)
+            <p class="mt-2 text-xs text-orange-600 font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4"/>
+                </svg>
+                +{{ $totalBookingBaru }} pengajuan sewa baru
+            </p>
+        @elseif(($bookingHariIni ?? 0) > 0)
+            <p class="mt-2 text-xs text-stone-500 font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {{ $bookingHariIni }} pesanan masuk hari ini
+            </p>
+        @else
+            <p class="mt-2 text-xs text-gray-400 font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                Belum ada pesanan baru
+            </p>
+        @endif
     </div>
 
     {{-- VERIFIKASI --}}
@@ -73,13 +89,22 @@
                 </svg>
             </div>
         </div>
-        <p class="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">{{ $menungguVerifikasi ?? 5 }}</p>
-        <p class="mt-2 text-xs text-amber-600 font-medium flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-            Menunggu Cek Pembayaran
-        </p>
+        <p class="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">{{ $menungguVerifikasi ?? 0 }}</p>
+        @if(($menungguVerifikasi ?? 0) > 0)
+            <p class="mt-2 text-xs text-amber-600 font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                {{ $menungguVerifikasi }} bukti perlu dicek
+            </p>
+        @else
+            <p class="mt-2 text-xs text-emerald-600 font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Semua pembayaran terverifikasi
+            </p>
+        @endif
     </div>
 
     {{-- DISEWA --}}
@@ -93,12 +118,21 @@
             </div>
         </div>
         <p class="text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">{{ $totalDisewa ?? 0 }}</p>
-        <p class="mt-2 text-xs text-emerald-600 font-medium flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Unit aktif disewa pelanggan
-        </p>
+        @if(($totalDisewa ?? 0) > 0)
+            <p class="mt-2 text-xs text-emerald-600 font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {{ $totalDisewa }} unit aktif disewa pelanggan
+            </p>
+        @else
+            <p class="mt-2 text-xs text-gray-400 font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/>
+                </svg>
+                Belum ada unit disewa
+            </p>
+        @endif
     </div>
 
     {{-- PENDAPATAN --}}

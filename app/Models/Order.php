@@ -19,6 +19,21 @@ class Order extends Model
         'total_amount' => 'decimal:2',
     ];
 
+    protected static function booted()
+    {
+        static::saved(function ($order) {
+            if ($order->client_id) {
+                \Illuminate\Support\Facades\Cache::forget('admin_dashboard_counts_' . $order->client_id);
+            }
+        });
+
+        static::deleted(function ($order) {
+            if ($order->client_id) {
+                \Illuminate\Support\Facades\Cache::forget('admin_dashboard_counts_' . $order->client_id);
+            }
+        });
+    }
+
     public function isPickup(): bool
     {
         $method = strtolower(trim($this->shipping_method ?? ''));

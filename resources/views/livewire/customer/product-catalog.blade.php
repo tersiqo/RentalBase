@@ -294,8 +294,8 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>
                 </span>
                 <div>
-                    <b class="text-primary-900 block text-[14px] mb-0.5 leading-tight font-bold">Jaminan KTP Asli (Tanpa Uang Tunai)</b>
-                    <p class="text-[12.5px] text-primary-700 leading-[1.5]">Verifikasi foto KTP saat booking online, dan titipkan fisik KTP asli saat serah terima alat.</p>
+                    <b class="text-primary-900 block text-[14px] mb-0.5 leading-tight font-bold">Verifikasi Identitas Digital (Bebas Deposit)</b>
+                    <p class="text-[12.5px] text-primary-700 leading-[1.5]">Verifikasi foto KTP &amp; selfie online tanpa uang jaminan dan tanpa perlu titip fisik KTP.</p>
                 </div>
             </div>
         </aside>
@@ -377,7 +377,7 @@
 
                     @foreach($displayedProducts as $index => $item)
                         <!-- Card -->
-                        <article wire:key="product-{{ $item->id }}" class="bg-white border border-gray-100 rounded-[24px] overflow-hidden flex flex-col shadow-[0_10px_30px_-14px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl {{ $item->available_units_count > 0 ? '' : 'opacity-60 grayscale-[0.2]' }} group animate-fade-in-up" style="animation-delay: {{ $index * 130 }}ms">
+                        <article wire:key="product-{{ $item->id }}" class="bg-white border border-gray-100 rounded-[24px] overflow-hidden flex flex-col shadow-[0_10px_30px_-14px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl {{ ($item->total_units_count ?? 0) > 0 ? '' : 'opacity-60 grayscale-[0.2]' }} group animate-fade-in-up" style="animation-delay: {{ $index * 130 }}ms">
                             
                             <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="relative h-[190px] flex items-center justify-center overflow-hidden bg-gray-100">
                                 @if($item->main_image)
@@ -413,17 +413,21 @@
                                                  <rect x="63" y="65" width="23" height="22" rx="3" stroke-width="2.6" fill="#fff" fill-opacity="0.18" />
                                                  <circle cx="60" cy="35" r="4" fill="#fff" />
                                              </svg>
-                                        </div>
+                                         </div>
                                     </div>
                                 @endif
                                 
                                 @if($item->available_units_count > 0)
-                                    <span class="absolute right-3.5 top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-[12px] font-bold flex items-center gap-1.5 text-green-700 shadow-sm border border-gray-100">
-                                        <i class="w-[7px] h-[7px] rounded-full bg-green-600 block"></i> Tersedia {{ $item->available_units_count }}
+                                    <span class="absolute right-3.5 top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-[12px] font-bold flex items-center gap-1.5 text-green-700 shadow-sm border border-green-200">
+                                        <i class="w-[7px] h-[7px] rounded-full bg-green-500 block"></i> Tersedia {{ $item->available_units_count }}
+                                    </span>
+                                @elseif(($item->total_units_count ?? 0) > 0)
+                                    <span class="absolute right-3.5 top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-[12px] font-bold flex items-center gap-1.5 text-amber-700 shadow-sm border border-amber-200">
+                                        <i class="w-[7px] h-[7px] rounded-full bg-amber-500 block"></i> Sedang Disewa
                                     </span>
                                 @else
-                                    <span class="absolute right-3.5 top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-[12px] font-bold flex items-center gap-1.5 text-gray-500 shadow-sm border border-gray-100">
-                                        <i class="w-[7px] h-[7px] rounded-full bg-gray-400 block"></i> Unit Kosong
+                                    <span class="absolute right-3.5 top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-[12px] font-bold flex items-center gap-1.5 text-gray-500 shadow-sm border border-gray-200">
+                                        <i class="w-[7px] h-[7px] rounded-full bg-gray-400 block"></i> Stok Habis
                                     </span>
                                 @endif
                             </a>
@@ -451,12 +455,12 @@
                                     <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="flex-1 inline-flex justify-center items-center rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 transition-all text-[13px]">
                                         Lihat detail
                                     </a>
-                                    @if($item->available_units_count > 0)
+                                    @if(($item->total_units_count ?? 0) > 0)
                                         @auth
                                             <button type="button" 
                                                     wire:click="openAddToCartModal({{ $item->id }})" 
-                                                    title="Tambah ke Keranjang"
-                                                    aria-label="Tambah ke Keranjang"
+                                                    title="{{ $item->available_units_count > 0 ? 'Tambah ke Keranjang' : 'Pilih Jadwal Booking' }}"
+                                                    aria-label="{{ $item->available_units_count > 0 ? 'Tambah ke Keranjang' : 'Pilih Jadwal Booking' }}"
                                                     class="flex-none inline-flex justify-center items-center gap-1 rounded-xl bg-primary-500 text-white font-bold px-3 py-2.5 tenant-shadow-sm hover:bg-primary-600 active:scale-95 transition-all cursor-pointer">
                                                 <span class="text-[14px] font-black leading-none">+</span>
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
@@ -564,7 +568,7 @@
                 <div class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100">
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         <div class="flex justify-between items-start mb-5">
-                            <h3 class="text-xl leading-6 font-bold text-gray-900" id="catalog-modal-title">Tambah ke Keranjang</h3>
+                            <h3 class="text-xl leading-6 font-bold text-gray-900" id="catalog-modal-title">Pilih Jadwal Sewa</h3>
                             <button type="button" wire:click="closeAddToCartModal" class="text-gray-400 hover:text-gray-500 transition-colors">
                                 <span class="sr-only">Tutup</span>
                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -599,17 +603,23 @@
 
                             <!-- Availability Banner -->
                             <div>
-                                @if($modalAvailableUnits > 0)
-                                    <div class="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-                                        <span>Tersedia <strong>{{ $modalAvailableUnits }} unit</strong> pada periode tanggal ini.</span>
-                                    </div>
-                                @else
-                                    <div class="flex items-center gap-2 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                                        <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
-                                        <span>Semua unit penuh dipesan pada tanggal ini. Silakan pilih tanggal lain.</span>
-                                    </div>
-                                @endif
+                                <div wire:loading wire:target="checkModalAvailability, modalStartDate, modalEndDate" class="flex items-center gap-2 text-xs font-semibold text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                                    <svg class="animate-spin h-3.5 w-3.5 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <span>Memeriksa ketersediaan unit...</span>
+                                </div>
+                                <div wire:loading.remove wire:target="checkModalAvailability, modalStartDate, modalEndDate">
+                                    @if($modalAvailableUnits > 0)
+                                        <div class="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                            <span>Tersedia <strong>{{ $modalAvailableUnits }} unit</strong> pada periode tanggal ini.</span>
+                                        </div>
+                                    @else
+                                        <div class="flex items-center gap-2 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                            <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                                            <span>Semua unit penuh dipesan pada tanggal ini. Silakan pilih tanggal lain.</span>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
 
                             @if($modalErrorMessage)

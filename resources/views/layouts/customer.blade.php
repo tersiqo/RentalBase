@@ -427,9 +427,9 @@
                             2
                         </span>
                         <div class="min-w-0">
-                            <h4 class="text-sm font-bold text-gray-900">Checkout &amp; Verifikasi Foto KTP</h4>
+                            <h4 class="text-sm font-bold text-gray-900">Checkout &amp; Unggah Foto KTP + Selfie</h4>
                             <p class="text-xs text-gray-600 mt-1 leading-relaxed">
-                                Tentukan metode penerimaan (diantar kurir atau ambil di outlet), gunakan template alamat tersimpan, serta unggah foto KTP &amp; swafoto untuk screening awal.
+                                Tentukan metode penerimaan (diantar kurir atau ambil di outlet), gunakan template alamat tersimpan, serta unggah foto KTP &amp; swafoto untuk verifikasi identitas online.
                             </p>
                         </div>
                     </div>
@@ -441,11 +441,11 @@
                         </span>
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
-                                <h4 class="text-sm font-bold text-gray-900">Pembayaran &amp; Serah Terima (Titip KTP Asli)</h4>
-                                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-primary-100 text-primary-700">Wajib Titip KTP</span>
+                                <h4 class="text-sm font-bold text-gray-900">Pembayaran &amp; Serah Terima Alat</h4>
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-100 text-emerald-700">Tanpa Titip KTP</span>
                             </div>
                             <p class="text-xs text-gray-600 mt-1 leading-relaxed">
-                                Setelah identitas diverifikasi admin, lakukan pembayaran sewa via transfer/QRIS. Saat serah terima alat, <strong>serahkan fisik KTP asli sebagai jaminan sewa (tanpa deposit uang tunai)</strong>.
+                                Setelah identitas diverifikasi admin, lakukan pembayaran sewa via transfer/QRIS. Saat serah terima alat, barang langsung dapat digunakan tanpa perlu menitipkan fisik KTP asli.
                             </p>
                         </div>
                     </div>
@@ -456,9 +456,9 @@
                             4
                         </span>
                         <div class="min-w-0">
-                            <h4 class="text-sm font-bold text-gray-900">Pengembalian Alat &amp; KTP Fisik Kembali</h4>
+                            <h4 class="text-sm font-bold text-gray-900">Pengembalian Alat &amp; Pemeriksaan Kondisi</h4>
                             <p class="text-xs text-gray-600 mt-1 leading-relaxed">
-                                Kembalikan alat sesuai batas tanggal sewa. Setelah pengecekan fisik selesai dan bebas denda, <strong>dokumen KTP asli Anda langsung diserahkan kembali utuh</strong>.
+                                Kembalikan alat sesuai batas tanggal sewa. Setelah pengecekan fisik unit selesai dan bebas kendala, pesanan Anda langsung dinyatakan selesai tuntas.
                             </p>
                         </div>
                     </div>
@@ -469,8 +469,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         <div>
-                            <strong class="font-bold block mb-0.5">Keuntungan Jaminan KTP Asli:</strong>
-                            Anda tidak perlu mengendapkan deposit uang tunai jutaan rupiah. Cukup serahkan KTP fisik asli saat serah terima barang, dan rawat alat sewa dengan baik.
+                            <strong class="font-bold block mb-0.5">Praktis Tanpa Deposit &amp; Tanpa Titip Fisik KTP:</strong>
+                            Anda tidak perlu mengendapkan deposit uang tunai dan tidak perlu menitipkan fisik KTP asli. Cukup verifikasi foto KTP &amp; swafoto (selfie) secara digital saat booking online, dan rawat alat sewa dengan baik.
                         </div>
                     </div>
                 </div>
@@ -557,7 +557,7 @@
                                 Apakah perlu membayar uang deposit jaminan?
                             </h4>
                             <p class="text-xs text-gray-600 mt-1 pl-4 leading-relaxed">
-                                Tidak perlu deposit uang tunai. Jaminan sewa berupa <strong>fisik KTP asli pelanggan</strong> yang dititipkan saat serah terima barang dan dikembalikan utuh setelah masa sewa selesai.
+                                Tidak perlu deposit uang tunai dan tidak perlu menitipkan kartu fisik KTP. Jaminan sewa berupa <strong>verifikasi foto KTP &amp; swafoto (selfie)</strong> yang diunggah saat pemesanan online.
                             </p>
                         </div>
 
@@ -577,7 +577,7 @@
                                 Bagaimana jika terlambat mengembalikan alat?
                             </h4>
                             <p class="text-xs text-gray-600 mt-1 pl-4 leading-relaxed">
-                                Keterlambatan dikenakan tarif denda harian sesuai harga sewa. Fisik KTP asli akan dikembalikan setelah denda diselesaikan.
+                                Keterlambatan dikenakan tarif denda harian sesuai harga sewa yang dapat diselesaikan langsung di halaman pesanan Anda.
                             </p>
                         </div>
                     </div>
@@ -620,20 +620,21 @@
                 </div>
             </div>
         </div>
+    </div>
     @auth
     @if(config('broadcasting.connections.pusher.key'))
-    {{-- Pusher & Echo Client for Customer Real-Time Order Tracking --}}
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
     <script>
         (function() {
             window.ensureCustomerEcho = function() {
                 if (window.Echo && typeof window.Echo.private === 'function') {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    if (token && window.Echo.connector?.options?.auth?.headers) {
+                        window.Echo.connector.options.auth.headers['X-CSRF-TOKEN'] = token;
+                    }
                     return window.Echo;
                 }
-                const EchoCtor = (typeof window.Echo === 'function') ? window.Echo : (typeof Echo !== 'undefined' ? Echo : null);
+                const EchoCtor = (typeof window.EchoClass === 'function') ? window.EchoClass : ((typeof window.Echo === 'function') ? window.Echo : null);
                 if (EchoCtor && typeof Pusher !== 'undefined') {
-                    window.Pusher = Pusher;
                     window.Echo = new EchoCtor({
                         broadcaster: 'pusher',
                         key: '{{ config('broadcasting.connections.pusher.key') }}',
@@ -650,10 +651,9 @@
                     });
                     return window.Echo;
                 }
-                return null;
+                return window.Echo || null;
             };
             window.ensureCustomerEcho();
-            window.addEventListener('load', window.ensureCustomerEcho);
         })();
     </script>
 
@@ -688,7 +688,21 @@
         function customerRealtimeNotification(userId) {
             return {
                 toasts: [],
+                _reloadTimer: null,
                 init() {
+                    try {
+                        const saved = sessionStorage.getItem('rb_pending_toast_customer');
+                        if (saved) {
+                            sessionStorage.removeItem('rb_pending_toast_customer');
+                            const parsed = JSON.parse(saved);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                parsed.forEach(t => {
+                                    this.addToast(t.title, t.message, t.url);
+                                });
+                            }
+                        }
+                    } catch (err) {}
+
                     const startListening = () => {
                         const echo = (typeof window.ensureCustomerEcho === 'function')
                             ? window.ensureCustomerEcho()
@@ -698,89 +712,101 @@
                             return false;
                         }
 
+                        console.log(`[RentalBase Realtime Customer] Subscribing to channel: customer.${userId}.orders`);
+
                         echo.private(`customer.${userId}.orders`)
                             .error((error) => {
-                                console.error('[RentalBase Realtime] Gagal autentikasi channel customer:', error);
+                                console.error('[RentalBase Realtime Customer] Gagal autentikasi channel customer:', error);
                             })
                         .listen('.identity.approved', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: identity.approved', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
                             this.addToast('Identitas KTP Disetujui!', e.message || `KTP pesanan #${e.order_number} disetujui. Silakan selesaikan pembayaran.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.identity.rejected', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: identity.rejected', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
                             this.addToast('Identitas KTP Ditolak!', e.message || `KTP pesanan #${e.order_number} perlu direvisi.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.payment.verified', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: payment.verified', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
                             this.addToast('Pembayaran Diterima!', e.message || `Pembayaran pesanan #${e.order_number} telah diverifikasi admin.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.payment.rejected', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: payment.rejected', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
                             this.addToast('Pembayaran Ditolak!', e.message || `Bukti bayar pesanan #${e.order_number} ditolak. Silakan unggah bukti yang benar.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.order.confirmed', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: order.confirmed', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
                             this.addToast('Pesanan Dikonfirmasi!', e.message || `Pesanan #${e.order_number} telah dikonfirmasi oleh toko.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.order.shipped', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: order.shipped', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
                             const title = (e.status === 'sedang_disewa') ? 'Barang Telah Diserahkan!' : 'Barang Sedang Dikirim!';
                             this.addToast(title, e.message || `Pesanan #${e.order_number} sedang dalam perjalanan.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.return.accepted', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: return.accepted', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
                             this.addToast('Pengembalian Diterima!', e.message || `Pengembalian pesanan #${e.order_number} telah diverifikasi toko.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.fine.issued', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: fine.issued', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
                             this.addToast('Denda Keterlambatan!', e.message || `Tagihan denda keterlambatan terbit untuk pesanan #${e.order_number}.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.damage.created', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: damage.created', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id + '/damage') : '/my-orders';
                             this.addToast('Klaim Kerusakan!', e.message || `Laporan klaim kerusakan diterbitkan untuk pesanan #${e.order_number}.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.damage.resolved', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: damage.resolved', e);
                             this.playChime();
                             const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
                             this.addToast('Klaim Kerusakan Selesai!', e.message || `Klaim kerusakan pesanan #${e.order_number} telah diselesaikan.`, targetUrl);
                             if (window.location.pathname.includes('/my-orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         });
                     return true;
@@ -796,32 +822,182 @@
                     }, 150);
                 }
             },
-                addToast(title, message, url = null) {
-                    const id = Date.now();
-                    this.toasts.push({ id, title, message, url });
-                    setTimeout(() => this.removeToast(id), 7000);
-                },
-                removeToast(id) {
-                    this.toasts = this.toasts.filter(t => t.id !== id);
-                },
-                playChime() {
+            triggerReload(delay = 800, forceFull = false) {
+                if (this._reloadTimer) return;
+                this._reloadTimer = setTimeout(async () => {
+                    this._reloadTimer = null;
+                    console.log(`[RentalBase Realtime Customer] triggerReload executing (delay: ${delay}ms, forceFull: ${forceFull})`);
+
+                    if (forceFull) {
+                        try {
+                            if (this.toasts && this.toasts.length > 0) {
+                                sessionStorage.setItem('rb_pending_toast_customer', JSON.stringify(this.toasts));
+                            }
+                        } catch (err) {}
+                        window.location.reload();
+                        return;
+                    }
+
+                    // 1. Guard: Check if customer is currently typing or editing
+                    const activeEl = document.activeElement;
+                    const isEditing = activeEl && (
+                        activeEl.tagName === 'INPUT' ||
+                        activeEl.tagName === 'TEXTAREA' ||
+                        activeEl.tagName === 'SELECT' ||
+                        activeEl.isContentEditable
+                    );
+                    if (isEditing) {
+                        console.log('[RentalBase Realtime Customer] Partial reload postponed: User is currently typing in an input element');
+                        return;
+                    }
+
+                    // 2. Guard: Check if modal or dialog is open
+                    const openDialog = document.querySelector('[role="dialog"][aria-modal="true"]:not([style*="display: none"]):not([style*="display:none"])');
+                    const isDialogVisible = openDialog && (
+                        typeof openDialog.checkVisibility === 'function'
+                            ? openDialog.checkVisibility()
+                            : (openDialog.offsetParent !== null || window.getComputedStyle(openDialog).display !== 'none')
+                    );
+                    if (isDialogVisible) {
+                        console.log('[RentalBase Realtime Customer] Partial reload postponed: Active modal dialog is currently visible');
+                        return;
+                    }
+
+                    const currentMain = document.querySelector('main');
+                    if (!currentMain) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    // 3. Preserve Alpine state if on my-orders view
+                    let savedState = null;
+                    const rootXData = currentMain.querySelector('[x-data]') || (currentMain.hasAttribute('x-data') ? currentMain : null);
+                    if (rootXData && window.Alpine && typeof window.Alpine.$data === 'function') {
+                        try {
+                            const alpineData = window.Alpine.$data(rootXData);
+                            if (alpineData) {
+                                if (alpineData.cancelModalOpen || alpineData.returnModalOpen || alpineData.receiveModalOpen || alpineData.lightboxOpen) {
+                                    console.log('[RentalBase Realtime Customer] Partial reload postponed: Action modal is open');
+                                    return;
+                                }
+                                if (alpineData.viewMode && alpineData.selectedOrderId) {
+                                    savedState = {
+                                        viewMode: alpineData.viewMode,
+                                        selectedOrderId: alpineData.selectedOrderId,
+                                        activeTab: alpineData.activeTab
+                                    };
+                                }
+                            }
+                        } catch (e) {}
+                    }
+
+                    // 4. Capture scroll position
+                    const scrollX = window.scrollX;
+                    const scrollY = window.scrollY;
+
                     try {
-                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(659.25, ctx.currentTime);
-                        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
-                        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start();
-                        osc.stop(ctx.currentTime + 0.5);
-                    } catch (err) {}
-                }
-            };
-        }
+                        const response = await fetch(window.location.href, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            console.warn(`[RentalBase Realtime Customer] Partial fetch returned status ${response.status}. Triggering clean full reload fallback.`);
+                            window.location.reload();
+                            return;
+                        }
+
+                        const html = await response.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+
+                        const newMain = doc.querySelector('main');
+                        if (!newMain) {
+                            window.location.reload();
+                            return;
+                        }
+
+                        // Clean up old Alpine tree
+                        if (window.Alpine && typeof window.Alpine.destroyTree === 'function') {
+                            window.Alpine.destroyTree(currentMain);
+                        }
+
+                        // Seamless partial DOM replacement
+                        currentMain.innerHTML = newMain.innerHTML;
+
+                        // Synchronize CSRF token if meta tag updated
+                        const newCsrf = doc.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        if (newCsrf) {
+                            document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', newCsrf);
+                        }
+
+                        // Re-initialize Alpine tree on refreshed content
+                        if (window.Alpine && typeof window.Alpine.initTree === 'function') {
+                            window.Alpine.initTree(currentMain);
+                        }
+
+                        // Re-scan Livewire if active
+                        if (window.Livewire && typeof window.Livewire.rescan === 'function') {
+                            window.Livewire.rescan();
+                        }
+
+                        // Restore saved Alpine state (e.g. order detail view)
+                        if (savedState) {
+                            const newRootXData = currentMain.querySelector('[x-data]') || (currentMain.hasAttribute('x-data') ? currentMain : null);
+                            if (newRootXData && window.Alpine && typeof window.Alpine.$data === 'function') {
+                                try {
+                                    const newAlpineData = window.Alpine.$data(newRootXData);
+                                    if (newAlpineData) {
+                                        if (savedState.activeTab) newAlpineData.activeTab = savedState.activeTab;
+                                        if (savedState.viewMode === 'detail' && savedState.selectedOrderId && typeof newAlpineData.openDetail === 'function') {
+                                            newAlpineData.openDetail(savedState.selectedOrderId);
+                                        }
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+
+                        // Restore exact scroll position
+                        window.scrollTo({ top: scrollY, left: scrollX, behavior: 'instant' });
+                        console.log('[RentalBase Realtime Customer] Partial DOM refresh applied successfully!');
+                    } catch (err) {
+                        console.error('[RentalBase Realtime Customer] Partial refresh error, fallback to reload:', err);
+                        try {
+                            if (this.toasts && this.toasts.length > 0) {
+                                sessionStorage.setItem('rb_pending_toast_customer', JSON.stringify(this.toasts));
+                            }
+                        } catch (e) {}
+                        window.location.reload();
+                    }
+                }, delay);
+            },
+            addToast(title, message, url = null) {
+                const id = Date.now() + Math.floor(Math.random() * 1000);
+                this.toasts.push({ id, title, message, url });
+                setTimeout(() => this.removeToast(id), 7000);
+            },
+            removeToast(id) {
+                this.toasts = this.toasts.filter(t => t.id !== id);
+            },
+            playChime() {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.5);
+                } catch (err) {}
+            }
+        };
+    }
     </script>
     @endif
     @endauth

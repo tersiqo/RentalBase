@@ -96,14 +96,6 @@ class AutoCompleteOrders extends Command
                         $return->update(['return_status' => 'selesai']);
                     }
 
-                    // Otomatis tandai KTP fisik jaminan telah dikembalikan
-                    if ($lockedOrder->identityGuarantee && in_array($lockedOrder->identityGuarantee->status, ['dititipkan', 'menunggu', 'diverifikasi'])) {
-                        $lockedOrder->identityGuarantee->update([
-                            'status' => 'dikembalikan',
-                            'returned_at' => Carbon::now(),
-                        ]);
-                    }
-
                     // Perbarui status unit fisik agar kembali tersedia jika tidak ada order aktif lain
                     foreach ($lockedOrder->orderItems as $item) {
                         foreach ($item->orderItemUnits as $oiu) {
@@ -120,7 +112,7 @@ class AutoCompleteOrders extends Command
                         'user_id'     => null,
                         'action'      => 'order_auto_completed',
                         'module'      => 'orders',
-                        'description' => sprintf('Pesanan #%s diselesaikan otomatis oleh sistem setelah masa tenggang retur tanpa kendala dan fisik KTP jaminan ditandai dikembalikan.', $lockedOrder->order_number),
+                        'description' => sprintf('Pesanan #%s diselesaikan otomatis oleh sistem setelah masa tenggang retur tanpa kendala.', $lockedOrder->order_number),
                         'ip_address'  => '127.0.0.1',
                         'user_agent'  => 'Console/Cron',
                     ]);

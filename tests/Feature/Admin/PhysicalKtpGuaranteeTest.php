@@ -124,15 +124,7 @@ class PhysicalKtpGuaranteeTest extends TestCase
         $this->assertStringContainsString('amber', $this->guarantee->status_color);
 
         $this->guarantee->update(['status' => 'diverifikasi']);
-        $this->assertEquals('Data Terverifikasi (Wajib Bawa KTP Fisik)', $this->guarantee->status_label);
-        $this->assertStringContainsString('blue', $this->guarantee->status_color);
-
-        $this->guarantee->update(['status' => 'dititipkan']);
-        $this->assertEquals('KTP Fisik Sedang Dititipkan', $this->guarantee->status_label);
-        $this->assertStringContainsString('purple', $this->guarantee->status_color);
-
-        $this->guarantee->update(['status' => 'dikembalikan']);
-        $this->assertEquals('KTP Fisik Telah Dikembalikan', $this->guarantee->status_label);
+        $this->assertEquals('Identitas Terverifikasi', $this->guarantee->status_label);
         $this->assertStringContainsString('emerald', $this->guarantee->status_color);
 
         $this->guarantee->update(['status' => 'ditolak']);
@@ -140,39 +132,30 @@ class PhysicalKtpGuaranteeTest extends TestCase
         $this->assertStringContainsString('red', $this->guarantee->status_color);
     }
 
-    public function test_shipment_requires_ktp_deposited_checkbox_when_processing_handover(): void
+    public function test_shipment_handover_succeeds_without_physical_ktp_deposit(): void
     {
         $this->actingAs($this->admin);
 
-        // 1. Gagal jika tidak mencentang ktp_deposited
+        // Pengiriman / serah terima langsung berhasil tanpa memerlukan checkbox ktp_deposited
         $response = $this->post(route('admin.shipments.process', $this->order->id), [
             // tanpa ktp_deposited
         ]);
 
-        $response->assertSessionHasErrors('ktp_deposited');
-        $this->assertEquals('diverifikasi', $this->guarantee->fresh()->status);
+        $response->assertRedirect(route('admin.shipments.index'));
+        $response->assertSessionHas('success');
 
-        // 2. Berhasil jika mencentang ktp_deposited
-        $successResponse = $this->post(route('admin.shipments.process', $this->order->id), [
-            'ktp_deposited' => '1',
-        ]);
-
-        $successResponse->assertRedirect(route('admin.shipments.index'));
-        $successResponse->assertSessionHas('success');
-
-        // Status pesanan menjadi sedang_disewa (karena ambil_toko) & jaminan KTP menjadi dititipkan beserta timestamp fisik
+        // Status pesanan menjadi sedang_disewa (karena ambil_toko) & jaminan identitas tetap diverifikasi
         $this->assertEquals('sedang_disewa', $this->order->fresh()->status);
-        $this->assertEquals('dititipkan', $this->guarantee->fresh()->status);
-        $this->assertNotNull($this->guarantee->fresh()->deposited_at);
+        $this->assertEquals('diverifikasi', $this->guarantee->fresh()->status);
     }
 
-    public function test_return_completion_updates_identity_guarantee_status_to_dikembalikan(): void
+    public function test_return_completion_maintains_identity_guarantee_status_as_diverifikasi(): void
     {
         $this->actingAs($this->admin);
 
-        // Set status order menjadi dikirim dan KTP dititipkan
+        // Set status order menjadi dikirim
         $this->order->update(['status' => 'dikirim']);
-        $this->guarantee->update(['status' => 'dititipkan']);
+        $this->guarantee->update(['status' => 'diverifikasi']);
 
         $response = $this->post("/admin/returns/{$this->order->id}/process", [
             'action_type' => 'normal',
@@ -181,11 +164,10 @@ class PhysicalKtpGuaranteeTest extends TestCase
 
         $response->assertRedirect(route('admin.returns.index'));
         $this->assertEquals('selesai', $this->order->fresh()->status);
-        $this->assertEquals('dikembalikan', $this->guarantee->fresh()->status);
-        $this->assertNotNull($this->guarantee->fresh()->returned_at);
+        $this->assertEquals('diverifikasi', $this->guarantee->fresh()->status);
     }
 
-    public function test_return_with_unpaid_late_fee_keeps_identity_guarantee_status_as_dititipkan(): void
+    public function test_return_with_unpaid_late_fee_keeps_identity_guarantee_status_as_diverifikasi(): void
     {
         $this->actingAs($this->admin);
 
@@ -194,7 +176,7 @@ class PhysicalKtpGuaranteeTest extends TestCase
             'status' => 'dikirim',
             'rental_end_date' => Carbon::now()->subHours(5),
         ]);
-        $this->guarantee->update(['status' => 'dititipkan']);
+        $this->guarantee->update(['status' => 'diverifikasi']);
 
         $response = $this->post("/admin/returns/{$this->order->id}/process", [
             'action_type' => 'denda',
@@ -203,42 +185,24 @@ class PhysicalKtpGuaranteeTest extends TestCase
 
         $response->assertRedirect(route('admin.returns.index'));
         $this->assertEquals('menunggu_pembayaran_denda', $this->order->fresh()->status);
-        $this->assertEquals('dititipkan', $this->guarantee->fresh()->status);
+        $this->assertEquals('diverifikasi', $this->guarantee->fresh()->status);
     }
 
-    public function test_admin_and_customer_order_detail_renders_physical_ktp_status_badges(): void
+    public function test_admin_and_customer_order_detail_renders_verified_identity_badges(): void
     {
-        // 1. Pengujian saat status KTP dititipkan
-        $this->guarantee->update(['status' => 'dititipkan']);
+        $this->guarantee->update(['status' => 'diverifikasi']);
         $this->order->update(['status' => 'sedang_disewa']);
 
         // Sisi Admin
         $this->actingAs($this->admin);
         $adminView = $this->get(route('admin.orders.show', $this->order->id));
         $adminView->assertStatus(200);
-        $adminView->assertSee('KTP Fisik Sedang Dititipkan');
-        $adminView->assertSee('KTP Fisik Dititipkan di Toko');
+        $adminView->assertSee('Identitas Terverifikasi');
 
         // Sisi Customer
         $this->actingAs($this->customer);
         $customerView = $this->get(route('customer.orders.show', ['order' => $this->order->id, 'subdomain' => $this->client->subdomain]));
         $customerView->assertStatus(200);
-        $customerView->assertSee('KTP Fisik Sedang Dititipkan di Toko');
-
-        // 2. Pengujian saat status KTP dikembalikan
-        $this->guarantee->update(['status' => 'dikembalikan']);
-        $this->order->update(['status' => 'selesai']);
-
-        // Sisi Admin
-        $this->actingAs($this->admin);
-        $adminViewCompleted = $this->get(route('admin.orders.show', $this->order->id));
-        $adminViewCompleted->assertStatus(200);
-        $adminViewCompleted->assertSee('KTP Fisik Telah Dikembalikan');
-
-        // Sisi Customer
-        $this->actingAs($this->customer);
-        $customerViewCompleted = $this->get(route('customer.orders.show', ['order' => $this->order->id, 'subdomain' => $this->client->subdomain]));
-        $customerViewCompleted->assertStatus(200);
-        $customerViewCompleted->assertSee('KTP Fisik Telah Dikembalikan');
+        $customerView->assertSee('Identitas Terverifikasi');
     }
 }

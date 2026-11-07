@@ -140,11 +140,6 @@ class ReturnController extends Controller
                 $return->return_status = 'diterima';
                 $order->status = 'menunggu_pembayaran_denda';
                 $msg = 'Tagihan denda sebesar Rp ' . number_format($lateFeeAmount, 0, ',', '.') . " untuk pesanan #{$order->order_number} berhasil diterbitkan.";
-
-                // Status KTP tetap dititipkan (ditahan sebagai jaminan sampai denda dilunasi)
-                if ($order->identityGuarantee) {
-                    $order->identityGuarantee->update(['status' => 'dititipkan']);
-                }
             } else {
                 // Barang kembali normal ATAU denda sudah lunas (termasuk jika customer sudah unggah late_fee_proof) / dimaafkan
                 $return->late_fee_status = (! empty($return->late_fee_proof) || $lateFeeAmount > 0) ? 'lunas' : 'tidak_ada';
@@ -161,15 +156,7 @@ class ReturnController extends Controller
                     }
                 }
 
-                // Otomatis ubah status jaminan fisik KTP menjadi dikembalikan dan catat timestamp pengembalian
-                if ($order->identityGuarantee) {
-                    $order->identityGuarantee->update([
-                        'status' => 'dikembalikan',
-                        'returned_at' => now(),
-                    ]);
-                }
-
-                $msg = "Pengembalian pesanan #{$order->order_number} selesai diproses. Fisik KTP jaminan telah dikembalikan dan status unit telah diperbarui.";
+                $msg = "Pengembalian pesanan #{$order->order_number} selesai diproses dan status unit telah diperbarui.";
             }
 
             $return->save();

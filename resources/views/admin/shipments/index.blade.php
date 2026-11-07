@@ -334,29 +334,6 @@
                                 Tidak perlu input resi karena barang diambil langsung di toko. Pastikan fisik barang telah dicek bersama pelanggan sebelum klik tombol serahkan di bawah.
                             </div>
                         </template>
-
-                        {{-- Konfirmasi Penitipan Fisik KTP (Jaminan Sewa) --}}
-                        <div class="p-3.5 bg-amber-50/80 border border-amber-200/90 rounded-lg text-xs space-y-2">
-                            <div class="flex items-start gap-2.5">
-                                <span class="text-base shrink-0 text-amber-600">🪪</span>
-                                <div class="flex-1">
-                                    <p class="font-bold text-amber-900 uppercase tracking-wide text-[11px]">Jaminan Fisik Identitas (KTP)</p>
-                                    <p class="text-amber-800 text-[11.5px] mt-0.5 leading-relaxed">
-                                        Sebagai jaminan keamanan unit selama masa sewa, pastikan kartu fisik KTP/identitas asli penyewa telah diterima dan ditahan di toko sebelum barang diserahkan.
-                                    </p>
-                                </div>
-                            </div>
-                            <label class="flex items-center gap-2 pt-2 border-t border-amber-200/70 text-gray-800 font-semibold cursor-pointer select-none">
-                                <input type="checkbox" 
-                                       name="ktp_deposited" 
-                                       value="1" 
-                                       required 
-                                       class="rounded text-orange-600 focus:ring-orange-500 w-4 h-4 border-gray-300 cursor-pointer">
-                                <span class="text-xs text-gray-900">
-                                    Fisik KTP / Identitas asli pelanggan telah diterima dan ditahan di toko sebagai jaminan sewa. <span class="text-red-500">*</span>
-                                </span>
-                            </label>
-                        </div>
                     </div>
 
                     {{-- Modal Footer --}}

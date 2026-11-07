@@ -386,6 +386,8 @@ class CustomerCheckoutController extends Controller
             if (class_exists(\App\Events\NewOrderPlaced::class)) {
                 event(new \App\Events\NewOrderPlaced($order));
             }
+
+            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_counts_' . $client->id);
         } catch (\Throwable $e) {
             DB::rollBack();
 

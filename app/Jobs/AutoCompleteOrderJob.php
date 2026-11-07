@@ -74,13 +74,6 @@ class AutoCompleteOrderJob implements ShouldQueue
                 'status' => 'selesai',
             ]);
 
-            // Kembalikan status jaminan identitas (KTP fisik)
-            if ($lockedOrder->identityGuarantee && $lockedOrder->identityGuarantee->status !== 'dikembalikan') {
-                $lockedOrder->identityGuarantee->update([
-                    'status' => 'dikembalikan',
-                ]);
-            }
-
             // Mastiin unit fisik kembali ke status tersedia
             foreach ($lockedOrder->orderItems as $item) {
                 foreach ($item->orderItemUnits as $orderItemUnit) {

@@ -256,7 +256,7 @@ class ReportController extends Controller
             ->orderBy('created_at', 'desc')
             ->lazy(100)
             ->each(function ($order) use ($handle, &$rowNumber) {
-                $sewa = ($order->status === 'selesai' && $this->isOrderPaymentVerified($order))
+                $sewa = $this->isOrderPaymentVerified($order)
                     ? (float) $order->total_amount
                     : 0;
 
@@ -449,15 +449,15 @@ class ReportController extends Controller
             ->whereNotIn('status', ['batal', 'dibatalkan', 'ditolak'])
             ->count();
 
-        // 2. Pendapatan Sewa Pokok: total biaya sewa dari order selesai dengan pembayaran terverifikasi
+        // 2. Pendapatan Sewa Pokok: total biaya sewa dari order terverifikasi atau operasional aktif / selesai
         $pendapatanSewaPokok = (float) Order::where('client_id', $clientId)
             ->whereBetween('created_at', [$start, $end])
-            ->where('status', 'selesai')
             ->whereNotIn('status', ['batal', 'dibatalkan', 'ditolak'])
             ->where(function ($q) {
-                $q->whereHas('payments', function ($pq) {
-                    $pq->whereIn('status', ['terverifikasi', 'diterima']);
-                })->orWhereDoesntHave('payments');
+                $q->whereIn('status', ['selesai', 'sedang_disewa', 'dikonfirmasi', 'siap_kirim', 'diproses', 'dikirim', 'dikembalikan', 'pembayaran_terverifikasi'])
+                  ->orWhereHas('payments', function ($pq) {
+                      $pq->whereIn('status', ['terverifikasi', 'diterima', 'dikonfirmasi']);
+                  });
             })
             ->sum('total_amount');
 
@@ -512,11 +512,15 @@ class ReportController extends Controller
      */
     private function isOrderPaymentVerified(Order $order): bool
     {
-        if ($order->payments->isEmpty()) {
-            return $order->status === 'selesai';
+        if (in_array($order->status, ['pembayaran_terverifikasi', 'siap_kirim', 'diproses', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan', 'selesai'])) {
+            return true;
         }
 
-        return $order->payments->contains(fn ($p) => in_array($p->status, ['terverifikasi', 'diterima']));
+        if ($order->payments->isEmpty()) {
+            return false;
+        }
+
+        return $order->payments->contains(fn ($p) => in_array($p->status, ['terverifikasi', 'diterima', 'dikonfirmasi']));
     }
 
     /**

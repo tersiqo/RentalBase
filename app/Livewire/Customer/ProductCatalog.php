@@ -90,6 +90,22 @@ class ProductCatalog extends Component
         $this->resetPage();
     }
 
+    public function updatedModalStartDate()
+    {
+        if ($this->modalStartDate && $this->modalEndDate && $this->modalEndDate < $this->modalStartDate) {
+            $this->modalEndDate = $this->modalStartDate;
+        }
+        $this->checkModalAvailability();
+    }
+
+    public function updatedModalEndDate()
+    {
+        if ($this->modalStartDate && $this->modalEndDate && $this->modalEndDate < $this->modalStartDate) {
+            $this->modalStartDate = $this->modalEndDate;
+        }
+        $this->checkModalAvailability();
+    }
+
     public function openAddToCartModal($productId)
     {
         $product = Product::where('id', $productId)

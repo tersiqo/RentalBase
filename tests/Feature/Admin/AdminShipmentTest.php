@@ -234,7 +234,7 @@ class AdminShipmentTest extends TestCase
         $response->assertRedirect(route('admin.shipments.index'));
         $response->assertSessionHas('success');
 
-        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'dikirim']);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'sedang_disewa']);
         $this->assertDatabaseHas('shipments', [
             'order_id'        => $order->id,
             'shipping_method' => 'ambil_toko',

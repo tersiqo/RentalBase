@@ -14,6 +14,23 @@ class Payment extends Model
         'verified_at' => 'datetime',
     ];
 
+    protected static function booted()
+    {
+        static::saved(function ($payment) {
+            $clientId = $payment->order?->client_id ?? $payment->client_id;
+            if ($clientId) {
+                \Illuminate\Support\Facades\Cache::forget('admin_dashboard_counts_' . $clientId);
+            }
+        });
+
+        static::deleted(function ($payment) {
+            $clientId = $payment->order?->client_id ?? $payment->client_id;
+            if ($clientId) {
+                \Illuminate\Support\Facades\Cache::forget('admin_dashboard_counts_' . $clientId);
+            }
+        });
+    }
+
     public function order()
     {
         return $this->belongsTo(Order::class);

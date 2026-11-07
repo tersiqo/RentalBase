@@ -168,11 +168,11 @@ class CustomerCatalogEnhancementTest extends TestCase
             ->set('endDate', '2026-11-12')
             ->assertSee('Tersedia 1');
 
-        // When searching overlapping dates (e.g. 2026-11-02 to 2026-11-03) -> Unit should be empty
+        // When searching overlapping dates (e.g. 2026-11-02 to 2026-11-03) -> Unit should show Sedang Disewa
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
             ->set('startDate', '2026-11-02')
             ->set('endDate', '2026-11-03')
-            ->assertSee('Unit Kosong');
+            ->assertSee('Sedang Disewa');
     }
 
     public function test_catalog_paginates_nine_items_per_page()
@@ -590,7 +590,7 @@ class CustomerCatalogEnhancementTest extends TestCase
         $response->assertSee('howToRentModalOpen');
         $response->assertSee('helpModalOpen');
         $response->assertSee('Panduan Cara Sewa &amp; Jaminan Identitas', false);
-        $response->assertSee('Wajib Titip KTP');
+        $response->assertSee('Tanpa Titip KTP');
         $response->assertSee('Pusat Bantuan &amp; Tanya Jawab', false);
         $response->assertSee('Apakah perlu membayar uang deposit jaminan?');
     }
@@ -819,11 +819,116 @@ class CustomerCatalogEnhancementTest extends TestCase
             ->assertSee('Tersedia 1');
 
         // 3. Saat mencari tanggal 10 - 11 November (bentrok dengan Customer A):
-        // Unit tampil 'Unit Kosong'
+        // Unit tampil 'Sedang Disewa' (karena toko punya unit, tetapi sedang disewa)
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
             ->set('startDate', '2026-11-10')
             ->set('endDate', '2026-11-11')
-            ->assertSee('Unit Kosong');
+            ->assertSee('Sedang Disewa');
+    }
+
+    public function test_add_to_cart_modal_dynamically_updates_available_units_for_future_dates()
+    {
+        Carbon::setTestNow('2026-11-01 10:00:00');
+
+        $customer = User::factory()->create(['role' => 'customer']);
+
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Haenim UV Sterilizer Test',
+            'slug' => 'haenim-uv-sterilizer-test',
+            'rental_price_per_day' => 80000,
+            'status' => 'aktif',
+        ]);
+
+        $unit = EquipmentUnit::create([
+            'client_id' => $this->client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'HNM-TEST-01',
+            'serial_number' => 'SN-HNM-TEST-01',
+            'condition' => 'baik',
+            'status' => 'disewa',
+        ]);
+
+        $order = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $customer->id,
+            'order_number' => 'ORD-HNM-TEST-01',
+            'status' => 'dikembalikan',
+            'rental_start_date' => '2026-11-01 00:00:00',
+            'rental_end_date' => '2026-11-05 23:59:59',
+            'duration_days' => 5,
+            'shipping_address' => 'Jl. Ijen No. 10, Malang',
+            'total_amount' => 320000,
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price_per_day' => 80000,
+            'subtotal' => 320000,
+        ]);
+
+        // Today (2026-11-01) is booked, so initially 0 units
+        $lw = Livewire::test(\App\Livewire\Customer\AddToCartModal::class, ['product' => $product]);
+        $this->assertEquals(0, $lw->get('availableUnits'));
+
+        // Check availability in 2027 (free)
+        $lw->call('checkAvailability', '2027-01-30', '2027-02-25');
+        $this->assertEquals(1, $lw->get('availableUnits'));
+        $lw->assertSee('Tersedia');
+    }
+
+    public function test_product_detail_page_shows_bookable_status_when_currently_rented_today()
+    {
+        Carbon::setTestNow('2026-11-01 10:00:00');
+
+        $customer = User::factory()->create(['role' => 'customer']);
+
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->category->id,
+            'name' => 'Stroller Rented Today',
+            'slug' => 'stroller-rented-today',
+            'rental_price_per_day' => 50000,
+            'status' => 'aktif',
+        ]);
+
+        EquipmentUnit::create([
+            'client_id' => $this->client->id,
+            'product_id' => $product->id,
+            'unit_code' => 'STR-TODAY-01',
+            'serial_number' => 'SN-STR-TODAY-01',
+            'condition' => 'baik',
+            'status' => 'disewa',
+        ]);
+
+        $order = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $customer->id,
+            'order_number' => 'ORD-STR-TEST-01',
+            'status' => 'sedang_disewa',
+            'rental_start_date' => '2026-11-01 00:00:00',
+            'rental_end_date' => '2026-11-05 23:59:59',
+            'duration_days' => 5,
+            'shipping_address' => 'Jl. Ijen No. 10, Malang',
+            'total_amount' => 200000,
+        ]);
+
+        OrderItem::create([
+            'order_id' => $order->id,
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price_per_day' => 50000,
+            'subtotal' => 200000,
+        ]);
+
+        $this->actingAs($customer)
+            ->get(route('customer.product.show', ['subdomain' => $this->client->subdomain, 'product' => $product->id]))
+            ->assertOk()
+            ->assertSee('Sedang Disewa (Bisa Booking Jadwal)')
+            ->assertSee('Sewa Sekarang');
     }
 }
 

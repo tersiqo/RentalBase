@@ -533,37 +533,6 @@
             </div>
 
             @if($order->identityGuarantee)
-                {{-- Status Penitipan Fisik KTP --}}
-                @if($order->identityGuarantee->status === 'dititipkan')
-                    <div class="mb-3 p-2.5 rounded-lg bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-start gap-2 shadow-2xs">
-                        <span class="text-sm shrink-0 mt-0.5">🔒</span>
-                        <div>
-                            <strong class="font-bold block text-purple-950">KTP Fisik Dititipkan di Toko</strong>
-                            <p class="text-purple-800 text-[11px] mt-0.5 leading-relaxed">Fisik kartu KTP/identitas asli penyewa saat ini ditahan di toko sebagai jaminan sewa dan wajib diserahkan kembali saat pengembalian selesai.</p>
-                            @if($order->identityGuarantee->deposited_at)
-                                <p class="text-purple-700 text-[10px] mt-1 font-semibold flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    Diterima fisik: {{ \Carbon\Carbon::parse($order->identityGuarantee->deposited_at)->translatedFormat('d M Y, H:i') }} WIB
-                                </p>
-                            @endif
-                        </div>
-                    </div>
-                @elseif($order->identityGuarantee->status === 'dikembalikan')
-                    <div class="mb-3 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-2 shadow-2xs">
-                        <span class="text-sm shrink-0 mt-0.5">✅</span>
-                        <div>
-                            <strong class="font-bold block text-emerald-950">KTP Fisik Telah Dikembalikan</strong>
-                            <p class="text-emerald-800 text-[11px] mt-0.5 leading-relaxed">Fisik kartu KTP/identitas asli telah diserahkan kembali kepada penyewa setelah sewa selesai.</p>
-                            @if($order->identityGuarantee->returned_at)
-                                <p class="text-emerald-700 text-[10px] mt-1 font-semibold flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                    Dikembalikan: {{ \Carbon\Carbon::parse($order->identityGuarantee->returned_at)->translatedFormat('d M Y, H:i') }} WIB
-                                </p>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-
                 {{-- Data Identitas Customer --}}
                 <div class="text-xs space-y-2 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
                     <div class="flex justify-between items-start">
