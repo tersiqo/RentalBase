@@ -18,7 +18,7 @@ class PasswordResetWorkflowTest extends TestCase
         $this->withoutVite();
     }
 
-    public function test_forgot_password_page_renders_successfully(): void
+    public function test_ut_01_010_password_reset_workflow_and_token_security(): void
     {
         $response = $this->get('/forgot-password');
 
