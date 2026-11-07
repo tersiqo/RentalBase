@@ -75,7 +75,7 @@ class CustomerMyOrdersTest extends TestCase
         return compact('client', 'customer', 'product', 'order');
     }
 
-    public function test_customer_orders_page_requires_authentication(): void
+    public function test_ut_09_001_customer_my_orders_page_and_status_filtering(): void
     {
         $response = $this->get('/my-orders');
 
