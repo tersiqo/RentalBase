@@ -124,7 +124,7 @@ class CustomerOrderDetailTest extends TestCase
         return compact('client', 'customer', 'otherCustomer', 'product', 'paymentMethod', 'order');
     }
 
-    public function test_authorized_customer_can_access_own_order_detail(): void
+    public function test_ut_09_002_customer_order_detail_stepper_and_tracking(): void
     {
         $fixture = $this->createFullOrderDetailFixture();
 
