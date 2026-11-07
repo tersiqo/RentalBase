@@ -22,29 +22,120 @@
     $defaultIdentityAddress = old('identity_address', $lastIdentity?->identity_address ?: ($profileAddress ?: ''));
     $defaultSaveToProfile = empty(trim($profileAddress ?? ''));
 @endphp
-<div class="max-w-[1260px] mx-auto px-6 py-8" x-data="{
-    currentStep: {{ $errors->hasAny(['full_name', 'identity_number', 'identity_address', 'identity_document_image', 'face_image']) ? 3 : ($errors->hasAny(['shipping_address', 'shipping_method']) ? 2 : ($errors->hasAny(['terms']) ? 4 : 1)) }},
-    periodStart: {{ json_encode(old('start_date', $period['start_date'])) }},
-    periodEnd: {{ json_encode(old('end_date', $period['end_date'])) }},
-    rentalTime: {{ json_encode(old('rental_time', now()->format('H:i'))) }},
-    items: {{ json_encode($itemsList->all()) }},
-    ship: {{ json_encode(old('shipping_method') === \App\Models\Order::SHIPPING_AMBIL_TOKO ? 'ambil' : 'antar') }},
-    shopName: {{ json_encode($shopLabel) }},
-    profileAddress: {{ json_encode($profileAddress ?? '') }},
-    lastOrderAddress: {{ json_encode($lastOrderAddress ?? '') }},
-    addressText: {{ json_encode($defaultShippingAddress) }},
-    saveToProfile: {{ json_encode(old('save_address_to_profile', $defaultSaveToProfile ? '1' : '0') === '1' || old('save_address_to_profile') === true) }},
-    whatsapp: {{ json_encode(old('whatsapp_number', auth()->user()->phone ?? '')) }},
-    fullName: {{ json_encode(old('full_name', $lastIdentity?->full_name ?? auth()->user()->name ?? '')) }},
-    identityNumber: {{ json_encode($defaultIdentityNumber) }},
-    identityAddress: {{ json_encode($defaultIdentityAddress) }},
-    agree: false,
-    stepErrors: [],
+<div class="max-w-[1260px] mx-auto px-6 py-8" x-data="(() => {
+    const storageKey = 'rentalbase_checkout_draft_{{ $client->id }}_{{ auth()->id() ?? 'guest' }}';
+    let savedDraft = null;
+    try {
+        const raw = sessionStorage.getItem(storageKey);
+        if (raw) savedDraft = JSON.parse(raw);
+    } catch (e) {}
 
-    ktpPreview: null,
-    ktpError: '',
-    selfiePreview: null,
-    selfieError: '',
+    const hasServerErrors = {{ $errors->any() ? 'true' : 'false' }};
+    const initialStep = (savedDraft && savedDraft.currentStep && !hasServerErrors && savedDraft.currentStep >= 1 && savedDraft.currentStep <= 4)
+        ? savedDraft.currentStep
+        : {{ $errors->hasAny(['full_name', 'identity_number', 'identity_address', 'identity_document_image', 'face_image']) ? 3 : ($errors->hasAny(['shipping_address', 'shipping_method']) ? 2 : ($errors->hasAny(['terms']) ? 4 : 1)) }};
+
+    return {
+        storageKey: storageKey,
+        currentStep: initialStep,
+        periodStart: (savedDraft && savedDraft.periodStart) ? savedDraft.periodStart : {{ json_encode(old('start_date', $period['start_date'])) }},
+        periodEnd: (savedDraft && savedDraft.periodEnd) ? savedDraft.periodEnd : {{ json_encode(old('end_date', $period['end_date'])) }},
+        rentalTime: (savedDraft && savedDraft.rentalTime) ? savedDraft.rentalTime : {{ json_encode(old('rental_time', now()->format('H:i'))) }},
+        items: {{ json_encode($itemsList->all()) }},
+        ship: (savedDraft && savedDraft.ship) ? savedDraft.ship : {{ json_encode(old('shipping_method') === \App\Models\Order::SHIPPING_AMBIL_TOKO ? 'ambil' : 'antar') }},
+        shopName: {{ json_encode($shopLabel) }},
+        profileAddress: {{ json_encode($profileAddress ?? '') }},
+        lastOrderAddress: {{ json_encode($lastOrderAddress ?? '') }},
+        addressText: (savedDraft && savedDraft.addressText !== undefined && savedDraft.addressText !== null && savedDraft.addressText !== '') ? savedDraft.addressText : {{ json_encode($defaultShippingAddress) }},
+        saveToProfile: (savedDraft && savedDraft.saveToProfile !== undefined) ? savedDraft.saveToProfile : {{ json_encode(old('save_address_to_profile', $defaultSaveToProfile ? '1' : '0') === '1' || old('save_address_to_profile') === true) }},
+        whatsapp: (savedDraft && savedDraft.whatsapp !== undefined && savedDraft.whatsapp !== null && savedDraft.whatsapp !== '') ? savedDraft.whatsapp : {{ json_encode(old('whatsapp_number', auth()->user()->phone ?? '')) }},
+        fullName: (savedDraft && savedDraft.fullName !== undefined && savedDraft.fullName !== null && savedDraft.fullName !== '') ? savedDraft.fullName : {{ json_encode(old('full_name', $lastIdentity?->full_name ?? auth()->user()->name ?? '')) }},
+        identityNumber: (savedDraft && savedDraft.identityNumber !== undefined && savedDraft.identityNumber !== null && savedDraft.identityNumber !== '') ? savedDraft.identityNumber : {{ json_encode($defaultIdentityNumber) }},
+        identityAddress: (savedDraft && savedDraft.identityAddress !== undefined && savedDraft.identityAddress !== null && savedDraft.identityAddress !== '') ? savedDraft.identityAddress : {{ json_encode($defaultIdentityAddress) }},
+        patokan: (savedDraft && savedDraft.patokan !== undefined && savedDraft.patokan !== null) ? savedDraft.patokan : '',
+        isDraftRestored: Boolean(savedDraft && (savedDraft.currentStep > 1 || savedDraft.whatsapp || savedDraft.identityNumber || savedDraft.addressText || savedDraft.patokan)),
+        agree: false,
+        stepErrors: [],
+        isSubmitting: false,
+
+        ktpPreview: null,
+        ktpError: '',
+        selfiePreview: null,
+        selfieError: '',
+
+        init() {
+            // Evaluasi ketersediaan unit item di keranjang
+            if (this.items && Array.isArray(this.items)) {
+                this.items.forEach(it => {
+                    const avail = (it.available_units !== undefined && it.available_units !== null) ? it.available_units : 99;
+                    if (avail <= 0) {
+                        it.quantity = 0;
+                    } else if (it.quantity > avail) {
+                        it.quantity = avail;
+                    }
+                });
+            }
+
+            // Pantau seluruh field utama untuk auto-save ke sessionStorage secara reaktif
+            const fieldsToWatch = [
+                'currentStep', 'ship', 'addressText', 'whatsapp', 
+                'fullName', 'identityNumber', 'identityAddress', 
+                'rentalTime', 'periodStart', 'periodEnd', 'saveToProfile', 'patokan'
+            ];
+            fieldsToWatch.forEach(field => {
+                this.$watch(field, () => this.saveDraft());
+            });
+
+            // Simpan draf saat ini
+            this.saveDraft();
+
+            window.addEventListener('beforeunload', (e) => {
+                if (this.isSubmitting) return;
+
+                // Peringatkan pengguna jika sudah melangkah ke step lanjutan (> 1) atau sudah memilih foto identitas
+                const hasProgress = this.currentStep > 1 || this.ktpPreview || this.selfiePreview;
+                if (hasProgress) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                    return '';
+                }
+            });
+        },
+
+        saveDraft() {
+            try {
+                const draft = {
+                    currentStep: this.currentStep,
+                    ship: this.ship,
+                    addressText: this.addressText,
+                    whatsapp: this.whatsapp,
+                    fullName: this.fullName,
+                    identityNumber: this.identityNumber,
+                    identityAddress: this.identityAddress,
+                    patokan: this.patokan,
+                    rentalTime: this.rentalTime,
+                    periodStart: this.periodStart,
+                    periodEnd: this.periodEnd,
+                    saveToProfile: this.saveToProfile,
+                    timestamp: Date.now(),
+                };
+                sessionStorage.setItem(this.storageKey, JSON.stringify(draft));
+            } catch (e) {
+                // Abaikan jika browser mematikan storage / quota exceeded
+            }
+        },
+
+        clearDraft() {
+            try {
+                sessionStorage.removeItem(this.storageKey);
+                this.isDraftRestored = false;
+            } catch (e) {}
+        },
+
+        resetDraft() {
+            this.clearDraft();
+            window.location.reload();
+        },
 
     get durationDays() {
         if (!this.periodStart || !this.periodEnd) return 1;
@@ -56,9 +147,15 @@
     },
 
     get shippingAddress() {
-        return this.ship === 'ambil'
-            ? 'Ambil di toko — ' + this.shopName
-            : this.addressText;
+        if (this.ship === 'ambil') {
+            return 'Ambil di toko — ' + this.shopName;
+        }
+        const cleanAddress = (this.addressText || '').trim();
+        const cleanPatokan = (this.patokan || '').trim();
+        if (cleanPatokan && !cleanAddress.includes(cleanPatokan)) {
+            return cleanAddress + ' (Patokan: ' + cleanPatokan + ')';
+        }
+        return cleanAddress;
     },
 
     rp(n) {
@@ -84,17 +181,6 @@
         } catch (e) {
             return dateStr;
         }
-    },
-
-    init() {
-        this.items.forEach(it => {
-            const avail = (it.available_units !== undefined && it.available_units !== null) ? it.available_units : 99;
-            if (avail <= 0) {
-                it.quantity = 0;
-            } else if (it.quantity > avail) {
-                it.quantity = avail;
-            }
-        });
     },
 
     itemSubtotal(item) {
@@ -222,6 +308,7 @@
         this.stepErrors = [];
         if (targetStep < this.currentStep) {
             this.currentStep = targetStep;
+            this.saveDraft();
             return;
         }
         for (let s = this.currentStep; s < targetStep; s++) {
@@ -229,11 +316,13 @@
             if (errs.length > 0) {
                 this.stepErrors = errs;
                 this.currentStep = s;
+                this.saveDraft();
                 window.scrollTo({ top: 150, behavior: 'smooth' });
                 return;
             }
         }
         this.currentStep = targetStep;
+        this.saveDraft();
         window.scrollTo({ top: 150, behavior: 'smooth' });
     },
 
@@ -253,8 +342,11 @@
             e.preventDefault();
             return false;
         }
+
+        this.isSubmitting = true;
+        this.clearDraft();
     }
-}">
+} })()">
 
     <!-- Breadcrumb -->
     <nav class="flex mb-6 text-sm font-medium text-gray-500" aria-label="Breadcrumb">
@@ -287,6 +379,21 @@
             </ul>
         </div>
     @endif
+
+    <!-- Draft Restored Notification Banner -->
+    <template x-if="isDraftRestored && currentStep > 1">
+        <div class="mb-6 bg-amber-50/90 border border-amber-200/90 rounded-2xl p-4 flex items-center justify-between text-xs text-amber-900 shadow-2xs">
+            <div class="flex items-center gap-2.5">
+                <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Draf formulir Anda dipulihkan otomatis ke <b>Langkah <span x-text="currentStep"></span></b>. Seluruh data teks yang Anda ketik tetap terjaga.</span>
+            </div>
+            <button type="button" @click="resetDraft()" class="text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer ml-3 shrink-0 text-xs">
+                Ulangi dari Awal
+            </button>
+        </div>
+    </template>
 
     <!-- Stepper Navigation -->
     <div class="mb-8 bg-white border border-slate-100 rounded-3xl p-5 sm:p-6 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.07)]">
@@ -737,7 +844,7 @@
 
                         <div>
                             <label for="patokan" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Patokan Lokasi <span class="text-gray-400 font-medium normal-case">(opsional, memudahkan kurir)</span></label>
-                            <input type="text" id="patokan" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-400" placeholder="Contoh: sebelah minimarket, pagar hitam, gang setelah masjid">
+                            <input type="text" id="patokan" x-model="patokan" class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500 placeholder-gray-400" placeholder="Contoh: sebelah minimarket, pagar hitam, gang setelah masjid">
                         </div>
                         <div>
                             <label for="wa" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nomor WhatsApp / Telepon Aktif Penerima <span class="text-red-500">*</span></label>
@@ -789,7 +896,7 @@
                         </div>
                         <div>
                             <h2 class="text-lg font-extrabold text-gray-900 tracking-tight">Identitas &amp; Jaminan Penyewa</h2>
-                            <p class="text-xs text-gray-500 font-medium mt-0.5">Jaminan KTP Asli (Tanpa Deposit Uang): Cukup titipkan identitas asli saat serah terima barang, tanpa perlu deposit uang tunai.</p>
+                            <p class="text-xs text-gray-500 font-medium mt-0.5">Verifikasi Identitas Digital (Tanpa Deposit Uang): Cukup unggah foto KTP dan swafoto (selfie), tanpa perlu deposit uang tunai dan tanpa titip fisik KTP.</p>
                         </div>
                     </div>
 
@@ -812,7 +919,7 @@
                     <div class="bg-primary-50 border border-primary-100 rounded-xl p-4 flex gap-3">
                         <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                         <div class="text-xs text-primary-900 leading-relaxed">
-                            <b>Ketentuan Jaminan KTP Asli:</b> Unggah foto KTP &amp; selfie untuk verifikasi awal saat booking online. Saat serah terima barang (ambil di toko/antar kurir), <strong>KTP fisik asli wajib diserahkan kepada pihak rental sebagai jaminan sewa</strong> dan akan dikembalikan utuh saat masa sewa selesai.
+                            <b>Ketentuan Verifikasi Identitas:</b> Unggah foto KTP &amp; swafoto (selfie) memegang KTP untuk verifikasi identitas penyewa saat booking online. <strong>Tidak perlu deposit uang tunai dan tidak perlu menitipkan fisik KTP asli</strong>.
                         </div>
                     </div>
 

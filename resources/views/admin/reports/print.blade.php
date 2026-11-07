@@ -209,9 +209,9 @@
         <tbody>
             @forelse($orders as $index => $order)
                 @php
-                    $isSelesai = $order->status === 'selesai';
-                    $hasVerifiedPayment = $order->payments->where('status', 'diverifikasi')->isNotEmpty();
-                    $sewa = ($isSelesai && $hasVerifiedPayment) ? (float) $order->total_amount : 0;
+                    $hasVerifiedPayment = in_array($order->status, ['pembayaran_terverifikasi', 'siap_kirim', 'diproses', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan', 'selesai'])
+                        || $order->payments->whereIn('status', ['terverifikasi', 'diterima', 'dikonfirmasi'])->isNotEmpty();
+                    $sewa = $hasVerifiedPayment ? (float) $order->total_amount : 0;
 
                     $denda = ($order->returnModel && $order->returnModel->late_fee_status === 'lunas')
                         ? (float) $order->returnModel->late_fee_amount

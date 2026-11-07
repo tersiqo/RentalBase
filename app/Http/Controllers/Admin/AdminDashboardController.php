@@ -36,6 +36,10 @@ class AdminDashboardController extends Controller
                 ->where('status', 'menunggu_pembayaran')
                 ->count();
 
+            $bookingHariIni = Order::where('client_id', $clientId)
+                ->whereDate('created_at', $today)
+                ->count();
+
             $menungguVerifikasi = Payment::whereHas('order', function ($q) use ($clientId) {
                 $q->where('client_id', $clientId);
             })->where('status', 'menunggu_konfirmasi')->count();
@@ -55,6 +59,7 @@ class AdminDashboardController extends Controller
 
             return compact(
                 'totalBookingBaru',
+                'bookingHariIni',
                 'menungguVerifikasi',
                 'totalDisewa',
                 'pendapatanBulanIni',

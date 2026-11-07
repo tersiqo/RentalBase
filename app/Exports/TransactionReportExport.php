@@ -63,10 +63,10 @@ class TransactionReportExport implements FromCollection, WithHeadings, WithMappi
     {
         $this->rowNumber++;
 
-        $hasVerifiedPayment = $order->payments && $order->payments->where('status', 'diverifikasi')->isNotEmpty();
-        $isSelesai = $order->status === 'selesai';
+        $hasVerifiedPayment = in_array($order->status, ['pembayaran_terverifikasi', 'siap_kirim', 'diproses', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan', 'selesai'])
+            || ($order->payments && $order->payments->whereIn('status', ['terverifikasi', 'diterima', 'dikonfirmasi'])->isNotEmpty());
 
-        $sewa = ($isSelesai && $hasVerifiedPayment) ? (float) $order->total_amount : 0;
+        $sewa = $hasVerifiedPayment ? (float) $order->total_amount : 0;
 
         $denda = ($order->returnModel && $order->returnModel->late_fee_status === 'lunas')
             ? (float) $order->returnModel->late_fee_amount

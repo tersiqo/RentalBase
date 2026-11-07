@@ -480,19 +480,12 @@ class DamageCaseController extends Controller
                     $return->update(['return_status' => 'selesai']);
                 }
 
-                if ($order->identityGuarantee && in_array($order->identityGuarantee->status, ['dititipkan', 'menunggu', 'diverifikasi'])) {
-                    $order->identityGuarantee->update([
-                        'status' => 'dikembalikan',
-                        'returned_at' => now(),
-                    ]);
-                }
-
                 ActivityLog::create([
                     'client_id'   => $order->client_id,
                     'user_id'     => $user->id,
                     'action'      => 'order_completed_post_damage_case',
                     'module'      => 'damage_cases',
-                    'description' => sprintf('Pesanan #%s otomatis diselesaikan dan KTP fisik jaminan telah dikembalikan pasca penutupan kasus kerusakan tiket #%d.', $order->order_number, $damageCase->id),
+                    'description' => sprintf('Pesanan #%s otomatis diselesaikan pasca penutupan kasus kerusakan tiket #%d.', $order->order_number, $damageCase->id),
                     'ip_address'  => $request->ip(),
                     'user_agent'  => $request->userAgent(),
                 ]);

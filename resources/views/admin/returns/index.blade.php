@@ -499,22 +499,6 @@
                             </div>
                         </template>
 
-                        {{-- Pengingat Pengembalian Jaminan KTP Fisik --}}
-                        <div class="p-3.5 bg-purple-50 border border-purple-200 rounded-md text-xs space-y-1.5">
-                            <div class="flex items-center gap-2 font-bold text-purple-900 text-[11px] uppercase tracking-wide">
-                                <span>🪪</span>
-                                <span>Pengingat Jaminan KTP Fisik</span>
-                            </div>
-                            <p class="text-purple-800 text-[11.5px] leading-relaxed">
-                                Pastikan fisik KTP / identitas asli pelanggan <strong>diserahkan kembali</strong> setelah kondisi fisik barang selesai diperiksa dan pesanan berstatus selesai (tanpa tunggakan denda).
-                            </p>
-                            <template x-if="Number(overrideFee) > 0">
-                                <p class="text-amber-800 font-semibold text-[11px] pt-1 border-t border-purple-200/60">
-                                    ⚠️ Perhatian: Jika diterbitkan tagihan denda, KTP fisik tetap ditahan di toko sebagai jaminan sampai denda dilunasi.
-                                </p>
-                            </template>
-                        </div>
-
                         <input type="hidden" name="action_type" x-ref="actionTypeInput" :value="(Number(overrideFee) > 0 && !activeOrder.late_fee_proof_url) ? 'denda' : 'normal'">
 
                     </div>

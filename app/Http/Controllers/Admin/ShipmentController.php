@@ -88,6 +88,12 @@ class ShipmentController extends Controller
             abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
         }
 
+        // Pastikan pesanan berstatus siap kirim / diproses sebelum dikirim
+        if (! in_array($order->status, ['siap_kirim', 'diproses'])) {
+            return redirect()->back()
+                ->with('error', 'Pesanan belum siap untuk dikirim atau belum menyelesaikan pembayaran.');
+        }
+
         // Kunci Jadwal Pengiriman / Penyerahan: Ambil di Toko = Hari-H, Kurir = mulai H-1
         if (! $order->canProcessHandover()) {
             return redirect()->back()
@@ -113,12 +119,6 @@ class ShipmentController extends Controller
             $validationRules['tracking_number'] = 'required|string|max:100';
             $validationMessages['courier_name.required'] = 'Pilihan ekspedisi kurir wajib diisi.';
             $validationMessages['tracking_number.required'] = 'Nomor resi atau tautan pelacakan wajib diisi.';
-        }
-
-        // Validasi konfirmasi penerimaan fisik KTP sebagai jaminan (wajib jika ada jaminan identitas)
-        if ($order->identityGuarantee) {
-            $validationRules['ktp_deposited'] = 'accepted';
-            $validationMessages['ktp_deposited.accepted'] = 'Konfirmasi penerimaan & penitipan fisik KTP / identitas asli wajib dicentang sebelum barang diserahkan.';
         }
 
         $request->validate($validationRules, $validationMessages);
@@ -148,14 +148,6 @@ class ShipmentController extends Controller
                 'status' => $targetStatus,
             ]);
 
-            // Update status jaminan KTP menjadi "dititipkan" dan catat waktu serah terima fisik KTP
-            if ($order->identityGuarantee) {
-                $order->identityGuarantee->update([
-                    'status' => 'dititipkan',
-                    'deposited_at' => now(),
-                ]);
-            }
-
             // Pastikan seluruh unit fisik yang dialokasikan berubah status menjadi 'disewa'
             foreach ($order->orderItems as $item) {
                 foreach ($item->orderItemUnits as $oiu) {
@@ -166,14 +158,14 @@ class ShipmentController extends Controller
             // Auto-sync jam sewa jika waktu serah terima melewati jadwal rencana sewa awal
             $wasSynced = $order->syncRentalHoursOnHandover(now());
 
-            // Catat jejak audit aktivitas pengiriman logistik & penitipan KTP fisik
+            // Catat jejak audit aktivitas pengiriman logistik
             $syncNote = $wasSynced
                 ? sprintf(' Jam mulai & batas kembali sewa otomatis disinkronkan ke waktu serah terima (%s WIB).', now()->format('H:i'))
                 : '';
 
             $activityDesc = $isPickup
-                ? sprintf('Pesanan #%s berhasil diserahkan langsung kepada pelanggan di toko. Fisik KTP/identitas penyewa resmi dititipkan sebagai jaminan.%s', $order->order_number ?? $order->id, $syncNote)
-                : sprintf('Pesanan #%s berhasil diproses dan dikirim via %s (Resi: %s). Fisik KTP/identitas penyewa resmi dicatat dititipkan sebagai jaminan.%s', $order->order_number ?? $order->id, $courierName, $trackingNumber, $syncNote);
+                ? sprintf('Pesanan #%s berhasil diserahkan langsung kepada pelanggan di toko.%s', $order->order_number ?? $order->id, $syncNote)
+                : sprintf('Pesanan #%s berhasil diproses dan dikirim via %s (Resi: %s).%s', $order->order_number ?? $order->id, $courierName, $trackingNumber, $syncNote);
 
             ActivityLog::create([
                 'client_id'   => $order->client_id,

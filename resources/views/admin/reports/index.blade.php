@@ -412,9 +412,10 @@
                     @forelse($orders as $index => $order)
                         @php
                             $isVerified = ($order->status === 'selesai' && ($order->payments->whereIn('status', ['terverifikasi', 'diterima'])->isNotEmpty() || $order->payments->isEmpty()))
-                                || $order->payments->whereIn('status', ['terverifikasi', 'diterima'])->isNotEmpty();
+                                || $order->payments->whereIn('status', ['terverifikasi', 'diterima', 'dikonfirmasi'])->isNotEmpty()
+                                || in_array($order->status, ['pembayaran_terverifikasi', 'siap_kirim', 'diproses', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan']);
 
-                            $sewa = ($order->status === 'selesai' && $isVerified)
+                            $sewa = $isVerified
                                 ? (float) $order->total_amount
                                 : 0;
 

@@ -368,18 +368,18 @@
 </script>
 
 @if(config('broadcasting.connections.pusher.key'))
-{{-- Pusher & Laravel Echo Runtime Client for Owner Platform --}}
-<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
 <script>
     (function() {
         window.ensureOwnerEcho = function() {
             if (window.Echo && typeof window.Echo.private === 'function') {
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (token && window.Echo.connector?.options?.auth?.headers) {
+                    window.Echo.connector.options.auth.headers['X-CSRF-TOKEN'] = token;
+                }
                 return window.Echo;
             }
-            const EchoCtor = (typeof window.Echo === 'function') ? window.Echo : (typeof Echo !== 'undefined' ? Echo : null);
+            const EchoCtor = (typeof window.EchoClass === 'function') ? window.EchoClass : ((typeof window.Echo === 'function') ? window.Echo : null);
             if (EchoCtor && typeof Pusher !== 'undefined') {
-                window.Pusher = Pusher;
                 window.Echo = new EchoCtor({
                     broadcaster: 'pusher',
                     key: '{{ config('broadcasting.connections.pusher.key') }}',
@@ -396,10 +396,9 @@
                 });
                 return window.Echo;
             }
-            return null;
+            return window.Echo || null;
         };
         window.ensureOwnerEcho();
-        window.addEventListener('load', window.ensureOwnerEcho);
     })();
 </script>
 
@@ -434,7 +433,21 @@
     function ownerRealtimeNotification() {
         return {
             toasts: [],
+            _reloadTimer: null,
             init() {
+                try {
+                    const saved = sessionStorage.getItem('rb_pending_toast_owner');
+                    if (saved) {
+                        sessionStorage.removeItem('rb_pending_toast_owner');
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            parsed.forEach(t => {
+                                this.addToast(t.title, t.message, t.url);
+                            });
+                        }
+                    }
+                } catch (err) {}
+
                 const startListening = () => {
                     const echo = (typeof window.ensureOwnerEcho === 'function')
                         ? window.ensureOwnerEcho()
@@ -452,14 +465,14 @@
                             this.playChime();
                             this.addToast('Pendaftaran Toko Baru!', e.message || `Toko "${e.business_name}" (${e.subdomain}) baru saja mendaftar.`, '/owner/registrations');
                             if (window.location.pathname.includes('/owner/registrations')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.subscription.renewal_uploaded', (e) => {
                             this.playChime();
                             this.addToast('Pengajuan Langganan Baru!', e.message || `Toko "${e.client_name}" mengajukan paket ${e.plan_name}.`, '/owner/subscriptions');
                             if (window.location.pathname.includes('/owner/subscriptions')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         });
                     return true;
@@ -475,8 +488,122 @@
                     }, 150);
                 }
             },
+            triggerReload(delay = 800, forceFull = false) {
+                if (this._reloadTimer) return;
+                this._reloadTimer = setTimeout(async () => {
+                    this._reloadTimer = null;
+
+                    if (forceFull) {
+                        try {
+                            if (this.toasts && this.toasts.length > 0) {
+                                sessionStorage.setItem('rb_pending_toast_owner', JSON.stringify(this.toasts));
+                            }
+                        } catch (err) {}
+                        window.location.reload();
+                        return;
+                    }
+
+                    // 1. Guard: Check if owner is currently typing or editing
+                    const activeEl = document.activeElement;
+                    const isEditing = activeEl && (
+                        activeEl.tagName === 'INPUT' ||
+                        activeEl.tagName === 'TEXTAREA' ||
+                        activeEl.tagName === 'SELECT' ||
+                        activeEl.isContentEditable
+                    );
+                    if (isEditing) {
+                        return;
+                    }
+
+                    // 2. Guard: Check if modal or dialog is open
+                    const openDialog = document.querySelector('[role="dialog"]:not([style*="display: none"]):not([style*="display:none"])');
+                    if (openDialog && openDialog.offsetParent !== null) {
+                        return;
+                    }
+
+                    const currentMain = document.querySelector('main');
+                    if (!currentMain) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    // Check Alpine modals on owner dashboard/views
+                    const rootXData = currentMain.querySelector('[x-data]') || (currentMain.hasAttribute('x-data') ? currentMain : null);
+                    if (rootXData && window.Alpine && typeof window.Alpine.$data === 'function') {
+                        try {
+                            const alpineData = window.Alpine.$data(rootXData);
+                            if (alpineData && (alpineData.showModal || alpineData.showRejectModal || alpineData.showVerifyModal)) {
+                                return;
+                            }
+                        } catch (e) {}
+                    }
+
+                    // 3. Capture scroll position
+                    const scrollX = window.scrollX;
+                    const scrollY = window.scrollY;
+
+                    try {
+                        const response = await fetch(window.location.href, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            console.warn(`[RentalBase Realtime Owner] Partial fetch returned status ${response.status}. Triggering clean full reload fallback.`);
+                            window.location.reload();
+                            return;
+                        }
+
+                        const html = await response.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+
+                        const newMain = doc.querySelector('main');
+                        if (!newMain) {
+                            window.location.reload();
+                            return;
+                        }
+
+                        // Clean up old Alpine bindings
+                        if (window.Alpine && typeof window.Alpine.destroyTree === 'function') {
+                            window.Alpine.destroyTree(currentMain);
+                        }
+
+                        // Seamless partial DOM replacement
+                        currentMain.innerHTML = newMain.innerHTML;
+
+                        // Synchronize CSRF token if meta tag updated
+                        const newCsrf = doc.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        if (newCsrf) {
+                            document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', newCsrf);
+                        }
+
+                        // Re-initialize Alpine tree on refreshed content
+                        if (window.Alpine && typeof window.Alpine.initTree === 'function') {
+                            window.Alpine.initTree(currentMain);
+                        }
+
+                        // Re-scan Livewire if active
+                        if (window.Livewire && typeof window.Livewire.rescan === 'function') {
+                            window.Livewire.rescan();
+                        }
+
+                        // Restore exact scroll position
+                        window.scrollTo({ top: scrollY, left: scrollX, behavior: 'instant' });
+                    } catch (err) {
+                        console.error('[RentalBase Realtime Owner] Partial refresh error:', err);
+                        try {
+                            if (this.toasts && this.toasts.length > 0) {
+                                sessionStorage.setItem('rb_pending_toast_owner', JSON.stringify(this.toasts));
+                            }
+                        } catch (e) {}
+                        window.location.reload();
+                    }
+                }, delay);
+            },
             addToast(title, message, url = null) {
-                const id = Date.now();
+                const id = Date.now() + Math.floor(Math.random() * 1000);
                 this.toasts.push({ id, title, message, url });
                 setTimeout(() => this.removeToast(id), 7000);
             },

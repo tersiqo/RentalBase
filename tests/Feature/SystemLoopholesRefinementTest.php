@@ -112,8 +112,7 @@ class SystemLoopholesRefinementTest extends TestCase
             'identity_address' => 'Jl. Mawar No 1',
             'identity_document_image' => 'ktp.jpg',
             'face_image' => 'selfie.jpg',
-            'status' => 'dititipkan',
-            'deposited_at' => now()->subDays(5),
+            'status' => 'diverifikasi',
         ]);
 
         // Validasi Accessor Model
@@ -153,8 +152,7 @@ class SystemLoopholesRefinementTest extends TestCase
         $this->assertEquals('selesai', $order->status);
         $this->assertEquals('selesai', $return->return_status);
         $this->assertEquals('lunas', $return->late_fee_status);
-        $this->assertEquals('dikembalikan', $ktp->status);
-        $this->assertNotNull($ktp->returned_at);
+        $this->assertEquals('diverifikasi', $ktp->status);
     }
 
     /**
@@ -193,8 +191,7 @@ class SystemLoopholesRefinementTest extends TestCase
             'identity_address' => 'Jl. Mawar No 1',
             'identity_document_image' => 'ktp.jpg',
             'face_image' => 'selfie.jpg',
-            'status' => 'dititipkan',
-            'deposited_at' => now()->subDays(4),
+            'status' => 'diverifikasi',
         ]);
 
         $this->artisan('orders:auto-complete')->assertSuccessful();
@@ -205,8 +202,7 @@ class SystemLoopholesRefinementTest extends TestCase
 
         $this->assertEquals('selesai', $order->status);
         $this->assertEquals('selesai', $return->return_status);
-        $this->assertEquals('dikembalikan', $ktp->status);
-        $this->assertNotNull($ktp->returned_at);
+        $this->assertEquals('diverifikasi', $ktp->status);
     }
 
     /**
@@ -622,8 +618,7 @@ class SystemLoopholesRefinementTest extends TestCase
             'identity_address' => 'Jl. Melati No 10',
             'identity_document_image' => 'ktp.jpg',
             'face_image' => 'selfie.jpg',
-            'status' => 'dititipkan',
-            'deposited_at' => now()->subDays(3),
+            'status' => 'diverifikasi',
         ]);
 
         $return = ReturnModel::create([
@@ -670,8 +665,7 @@ class SystemLoopholesRefinementTest extends TestCase
 
         $this->assertEquals('selesai', $order->status);
         $this->assertEquals('selesai', $return->return_status);
-        $this->assertEquals('dikembalikan', $identity->status);
-        $this->assertNotNull($identity->returned_at);
+        $this->assertEquals('diverifikasi', $identity->status);
         $this->assertEquals('tersedia', $unit->status);
     }
 

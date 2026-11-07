@@ -57,15 +57,23 @@
                 
                 {{-- Stock Badge (Top Left) --}}
                 @php
-                    $availCount = $product->available_units_count ?? $product->getAvailableUnitsForPeriod();
+                    $totalUsableUnits = $product->units()->whereNotIn('status', ['rusak', 'maintenance'])->count();
+                    $availToday = $product->available_units_count ?? $product->getAvailableUnitsForPeriod();
                 @endphp
-                @if($availCount > 0)
+                @if($availToday > 0)
                 <div class="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-green-200 shadow-sm flex items-center gap-1.5">
                     <span class="relative flex h-2.5 w-2.5">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                     </span>
-                    <span class="text-xs font-bold text-green-700">{{ $availCount }} Unit Tersedia</span>
+                    <span class="text-xs font-bold text-green-700">{{ $availToday }} Unit Tersedia</span>
+                </div>
+                @elseif($totalUsableUnits > 0)
+                <div class="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-amber-200 shadow-sm flex items-center gap-1.5">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                    </span>
+                    <span class="text-xs font-bold text-amber-700">Sedang Disewa (Bisa Booking Jadwal)</span>
                 </div>
                 @else
                 <div class="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm px-3.5 py-1.5 rounded-full border border-red-200 shadow-sm flex items-center gap-1.5">
@@ -171,7 +179,7 @@
                 <div class="mt-auto pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
                     <livewire:customer.add-to-cart-modal :product="$product" />
                     
-                    @if(($product->available_units_count ?? $product->getAvailableUnitsForPeriod()) > 0)
+                    @if($totalUsableUnits > 0)
                     <button type="button" 
                             x-data 
                             @click="$dispatch('open-cart-modal')" 

@@ -482,6 +482,7 @@
         {{-- Dropdown Preview Menu --}}
         <div x-show="notifOpen"
              x-cloak
+             id="admin-notification-dropdown-menu"
              @click.away="notifOpen = false"
              x-transition:enter="transition ease-out duration-150"
              x-transition:enter-start="opacity-0 scale-95"
@@ -696,20 +697,299 @@
     }
 </script>
 
+{{-- Unobtrusive AJAX Filter, Search, Reset, and Pagination System --}}
+<script>
+    (function() {
+        let currentPartialAbort = null;
+        let progressBarEl = null;
+
+        function getOrCreateProgressBar() {
+            if (!progressBarEl) {
+                progressBarEl = document.createElement('div');
+                progressBarEl.id = 'admin-ajax-progress';
+                progressBarEl.style.cssText = 'position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,#f97316,#ea580c);z-index:99999;transition:width 0.2s ease, opacity 0.3s ease;width:0%;opacity:0;pointer-events:none;';
+                document.body.appendChild(progressBarEl);
+            }
+            return progressBarEl;
+        }
+
+        function startProgressBar() {
+            const bar = getOrCreateProgressBar();
+            bar.style.transition = 'width 0.2s ease, opacity 0.3s ease';
+            bar.style.opacity = '1';
+            bar.style.width = '30%';
+            setTimeout(() => {
+                if (bar.style.opacity === '1') bar.style.width = '70%';
+            }, 150);
+        }
+
+        function finishProgressBar() {
+            const bar = getOrCreateProgressBar();
+            bar.style.width = '100%';
+            setTimeout(() => {
+                bar.style.opacity = '0';
+                setTimeout(() => {
+                    bar.style.width = '0%';
+                }, 300);
+            }, 150);
+        }
+
+        window.adminPartialSwap = async function(targetUrl, options = {}) {
+            const {
+                pushHistory = true,
+                preserveScroll = false,
+                scrollToTable = false,
+                preserveFocus = true,
+                showLoading = true
+            } = options;
+
+            if (currentPartialAbort) {
+                currentPartialAbort.abort();
+            }
+            currentPartialAbort = new AbortController();
+            const { signal } = currentPartialAbort;
+
+            const currentMain = document.querySelector('main');
+            if (!currentMain) {
+                window.location.href = targetUrl;
+                return;
+            }
+
+            const scrollX = window.scrollX;
+            const scrollY = window.scrollY;
+
+            // Preserve active input focus & cursor selection
+            let activeName = null;
+            let selectionStart = null;
+            let selectionEnd = null;
+            if (preserveFocus) {
+                const activeEl = document.activeElement;
+                if (activeEl && currentMain.contains(activeEl) && activeEl.name) {
+                    activeName = activeEl.name;
+                    if (typeof activeEl.selectionStart === 'number') {
+                        selectionStart = activeEl.selectionStart;
+                        selectionEnd = activeEl.selectionEnd;
+                    }
+                }
+            }
+
+            // Visual loading indication
+            const tableContainer = currentMain.querySelector('table')?.closest('.overflow-x-auto')?.parentElement 
+                || currentMain.querySelector('table')?.parentElement 
+                || currentMain;
+            if (showLoading) {
+                startProgressBar();
+                tableContainer.style.transition = 'opacity 0.15s ease';
+                tableContainer.style.opacity = '0.55';
+                tableContainer.style.pointerEvents = 'none';
+            }
+
+            try {
+                const response = await fetch(targetUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html, application/xhtml+xml'
+                    },
+                    signal
+                });
+
+                if (!response.ok) {
+                    console.warn(`[RentalBase Admin AJAX] Request returned status ${response.status}. Falling back to standard navigation.`);
+                    window.location.href = targetUrl;
+                    return;
+                }
+
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                const newMain = doc.querySelector('main');
+                if (!newMain) {
+                    window.location.href = targetUrl;
+                    return;
+                }
+
+                if (doc.title) {
+                    document.title = doc.title;
+                }
+
+                if (pushHistory && window.location.href !== targetUrl) {
+                    window.history.pushState({ rbAdminAjax: true, url: targetUrl }, '', targetUrl);
+                }
+
+                if (window.Alpine && typeof window.Alpine.destroyTree === 'function') {
+                    window.Alpine.destroyTree(currentMain);
+                }
+
+                currentMain.innerHTML = newMain.innerHTML;
+
+                // Execute scripts in replacement DOM
+                currentMain.querySelectorAll('script').forEach(script => {
+                    const newScript = document.createElement('script');
+                    Array.from(script.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                    newScript.textContent = script.textContent;
+                    script.parentNode.replaceChild(newScript, script);
+                });
+
+                // Synchronize notification bell & dropdown in topbar
+                const currentBell = document.getElementById('btn-admin-notifications');
+                const newBell = doc.getElementById('btn-admin-notifications');
+                if (currentBell && newBell) {
+                    currentBell.innerHTML = newBell.innerHTML;
+                }
+                const currentMenu = document.getElementById('admin-notification-dropdown-menu');
+                const newMenu = doc.getElementById('admin-notification-dropdown-menu');
+                if (currentMenu && newMenu) {
+                    currentMenu.innerHTML = newMenu.innerHTML;
+                }
+
+                // Synchronize CSRF token
+                const newCsrf = doc.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (newCsrf) {
+                    document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', newCsrf);
+                }
+
+                // Re-initialize Alpine tree
+                if (window.Alpine && typeof window.Alpine.initTree === 'function') {
+                    window.Alpine.initTree(currentMain);
+                }
+
+                // Re-scan Livewire if present
+                if (window.Livewire && typeof window.Livewire.rescan === 'function') {
+                    window.Livewire.rescan();
+                }
+
+                // Restore focused element & cursor
+                if (activeName) {
+                    const safeSelector = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(activeName) : activeName.replace(/"/g, '\\"');
+                    const restoredEl = currentMain.querySelector(`[name="${safeSelector}"]`);
+                    if (restoredEl && typeof restoredEl.focus === 'function') {
+                        restoredEl.focus();
+                        if (typeof restoredEl.setSelectionRange === 'function' && selectionStart !== null && selectionEnd !== null) {
+                            restoredEl.setSelectionRange(selectionStart, selectionEnd);
+                        }
+                    }
+                }
+
+                // Scroll handling
+                if (preserveScroll) {
+                    window.scrollTo({ top: scrollY, left: scrollX, behavior: 'instant' });
+                } else if (scrollToTable) {
+                    const newTable = currentMain.querySelector('table');
+                    if (newTable) {
+                        const rect = newTable.getBoundingClientRect();
+                        window.scrollTo({
+                            top: Math.max(0, window.scrollY + rect.top - 100),
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+                console.error('[RentalBase Admin AJAX] Error during partial swap:', err);
+                window.location.href = targetUrl;
+            } finally {
+                tableContainer.style.opacity = '';
+                tableContainer.style.pointerEvents = '';
+                finishProgressBar();
+            }
+        };
+
+        // 1. Intercept GET form submit inside main (Filter & Search)
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (!form || form.tagName !== 'FORM') return;
+            if ((form.getAttribute('method') || 'GET').toUpperCase() !== 'GET') return;
+            if (!form.closest('main')) return;
+            if (form.hasAttribute('data-no-ajax')) return;
+            if (e.defaultPrevented) return;
+
+            e.preventDefault();
+
+            const formAction = form.getAttribute('action') || window.location.pathname;
+            const actionUrl = new URL(formAction, window.location.origin);
+            const params = new URLSearchParams(actionUrl.search);
+            const formData = new FormData(form);
+
+            for (const [key, val] of formData.entries()) {
+                if (typeof val === 'string' && val.trim() !== '') {
+                    params.set(key, val.trim());
+                } else {
+                    params.delete(key);
+                }
+            }
+
+            const queryString = params.toString();
+            const targetUrl = actionUrl.pathname + (queryString ? '?' + queryString : '');
+
+            window.adminPartialSwap(targetUrl, {
+                pushHistory: true,
+                preserveFocus: true,
+                scrollToTable: false
+            });
+        });
+
+        // 2. Intercept Reset, Pagination, and Notification tab links inside main
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (!link || !link.href) return;
+            if (link.target && link.target !== '_self') return;
+            if (link.hasAttribute('download') || link.hasAttribute('data-no-ajax')) return;
+            if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+            if (!link.closest('main')) return;
+
+            const url = new URL(link.href, window.location.origin);
+            if (url.origin !== window.location.origin) return;
+
+            const isResetLink = link.closest('form[method="GET"], form[method="get"]') ||
+                                link.hasAttribute('data-ajax-reset') ||
+                                (link.textContent && link.textContent.trim().toLowerCase().startsWith('reset') && url.pathname === window.location.pathname);
+
+            const isPagination = link.closest('nav[role="navigation"]') ||
+                                 link.closest('.pagination') ||
+                                 (url.pathname === window.location.pathname && url.searchParams.has('page'));
+
+            const isNotificationTab = url.pathname.includes('/admin/notifications') && url.searchParams.has('tab');
+
+            if (isResetLink || isPagination || isNotificationTab) {
+                e.preventDefault();
+                window.adminPartialSwap(link.href, {
+                    pushHistory: true,
+                    preserveFocus: isResetLink,
+                    scrollToTable: isPagination
+                });
+            }
+        });
+
+        // 3. Handle browser Back/Forward navigation smoothly
+        window.addEventListener('popstate', function(e) {
+            if (document.querySelector('main')) {
+                window.adminPartialSwap(window.location.href, {
+                    pushHistory: false,
+                    preserveScroll: false,
+                    preserveFocus: false
+                });
+            }
+        });
+    })();
+</script>
+
 @if($currentClient)
 @if(config('broadcasting.connections.pusher.key'))
-{{-- Pusher & Laravel Echo Runtime Client --}}
-<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
 <script>
     (function() {
         window.ensureAdminEcho = function() {
             if (window.Echo && typeof window.Echo.private === 'function') {
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (token && window.Echo.connector?.options?.auth?.headers) {
+                    window.Echo.connector.options.auth.headers['X-CSRF-TOKEN'] = token;
+                }
                 return window.Echo;
             }
-            const EchoCtor = (typeof window.Echo === 'function') ? window.Echo : (typeof Echo !== 'undefined' ? Echo : null);
+            const EchoCtor = (typeof window.EchoClass === 'function') ? window.EchoClass : ((typeof window.Echo === 'function') ? window.Echo : null);
             if (EchoCtor && typeof Pusher !== 'undefined') {
-                window.Pusher = Pusher;
                 window.Echo = new EchoCtor({
                     broadcaster: 'pusher',
                     key: '{{ config('broadcasting.connections.pusher.key') }}',
@@ -726,10 +1006,9 @@
                 });
                 return window.Echo;
             }
-            return null;
+            return window.Echo || null;
         };
         window.ensureAdminEcho();
-        window.addEventListener('load', window.ensureAdminEcho);
     })();
 </script>
 @endif
@@ -765,7 +1044,21 @@
     function realtimeNotification(clientId) {
         return {
             toasts: [],
+            _reloadTimer: null,
             init() {
+                try {
+                    const saved = sessionStorage.getItem('rb_pending_toast_admin');
+                    if (saved) {
+                        sessionStorage.removeItem('rb_pending_toast_admin');
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            parsed.forEach(t => {
+                                this.addToast(t.title, t.message, t.url);
+                            });
+                        }
+                    }
+                } catch (err) {}
+
                 const startListening = () => {
                     const echo = (typeof window.ensureAdminEcho === 'function')
                         ? window.ensureAdminEcho()
@@ -775,6 +1068,11 @@
                         return false;
                     }
 
+                    const isOrderPage = (orderId = null) => {
+                        const p = window.location.pathname;
+                        return p === '/admin/dashboard' || p === '/admin' || p === '/admin/orders' || (orderId && p.includes('/admin/orders/' + orderId));
+                    };
+
                     echo.private(`tenant.${clientId}.orders`)
                         .error((error) => {
                             console.error('[RentalBase Realtime] Gagal autentikasi channel tenant:', error);
@@ -782,57 +1080,57 @@
                         .listen('.order.placed', (e) => {
                             this.playChime();
                             this.addToast('Pesanan Baru Masuk!', e.message || `Pesanan #${e.order_number} baru saja dibuat oleh customer.`, `/admin/orders/${e.order_id}`);
-                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                                setTimeout(() => window.location.reload(), 800);
+                            if (isOrderPage(e.order_id)) {
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.payment.uploaded', (e) => {
                             this.playChime();
                             this.addToast('Bukti Pembayaran Diunggah!', e.message || `Bukti bayar untuk pesanan #${e.order_number} telah diupload.`, `/admin/orders/${e.order_id}`);
-                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                                setTimeout(() => window.location.reload(), 800);
+                            if (isOrderPage(e.order_id) || window.location.pathname === '/admin/payments') {
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.identity.uploaded', (e) => {
                             this.playChime();
                             this.addToast('Revisi KTP Diunggah!', e.message || `Customer mengunggah revisi identitas pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
-                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                                setTimeout(() => window.location.reload(), 800);
+                            if (isOrderPage(e.order_id)) {
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.return.requested', (e) => {
                             this.playChime();
                             this.addToast('Pengajuan Retur Barang!', e.message || `Customer mengajukan retur untuk pesanan #${e.order_number}.`, `/admin/returns`);
-                            if (window.location.pathname === '/admin/returns' || window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                                setTimeout(() => window.location.reload(), 800);
+                            if (isOrderPage(e.order_id) || window.location.pathname === '/admin/returns') {
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.order.received', (e) => {
                             this.playChime();
                             this.addToast('Pesanan Telah Diterima!', e.message || `Customer telah menerima pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
-                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id) || window.location.pathname === '/admin/shipments') {
-                                setTimeout(() => window.location.reload(), 800);
+                            if (isOrderPage(e.order_id) || window.location.pathname === '/admin/shipments') {
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.order.cancelled', (e) => {
                             this.playChime();
                             this.addToast('Pesanan Dibatalkan!', e.message || `Customer membatalkan pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
-                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                                setTimeout(() => window.location.reload(), 800);
+                            if (isOrderPage(e.order_id)) {
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.late_fee.uploaded', (e) => {
                             this.playChime();
                             this.addToast('Bukti Denda Diunggah!', e.message || `Bukti pembayaran denda pesanan #${e.order_number} telah diupload.`, `/admin/returns`);
                             if (window.location.pathname.includes('/admin/returns') || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.damage.payment_uploaded', (e) => {
                             this.playChime();
                             this.addToast('Bukti Kompensasi Kerusakan!', e.message || `Customer mengunggah bukti bayar kompensasi kerusakan.`, `/admin/damage-cases/${e.case_id}`);
                             if (window.location.pathname.includes('/admin/damage-cases') || window.location.pathname.includes('/admin/orders')) {
-                                setTimeout(() => window.location.reload(), 800);
+                                this.triggerReload(800);
                             }
                         })
                         .listen('.tenant.quota_alert', (e) => {
@@ -852,8 +1150,54 @@
                     }, 150);
                 }
             },
+            triggerReload(delay = 800, forceFull = false) {
+                if (this._reloadTimer) return;
+                this._reloadTimer = setTimeout(async () => {
+                    this._reloadTimer = null;
+
+                    if (forceFull) {
+                        try {
+                            if (this.toasts && this.toasts.length > 0) {
+                                sessionStorage.setItem('rb_pending_toast_admin', JSON.stringify(this.toasts));
+                            }
+                        } catch (err) {}
+                        window.location.reload();
+                        return;
+                    }
+
+                    // 1. Guard: Check if admin is currently typing or editing an input
+                    const activeEl = document.activeElement;
+                    const isEditing = activeEl && (
+                        activeEl.tagName === 'INPUT' ||
+                        activeEl.tagName === 'TEXTAREA' ||
+                        activeEl.tagName === 'SELECT' ||
+                        activeEl.isContentEditable
+                    );
+                    if (isEditing) {
+                        return;
+                    }
+
+                    // 2. Guard: Check if an interactive modal/dialog is visible
+                    const openDialog = document.querySelector('[role="dialog"]:not([style*="display: none"]):not([style*="display:none"])');
+                    if (openDialog && openDialog.offsetParent !== null) {
+                        return;
+                    }
+
+                    if (typeof window.adminPartialSwap === 'function') {
+                        await window.adminPartialSwap(window.location.href, {
+                            pushHistory: false,
+                            preserveScroll: true,
+                            preserveFocus: false,
+                            showLoading: false
+                        });
+                        return;
+                    }
+
+                    window.location.reload();
+                }, delay);
+            },
             addToast(title, message, url = null) {
-                const id = Date.now();
+                const id = Date.now() + Math.floor(Math.random() * 1000);
                 this.toasts.push({ id, title, message, url });
                 setTimeout(() => this.removeToast(id), 6000);
             },

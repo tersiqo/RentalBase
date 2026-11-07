@@ -10,5 +10,10 @@ window.Alpine = Alpine;
 // Inisialisasi WebSocket Echo (Pusher) jika env tersedia
 import './echo';
 
+// Global safeguard: Ensure window.Echo.socketId is always callable so Livewire supportLaravelEcho never throws TypeError
+if (typeof window !== 'undefined' && window.Echo && typeof window.Echo.socketId !== 'function') {
+    window.Echo.socketId = () => undefined;
+}
+
 // Jalankan Livewire (ini otomatis meng-start Alpine yang sudah dilengkapi fitur Livewire)
 Livewire.start();

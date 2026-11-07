@@ -48,7 +48,7 @@ class DamageCaseResolved implements ShouldBroadcastNow
             'case_id' => $this->damageCase->id,
             'order_id' => $order?->id,
             'order_number' => $order?->order_number,
-            'message' => 'Kasus klaim kerusakan untuk pesanan #' . ($order?->order_number ?? '') . ' telah diselesaikan dan jaminan KTP fisik dikembalikan.',
+            'message' => 'Kasus klaim kerusakan untuk pesanan #' . ($order?->order_number ?? '') . ' telah diselesaikan dan pesanan Anda telah tuntas.',
         ];
     }
 }

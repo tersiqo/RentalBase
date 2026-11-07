@@ -1,11 +1,35 @@
 @extends('layouts.customer')
 
 @section('content')
+@php
+    $tabs = ['Semua', 'Belum Dibayar', 'Menunggu Verifikasi', 'Diproses', 'Dikirim', 'Sedang Disewa', 'Selesai', 'Batal'];
+    $counts = [
+        'Semua' => $orders->count(),
+        'Belum Dibayar' => $orders->filter(fn($o) => in_array($o->status_label, ['Belum Dibayar', 'Menunggu Pembayaran']) || in_array($o->status, ['menunggu_pembayaran', 'belum_dibayar']))->count(),
+        'Menunggu Verifikasi' => $orders->filter(fn($o) => in_array($o->status_label, ['Menunggu Verifikasi', 'Menunggu Konfirmasi']) || in_array($o->status, ['menunggu_verifikasi', 'menunggu_konfirmasi']))->count(),
+        'Diproses' => $orders->filter(fn($o) => in_array($o->status_label, ['Diproses', 'Siap Kirim']) || in_array($o->status, ['diproses', 'dikonfirmasi', 'siap_kirim']))->count(),
+        'Dikirim' => $orders->filter(fn($o) => $o->status_label === 'Dikirim' || $o->status === 'dikirim')->count(),
+        'Sedang Disewa' => $orders->filter(fn($o) => in_array($o->status_label, ['Sedang Disewa', 'Dikembalikan']) || in_array($o->status, ['sedang_disewa', 'dikembalikan']))->count(),
+        'Selesai' => $orders->filter(fn($o) => $o->status_label === 'Selesai' || $o->status === 'selesai')->count(),
+        'Batal' => $orders->filter(fn($o) => in_array($o->status_label, ['Batal', 'Dibatalkan', 'Ditolak']) || in_array($o->status, ['batal', 'dibatalkan', 'ditolak']))->count(),
+    ];
+@endphp
 <div class="max-w-[1260px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"
      x-data="{ 
         activeTab: 'Semua', 
         viewMode: 'list',
         selectedOrderId: null,
+        tabCounts: {{ json_encode($counts) }},
+        matchesTab(tab, statusLabel, status) {
+            if (tab === 'Semua') return true;
+            if (tab === statusLabel || tab === status) return true;
+            if (tab === 'Belum Dibayar' && (statusLabel === 'Menunggu Pembayaran' || status === 'menunggu_pembayaran' || status === 'belum_dibayar')) return true;
+            if (tab === 'Menunggu Verifikasi' && (statusLabel === 'Menunggu Konfirmasi' || status === 'menunggu_konfirmasi' || status === 'menunggu_verifikasi')) return true;
+            if (tab === 'Diproses' && (statusLabel === 'Siap Kirim' || status === 'siap_kirim' || status === 'dikonfirmasi' || status === 'diproses')) return true;
+            if (tab === 'Sedang Disewa' && (statusLabel === 'Dikembalikan' || status === 'dikembalikan' || status === 'sedang_disewa')) return true;
+            if (tab === 'Batal' && (statusLabel === 'Dibatalkan' || statusLabel === 'Ditolak' || status === 'batal' || status === 'dibatalkan' || status === 'ditolak')) return true;
+            return false;
+        },
         lightboxOpen: false,
         lightboxImg: '',
         lightboxCaption: '',
@@ -113,34 +137,22 @@
             </div>
         </div>
 
-        @php
-            $tabs = ['Semua', 'Belum Dibayar', 'Menunggu Verifikasi', 'Diproses', 'Dikirim', 'Sedang Disewa', 'Selesai', 'Batal'];
-            $counts = [
-                'Semua' => $orders->count(),
-                'Belum Dibayar' => $orders->filter(fn($o) => $o->status_label === 'Belum Dibayar')->count(),
-                'Menunggu Verifikasi' => $orders->filter(fn($o) => $o->status_label === 'Menunggu Verifikasi')->count(),
-                'Diproses' => $orders->filter(fn($o) => $o->status_label === 'Diproses')->count(),
-                'Dikirim' => $orders->filter(fn($o) => $o->status_label === 'Dikirim')->count(),
-                'Sedang Disewa' => $orders->filter(fn($o) => $o->status_label === 'Sedang Disewa')->count(),
-                'Selesai' => $orders->filter(fn($o) => $o->status_label === 'Selesai')->count(),
-                'Batal' => $orders->filter(fn($o) => $o->status_label === 'Batal')->count(),
-            ];
-        @endphp
-
-        <!-- Tabs Filter -->
-        <div class="border-b border-gray-100 mb-6 pb-3">
-            <div class="flex gap-2 overflow-x-auto md:overflow-visible md:flex-wrap hide-scroll-bar whitespace-nowrap snap-x">
+        <!-- Tabs Filter (Marketplace Underline Style seperti Foto Referensi) -->
+        <div class="bg-white rounded-2xl shadow-xs border border-gray-200/80 mb-6 overflow-hidden">
+            <div class="flex items-center overflow-x-auto hide-scroll-bar whitespace-nowrap border-b border-gray-200">
                 @foreach($tabs as $tab)
                     <button 
                         type="button"
                         @click.prevent="activeTab = '{{ $tab }}'"
-                        :class="activeTab === '{{ $tab }}' ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 bg-white border border-gray-200/80'"
-                        class="px-4 py-2 rounded-xl text-sm font-semibold transition-all focus:outline-none shrink-0 snap-start flex items-center gap-2">
+                        class="relative py-4 px-4 sm:px-6 text-sm font-semibold transition-all focus:outline-none shrink-0 flex items-center justify-center gap-1.5 border-b-2 -mb-px cursor-pointer"
+                        :class="activeTab === '{{ $tab }}' 
+                            ? 'text-orange-500 font-bold border-orange-500' 
+                            : 'text-gray-600 hover:text-gray-900 border-transparent hover:border-gray-300'">
                         <span>{{ $tab }}</span>
                         @if(($counts[$tab] ?? 0) > 0)
-                            <span :class="activeTab === '{{ $tab }}' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-700'" 
-                                  class="px-2 py-0.5 rounded-full text-xs font-bold transition-colors">
-                                {{ $counts[$tab] }}
+                            <span :class="activeTab === '{{ $tab }}' ? 'text-orange-500 font-bold' : 'text-orange-500 font-semibold'" 
+                                  class="text-xs transition-colors">
+                                ({{ $counts[$tab] }})
                             </span>
                         @endif
                     </button>
@@ -149,7 +161,7 @@
         </div>
 
         @if($orders->isEmpty())
-            <!-- Empty State jika belum ada pesanan -->
+            <!-- Empty State jika belum ada pesanan sama sekali -->
             <div class="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
                 <div class="w-20 h-20 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                     🧸
@@ -165,6 +177,19 @@
                 </a>
             </div>
         @else
+            <!-- Tab-specific Empty State jika filter tab tidak memiliki pesanan -->
+            <div x-show="activeTab !== 'Semua' && (tabCounts[activeTab] || 0) === 0" 
+                 class="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-xs" 
+                 style="display: none;">
+                <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                    📦
+                </div>
+                <h3 class="text-base font-bold text-gray-900 mb-1">Belum Ada Pesanan</h3>
+                <p class="text-xs sm:text-sm text-gray-500 max-w-sm mx-auto">
+                    Tidak ada pesanan dengan status <span class="font-semibold text-gray-700" x-text="activeTab"></span> saat ini.
+                </p>
+            </div>
+
             <!-- Daftar Card Pesanan -->
             <div class="space-y-4">
                 @foreach ($orders as $order)
@@ -172,7 +197,7 @@
                         $firstItem = $order->orderItems->first();
                         $product = $firstItem?->product;
                     @endphp
-                    <div x-show="activeTab === 'Semua' || activeTab === '{{ $order->status_label }}' || activeTab === '{{ $order->status }}'"
+                    <div x-show="matchesTab(activeTab, '{{ $order->status_label }}', '{{ $order->status }}')"
                          x-transition.opacity.duration.300ms
                          data-order-id="{{ $order->id }}"
                          data-order-number="{{ $order->order_number }}"

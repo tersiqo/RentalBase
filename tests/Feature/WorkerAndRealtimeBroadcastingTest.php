@@ -201,7 +201,7 @@ class WorkerAndRealtimeBroadcastingTest extends TestCase
         $identity->refresh();
 
         $this->assertEquals('selesai', $order->status);
-        $this->assertEquals('dikembalikan', $identity->status);
+        $this->assertEquals('diverifikasi', $identity->status);
     }
 
     /**

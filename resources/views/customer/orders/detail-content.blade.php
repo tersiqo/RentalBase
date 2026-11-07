@@ -282,10 +282,9 @@
                         $orderStatusNormalized = strtolower(trim(str_replace(['-', ' '], '_', $order->status ?? '')));
                         $isOrderApproved = in_array($orderStatusNormalized, ['siap_kirim', 'diproses', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan', 'selesai']);
                         
-                        // Penting: Status dititipkan, dikembalikan, dan ditolak tidak boleh tertimpa diverifikasi
-                        if (in_array($rawIdStatus, ['dititipkan', 'dikembalikan', 'ditolak'])) {
-                            $idStatus = $rawIdStatus;
-                        } elseif ($isOrderApproved && $rawIdStatus !== 'ditolak') {
+                        if ($rawIdStatus === 'ditolak') {
+                            $idStatus = 'ditolak';
+                        } elseif ($isOrderApproved || in_array($rawIdStatus, ['diverifikasi', 'dititipkan', 'dikembalikan'])) {
                             $idStatus = 'diverifikasi';
                         } else {
                             $idStatus = $rawIdStatus;
@@ -295,33 +294,13 @@
                         $faceImg = storage_url($identity->face_image);
                     @endphp
 
-                    @if($idStatus === 'dikembalikan')
+                    @if($idStatus === 'diverifikasi')
                         <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-3 mb-4 shadow-sm">
-                            <span class="text-lg shrink-0 mt-0.5">✅</span>
-                            <div>
-                                <strong class="font-bold text-emerald-950 block">KTP Fisik Telah Dikembalikan</strong>
-                                <span class="text-xs sm:text-sm text-emerald-800">
-                                    Jaminan identitas asli Anda telah diserahkan kembali setelah masa sewa selesai. Terima kasih telah menyewa di {{ $client->nama_usaha ?? 'toko kami' }}.
-                                </span>
-                            </div>
-                        </div>
-                    @elseif($idStatus === 'dititipkan')
-                        <div class="p-4 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 flex items-start gap-3 mb-4 shadow-sm">
-                            <span class="text-lg shrink-0 mt-0.5">🔒</span>
-                            <div>
-                                <strong class="font-bold text-purple-950 block">KTP Fisik Sedang Dititipkan di Toko</strong>
-                                <span class="text-xs sm:text-sm text-purple-800">
-                                    Dokumen KTP asli Anda saat ini disimpan dengan aman di toko sebagai jaminan selama masa sewa dan akan diserahkan kembali saat barang dikembalikan dalam kondisi baik.
-                                </span>
-                            </div>
-                        </div>
-                    @elseif($idStatus === 'diverifikasi')
-                        <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex items-start gap-3 mb-4 shadow-sm">
                             <span class="text-lg shrink-0 mt-0.5">🪪</span>
                             <div>
-                                <strong class="font-bold text-blue-950 block">Identitas Terverifikasi</strong>
-                                <span class="text-xs sm:text-sm text-blue-800">
-                                    Dokumen KTP & selfie Anda telah diverifikasi oleh admin toko. <strong>Wajib menyerahkan KTP asli sebagai jaminan</strong> saat serah terima alat.
+                                <strong class="font-bold text-emerald-950 block">Identitas Terverifikasi</strong>
+                                <span class="text-xs sm:text-sm text-emerald-800">
+                                    Dokumen foto KTP &amp; swafoto (selfie) Anda telah diverifikasi oleh admin toko.
                                     @if(in_array($orderStatusNormalized, ['menunggu_pembayaran', 'belum_dibayar']))
                                         Pembayaran dapat dilanjutkan.
                                     @endif
@@ -341,7 +320,7 @@
                             <span class="text-lg shrink-0 mt-0.5">🔎</span>
                             <div>
                                 <strong class="font-bold text-amber-950 block">Sedang Diperiksa</strong>
-                                <span class="text-xs sm:text-sm text-amber-800">Dokumen KTP & selfie Anda sedang dalam proses peninjauan oleh toko rental (maksimal 1×24 jam).</span>
+                                <span class="text-xs sm:text-sm text-amber-800">Dokumen foto KTP &amp; swafoto (selfie) Anda sedang dalam proses peninjauan oleh toko rental (maksimal 1×24 jam).</span>
                             </div>
                         </div>
                     @endif
@@ -791,7 +770,7 @@
                             <span class="text-base">⏳</span>
                             <div>
                                 <p class="font-bold">Bukti Pembayaran Denda Telah Dikirim</p>
-                                <p class="text-[11px] mt-0.5">Toko sedang memverifikasi bukti transfer denda Anda. Fisik KTP akan diserahkan kembali setelah verifikasi selesai.</p>
+                                <p class="text-[11px] mt-0.5">Toko sedang memverifikasi bukti transfer denda Anda.</p>
                             </div>
                         </div>
                     @endif
