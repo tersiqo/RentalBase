@@ -15,7 +15,7 @@ class LandingPageTest extends TestCase
         $this->withoutVite();
     }
 
-    public function test_landing_page_controller_returns_200_and_view_data(): void
+    public function test_ut_02_001_landing_page_and_public_layout(): void
     {
         $response = $this->get('/');
 
