@@ -188,6 +188,10 @@ class PageController extends Controller
                 'user_agent'  => $request->userAgent(),
             ]);
 
+            if (class_exists(\App\Events\OrderCancelled::class)) {
+                event(new \App\Events\OrderCancelled($lockedOrder));
+            }
+
             return back()->with('success', 'Pesanan #' . $lockedOrder->order_number . ' berhasil dibatalkan.');
         });
     }
@@ -213,6 +217,10 @@ class PageController extends Controller
                 'status' => 'diterima',
                 'delivered_at' => now(),
             ]);
+        }
+
+        if (class_exists(\App\Events\OrderReceived::class)) {
+            event(new \App\Events\OrderReceived($order));
         }
 
         return back()->with('success', 'Penerimaan barang pesanan #' . $order->order_number . ' berhasil dikonfirmasi. Masa sewa sedang berjalan.');
@@ -626,6 +634,10 @@ class PageController extends Controller
             'ip_address'  => $request->ip(),
             'user_agent'  => $request->userAgent(),
         ]);
+
+        if (class_exists(\App\Events\LateFeePaymentUploaded::class)) {
+            event(new \App\Events\LateFeePaymentUploaded($order));
+        }
 
         return back()->with('success', 'Bukti pembayaran denda pesanan #' . $order->order_number . ' berhasil diunggah dan sedang diverifikasi oleh toko.');
     }

@@ -372,23 +372,35 @@
 <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
 <script>
-    if (!window.Echo && typeof Pusher !== 'undefined' && typeof Echo !== 'undefined') {
-        window.Pusher = Pusher;
-        window.Echo = new Echo({
-            broadcaster: 'pusher',
-            key: '{{ config('broadcasting.connections.pusher.key') }}',
-            cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
-            forceTLS: true,
-            csrfToken: '{{ csrf_token() }}',
-            authEndpoint: '/broadcasting/auth',
-            auth: {
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                }
+    (function() {
+        window.ensureOwnerEcho = function() {
+            if (window.Echo && typeof window.Echo.private === 'function') {
+                return window.Echo;
             }
-        });
-    }
+            const EchoCtor = (typeof window.Echo === 'function') ? window.Echo : (typeof Echo !== 'undefined' ? Echo : null);
+            if (EchoCtor && typeof Pusher !== 'undefined') {
+                window.Pusher = Pusher;
+                window.Echo = new EchoCtor({
+                    broadcaster: 'pusher',
+                    key: '{{ config('broadcasting.connections.pusher.key') }}',
+                    cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+                    forceTLS: true,
+                    csrfToken: '{{ csrf_token() }}',
+                    authEndpoint: '/broadcasting/auth',
+                    auth: {
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    }
+                });
+                return window.Echo;
+            }
+            return null;
+        };
+        window.ensureOwnerEcho();
+        window.addEventListener('load', window.ensureOwnerEcho);
+    })();
 </script>
 
 {{-- Real-Time Owner Toast Notification Container --}}
@@ -423,28 +435,45 @@
         return {
             toasts: [],
             init() {
-                if (!window.Echo) {
-                    return;
-                }
+                const startListening = () => {
+                    const echo = (typeof window.ensureOwnerEcho === 'function')
+                        ? window.ensureOwnerEcho()
+                        : (window.Echo && typeof window.Echo.private === 'function' ? window.Echo : null);
 
-                window.Echo.private('owner.platform')
-                    .error((error) => {
-                        console.error('[RentalBase Realtime] Gagal autentikasi channel owner:', error);
-                    })
-                    .listen('.tenant.registered', (e) => {
-                        this.playChime();
-                        this.addToast('Pendaftaran Toko Baru!', e.message || `Toko "${e.business_name}" (${e.subdomain}) baru saja mendaftar.`, '/owner/registrations');
-                        if (window.location.pathname.includes('/owner/registrations')) {
-                            setTimeout(() => window.location.reload(), 800);
+                    if (!echo) {
+                        return false;
+                    }
+
+                    echo.private('owner.platform')
+                        .error((error) => {
+                            console.error('[RentalBase Realtime] Gagal autentikasi channel owner:', error);
+                        })
+                        .listen('.tenant.registered', (e) => {
+                            this.playChime();
+                            this.addToast('Pendaftaran Toko Baru!', e.message || `Toko "${e.business_name}" (${e.subdomain}) baru saja mendaftar.`, '/owner/registrations');
+                            if (window.location.pathname.includes('/owner/registrations')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.subscription.renewal_uploaded', (e) => {
+                            this.playChime();
+                            this.addToast('Pengajuan Langganan Baru!', e.message || `Toko "${e.client_name}" mengajukan paket ${e.plan_name}.`, '/owner/subscriptions');
+                            if (window.location.pathname.includes('/owner/subscriptions')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        });
+                    return true;
+                };
+
+                if (!startListening()) {
+                    let attempts = 0;
+                    const poll = setInterval(() => {
+                        attempts++;
+                        if (startListening() || attempts >= 30) {
+                            clearInterval(poll);
                         }
-                    })
-                    .listen('.subscription.renewal_uploaded', (e) => {
-                        this.playChime();
-                        this.addToast('Pengajuan Langganan Baru!', e.message || `Toko "${e.client_name}" mengajukan paket ${e.plan_name}.`, '/owner/subscriptions');
-                        if (window.location.pathname.includes('/owner/subscriptions')) {
-                            setTimeout(() => window.location.reload(), 800);
-                        }
-                    });
+                    }, 150);
+                }
             },
             addToast(title, message, url = null) {
                 const id = Date.now();

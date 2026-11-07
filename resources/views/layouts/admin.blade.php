@@ -702,23 +702,35 @@
 <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
 <script>
-    if (!window.Echo && typeof Pusher !== 'undefined' && typeof Echo !== 'undefined') {
-        window.Pusher = Pusher;
-        window.Echo = new Echo({
-            broadcaster: 'pusher',
-            key: '{{ config('broadcasting.connections.pusher.key') }}',
-            cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
-            forceTLS: true,
-            csrfToken: '{{ csrf_token() }}',
-            authEndpoint: '/broadcasting/auth',
-            auth: {
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                }
+    (function() {
+        window.ensureAdminEcho = function() {
+            if (window.Echo && typeof window.Echo.private === 'function') {
+                return window.Echo;
             }
-        });
-    }
+            const EchoCtor = (typeof window.Echo === 'function') ? window.Echo : (typeof Echo !== 'undefined' ? Echo : null);
+            if (EchoCtor && typeof Pusher !== 'undefined') {
+                window.Pusher = Pusher;
+                window.Echo = new EchoCtor({
+                    broadcaster: 'pusher',
+                    key: '{{ config('broadcasting.connections.pusher.key') }}',
+                    cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+                    forceTLS: true,
+                    csrfToken: '{{ csrf_token() }}',
+                    authEndpoint: '/broadcasting/auth',
+                    auth: {
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    }
+                });
+                return window.Echo;
+            }
+            return null;
+        };
+        window.ensureAdminEcho();
+        window.addEventListener('load', window.ensureAdminEcho);
+    })();
 </script>
 @endif
 
@@ -754,46 +766,91 @@
         return {
             toasts: [],
             init() {
-                if (!window.Echo) {
-                    return;
-                }
+                const startListening = () => {
+                    const echo = (typeof window.ensureAdminEcho === 'function')
+                        ? window.ensureAdminEcho()
+                        : (window.Echo && typeof window.Echo.private === 'function' ? window.Echo : null);
 
-                window.Echo.private(`tenant.${clientId}.orders`)
-                    .error((error) => {
-                        console.error('[RentalBase Realtime] Gagal autentikasi channel tenant:', error);
-                    })
-                    .listen('.order.placed', (e) => {
-                        this.playChime();
-                        this.addToast('Pesanan Baru Masuk!', e.message || `Pesanan #${e.order_number} baru saja dibuat oleh customer.`, `/admin/orders/${e.order_id}`);
-                        if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                            setTimeout(() => window.location.reload(), 800);
+                    if (!echo) {
+                        return false;
+                    }
+
+                    echo.private(`tenant.${clientId}.orders`)
+                        .error((error) => {
+                            console.error('[RentalBase Realtime] Gagal autentikasi channel tenant:', error);
+                        })
+                        .listen('.order.placed', (e) => {
+                            this.playChime();
+                            this.addToast('Pesanan Baru Masuk!', e.message || `Pesanan #${e.order_number} baru saja dibuat oleh customer.`, `/admin/orders/${e.order_id}`);
+                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.payment.uploaded', (e) => {
+                            this.playChime();
+                            this.addToast('Bukti Pembayaran Diunggah!', e.message || `Bukti bayar untuk pesanan #${e.order_number} telah diupload.`, `/admin/orders/${e.order_id}`);
+                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.identity.uploaded', (e) => {
+                            this.playChime();
+                            this.addToast('Revisi KTP Diunggah!', e.message || `Customer mengunggah revisi identitas pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
+                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.return.requested', (e) => {
+                            this.playChime();
+                            this.addToast('Pengajuan Retur Barang!', e.message || `Customer mengajukan retur untuk pesanan #${e.order_number}.`, `/admin/returns`);
+                            if (window.location.pathname === '/admin/returns' || window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.order.received', (e) => {
+                            this.playChime();
+                            this.addToast('Pesanan Telah Diterima!', e.message || `Customer telah menerima pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
+                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id) || window.location.pathname === '/admin/shipments') {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.order.cancelled', (e) => {
+                            this.playChime();
+                            this.addToast('Pesanan Dibatalkan!', e.message || `Customer membatalkan pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
+                            if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.late_fee.uploaded', (e) => {
+                            this.playChime();
+                            this.addToast('Bukti Denda Diunggah!', e.message || `Bukti pembayaran denda pesanan #${e.order_number} telah diupload.`, `/admin/returns`);
+                            if (window.location.pathname.includes('/admin/returns') || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.damage.payment_uploaded', (e) => {
+                            this.playChime();
+                            this.addToast('Bukti Kompensasi Kerusakan!', e.message || `Customer mengunggah bukti bayar kompensasi kerusakan.`, `/admin/damage-cases/${e.case_id}`);
+                            if (window.location.pathname.includes('/admin/damage-cases') || window.location.pathname.includes('/admin/orders')) {
+                                setTimeout(() => window.location.reload(), 800);
+                            }
+                        })
+                        .listen('.tenant.quota_alert', (e) => {
+                            this.playChime();
+                            this.addToast('Peringatan Kuota Produk!', e.message, '/admin/products');
+                        });
+                    return true;
+                };
+
+                if (!startListening()) {
+                    let attempts = 0;
+                    const poll = setInterval(() => {
+                        attempts++;
+                        if (startListening() || attempts >= 30) {
+                            clearInterval(poll);
                         }
-                    })
-                    .listen('.payment.uploaded', (e) => {
-                        this.playChime();
-                        this.addToast('Bukti Pembayaran Diunggah!', e.message || `Bukti bayar untuk pesanan #${e.order_number} telah diupload.`, `/admin/orders/${e.order_id}`);
-                        if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                            setTimeout(() => window.location.reload(), 800);
-                        }
-                    })
-                    .listen('.identity.uploaded', (e) => {
-                        this.playChime();
-                        this.addToast('Revisi KTP Diunggah!', e.message || `Customer mengunggah revisi identitas pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
-                        if (window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                            setTimeout(() => window.location.reload(), 800);
-                        }
-                    })
-                    .listen('.return.requested', (e) => {
-                        this.playChime();
-                        this.addToast('Pengajuan Retur Barang!', e.message || `Customer mengajukan retur untuk pesanan #${e.order_number}.`, `/admin/returns`);
-                        if (window.location.pathname === '/admin/returns' || window.location.pathname === '/admin/orders' || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                            setTimeout(() => window.location.reload(), 800);
-                        }
-                    })
-                    .listen('.tenant.quota_alert', (e) => {
-                        this.playChime();
-                        this.addToast('Peringatan Kuota Produk!', e.message, '/admin/products');
-                    });
+                    }, 150);
+                }
             },
             addToast(title, message, url = null) {
                 const id = Date.now();
