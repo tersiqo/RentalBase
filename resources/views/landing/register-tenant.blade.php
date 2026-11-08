@@ -143,6 +143,12 @@
                             <div>
                                 <label class="form-label">Deskripsi Singkat Usaha <span class="text-red-500">*</span></label>
                                 <textarea x-model="form.description" name="description" rows="3" class="form-control resize-none" placeholder="Jelaskan secara singkat tentang barang yang Anda sewakan..." required></textarea>
+                                <p class="text-xs text-gray-500 mt-1.5 flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-brand shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Teks ini akan tampil di banner katalog publik toko Anda untuk menyapa calon pelanggan.</span>
+                                </p>
                             </div>
                         </div>
 
@@ -316,7 +322,7 @@
                 submitForm() {
                     if(this.form.password === this.form.passwordConfirm && this.form.agree) {
                         // Animasi loading pada tombol bisa ditambahkan di sini
-                        alert('🎉 Pendaftaran Berhasil!\n\nSelamat datang di RentalBase. Mengarahkan Anda ke Dashboard...');
+                        alert('Pendaftaran Berhasil!\n\nSelamat datang di RentalBase. Mengarahkan Anda ke Dashboard...');
                         // Contoh redirect: window.location.href = '/dashboard';
                     }
                 }

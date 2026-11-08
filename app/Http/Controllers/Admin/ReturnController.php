@@ -156,6 +156,14 @@ class ReturnController extends Controller
                     }
                 }
 
+                // Kembalikan jaminan KTP fisik jika ada dan berstatus dititipkan
+                if ($order->identityGuarantee && $order->identityGuarantee->status === 'dititipkan') {
+                    $order->identityGuarantee->update([
+                        'status' => 'dikembalikan',
+                        'returned_at' => $now,
+                    ]);
+                }
+
                 $msg = "Pengembalian pesanan #{$order->order_number} selesai diproses dan status unit telah diperbarui.";
             }
 

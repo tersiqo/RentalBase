@@ -25,9 +25,7 @@
         $logoPath = $tenantProfile?->logo_path ?? $client?->logo ?? null;
         $logoUrl = null;
         if ($logoPath) {
-            $logoUrl = str_starts_with($logoPath, 'http')
-                ? $logoPath
-                : \Illuminate\Support\Facades\Storage::url($logoPath);
+            $logoUrl = storage_url($logoPath);
         }
 
         $shopName = $tenantProfile?->name ?? $client->nama_usaha ?? ($client->business_name ?? 'RentalBase');
@@ -122,8 +120,58 @@
             --tw-gradient-to: color-mix(in srgb, var(--tenant-theme) 80%, black) var(--tw-gradient-to-position) !important;
         }
 
-        .hover\:bg-primary-600:hover {
+        .hover:bg-primary-600:hover {
             filter: brightness(0.92);
+        }
+
+        .hover:bg-primary-50:hover {
+            background-color: color-mix(in srgb, var(--tenant-theme) 10%, white) !important;
+        }
+
+        .hover:bg-primary-100:hover {
+            background-color: color-mix(in srgb, var(--tenant-theme) 18%, white) !important;
+        }
+
+        .hover:border-primary-300:hover {
+            border-color: color-mix(in srgb, var(--tenant-theme) 50%, white) !important;
+        }
+
+        .hover:border-primary-500:hover {
+            border-color: var(--tenant-theme) !important;
+        }
+
+        .hover:text-primary-500:hover,
+        .hover:text-primary-600:hover {
+            color: var(--tenant-theme) !important;
+        }
+
+        .hover:text-primary-700:hover {
+            color: color-mix(in srgb, var(--tenant-theme) 75%, black) !important;
+        }
+
+        .file\:bg-primary-500::file-selector-button {
+            background-color: var(--tenant-theme) !important;
+            color: #fff !important;
+        }
+
+        .hover\:file\:bg-primary-600:hover::file-selector-button {
+            filter: brightness(0.92) !important;
+        }
+
+        .ring-primary-500 {
+            --tw-ring-color: var(--tenant-theme) !important;
+        }
+
+        .ring-primary-100 {
+            --tw-ring-color: color-mix(in srgb, var(--tenant-theme) 18%, white) !important;
+        }
+
+        .focus:ring-primary-500:focus {
+            --tw-ring-color: var(--tenant-theme) !important;
+        }
+
+        .focus:border-primary-500:focus {
+            border-color: var(--tenant-theme) !important;
         }
 
         /* Dynamic Tenant Hero Banner & Card Theme */
@@ -215,13 +263,20 @@
                     <livewire:customer.cart-icon :client="$client" />
 
                     @auth
-                        <!-- Bell Notification Icon Customer -->
+                        <!-- Bell Notification Icon Customer (Scoped per-Tenant) -->
                         @php
-                            $unreadCustomerNotifs = \App\Models\Notification::where('user_id', auth()->id())
-                                ->where('is_read', false)
-                                ->count();
+                            $notifQuery = \App\Models\Notification::where('user_id', auth()->id())
+                                ->where('is_read', false);
+                            if (isset($client) && $client?->id) {
+                                $notifQuery->where('client_id', $client->id);
+                            }
+                            $unreadCustomerNotifs = $notifQuery->count();
+                            $activeSub = $client->subdomain ?? session('active_client_subdomain', null);
+                            $notifRoute = $activeSub 
+                                ? route('customer.notifications.tenant', ['subdomain' => $activeSub])
+                                : route('customer.notifications.index');
                         @endphp
-                        <a href="{{ route('customer.notifications.index') }}"
+                        <a href="{{ $notifRoute }}"
                            class="relative p-2 rounded-xl text-gray-600 hover:text-primary-500 hover:bg-gray-100 transition-colors"
                            title="Pemberitahuan">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -241,7 +296,7 @@
                             <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none cursor-pointer">
                                 @php
                                     $userAvatar = auth()->user()->avatar 
-                                        ? (str_starts_with(auth()->user()->avatar, 'http') ? auth()->user()->avatar : \Illuminate\Support\Facades\Storage::url(auth()->user()->avatar))
+                                        ? storage_url(auth()->user()->avatar)
                                         : "https://ui-avatars.com/api/?name=" . urlencode(auth()->user()->name) . "&background=f97316&color=fff&bold=true";
                                 @endphp
                                 <img src="{{ $userAvatar }}" 
@@ -259,7 +314,7 @@
                                 </div>
                                 <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-4 py-2 text-sm font-semibold {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50' }} transition">Profil Saya</a>
                                 <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition">Pesanan Saya</a>
-                                <a href="{{ route('customer.notifications.index') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition flex items-center justify-between">
+                                <a href="{{ $notifRoute }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition flex items-center justify-between">
                                     <span>Pemberitahuan</span>
                                     @if(isset($unreadCustomerNotifs) && $unreadCustomerNotifs > 0)
                                         <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary-50 text-primary-600">{{ $unreadCustomerNotifs }}</span>
@@ -302,7 +357,7 @@
                 @auth
                     <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Profil Saya</a>
                     <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
-                    <a href="{{ route('customer.notifications.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.notifications*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pemberitahuan</a>
+                    <a href="{{ $notifRoute ?? route('customer.notifications.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.notifications*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pemberitahuan</a>
                 @endauth
                 <button type="button" @click.prevent="helpModalOpen = true; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 cursor-pointer">Bantuan</button>
                 

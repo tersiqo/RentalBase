@@ -314,8 +314,8 @@
                     <button type="button" class="px-2 py-0.5 rounded border border-gray-200 text-gray-700 text-[8px] font-medium hover:bg-gray-50 shadow-xs">
                         Kelola Unit
                     </button>
-                    <button type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-black text-white text-[8px] font-semibold shadow-xs flex items-center gap-0.5">
-                        <span class="text-[7px]">⚡</span>
+                    <button type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-black text-white text-[8px] font-semibold shadow-xs flex items-center gap-1">
+                        <svg class="w-2.5 h-2.5 text-amber-400 fill-amber-400 shrink-0" viewBox="0 0 20 20"><path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"/></svg>
                         <span>Upgrade</span>
                     </button>
                 </div>

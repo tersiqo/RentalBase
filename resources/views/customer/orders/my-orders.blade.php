@@ -130,7 +130,7 @@
             </div>
             <div>
                 <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? 'babyrental']) }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-xl transition shadow-2xs">
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-primary-500 bg-primary-50 hover:bg-primary-100 rounded-xl transition shadow-2xs">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                     Sewa Alat Baru
                 </a>
@@ -146,11 +146,11 @@
                         @click.prevent="activeTab = '{{ $tab }}'"
                         class="relative py-4 px-4 sm:px-6 text-sm font-semibold transition-all focus:outline-none shrink-0 flex items-center justify-center gap-1.5 border-b-2 -mb-px cursor-pointer"
                         :class="activeTab === '{{ $tab }}' 
-                            ? 'text-orange-500 font-bold border-orange-500' 
+                            ? 'text-primary-500 font-bold border-primary-500' 
                             : 'text-gray-600 hover:text-gray-900 border-transparent hover:border-gray-300'">
                         <span>{{ $tab }}</span>
                         @if(($counts[$tab] ?? 0) > 0)
-                            <span :class="activeTab === '{{ $tab }}' ? 'text-orange-500 font-bold' : 'text-orange-500 font-semibold'" 
+                            <span :class="activeTab === '{{ $tab }}' ? 'text-primary-500 font-bold' : 'text-gray-400 font-semibold'" 
                                   class="text-xs transition-colors">
                                 ({{ $counts[$tab] }})
                             </span>
@@ -163,15 +163,15 @@
         @if($orders->isEmpty())
             <!-- Empty State jika belum ada pesanan sama sekali -->
             <div class="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
-                <div class="w-20 h-20 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                    🧸
+                <div class="w-20 h-20 bg-primary-50 text-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
                 </div>
                 <h3 class="text-lg font-bold text-gray-900 mb-1">Belum Ada Pesanan</h3>
                 <p class="text-sm text-gray-500 max-w-md mx-auto mb-6">
                     Anda belum memiliki riwayat pesanan sewa. Temukan dan sewa berbagai peralatan berkualitas di toko kami!
                 </p>
                 <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? 'babyrental']) }}" 
-                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition shadow-sm">
+                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-500 text-white font-bold rounded-xl hover:bg-primary-600 transition shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                     Mulai Sewa Sekarang
                 </a>
@@ -181,8 +181,8 @@
             <div x-show="activeTab !== 'Semua' && (tabCounts[activeTab] || 0) === 0" 
                  class="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-xs" 
                  style="display: none;">
-                <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
-                    📦
+                <div class="w-16 h-16 bg-primary-50 text-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                 </div>
                 <h3 class="text-base font-bold text-gray-900 mb-1">Belum Ada Pesanan</h3>
                 <p class="text-xs sm:text-sm text-gray-500 max-w-sm mx-auto">
@@ -212,8 +212,9 @@
                                         <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg font-medium">{{ $order->client->nama_usaha }}</span>
                                     @endif
                                     @if($order->damageReports()->exists())
-                                        <span class="text-[11px] bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1">
-                                            ⚠️ Ada Klaim Kerusakan
+                                        <span class="text-[11px] bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                            <span>Ada Klaim Kerusakan</span>
                                         </span>
                                     @endif
                                 </div>
@@ -269,7 +270,7 @@
 
                             @if($order->can_return)
                                 <a href="{{ route('customer.orders.return.form', $order->id) }}" 
-                                   class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-orange-200 bg-white text-orange-600 font-semibold hover:bg-orange-50 hover:border-orange-300 transition text-sm">
+                                   class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-primary-200 bg-white text-primary-600 font-semibold hover:bg-primary-50 hover:border-primary-300 transition text-sm">
                                     <span>Ajukan Pengembalian</span>
                                 </a>
                             @endif
@@ -293,7 +294,7 @@
                             <!-- Tombol Lihat Detail: Buka View Detail Lengkap -->
                             <button type="button"
                                     @click="openDetail({{ $order->id }})" 
-                                    class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-xs transition text-sm">
+                                    class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold shadow-xs transition text-sm">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 <span>Lihat detail</span>
                             </button>
@@ -319,8 +320,8 @@
     <!-- Modal 1: Batalkan Pesanan -->
     <div x-show="cancelModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" style="display: none;" x-transition>
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 text-center" @click.away="cancelModalOpen = false">
-            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                ⚠️
+            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             </div>
             <h3 class="font-bold text-lg text-gray-900 mb-2">Batalkan Pesanan?</h3>
             <p class="text-xs sm:text-sm text-gray-500 mb-5 leading-relaxed">
@@ -348,8 +349,10 @@
     <div x-show="returnModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" style="display: none;" x-transition>
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden" @click.away="returnModalOpen = false">
             <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <span class="text-lg">↩️</span>
+                <div class="flex items-center gap-2.5">
+                    <span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                    </span>
                     <h3 class="font-bold text-base text-gray-900">Ajukan Pengembalian Barang</h3>
                 </div>
                 <button type="button" @click="returnModalOpen = false" class="text-gray-400 hover:text-gray-600">
@@ -364,21 +367,21 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Metode Pengembalian</label>
-                        <select name="return_method" class="w-full text-xs sm:text-sm p-2.5 rounded-xl border border-gray-300 focus:ring-orange-500 focus:border-orange-500 font-medium">
+                        <select name="return_method" class="w-full text-xs sm:text-sm p-2.5 rounded-xl border border-gray-300 focus:ring-primary-500 focus:border-primary-500 font-medium">
                             <option value="ambil_toko">Diantar langsung ke toko rental</option>
                             <option value="kurir">Dijemput kurir / dikirim via ekspedisi</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Catatan / Keterangan Kondisi Barang</label>
-                        <textarea name="notes" rows="3" required placeholder="Contoh: Masa sewa telah selesai, seluruh unit bersih dan lengkap siap diantar Sabtu pagi." class="w-full text-xs sm:text-sm p-3 rounded-xl border border-gray-300 focus:ring-orange-500 focus:border-orange-500"></textarea>
+                        <textarea name="notes" rows="3" required placeholder="Contoh: Masa sewa telah selesai, seluruh unit bersih dan lengkap siap diantar Sabtu pagi." class="w-full text-xs sm:text-sm p-3 rounded-xl border border-gray-300 focus:ring-primary-500 focus:border-primary-500"></textarea>
                     </div>
                 </div>
                 <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
                     <button type="button" @click="returnModalOpen = false" class="px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 transition">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl font-bold text-sm bg-orange-500 hover:bg-orange-600 text-white transition shadow-sm">
+                    <button type="submit" class="px-5 py-2.5 rounded-xl font-bold text-sm bg-primary-500 hover:bg-primary-600 text-white transition shadow-sm">
                         Ajukan Sekarang
                     </button>
                 </div>
@@ -389,8 +392,8 @@
     <!-- Modal 3: Konfirmasi Terima Barang -->
     <div x-show="receiveModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" style="display: none;" x-transition>
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 text-center" @click.away="receiveModalOpen = false">
-            <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                📦
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
             </div>
             <h3 class="font-bold text-lg text-gray-900 mb-2">Konfirmasi Terima Barang?</h3>
             <p class="text-xs sm:text-sm text-gray-500 mb-6 leading-relaxed">
@@ -413,7 +416,9 @@
         <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden p-4" @click.away="lightboxOpen = false">
             <div class="flex justify-between items-center pb-2 mb-2 border-b border-gray-100">
                 <span class="text-sm font-bold text-gray-900" x-text="lightboxCaption"></span>
-                <button type="button" @click="lightboxOpen = false" class="text-gray-400 hover:text-gray-700 text-lg">✕</button>
+                <button type="button" @click="lightboxOpen = false" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
             </div>
             <div class="p-1 bg-gray-50 rounded-xl flex items-center justify-center">
                 <img :src="lightboxImg" :alt="lightboxCaption" class="max-h-[75vh] w-auto max-w-full rounded-lg object-contain">
@@ -436,7 +441,7 @@
          x-transition:leave-end="opacity-0 transform translate-y-4"
          class="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 border-l-4 border-emerald-400" 
          style="display: none;">
-        <span>✅</span>
+        <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
         <span x-text="toastMessage"></span>
     </div>
 

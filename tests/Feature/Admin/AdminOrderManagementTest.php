@@ -7,6 +7,7 @@ use App\Events\OrderConfirmed;
 use App\Events\PaymentVerified;
 use App\Models\Category;
 use App\Models\Client;
+use App\Models\ClientPaymentMethod;
 use App\Models\EquipmentUnit;
 use App\Models\IdentityGuarantee;
 use App\Models\Order;
@@ -18,7 +19,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use App\Jobs\CancelUnpaidOrderJob;
 use Tests\TestCase;
 
 /**
@@ -218,6 +221,7 @@ class AdminOrderManagementTest extends TestCase
     public function test_it_ord_006_konfirmasi_tahap_1_verifikasi_ktp_dan_ubah_ke_menunggu_bayar(): void
     {
         Event::fake([IdentityApproved::class, OrderConfirmed::class]);
+        Queue::fake([CancelUnpaidOrderJob::class]);
 
         $order = $this->createOrder(['status' => 'menunggu_konfirmasi']);
         $ktp = IdentityGuarantee::create([
@@ -259,9 +263,16 @@ class AdminOrderManagementTest extends TestCase
         Event::fake([PaymentVerified::class, OrderConfirmed::class]);
 
         $order = $this->createOrder(['status' => 'menunggu_verifikasi']);
+        $paymentMethod = ClientPaymentMethod::create([
+            'client_id'      => $this->clientA->id,
+            'bank_name'      => 'BCA',
+            'account_number' => '1234567890',
+            'account_holder' => 'Studio A',
+            'is_active'      => true,
+        ]);
         $payment = Payment::create([
             'order_id'       => $order->id,
-            'payment_method' => 'transfer_bank',
+            'client_payment_method_id' => $paymentMethod->id,
             'amount'         => 900000,
             'payment_proof'  => 'payments/transfer.jpg',
             'status'         => 'menunggu_konfirmasi',

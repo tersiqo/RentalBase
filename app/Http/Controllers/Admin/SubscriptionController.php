@@ -101,6 +101,17 @@ class SubscriptionController extends Controller
         $durationMonths = $packageConfig['duration_months'] ?? 3;
         $price = (float) ($packageConfig['price'] ?? 0);
 
+        // Cegah duplikasi jika admin klik ganda (double-click / quick resubmit)
+        $recentPending = Subscription::where('client_id', $client->id)
+            ->where('status', 'menunggu_konfirmasi')
+            ->where('created_at', '>=', now()->subSeconds(60))
+            ->first();
+
+        if ($recentPending) {
+            return redirect()->route('admin.subscriptions.index')
+                ->with('success', 'Pengajuan perpanjangan langganan berhasil dikirim. Tim Owner akan segera memverifikasi pembayaran Anda.');
+        }
+
         // Upload bukti pembayaran
         $disk = config('filesystems.default', 'public');
         $proofPath = $request->file('payment_proof')->store('subscriptions/proofs', $disk);
@@ -173,6 +184,17 @@ class SubscriptionController extends Controller
 
         $durationMonths = $packageConfig['duration_months'] ?? 6;
         $price = (float) ($packageConfig['price'] ?? 0);
+
+        // Cegah duplikasi jika admin klik ganda (double-click / quick resubmit)
+        $recentPending = Subscription::where('client_id', $client->id)
+            ->where('status', 'menunggu_konfirmasi')
+            ->where('created_at', '>=', now()->subSeconds(60))
+            ->first();
+
+        if ($recentPending) {
+            return redirect()->route('admin.subscriptions.index')
+                ->with('success', 'Pengajuan upgrade paket langganan berhasil dikirim. Tim Owner akan segera memverifikasi pembayaran Anda.');
+        }
 
         // Upload bukti pembayaran
         $disk = config('filesystems.default', 'public');

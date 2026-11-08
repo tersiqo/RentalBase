@@ -41,6 +41,20 @@ class CartPage extends Component
         session()->put('active_client_subdomain', $this->client->subdomain);
 
         $this->loadCart();
+
+        // Restore selectedItems dari session (misal saat customer klik Back dari checkout)
+        // atau otomatis pilih semua item agar kalkulasi subtotal dan tombol Lanjut Pembayaran langsung aktif
+        $validHashes = array_keys($this->cart);
+        $savedCheckoutItems = session()->get('checkout_items', []);
+        $restored = array_values(array_intersect((array) $savedCheckoutItems, $validHashes));
+
+        if (! empty($restored)) {
+            $this->selectedItems = $restored;
+        } elseif (! empty($validHashes)) {
+            $this->selectedItems = $validHashes;
+        }
+
+        $this->selectAll = (! empty($validHashes) && count($this->selectedItems) === count($validHashes));
     }
 
     public function loadCart()

@@ -18,12 +18,12 @@
                     </div>
                 </div>
                 
-                <h1 class="text-[clamp(34px,4.6vw,52px)] leading-[1.1] font-extrabold tracking-tight text-gray-900 mb-4 max-w-[18ch] animate-fade-in-up" style="animation-delay: 140ms;">
-                    {{ $client->description ?: 'Perlengkapan bayi, sewa tanpa deposit tunai' }}
+                <h1 class="text-[clamp(32px,4vw,46px)] leading-[1.18] font-extrabold tracking-tight text-gray-900 mb-4 max-w-[20ch] animate-fade-in-up" style="animation-delay: 140ms;">
+                    Sewa Perlengkapan di {{ $client->business_name }}
                 </h1>
                 
-                <p class="text-[18px] max-w-[46ch] mb-7 text-gray-600 animate-fade-in-up" style="animation-delay: 220ms;">
-                    Eksplorasi koleksi peralatan {{ $client->business_name }} dan cek ketersediaannya secara real-time. Perlengkapan bayi, sewa tanpa deposit tunai.
+                <p class="text-[17px] leading-relaxed max-w-[52ch] mb-7 text-gray-600 animate-fade-in-up" style="animation-delay: 220ms;">
+                    {{ $client->description ?: ('Eksplorasi koleksi peralatan ' . $client->business_name . ' dan cek ketersediaannya secara real-time. Proses sewa mudah dan transparan.') }}
                 </p>
                 
                 <!-- Search Component -->
@@ -59,7 +59,8 @@
                             <!-- Top Bar: Category & Status Badge -->
                             <div class="relative z-10 flex items-center justify-between gap-2">
                                 <div class="inline-flex items-center gap-1.5 bg-black/25 backdrop-blur-md border border-white/20 text-white rounded-full px-3 py-1 text-[12px] font-bold shadow-xs">
-                                    <span>⭐ Produk Unggulan</span>
+                                    <svg class="w-3.5 h-3.5 text-amber-300 fill-amber-300" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                    <span>Produk Unggulan</span>
                                     @if($feat->category)
                                         <span class="text-white/60">·</span>
                                         <span class="text-white/90 truncate max-w-[120px]">{{ $feat->category->name }}</span>
@@ -381,7 +382,7 @@
                             
                             <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="relative h-[190px] flex items-center justify-center overflow-hidden bg-gray-100">
                                 @if($item->main_image)
-                                    <img src="{{ Storage::url($item->main_image) }}" 
+                                    <img src="{{ storage_url($item->main_image) }}" 
                                          alt="{{ $item->name }}" 
                                          loading="lazy"
                                          class="object-cover w-full h-full transition-transform duration-500 ease-out group-hover:scale-110"
@@ -580,7 +581,7 @@
                         <!-- Product Summary -->
                         <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
                             <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden shrink-0">
-                                <img src="{{ $modalProduct->main_image ? Storage::url($modalProduct->main_image) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" class="w-full h-full object-cover">
+                                <img src="{{ $modalProduct->main_image ? storage_url($modalProduct->main_image) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" class="w-full h-full object-cover">
                             </div>
                             <div>
                                 <h4 class="font-bold text-gray-900 line-clamp-1">{{ $modalProduct->name }}</h4>

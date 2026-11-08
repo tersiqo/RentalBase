@@ -4,7 +4,7 @@
 @php
     $itemsList = $items->values()->map(function ($item) {
         if (empty($item['image_url']) && !empty($item['main_image'])) {
-            $item['image_url'] = \Illuminate\Support\Facades\Storage::url($item['main_image']);
+            $item['image_url'] = storage_url($item['main_image']);
         }
         if (empty($item['hash'])) {
             $item['hash'] = md5($item['product_id'].$item['start_date'].$item['end_date']);
@@ -40,7 +40,7 @@
         currentStep: initialStep,
         periodStart: (savedDraft && savedDraft.periodStart) ? savedDraft.periodStart : {{ json_encode(old('start_date', $period['start_date'])) }},
         periodEnd: (savedDraft && savedDraft.periodEnd) ? savedDraft.periodEnd : {{ json_encode(old('end_date', $period['end_date'])) }},
-        rentalTime: (savedDraft && savedDraft.rentalTime) ? savedDraft.rentalTime : {{ json_encode(old('rental_time', now()->format('H:i'))) }},
+        rentalTime: (savedDraft && savedDraft.rentalTime) ? savedDraft.rentalTime : ({{ json_encode(old('rental_time')) }} || (() => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; })()),
         items: {{ json_encode($itemsList->all()) }},
         ship: (savedDraft && savedDraft.ship) ? savedDraft.ship : {{ json_encode(old('shipping_method') === \App\Models\Order::SHIPPING_AMBIL_TOKO ? 'ambil' : 'antar') }},
         shopName: {{ json_encode($shopLabel) }},
@@ -512,7 +512,7 @@
                                 <div class="w-[78px] h-[78px] rounded-xl bg-white border border-gray-200/80 overflow-hidden flex-none flex items-center justify-center relative">
                                     <template x-if="item.image_url || item.main_image">
                                         <div class="w-full h-full relative">
-                                            <img :src="item.image_url || ('{{ rtrim(config('filesystems.disks.s3.url', Storage::url('')), '/') }}/' + item.main_image)" :alt="item.name" class="w-full h-full object-cover">
+                                            <img :src="item.image_url" :alt="item.name" class="w-full h-full object-cover">
                                         </div>
                                     </template>
                                     <template x-if="!item.image_url && !item.main_image">
@@ -589,7 +589,8 @@
                     <div class="pt-4 border-t border-gray-100 space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <label for="rental_time" class="block text-xs font-bold text-gray-800 uppercase tracking-wide flex items-center gap-1.5">
-                                <span>⏰ Rencana Jam Pengambilan / Pengiriman &amp; Batas Kembali</span>
+                                <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span>Rencana Jam Pengambilan / Pengiriman &amp; Batas Kembali</span>
                                 <span class="text-primary-500">*</span>
                             </label>
                             <span class="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
@@ -613,23 +614,27 @@
                                 <div class="flex flex-wrap gap-1.5 text-[11px]">
                                     <button type="button"
                                             @click="setNowTime()"
-                                            class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
-                                        ⌚ Sekarang
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
+                                        <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span>Sekarang</span>
                                     </button>
                                     <button type="button"
                                             @click="rentalTime = '09:00'"
-                                            class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
-                                        🌅 09:00
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
+                                        <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                        <span>09:00</span>
                                     </button>
                                     <button type="button"
                                             @click="rentalTime = '13:00'"
-                                            class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
-                                        ☀️ 13:00
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
+                                        <svg class="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                        <span>13:00</span>
                                     </button>
                                     <button type="button"
                                             @click="rentalTime = '16:00'"
-                                            class="px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
-                                        🌇 16:00
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
+                                        <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                                        <span>16:00</span>
                                     </button>
                                 </div>
                             </div>
@@ -649,11 +654,13 @@
                                     </span>
                                 </div>
                                 <div class="text-[11px] text-gray-600 pt-1 leading-relaxed space-y-1.5">
-                                    <p>
-                                        💡 <em>Jam batas pengembalian otomatis disamakan dengan jam mulai sewa. Keterlambatan retur baru dihitung jika melewati pukul <strong x-text="rentalTime + ' WIB'"></strong> pada tanggal selesai.</em>
+                                    <p class="flex items-start gap-1.5">
+                                        <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span><em>Jam batas pengembalian otomatis disamakan dengan jam mulai sewa. Keterlambatan retur baru dihitung jika melewati pukul <strong x-text="rentalTime + ' WIB'"></strong> pada tanggal selesai.</em></span>
                                     </p>
-                                    <p class="text-primary-800 bg-primary-50/80 p-2.5 rounded-lg border border-primary-100 text-[11px]">
-                                        🛡️ <strong>Jaminan Durasi Utuh:</strong> Jika proses verifikasi, pembayaran, atau serah terima selesai melewati jam rencana di atas, jam mulai &amp; batas kembali akan otomatis disesuaikan saat barang diserahkan agar waktu sewa Anda tidak terpotong.
+                                    <p class="text-primary-800 bg-primary-50/80 p-2.5 rounded-lg border border-primary-100 text-[11px] flex items-start gap-2">
+                                        <svg class="w-4 h-4 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                        <span><strong>Jaminan Durasi Utuh:</strong> Jika proses verifikasi, pembayaran, atau serah terima selesai melewati jam rencana di atas, jam mulai &amp; batas kembali akan otomatis disesuaikan saat barang diserahkan agar waktu sewa Anda tidak terpotong.</span>
                                     </p>
                                 </div>
                             </div>
@@ -772,10 +779,12 @@
                                     <div>
                                         <div class="flex items-center justify-between mb-1">
                                             <span class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-900">
-                                                <span>🏠</span> Alamat Utama Profil
+                                                <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                                <span>Alamat Utama Profil</span>
                                             </span>
                                             <span x-show="addressText.trim() === profileAddress.trim()" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary-100 text-primary-700">
-                                                ✓ Aktif
+                                                <svg class="w-3 h-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                <span>Aktif</span>
                                             </span>
                                         </div>
                                         <p class="text-xs text-gray-500 line-clamp-2 leading-relaxed">{{ $profileAddress }}</p>
@@ -794,10 +803,12 @@
                                     <div>
                                         <div class="flex items-center justify-between mb-1">
                                             <span class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-900">
-                                                <span>📦</span> Pengiriman Terakhir
+                                                <svg class="w-4 h-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                                <span>Pengiriman Terakhir</span>
                                             </span>
                                             <span x-show="addressText.trim() === lastOrderAddress.trim()" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary-100 text-primary-700">
-                                                ✓ Aktif
+                                                <svg class="w-3 h-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                <span>Aktif</span>
                                             </span>
                                         </div>
                                         <p class="text-xs text-gray-500 line-clamp-2 leading-relaxed">{{ $lastOrderAddress }}</p>
@@ -812,9 +823,9 @@
                             <div class="flex items-center justify-between pt-1">
                                 <button type="button" 
                                         @click="addressText = ''; $nextTick(() => document.getElementById('addressText').focus())"
-                                        class="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-800 transition cursor-pointer">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                                    <span>✏️ Ketik Alamat Baru</span>
+                                        class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-800 transition cursor-pointer">
+                                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    <span>Ketik Alamat Baru</span>
                                 </button>
                                 <span class="text-[11px] text-gray-400">Atau edit langsung textarea di bawah</span>
                             </div>
@@ -957,16 +968,18 @@
                             <div class="flex items-center gap-1.5">
                                 <button type="button" 
                                         @click="if (addressText && addressText.trim().length > 0) { identityAddress = addressText }"
-                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200 transition cursor-pointer"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200 transition cursor-pointer"
                                         title="Salin alamat dari Step 2">
-                                    <span>🔄</span> Sama dengan Alamat Pengiriman
+                                    <svg class="w-3.5 h-3.5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    <span>Sama dengan Alamat Pengiriman</span>
                                 </button>
                                 @if($profileAddress)
                                 <button type="button" 
                                         @click="identityAddress = profileAddress"
-                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
                                         title="Gunakan alamat dari profil">
-                                    <span>🏠</span> Gunakan Alamat Utama Profil
+                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                    <span>Gunakan Alamat Utama Profil</span>
                                 </button>
                                 @endif
                             </div>

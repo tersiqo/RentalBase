@@ -198,9 +198,10 @@
                                     <div class="inline-flex flex-col items-center">
                                         <button type="button" 
                                                 disabled 
-                                                class="inline-flex items-center justify-center px-3.5 py-2 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed shadow-2xs"
+                                                class="inline-flex items-center justify-center px-3.5 py-2 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-md cursor-not-allowed shadow-2xs gap-1.5"
                                                 title="{{ $order->handover_blocked_reason }}">
-                                            <span>🔒 {{ $isPickup ? 'Belum Hari-H' : 'Belum H-1' }}</span>
+                                            <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                            <span>{{ $isPickup ? 'Belum Hari-H' : 'Belum H-1' }}</span>
                                         </button>
                                         <span class="text-[10px] text-gray-500 font-medium mt-1 max-w-[170px] truncate" title="{{ $order->handover_blocked_reason }}">
                                             {{ $order->handover_blocked_reason }}
@@ -245,7 +246,7 @@
          class="fixed inset-0 z-50 overflow-y-auto" 
          aria-labelledby="modal-title" 
          role="dialog" 
-         aria-modal="true"
+         aria-modal="true" 
          @keydown.escape.window="closeModal()">
         
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -273,7 +274,9 @@
                         <h3 class="text-base font-bold text-gray-900" id="modal-title">
                             <span x-text="selectedOrder.is_pickup ? 'Penyerahan Pesanan #' : 'Proses Pengiriman #'"></span><span x-text="selectedOrder.order_number"></span>
                         </h3>
-                        <button type="button" @click="closeModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg p-1">✕</button>
+                        <button type="button" @click="closeModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
                     </div>
 
                     {{-- Modal Body --}}

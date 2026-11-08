@@ -123,7 +123,7 @@
                             <button type="button"
                                     @click="activeIdx = idx"
                                     class="relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 bg-white"
-                                    :class="activeIdx === idx ? 'border-orange-500 ring-2 ring-orange-500/30 scale-105 shadow-sm' : 'border-gray-200 hover:border-orange-300 opacity-70 hover:opacity-100'">
+                                    :class="activeIdx === idx ? 'border-primary-500 ring-2 ring-primary-500/30 scale-105 shadow-sm' : 'border-gray-200 hover:border-primary-300 opacity-70 hover:opacity-100'">
                                 <img :src="imgUrl" 
                                      alt="Thumbnail" 
                                      class="w-full h-full object-cover"

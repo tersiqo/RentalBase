@@ -508,6 +508,15 @@ class PageController extends Controller
         }
 
         if (! $order->can_upload_payment) {
+            // Jika bukti pembayaran sebenarnya baru saja diunggah (misal akibat double-click / resubmit)
+            $recentPayment = $order->payments()
+                ->where('created_at', '>=', now()->subSeconds(60))
+                ->first();
+
+            if ($recentPayment) {
+                return back()->with('success', 'Bukti pembayaran pesanan #' . $order->order_number . ' sudah berhasil diterima dan sedang dalam antrean verifikasi toko.');
+            }
+
             return back()->with('error', 'Unggah bukti pembayaran belum diizinkan. Pastikan verifikasi identitas telah disetujui.');
         }
 
@@ -595,6 +604,12 @@ class PageController extends Controller
         }
 
         if (! $order->can_pay_late_fee) {
+            // Jika bukti denda sebenarnya baru saja diunggah (misal akibat double-click / resubmit)
+            $recentLateFee = $order->returnModel?->late_fee_status === 'menunggu_verifikasi';
+            if ($recentLateFee) {
+                return back()->with('success', 'Bukti pembayaran denda pesanan #' . $order->order_number . ' sudah berhasil diunggah dan sedang diverifikasi oleh toko.');
+            }
+
             return back()->with('error', 'Pembayaran denda tidak dapat diproses untuk pesanan ini.');
         }
 

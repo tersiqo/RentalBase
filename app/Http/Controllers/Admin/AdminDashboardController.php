@@ -33,7 +33,7 @@ class AdminDashboardController extends Controller
             $today = Carbon::today();
 
             $totalBookingBaru = Order::where('client_id', $clientId)
-                ->where('status', 'menunggu_pembayaran')
+                ->whereIn('status', ['menunggu_konfirmasi', 'menunggu_pembayaran'])
                 ->count();
 
             $bookingHariIni = Order::where('client_id', $clientId)

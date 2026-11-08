@@ -92,7 +92,7 @@ class PaymentMethodController extends Controller
             return response()->json([
                 'success' => true,
                 'data'    => $paymentMethod,
-                'qris_url'=> $paymentMethod->qris_image_path ? Storage::url($paymentMethod->qris_image_path) : null,
+                'qris_url'=> $paymentMethod->qris_image_path ? storage_url($paymentMethod->qris_image_path) : null,
             ]);
         }
 
@@ -303,7 +303,7 @@ class PaymentMethodController extends Controller
                     'client_id'          => $client->id,
                     'type'               => $isQris ? 'qris' : 'bank_transfer',
                     'bank_name'          => $isQris ? null : $legacy->bank_name,
-                    'account_number'     => $isQris ? null : $legacy->account_number,
+                    'account_number'     => $isQris ? ($legacy->account_number && ! str_starts_with($legacy->account_number, 'QRIS-') ? $legacy->account_number : null) : $legacy->account_number,
                     'account_name'       => $isQris ? null : $legacy->account_holder,
                     'qris_merchant_name' => $isQris ? ($legacy->account_holder ?: ($client->business_name ?? 'QRIS')) : null,
                     'qris_image_path'    => $legacy->qris_image,
@@ -393,9 +393,9 @@ class PaymentMethodController extends Controller
 
             $legacyData = [
                 'client_id'      => $paymentMethod->client_id,
-                'bank_name'      => $paymentMethod->bank_name ?? ($paymentMethod->qris_merchant_name ?: 'QRIS'),
-                'account_number' => $paymentMethod->account_number ?? ('QRIS-' . $paymentMethod->id),
-                'account_holder' => $paymentMethod->account_name ?? ($paymentMethod->qris_merchant_name ?: 'Merchant QRIS'),
+                'bank_name'      => $paymentMethod->type === 'qris' ? 'QRIS' : ($paymentMethod->bank_name ?? 'Bank Transfer'),
+                'account_number' => $paymentMethod->account_number ?? ($paymentMethod->type === 'qris' ? ('QRIS-' . $paymentMethod->id) : null),
+                'account_holder' => $paymentMethod->type === 'qris' ? ($paymentMethod->qris_merchant_name ?: 'Merchant QRIS') : ($paymentMethod->account_name ?? 'Pemilik Rekening'),
                 'qris_image'     => $paymentMethod->qris_image_path,
                 'is_active'      => (bool) $paymentMethod->is_active,
             ];

@@ -208,4 +208,57 @@ class CustomerNotificationTest extends TestCase
         $response->assertRedirect();
         $this->assertEquals(0, Notification::where('user_id', $user->id)->where('is_read', false)->count());
     }
+
+    public function test_customer_notifications_are_strictly_isolated_per_tenant(): void
+    {
+        $client1 = Client::create([
+            'business_name' => 'Baby Rental Studio',
+            'subdomain' => 'babyrental',
+            'status' => 'aktif',
+        ]);
+
+        $client2 = Client::create([
+            'business_name' => 'Berkah Tenda Malang',
+            'subdomain' => 'berkahtenda',
+            'status' => 'aktif',
+        ]);
+
+        $customer = User::factory()->create([
+            'client_id' => null,
+            'role' => 'customer',
+            'status' => 'aktif',
+        ]);
+
+        // Notif dari Toko 1 (Baby Rental)
+        Notification::create([
+            'client_id' => $client1->id,
+            'user_id' => $customer->id,
+            'title' => 'Stroller Dikirim #ORD-BABY-01',
+            'message' => 'Stroller Bugaboo kamu sedang dikirim kurir.',
+            'type' => 'shipment',
+            'is_read' => false,
+        ]);
+
+        // Notif dari Toko 2 (Berkah Tenda)
+        Notification::create([
+            'client_id' => $client2->id,
+            'user_id' => $customer->id,
+            'title' => 'Tenda Plafon Diproses #ORD-TENDA-02',
+            'message' => 'Pesanan sewa tenda kamu telah dikonfirmasi toko.',
+            'type' => 'order',
+            'is_read' => false,
+        ]);
+
+        // Saat buka notifikasi di Toko 2 (Berkah Tenda)
+        $responseStore2 = $this->actingAs($customer)->get('/client/berkahtenda/notifications');
+        $responseStore2->assertStatus(200);
+        $responseStore2->assertSee('Tenda Plafon Diproses #ORD-TENDA-02');
+        $responseStore2->assertDontSee('Stroller Dikirim #ORD-BABY-01');
+
+        // Saat buka notifikasi di Toko 1 (Baby Rental)
+        $responseStore1 = $this->actingAs($customer)->get('/client/babyrental/notifications');
+        $responseStore1->assertStatus(200);
+        $responseStore1->assertSee('Stroller Dikirim #ORD-BABY-01');
+        $responseStore1->assertDontSee('Tenda Plafon Diproses #ORD-TENDA-02');
+    }
 }

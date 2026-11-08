@@ -615,7 +615,7 @@ class CustomerCatalogEnhancementTest extends TestCase
 
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
             ->assertSeeHtml('<svg width="230" height="230"')
-            ->assertDontSee('⭐ Produk Unggulan');
+            ->assertDontSee('Produk Unggulan');
     }
 
     public function test_catalog_hero_renders_featured_product_showcase_when_mode_is_featured()
@@ -644,7 +644,7 @@ class CustomerCatalogEnhancementTest extends TestCase
         $categories = Category::where('client_id', $this->client->id)->get();
 
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
-            ->assertSee('⭐ Produk Unggulan')
+            ->assertSee('Produk Unggulan')
             ->assertSee('Sony A7 IV Body Only')
             ->assertSee('250.000')
             ->assertSee('1 Tersedia')
@@ -681,7 +681,7 @@ class CustomerCatalogEnhancementTest extends TestCase
 
         $component = Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories]);
 
-        $component->assertSee('⭐ Produk Unggulan')
+        $component->assertSee('Produk Unggulan')
             ->assertSee('Produk B Pilihan Admin')
             ->assertSee('350.000');
 
@@ -700,7 +700,7 @@ class CustomerCatalogEnhancementTest extends TestCase
 
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
             ->assertSeeHtml('<svg width="230" height="230"')
-            ->assertDontSee('⭐ Produk Unggulan');
+            ->assertDontSee('Produk Unggulan');
     }
 
     public function test_admin_can_update_hero_showcase_settings_via_tenant_profile_controller()
