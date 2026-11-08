@@ -250,16 +250,16 @@
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         @if($units->count() > 0)
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse min-w-[980px]">
                     <thead>
                         <tr class="border-b border-slate-100 bg-slate-50/70 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                            <th class="py-3.5 px-4">Kode Unit / Aset</th>
-                            <th class="py-3.5 px-4">Produk Induk</th>
-                            <th class="py-3.5 px-4">Nomor Seri Pabrik</th>
-                            <th class="py-3.5 px-4">Kondisi Fisik</th>
-                            <th class="py-3.5 px-4">Status Operasional</th>
-                            <th class="py-3.5 px-4">Pesanan / Status Sewa</th>
-                            <th class="py-3.5 px-4 text-right">Aksi</th>
+                            <th class="py-3.5 px-4 whitespace-nowrap">Kode Unit / Aset</th>
+                            <th class="py-3.5 px-4 whitespace-nowrap">Produk Induk</th>
+                            <th class="py-3.5 px-4 whitespace-nowrap">Nomor Seri Pabrik</th>
+                            <th class="py-3.5 px-4 whitespace-nowrap">Kondisi Fisik</th>
+                            <th class="py-3.5 px-4 whitespace-nowrap">Status Operasional</th>
+                            <th class="py-3.5 px-4 whitespace-nowrap">Pesanan / Status Sewa</th>
+                            <th class="py-3.5 px-4 text-right whitespace-nowrap">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-xs sm:text-sm">
@@ -273,7 +273,7 @@
                             @endphp
                             <tr x-show="matchesFilter({{ $unit->id }})" class="hover:bg-slate-50/50 transition">
                                 {{-- Kode Unit / Aset --}}
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap align-middle">
                                     <div class="flex items-center gap-2">
                                         <div class="w-7 h-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
@@ -286,11 +286,11 @@
                                 </td>
 
                                 {{-- Produk Induk --}}
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 align-middle">
                                     <div class="flex items-center gap-3">
                                         <div class="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200/60">
                                             @if($unit->product?->main_image)
-                                                <img src="{{ Storage::url($unit->product->main_image) }}"
+                                                <img src="{{ storage_url($unit->product->main_image) }}"
                                                      alt="{{ $unit->product->name }}"
                                                      class="w-full h-full object-cover"
                                                      onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=100&auto=format&fit=crop&q=60';">
@@ -300,7 +300,7 @@
                                                 </div>
                                             @endif
                                         </div>
-                                        <div>
+                                        <div class="min-w-0">
                                             <p class="font-bold text-slate-900 line-clamp-1">{{ $unit->product?->name ?? 'Produk Dihapus' }}</p>
                                             <p class="text-xs text-orange-600 font-semibold mt-0.5">
                                                 Rp {{ number_format($unit->product?->rental_price_per_day ?? 0, 0, ',', '.') }}/hari
@@ -310,9 +310,9 @@
                                 </td>
 
                                 {{-- Nomor Seri Pabrik --}}
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap align-middle">
                                     @if($unit->serial_number)
-                                        <span class="font-mono text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/50">
+                                        <span class="font-mono text-xs text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/60 whitespace-nowrap inline-block">
                                             {{ $unit->serial_number }}
                                         </span>
                                     @else
@@ -321,56 +321,49 @@
                                 </td>
 
                                 {{-- Kondisi Fisik --}}
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap align-middle">
                                     @if($cond === 'baik')
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70 whitespace-nowrap">
                                             Baik
                                         </span>
                                     @elseif($cond === 'rusak_ringan')
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/70 whitespace-nowrap">
                                             Rusak Ringan
                                         </span>
                                     @elseif($cond === 'rusak_berat')
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/70 whitespace-nowrap">
                                             Rusak Berat
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
                                             {{ ucfirst($unit->condition) }}
                                         </span>
                                     @endif
                                 </td>
 
                                 {{-- Status Operasional --}}
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap align-middle">
                                     @if(in_array($st, ['tersedia', 'available']))
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100/70 text-emerald-800">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70 whitespace-nowrap">
                                             Tersedia
                                         </span>
                                     @elseif(in_array($st, ['disewa', 'rented']))
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100/70 text-blue-800">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/70 whitespace-nowrap">
                                             Sedang Disewa
                                         </span>
                                     @elseif($st === 'maintenance')
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100/70 text-amber-800">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/70 whitespace-nowrap">
                                             Perawatan
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-700">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
                                             Tidak Tersedia
                                         </span>
                                     @endif
                                 </td>
 
                                 {{-- Pesanan / Status Sewa --}}
-                                <td class="py-3.5 px-4">
+                                <td class="py-3.5 px-4 whitespace-nowrap align-middle">
                                     @if($activeOrder)
                                         <div>
                                             <a href="{{ route('admin.orders.show', $activeOrder->id) }}"
@@ -388,7 +381,7 @@
                                 </td>
 
                                 {{-- Aksi --}}
-                                <td class="py-3.5 px-4 text-right">
+                                <td class="py-3.5 px-4 text-right whitespace-nowrap align-middle">
                                     <div class="inline-flex items-center gap-1.5">
                                         {{-- Edit Button --}}
                                         <button type="button"

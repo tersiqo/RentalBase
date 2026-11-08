@@ -335,7 +335,7 @@ class SystemRevisionsTest extends TestCase
     {
         $this->actingAs($this->owner);
 
-        $now = Carbon::now('Asia/Jakarta');
+        $now = Carbon::now(config('app.timezone', 'Asia/Jakarta'));
 
         // Subscription aktif Starter
         $activeSub = Subscription::create([

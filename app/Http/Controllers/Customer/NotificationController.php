@@ -12,14 +12,21 @@ class NotificationController extends Controller
 {
     /**
      * Menampilkan daftar notifikasi customer yang sedang login.
+     * Dibatasi strictly per-tenant toko aktif.
      */
-    public function index(Request $request)
+    public function index(Request $request, ?string $subdomain = null)
     {
         $user = Auth::user();
 
-        // 1. Resolve client toko aktif untuk konsistensi layout header/footer customer
+        // 1. Resolve client toko aktif untuk konsistensi layout dan isolasi data per-tenant
         $client = null;
-        if ($request->filled('client')) {
+        if ($subdomain) {
+            $client = Client::where('subdomain', $subdomain)->first();
+        }
+        if (! $client && $request->route('subdomain')) {
+            $client = Client::where('subdomain', $request->route('subdomain'))->first();
+        }
+        if (! $client && $request->filled('client')) {
             $client = Client::where('subdomain', $request->query('client'))->first();
         }
         if (! $client && session()->has('active_client_id')) {
@@ -28,12 +35,28 @@ class NotificationController extends Controller
         if (! $client && session()->has('active_client_subdomain')) {
             $client = Client::where('subdomain', session('active_client_subdomain'))->first();
         }
+        if (! $client && ($referer = $request->headers->get('referer'))) {
+            if (preg_match('#/client/([^/?#]+)#', $referer, $matches)) {
+                $client = Client::where('subdomain', $matches[1])->first();
+            }
+        }
+        if (! $client && $user->client_id) {
+            $client = Client::find($user->client_id);
+        }
         if (! $client) {
             $client = Client::where('status', 'aktif')->first() ?? Client::first();
         }
 
-        // 2. Query dasar: WAJIB dibatasi hanya notifikasi milik user customer yang sedang login!
+        if ($client) {
+            session()->put('active_client_id', $client->id);
+            session()->put('active_client_subdomain', $client->subdomain);
+        }
+
+        // 2. Query dasar: WAJIB dibatasi hanya notifikasi milik user customer dan toko aktif!
         $query = Notification::where('user_id', $user->id);
+        if ($client && isset($client->id)) {
+            $query->where('client_id', $client->id);
+        }
 
         // 3. Filter berdasarkan tab kategori
         $filter = $request->query('filter', 'all');
@@ -46,9 +69,16 @@ class NotificationController extends Controller
             $query->whereIn('type', ['shipment', 'return', 'damage']);
         }
 
-        // 4. Hitung statistik untuk badge counter tab
-        $totalUnread = Notification::where('user_id', $user->id)->where('is_read', false)->count();
-        $totalAll    = Notification::where('user_id', $user->id)->count();
+        // 4. Hitung statistik untuk badge counter tab (strictly per-tenant)
+        $unreadQuery = Notification::where('user_id', $user->id)->where('is_read', false);
+        $allQuery    = Notification::where('user_id', $user->id);
+        if ($client && isset($client->id)) {
+            $unreadQuery->where('client_id', $client->id);
+            $allQuery->where('client_id', $client->id);
+        }
+
+        $totalUnread = $unreadQuery->count();
+        $totalAll    = $allQuery->count();
 
         // 5. Pagination 10 baris per halaman
         $notifications = $query->latest()->paginate(10)->withQueryString();
@@ -92,9 +122,21 @@ class NotificationController extends Controller
      */
     public function markAllAsRead(Request $request)
     {
-        Notification::where('user_id', Auth::id())
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
+        $query = Notification::where('user_id', Auth::id())
+            ->where('is_read', false);
+
+        $client = null;
+        if ($request->filled('client_id')) {
+            $client = Client::find($request->client_id);
+        } elseif ($request->filled('client')) {
+            $client = Client::where('subdomain', $request->client)->first();
+        }
+
+        if ($client && isset($client->id)) {
+            $query->where('client_id', $client->id);
+        }
+
+        $query->update(['is_read' => true]);
 
         if ($request->wantsJson()) {
             return response()->json([

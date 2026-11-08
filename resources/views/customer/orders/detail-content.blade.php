@@ -40,9 +40,9 @@
     <div class="mb-6">
         <nav class="flex items-center gap-2 text-xs sm:text-sm text-gray-500 mb-2">
             @if(isset($backRoute))
-                <a href="{{ $backRoute }}" class="hover:text-orange-600 transition">Pesanan Saya</a>
+                <a href="{{ $backRoute }}" class="hover:text-primary-600 transition">Pesanan Saya</a>
             @else
-                <button type="button" @click="closeDetail()" class="hover:text-orange-600 transition">Pesanan Saya</button>
+                <button type="button" @click="closeDetail()" class="hover:text-primary-600 transition">Pesanan Saya</button>
             @endif
             <span class="text-gray-300">/</span>
             <span class="font-mono text-gray-700 font-semibold">{{ $order->order_number ?? ('ORD-' . $order->id) }}</span>
@@ -92,7 +92,7 @@
         @endphp
         <div class="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
             <div class="flex items-center gap-3">
-                <span class="text-2xl">⚠️</span>
+                <svg class="w-6 h-6 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 <div>
                     <h4 class="text-sm font-bold text-rose-900">Ada Laporan Kerusakan untuk Pesanan Ini</h4>
                     <p class="text-xs text-rose-700 mt-0.5">
@@ -119,7 +119,9 @@
             <!-- Panel 1: Stepper Progres Pesanan -->
             <section class="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
                 <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-5">
-                    <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm shadow-sm">🧭</span>
+                    <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </span>
                     <span>Progres Pesanan</span>
                 </h2>
 
@@ -133,14 +135,14 @@
                             @endphp
                             <div class="flex-1 relative text-center px-2 group">
                                 @if($idx > 0)
-                                    <div class="absolute top-[17px] -left-1/2 w-full h-[3px] -z-0 transition-colors {{ ($idx <= $currentStep && !$isCancelled) ? 'bg-orange-500' : ($isCancelled && $idx <= $currentStep ? 'bg-red-400' : 'bg-gray-200') }}"></div>
+                                    <div class="absolute top-[17px] -left-1/2 w-full h-[3px] -z-0 transition-colors {{ ($idx <= $currentStep && !$isCancelled) ? 'bg-primary-500' : ($isCancelled && $idx <= $currentStep ? 'bg-red-400' : 'bg-gray-200') }}"></div>
                                 @endif
 
                                 <div class="relative z-10 w-9 h-9 rounded-full mx-auto mb-2 flex items-center justify-center text-xs font-extrabold transition-all duration-300
                                     @if($isDone)
-                                        bg-orange-500 border-2 border-orange-500 text-white shadow-[0_2px_8px_rgba(249,115,22,0.4)]
+                                        bg-primary-500 border-2 border-primary-500 text-white shadow-sm
                                     @elseif($isCur)
-                                        bg-white border-2 border-orange-500 text-orange-600 ring-4 ring-orange-100 shadow-sm
+                                        bg-white border-2 border-primary-500 text-primary-600 ring-4 ring-primary-100 shadow-sm
                                     @elseif($isBad)
                                         bg-red-600 border-2 border-red-600 text-white ring-4 ring-red-100
                                     @else
@@ -175,8 +177,8 @@
                 </div>
 
                 <!-- Status note alert banner -->
-                <div class="mt-4 p-3.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-900 text-xs sm:text-sm font-medium flex items-start gap-2.5 shadow-sm">
-                    <span class="text-base shrink-0 mt-0.5">💡</span>
+                <div class="mt-4 p-3.5 rounded-xl bg-primary-50 border border-primary-200 text-primary-900 text-xs sm:text-sm font-medium flex items-start gap-2.5 shadow-sm">
+                    <svg class="w-4 h-4 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     <div>
                         <strong class="font-bold">Info Status:</strong> {{ $order->status_note }}
                     </div>
@@ -186,7 +188,9 @@
             <!-- Panel 2: Detail Pesanan (Facts, Items, Summary) -->
             <section class="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
                 <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-5">
-                    <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm shadow-sm">🧾</span>
+                    <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </span>
                     <span>Rincian Sewa & Peralatan</span>
                 </h2>
 
@@ -202,7 +206,7 @@
                     </div>
                     <div class="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
                         <span class="text-xs text-gray-500 block mb-0.5">Periode Sewa</span>
-                        <b class="text-gray-900 font-bold text-orange-600">{{ $order->date_range }}</b>
+                        <b class="text-gray-900 font-bold text-primary-600">{{ $order->date_range }}</b>
                         @php
                             $isPreHandover = in_array($order->status, ['menunggu_konfirmasi', 'menunggu_pembayaran', 'menunggu_verifikasi', 'siap_kirim']);
                             $timeLabel = $isPreHandover ? 'Rencana Mulai & Kembali' : 'Jam Sewa & Jatuh Tempo Aktif';
@@ -230,7 +234,7 @@
                         @php
                             $product = $item->product;
                             $img = $product?->main_image 
-                                ? (str_starts_with($product->main_image, 'http') ? $product->main_image : Storage::url($product->main_image)) 
+                                ? storage_url($product->main_image)
                                 : 'https://placehold.co/100x100/f3f4f6/9ca3af?text=Produk';
                         @endphp
                         <div class="flex items-center justify-between p-3.5 bg-gray-50/50 hover:bg-gray-50 border border-gray-100 rounded-xl gap-4 transition-colors">
@@ -264,7 +268,7 @@
                     </div>
                     <div class="pt-3 border-t border-dashed border-gray-200 flex justify-between items-baseline text-base sm:text-lg font-extrabold text-gray-900">
                         <span>Total Tagihan:</span>
-                        <span class="text-xl sm:text-2xl text-orange-600 font-mono font-extrabold">{{ $order->formatted_total }}</span>
+                        <span class="text-xl sm:text-2xl text-primary-600 font-mono font-extrabold">{{ $order->formatted_total }}</span>
                     </div>
                 </div>
             </section>
@@ -272,7 +276,9 @@
             <!-- Panel 3: Verifikasi Identitas (Identity Guarantee from DB) -->
             <section class="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
                 <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-4">
-                    <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm shadow-sm">🪪</span>
+                    <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                    </span>
                     <span>Verifikasi Identitas Penyewa</span>
                 </h2>
 
@@ -296,7 +302,7 @@
 
                     @if($idStatus === 'diverifikasi')
                         <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-start gap-3 mb-4 shadow-sm">
-                            <span class="text-lg shrink-0 mt-0.5">🪪</span>
+                            <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <div>
                                 <strong class="font-bold text-emerald-950 block">Identitas Terverifikasi</strong>
                                 <span class="text-xs sm:text-sm text-emerald-800">
@@ -309,7 +315,7 @@
                         </div>
                     @elseif($idStatus === 'ditolak')
                         <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-900 flex items-start gap-3 mb-4 shadow-sm">
-                            <span class="text-lg shrink-0 mt-0.5">❌</span>
+                            <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <div>
                                 <strong class="font-bold text-red-950 block">Verifikasi Identitas Ditolak</strong>
                                 <span class="text-xs sm:text-sm text-red-800">Alasan dari toko: {{ $identity->rejection_reason ?? 'Foto KTP atau swafoto buram atau tidak sesuai. Silakan unggah ulang dokumen yang jelas.' }}</span>
@@ -317,7 +323,7 @@
                         </div>
                     @else
                         <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 mb-4 shadow-sm">
-                            <span class="text-lg shrink-0 mt-0.5">🔎</span>
+                            <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                             <div>
                                 <strong class="font-bold text-amber-950 block">Sedang Diperiksa</strong>
                                 <span class="text-xs sm:text-sm text-amber-800">Dokumen foto KTP &amp; swafoto (selfie) Anda sedang dalam proses peninjauan oleh toko rental (maksimal 1×24 jam).</span>
@@ -347,8 +353,11 @@
                                 @if($docImg)
                                     <div class="flex flex-col items-start gap-1">
                                         <button type="button" @click="openLightbox('{{ $docImg }}', 'Foto KTP')" class="group relative rounded-lg overflow-hidden border border-gray-200 bg-white hover:opacity-95 transition shadow-2xs">
-                                            <img src="{{ $docImg }}" alt="KTP" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><span class=\'text-base\'>📄</span><span>Foto KTP</span></div>';">
-                                            <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold">🔍 Lihat</span>
+                                            <img src="{{ $docImg }}" alt="KTP" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\'/></svg><span>Foto KTP</span></div>';">
+                                            <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                <span>Lihat</span>
+                                            </span>
                                         </button>
                                         <span class="text-[11px] text-gray-500 font-medium">Foto KTP</span>
                                     </div>
@@ -357,8 +366,11 @@
                                 @if($faceImg)
                                     <div class="flex flex-col items-start gap-1">
                                         <button type="button" @click="openLightbox('{{ $faceImg }}', 'Foto Selfie memegang KTP')" class="group relative rounded-lg overflow-hidden border border-gray-200 bg-white hover:opacity-95 transition shadow-2xs">
-                                            <img src="{{ $faceImg }}" alt="Selfie" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><span class=\'text-base\'>🤳</span><span>Selfie KTP</span></div>';">
-                                            <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold">🔍 Lihat</span>
+                                            <img src="{{ $faceImg }}" alt="Selfie" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\'/></svg><span>Selfie KTP</span></div>';">
+                                            <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                <span>Lihat</span>
+                                            </span>
                                         </button>
                                         <span class="text-[11px] text-gray-500 font-medium">Selfie KTP</span>
                                     </div>
@@ -369,7 +381,7 @@
 
                     <!-- Reupload form if identity rejected -->
                     @if($order->can_reupload_identity)
-                        <form action="{{ route('customer.orders.identity', $order->id) }}" method="POST" enctype="multipart/form-data" class="mt-4 p-4 rounded-xl border border-dashed border-orange-300 bg-orange-50/50">
+                        <form action="{{ route('customer.orders.identity', $order->id) }}" method="POST" enctype="multipart/form-data" class="mt-4 p-4 rounded-xl border border-dashed border-primary-300 bg-primary-50/50">
                             @csrf
                             <h5 class="font-bold text-sm text-gray-900 mb-2">Unggah Ulang Dokumen Identitas</h5>
                             <p class="text-xs text-gray-500 mb-3">Pilih foto KTP dan foto selfie memegang KTP terbaru yang jelas (maks. 2 MB per file).</p>
@@ -377,14 +389,14 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                                 <div>
                                     <label class="block text-xs font-bold text-gray-700 mb-1">Foto KTP Baru</label>
-                                    <input type="file" name="identity_document_image" accept="image/jpeg,image/png,image/jpg" required class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-500 file:text-white hover:file:bg-orange-600 cursor-pointer">
+                                    <input type="file" name="identity_document_image" accept="image/jpeg,image/png,image/jpg" required class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-500 file:text-white hover:file:bg-primary-600 cursor-pointer">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-gray-700 mb-1">Foto Selfie Baru</label>
-                                    <input type="file" name="face_image" accept="image/jpeg,image/png,image/jpg" required class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-500 file:text-white hover:file:bg-orange-600 cursor-pointer">
+                                    <input type="file" name="face_image" accept="image/jpeg,image/png,image/jpg" required class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-500 file:text-white hover:file:bg-primary-600 cursor-pointer">
                                 </div>
                             </div>
-                            <button type="submit" class="w-full py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm">
+                            <button type="submit" class="w-full py-2 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm">
                                 Kirim Ulang Dokumen Identitas
                             </button>
                         </form>
@@ -392,7 +404,7 @@
 
                 @else
                     <div class="p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-xs sm:text-sm flex items-center gap-3">
-                        <span class="text-base">ℹ️</span>
+                        <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <span>Pesanan ini tidak menyertakan jaminan identitas khusus.</span>
                     </div>
                 @endif
@@ -401,13 +413,15 @@
             <!-- Panel 4: Pengiriman & Logistik -->
             <section class="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
                 <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-4">
-                    <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm shadow-sm">🚚</span>
+                    <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+                    </span>
                     <span>Informasi Pengiriman</span>
                 </h2>
 
                 @if(in_array(strtolower($order->status), ['menunggu_pembayaran', 'belum_dibayar', 'menunggu_konfirmasi', 'menunggu_verifikasi']) && !$shipment)
                     <div class="p-4 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-xs sm:text-sm flex items-start gap-3">
-                        <span class="text-base shrink-0 mt-0.5">ℹ️</span>
+                        <svg class="w-4 h-4 text-gray-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <div>
                             <strong class="font-bold text-gray-900 block mb-0.5">Belum Ada Informasi Pengiriman</strong>
                             <span>Rincian serah-terima/kurir dan nomor resi pengiriman akan tersedia setelah pembayaran Anda terverifikasi oleh toko rental.</span>
@@ -432,7 +446,7 @@
                                         <span class="font-mono font-bold bg-gray-100 px-2.5 py-1 rounded-lg text-gray-900 text-xs tracking-wider">
                                             {{ $shipment->tracking_number }}
                                         </span>
-                                        <button type="button" @click="copyToClipboard('{{ $shipment->tracking_number }}')" class="text-orange-600 font-bold hover:text-orange-700 text-xs">
+                                        <button type="button" @click="copyToClipboard('{{ $shipment->tracking_number }}')" class="text-primary-600 font-bold hover:text-primary-700 text-xs">
                                             Salin
                                         </button>
                                     @else
@@ -447,7 +461,7 @@
 
                             @if($trackingUrl)
                                 <a href="{{ $trackingUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 w-full py-2.5 mt-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 font-bold text-xs sm:text-sm rounded-xl transition shadow-2xs">
-                                    <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                     Lacak Paket di Ekspedisi
                                 </a>
                             @endif
@@ -478,7 +492,9 @@
             @if($isCancelled)
                 <section class="bg-white border border-red-200 rounded-2xl p-5 sm:p-6 shadow-sm">
                     <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-4">
-                        <span class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-sm shadow-sm">💸</span>
+                        <span class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 shadow-2xs border border-red-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                        </span>
                         <span>Status Pembatalan & Refund</span>
                     </h2>
 
@@ -518,10 +534,11 @@
                         @if($refundStatus === 'refund_selesai' && $refundProof)
                             <div class="pt-2">
                                 <span class="text-xs font-bold text-gray-600 block mb-1.5">Bukti Transfer Refund dari Toko:</span>
-                                <figure @click="openLightbox('{{ $refundProof }}', 'Bukti Transfer Pengembalian Dana')" class="border border-gray-200 rounded-xl overflow-hidden cursor-zoom-in bg-gray-50 group hover:border-orange-500 transition max-w-sm">
+                                <figure @click="openLightbox('{{ $refundProof }}', 'Bukti Transfer Pengembalian Dana')" class="border border-gray-200 rounded-xl overflow-hidden cursor-zoom-in bg-gray-50 group hover:border-primary-500 transition max-w-sm">
                                     <img src="{{ $refundProof }}" alt="Bukti Refund" class="w-full max-h-48 object-contain bg-white">
-                                    <figcaption class="p-2 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100 group-hover:text-orange-600 font-medium">
-                                        🔍 Klik untuk melihat bukti transfer refund
+                                    <figcaption class="p-2 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100 group-hover:text-primary-600 font-medium flex items-center justify-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        <span>Klik untuk melihat bukti transfer refund</span>
                                     </figcaption>
                                 </figure>
                             </div>
@@ -539,34 +556,70 @@
         <!-- Right Column: Sticky Payment & Actions Panel -->
         <aside class="space-y-6 lg:sticky lg:top-24">
             
+            @php
+                $payStatus = strtolower($payment?->status ?? 'belum');
+                $isOrderAdvanced = in_array(strtolower($order->status), [
+                    'diproses', 'dikonfirmasi', 'siap_kirim', 'dikirim', 'sedang_disewa', 'selesai', 'dikembalikan'
+                ]);
+                $isPaidVerified = in_array($payStatus, [
+                    'terverifikasi', 'dikonfirmasi', 'sukses', 'lunas', 'berhasil'
+                ]) || ($isOrderAdvanced && $order->payments()->whereIn('status', ['terverifikasi', 'dikonfirmasi', 'sukses', 'lunas', 'berhasil'])->exists());
+                $isPaidWaiting = !$isPaidVerified && (in_array($payStatus, [
+                    'menunggu_konfirmasi', 'menunggu_verifikasi', 'pending'
+                ]) || $order->status === 'menunggu_verifikasi');
+
+                $activePaymentMethods = ($client?->clientPaymentMethods()->where('is_active', true)->exists())
+                    ? $client->clientPaymentMethods()->where('is_active', true)->get()
+                    : (($client?->paymentMethods()->exists()) ? $client->paymentMethods : collect());
+
+                $bankMethods = $activePaymentMethods->filter(function($m) {
+                    $bankName = strtoupper($m->bank_name ?? '');
+                    $type = strtolower($m->type ?? '');
+                    $accNum = (string)($m->account_number ?? '');
+
+                    if (empty($accNum)) return false;
+                    if ($type === 'qris' || $bankName === 'QRIS') return false;
+                    if (str_starts_with($accNum, 'QRIS-')) return false;
+                    if (!empty($m->qris_image) && empty($m->bank_name)) return false;
+
+                    return true;
+                });
+
+                $qrisMethod = $activePaymentMethods->first(function($m) {
+                    return ($m->type ?? '') === 'qris'
+                        || strtoupper($m->bank_name ?? '') === 'QRIS'
+                        || !empty($m->qris_image)
+                        || !empty($m->qris_image_path);
+                });
+
+                $firstBankId = $bankMethods->first()?->id ?? '';
+                $qrisId = $qrisMethod?->id ?? '';
+                $qrisImg = storage_url($qrisMethod?->qris_image ?? $qrisMethod?->qris_image_path);
+                $qrisMerchantName = $qrisMethod?->qris_merchant_name ?? $qrisMethod?->account_holder ?? $client->nama_usaha ?? 'BABYRENT MALANG';
+                $qrisNmid = $qrisMethod?->account_number;
+            @endphp
+
             <!-- Panel Pembayaran -->
-            <section class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm" x-data="{ ptab: 'bank' }">
+            <section class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm"
+                     x-data="{
+                         ptab: 'bank',
+                         bankMethodId: '{{ $firstBankId }}',
+                         qrisMethodId: '{{ $qrisId }}',
+                         get selectedPaymentMethodId() {
+                             return this.ptab === 'qris' ? this.qrisMethodId : this.bankMethodId;
+                         }
+                     }">
                 <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-4">
-                    <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm shadow-sm">💳</span>
+                    <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    </span>
                     <span>Pembayaran</span>
                 </h2>
-
-                @php
-                    $payStatus = strtolower($payment?->status ?? 'belum');
-                    $isOrderAdvanced = in_array(strtolower($order->status), [
-                        'diproses', 'dikonfirmasi', 'siap_kirim', 'dikirim', 'sedang_disewa', 'selesai', 'dikembalikan'
-                    ]);
-                    $isPaidVerified = in_array($payStatus, [
-                        'terverifikasi', 'dikonfirmasi', 'sukses', 'lunas', 'berhasil'
-                    ]) || ($isOrderAdvanced && $order->payments()->whereIn('status', ['terverifikasi', 'dikonfirmasi', 'sukses', 'lunas', 'berhasil'])->exists());
-                    $isPaidWaiting = !$isPaidVerified && (in_array($payStatus, [
-                        'menunggu_konfirmasi', 'menunggu_verifikasi', 'pending'
-                    ]) || $order->status === 'menunggu_verifikasi');
-
-                    $activePaymentMethods = ($client?->clientPaymentMethods()->where('is_active', true)->exists())
-                        ? $client->clientPaymentMethods()->where('is_active', true)->get()
-                        : (($client?->paymentMethods()->exists()) ? $client->paymentMethods : collect());
-                @endphp
 
                 @if($isPaidVerified)
                     <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 mb-4 shadow-sm">
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="text-emerald-600 font-bold">✅</span>
+                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                             <strong class="font-bold text-emerald-950">Pembayaran Terverifikasi</strong>
                         </div>
                         <p class="text-xs text-emerald-800">
@@ -577,14 +630,15 @@
                                 $proofImg = storage_url($payment->payment_proof);
                             @endphp
                             <button type="button" @click="openLightbox('{{ $proofImg }}', 'Bukti Pembayaran')" class="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 underline">
-                                🔍 Lihat Bukti Pembayaran
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <span>Lihat Bukti Pembayaran</span>
                             </button>
                         @endif
                     </div>
                 @elseif($isPaidWaiting)
                     <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 mb-4 shadow-sm">
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="text-blue-600 font-bold">⏳</span>
+                            <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <strong class="font-bold text-blue-950">Bukti Pembayaran Diterima</strong>
                         </div>
                         <p class="text-xs text-blue-800">
@@ -595,32 +649,50 @@
                                 $proofImg = storage_url($payment->payment_proof);
                             @endphp
                             <button type="button" @click="openLightbox('{{ $proofImg }}', 'Bukti Pembayaran Terunggah')" class="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 hover:text-blue-800 underline">
-                                🔍 Lihat Bukti Pembayaran
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <span>Lihat Bukti Pembayaran</span>
                             </button>
                         @endif
                     </div>
                 @elseif(!$isCancelled)
                     <!-- Belum dibayar: Tampilkan Metode Pembayaran & Upload Form -->
-                    <div class="p-3.5 bg-orange-50 border border-dashed border-orange-300 rounded-xl mb-4 flex justify-between items-center">
-                        <span class="text-xs text-orange-800 font-medium">Total Yang Harus Dibayar:</span>
-                        <b class="text-lg font-bold font-mono text-orange-700">{{ $order->formatted_total }}</b>
+                    <div class="p-3.5 bg-primary-50 border border-dashed border-primary-300 rounded-xl mb-4 flex justify-between items-center">
+                        <span class="text-xs text-primary-800 font-medium">Total Yang Harus Dibayar:</span>
+                        <b class="text-lg font-bold font-mono text-primary-700">{{ $order->formatted_total }}</b>
                     </div>
 
                     <!-- Payment Tabs -->
                     <div class="flex bg-gray-100 p-1 rounded-xl mb-3 text-xs font-bold">
-                        <button type="button" @click="ptab = 'bank'" :class="ptab === 'bank' ? 'bg-white text-orange-600 shadow-xs' : 'text-gray-500 hover:text-gray-900'" class="flex-1 py-2 rounded-lg transition-all text-center">
+                        <button type="button" @click="ptab = 'bank'" :class="ptab === 'bank' ? 'bg-white text-primary-600 shadow-xs' : 'text-gray-500 hover:text-gray-900'" class="flex-1 py-2 rounded-lg transition-all text-center">
                             Transfer Bank
                         </button>
-                        <button type="button" @click="ptab = 'qris'" :class="ptab === 'qris' ? 'bg-white text-orange-600 shadow-xs' : 'text-gray-500 hover:text-gray-900'" class="flex-1 py-2 rounded-lg transition-all text-center">
+                        <button type="button" @click="ptab = 'qris'" :class="ptab === 'qris' ? 'bg-white text-primary-600 shadow-xs' : 'text-gray-500 hover:text-gray-900'" class="flex-1 py-2 rounded-lg transition-all text-center">
                             QRIS
                         </button>
                     </div>
 
                     <!-- Tab Bank Transfer -->
                     <div x-show="ptab === 'bank'" class="space-y-2 mb-4">
-                        @forelse($activePaymentMethods->filter(fn($m) => !empty($m->account_number) && (!isset($m->type) || $m->type !== 'qris') && !str_starts_with((string)$m->account_number, 'QRIS-')) as $method)
+                        @php
+                            $bankMethods = $activePaymentMethods->filter(function($m) {
+                                $bankName = strtoupper($m->bank_name ?? '');
+                                $type = strtolower($m->type ?? '');
+                                $accNum = (string)($m->account_number ?? '');
+
+                                if (empty($accNum)) return false;
+                                if ($type === 'qris' || $bankName === 'QRIS') return false;
+                                if (str_starts_with($accNum, 'QRIS-')) return false;
+                                if (!empty($m->qris_image) && empty($m->bank_name)) return false;
+
+                                return true;
+                            });
+                        @endphp
+
+                        @forelse($bankMethods as $method)
                             @if(!empty($method->account_number))
-                                <div class="p-3 border border-gray-200 rounded-xl flex items-center justify-between gap-3 bg-white">
+                                <div @click="bankMethodId = '{{ $method->id }}'"
+                                     :class="bankMethodId == '{{ $method->id }}' ? 'ring-2 ring-primary-500 border-primary-500 bg-primary-50/20' : 'border-gray-200 bg-white'"
+                                     class="p-3 border rounded-xl flex items-center justify-between gap-3 cursor-pointer transition">
                                     <div class="min-w-0">
                                         <div class="flex items-center gap-2">
                                             <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[11px]">{{ $method->bank_name }}</span>
@@ -628,7 +700,7 @@
                                         </div>
                                         <small class="text-xs text-gray-500 block mt-0.5">a.n. {{ $method->account_holder ?? $method->account_name }}</small>
                                     </div>
-                                    <button type="button" @click="copyToClipboard('{{ str_replace(' ', '', $method->account_number) }}')" class="px-2.5 py-1 text-xs font-bold text-orange-600 hover:bg-orange-50 rounded-lg border border-orange-200 transition">
+                                    <button type="button" @click.stop="copyToClipboard('{{ str_replace(' ', '', $method->account_number) }}')" class="px-2.5 py-1 text-xs font-bold text-primary-600 hover:bg-primary-50 rounded-lg border border-primary-200 transition">
                                         Salin
                                     </button>
                                 </div>
@@ -643,7 +715,7 @@
                                     </div>
                                     <small class="text-xs text-gray-500 block mt-0.5">a.n. {{ $client->nama_usaha ?? 'BabyRent Malang' }}</small>
                                 </div>
-                                <button type="button" @click="copyToClipboard('8830452177')" class="px-2.5 py-1 text-xs font-bold text-orange-600 hover:bg-orange-50 rounded-lg border border-orange-200 transition">
+                                <button type="button" @click="copyToClipboard('8830452177')" class="px-2.5 py-1 text-xs font-bold text-primary-600 hover:bg-primary-50 rounded-lg border border-primary-200 transition">
                                     Salin
                                 </button>
                             </div>
@@ -655,7 +727,7 @@
                                     </div>
                                     <small class="text-xs text-gray-500 block mt-0.5">a.n. {{ $client->nama_usaha ?? 'BabyRent Malang' }}</small>
                                 </div>
-                                <button type="button" @click="copyToClipboard('012301045678503')" class="px-2.5 py-1 text-xs font-bold text-orange-600 hover:bg-orange-50 rounded-lg border border-orange-200 transition">
+                                <button type="button" @click="copyToClipboard('012301045678503')" class="px-2.5 py-1 text-xs font-bold text-primary-600 hover:bg-primary-50 rounded-lg border border-primary-200 transition">
                                     Salin
                                 </button>
                             </div>
@@ -663,14 +735,9 @@
                     </div>
 
                     <!-- Tab QRIS -->
-                    <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-3 border border-gray-200 rounded-xl mb-4 bg-white">
-                        @php
-                            $qrisMethod = $activePaymentMethods->first(fn($m) => !empty($m->qris_image));
-                            $qrisImg = storage_url($qrisMethod?->qris_image);
-                        @endphp
-
+                    <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-4 border border-gray-200 rounded-xl mb-4 bg-white">
                         @if($qrisImg)
-                            <img src="{{ $qrisImg }}" alt="Kode QRIS" class="w-48 h-48 mx-auto object-contain mb-2">
+                            <img src="{{ $qrisImg }}" alt="Kode QRIS" class="w-48 h-48 mx-auto object-contain mb-2 rounded-lg border border-gray-100 p-1 shadow-xs">
                         @else
                             <!-- Dynamic QRIS Placeholder SVG from reference -->
                             <div class="w-44 h-44 mx-auto mb-2 bg-gray-50 p-2 rounded-xl border border-gray-200 flex items-center justify-center">
@@ -694,24 +761,53 @@
                                 </svg>
                             </div>
                         @endif
-                        <span class="text-xs font-bold text-gray-900 block">{{ $client->nama_usaha ?? 'BABYRENT MALANG' }}</span>
-                        <small class="text-[11px] text-gray-500 block">Scan dengan BCA Mobile, GoPay, OVO, Dana, atau ShopeePay</small>
+
+                        @if($qrisNmid && !str_starts_with($qrisNmid, 'QRIS-'))
+                            <div class="inline-flex items-center gap-2 px-3 py-1 bg-stone-50 border border-gray-200 rounded-xl text-xs mb-2">
+                                <span class="text-gray-500 font-semibold">NMID:</span>
+                                <span class="font-mono font-bold text-gray-900 tracking-wider">{{ $qrisNmid }}</span>
+                                <button type="button" @click="copyToClipboard('{{ $qrisNmid }}')" class="px-2 py-0.5 rounded text-[11px] font-bold text-primary-600 hover:bg-primary-50 transition border border-primary-200">
+                                    Salin
+                                </button>
+                            </div>
+                        @endif
+
+                        <span class="text-xs font-bold text-gray-900 block">{{ $qrisMerchantName }}</span>
+                        <small class="text-[11px] text-gray-500 block mt-0.5">Scan dengan BCA Mobile, GoPay, OVO, Dana, atau ShopeePay</small>
                     </div>
 
                     <!-- Upload Proof Form / Alert -->
                     @if($order->can_upload_payment)
-                        <form action="{{ route('customer.orders.payment', $order->id) }}" method="POST" enctype="multipart/form-data" class="pt-3 border-t border-gray-100">
+                        <form action="{{ route('customer.orders.payment', $order->id) }}" 
+                              method="POST" 
+                              enctype="multipart/form-data" 
+                              x-data="{ submitting: false }"
+                              @submit="submitting = true"
+                              class="pt-3 border-t border-gray-100">
                             @csrf
-                            <label class="block text-xs font-bold text-gray-800 mb-1.5">Unggah Bukti Transfer</label>
-                            <input type="file" name="payment_proof" accept="image/jpeg,image/png,image/jpg,application/pdf" required class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-500 file:text-white hover:file:bg-orange-600 cursor-pointer mb-2.5">
-                            <button type="submit" class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-1.5">
+                            <input type="hidden" name="client_payment_method_id" :value="selectedPaymentMethodId">
+
+                            <div class="mb-2 flex items-center justify-between">
+                                <label class="block text-xs font-bold text-gray-800">Unggah Bukti Transfer</label>
+                                <span class="text-[11px] text-gray-500">
+                                    Tujuan: <strong class="text-primary-600" x-text="ptab === 'qris' ? 'QRIS Toko' : 'Transfer Bank'"></strong>
+                                </span>
+                            </div>
+                            <input type="file" name="payment_proof" accept="image/jpeg,image/png,image/jpg,application/pdf" required class="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-500 file:text-white hover:file:bg-primary-600 cursor-pointer mb-2.5">
+                            <button type="submit" 
+                                    :disabled="submitting"
+                                    :class="submitting ? 'opacity-70 cursor-not-allowed' : ''"
+                                    class="w-full py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-1.5">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                                <span>Kirim Bukti Pembayaran</span>
+                                <span x-text="submitting ? 'Mengirim Bukti...' : 'Kirim Bukti Pembayaran'"></span>
                             </button>
                         </form>
                     @else
                         <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                            <strong class="font-bold block mb-0.5">🔒 Pembayaran Belum Dibuka</strong>
+                            <strong class="font-bold flex items-center gap-1.5 mb-0.5">
+                                <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                <span>Pembayaran Belum Dibuka</span>
+                            </strong>
                             <span>Unggah bukti bayar akan tersedia setelah dokumen verifikasi identitas Anda disetujui oleh admin toko.</span>
                         </div>
                     @endif
@@ -721,7 +817,9 @@
             <!-- Panel Aksi -->
             <section class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
                 <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-4">
-                    <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm shadow-sm">⚡</span>
+                    <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </span>
                     <span>Tindakan Tersedia</span>
                 </h2>
 
@@ -729,7 +827,7 @@
                     @if($return && in_array($return->return_status, ['diajukan', 'diproses', 'dalam_pengembalian', 'diterima', 'selesai']))
                         <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs space-y-1.5">
                             <div class="flex items-center gap-2 font-bold text-blue-950">
-                                <span>↩️</span>
+                                <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                                 <span>Pengembalian Barang ({{ ucfirst(str_replace('_', ' ', $return->return_status)) }})</span>
                             </div>
                             <p class="text-blue-800">
@@ -750,7 +848,8 @@
                                     $feeProofImg = storage_url($return->late_fee_proof);
                                 @endphp
                                 <button type="button" @click="openLightbox('{{ $feeProofImg }}', 'Bukti Pembayaran Denda')" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:underline pt-1">
-                                    🔍 Lihat Bukti Pembayaran Denda
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <span>Lihat Bukti Pembayaran Denda</span>
                                 </button>
                             @endif
                         </div>
@@ -767,7 +866,7 @@
 
                     @if($return && $return->late_fee_status === 'menunggu_verifikasi')
                         <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
-                            <span class="text-base">⏳</span>
+                            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <div>
                                 <p class="font-bold">Bukti Pembayaran Denda Telah Dikirim</p>
                                 <p class="text-[11px] mt-0.5">Toko sedang memverifikasi bukti transfer denda Anda.</p>
@@ -786,7 +885,7 @@
 
                     @if($order->can_return)
                         <a href="{{ route('customer.orders.return.form', $order->id) }}" 
-                            class="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-1.5">
+                            class="w-full py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-1.5">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                             <span>Ajukan Pengembalian</span>
                         </a>
@@ -816,7 +915,7 @@
                             $waText = urlencode('Halo ' . ($client->nama_usaha ?? 'Admin') . ', saya ingin bertanya mengenai pesanan saya ' . ($order->order_number ?? ('ORD-' . $order->id)));
                         @endphp
                         <a href="https://wa.me/{{ $waPhone }}?text={{ $waText }}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 font-bold rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-2xs">
-                            <span class="text-base text-emerald-600">💬</span>
+                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                             <span>Hubungi Toko Rental</span>
                         </a>
                     </div>

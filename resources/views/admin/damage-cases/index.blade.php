@@ -130,7 +130,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
             
             {{-- Pencarian Realtime --}}
-            <div class="sm:col-span-5 relative">
+            <div class="sm:col-span-6 relative">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
@@ -140,27 +140,17 @@
                        class="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition text-slate-800">
             </div>
 
-            {{-- Filter Status Kasus --}}
-            <div class="sm:col-span-3">
-                <select x-model="selectedCaseStatus" 
+            {{-- Filter Status Terpadu --}}
+            <div class="sm:col-span-4">
+                <select x-model="selectedUnifiedStatus" 
                         class="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition text-slate-700">
-                    <option value="">Semua Status Kasus</option>
+                    <option value="">Semua Status</option>
                     <option value="terbuka">Menunggu Tanggapan</option>
                     <option value="dalam_tinjauan">Dalam Tinjauan</option>
-                    <option value="kompensasi_dibayar">Kompensasi Dibayar</option>
-                    <option value="selesai">Selesai / Lunas</option>
+                    <option value="menunggu_pembayaran">Menunggu Pembayaran</option>
+                    <option value="kompensasi_dibayar">Verifikasi Pembayaran</option>
+                    <option value="selesai">Selesai & Lunas</option>
                     <option value="dibatalkan">Dibatalkan</option>
-                </select>
-            </div>
-
-            {{-- Filter Status Pembayaran --}}
-            <div class="sm:col-span-2">
-                <select x-model="selectedPaymentStatus" 
-                        class="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition text-slate-700">
-                    <option value="">Semua Status Bayar</option>
-                    <option value="belum_dibayar">Belum Dibayar</option>
-                    <option value="menunggu_verifikasi">Verifikasi Bayar</option>
-                    <option value="lunas">Lunas</option>
                 </select>
             </div>
 
@@ -188,17 +178,16 @@
     {{-- MAIN TABLE OF DAMAGE CASES --}}
     <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse min-w-[980px]">
                 <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        <th class="py-3.5 px-4 sm:px-6">Tiket & Waktu</th>
-                        <th class="py-3.5 px-4">Pesanan & Penyewa</th>
-                        <th class="py-3.5 px-4">Unit Fisik / Produk</th>
-                        <th class="py-3.5 px-4">Tuntutan Kompensasi</th>
-                        <th class="py-3.5 px-4">Bukti Foto</th>
-                        <th class="py-3.5 px-4">Status Kasus</th>
-                        <th class="py-3.5 px-4">Status Bayar</th>
-                        <th class="py-3.5 px-4 text-right sm:pr-6">Aksi</th>
+                        <th class="py-3.5 px-4 sm:px-6 whitespace-nowrap">Tiket & Waktu</th>
+                        <th class="py-3.5 px-4 whitespace-nowrap">Pesanan & Penyewa</th>
+                        <th class="py-3.5 px-4 whitespace-nowrap">Unit Fisik / Produk</th>
+                        <th class="py-3.5 px-4 whitespace-nowrap">Tuntutan Kompensasi</th>
+                        <th class="py-3.5 px-4 whitespace-nowrap">Bukti Foto</th>
+                        <th class="py-3.5 px-4 whitespace-nowrap">Status</th>
+                        <th class="py-3.5 px-4 text-right sm:pr-6 whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm">
@@ -212,7 +201,7 @@
                         @endphp
                         <tr x-show="matchesFilter({{ $case->id }})" class="hover:bg-slate-50/60 transition-colors">
                             {{-- Tiket & Waktu --}}
-                            <td class="py-4 px-4 sm:px-6">
+                            <td class="py-4 px-4 sm:px-6 align-middle whitespace-nowrap">
                                 <div class="font-extrabold text-slate-900">#{{ $case->id }}</div>
                                 <div class="text-xs text-slate-400 mt-0.5">
                                     {{ $case->created_at ? $case->created_at->translatedFormat('d M Y, H:i') : '-' }} WIB
@@ -220,7 +209,7 @@
                             </td>
 
                             {{-- Pesanan & Penyewa --}}
-                            <td class="py-4 px-4">
+                            <td class="py-4 px-4 align-middle">
                                 @if($order)
                                     <a href="{{ route('admin.orders.show', $order->id) }}"
                                        class="font-semibold text-rose-600 hover:text-rose-700 hover:underline inline-flex items-center gap-1"
@@ -228,10 +217,10 @@
                                         <span>{{ $order->order_number ?? ('ORD-' . $order->id) }}</span>
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                     </a>
-                                    <div class="text-xs text-slate-600 font-medium mt-0.5">
+                                    <div class="text-xs text-slate-600 font-medium mt-0.5 whitespace-nowrap">
                                         {{ $order->user->name ?? 'Penyewa' }}
                                     </div>
-                                    <div class="text-[11px] text-slate-400">
+                                    <div class="text-[11px] text-slate-400 whitespace-nowrap">
                                         {{ $order->user->email ?? '-' }}
                                     </div>
                                 @else
@@ -240,7 +229,7 @@
                             </td>
 
                             {{-- Unit Fisik / Produk --}}
-                            <td class="py-4 px-4">
+                            <td class="py-4 px-4 align-middle">
                                 @if($unit)
                                     <div class="flex items-center gap-1.5 font-bold text-slate-800">
                                         <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-xs">
@@ -250,7 +239,7 @@
                                     <div class="text-xs text-slate-600 font-medium mt-1 truncate max-w-[180px]">
                                         {{ $product->name ?? 'Perlengkapan Rental' }}
                                     </div>
-                                    <div class="text-[11px] text-slate-400">
+                                    <div class="text-[11px] text-slate-400 whitespace-nowrap">
                                         SN: {{ $unit->serial_number ?? '-' }}
                                     </div>
                                 @else
@@ -259,7 +248,7 @@
                             </td>
 
                             {{-- Tuntutan Kompensasi --}}
-                            <td class="py-4 px-4">
+                            <td class="py-4 px-4 align-middle whitespace-nowrap">
                                 <div class="font-extrabold text-slate-900">{{ $case->formatted_total }}</div>
                                 <div class="text-[11px] text-slate-500 mt-0.5">
                                     Perbaikan: {{ $case->formatted_repair_cost }}
@@ -272,9 +261,9 @@
                             </td>
 
                             {{-- Bukti Foto --}}
-                            <td class="py-4 px-4">
+                            <td class="py-4 px-4 align-middle whitespace-nowrap">
                                 @if($imagesCount > 0)
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 whitespace-nowrap">
                                         <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                         <span>{{ $imagesCount }} Foto</span>
                                     </span>
@@ -283,22 +272,15 @@
                                 @endif
                             </td>
 
-                            {{-- Status Kasus --}}
-                            <td class="py-4 px-4">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border {{ $case->status_color }}">
-                                    {{ $case->status_label }}
-                                </span>
-                            </td>
-
-                            {{-- Status Bayar --}}
-                            <td class="py-4 px-4">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border {{ $case->payment_status_color }}">
-                                    {{ $case->payment_status_label }}
+                            {{-- Status Terpadu --}}
+                            <td class="py-4 px-4 align-middle whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap {{ $case->unified_status['color'] }}">
+                                    {{ $case->unified_status['label'] }}
                                 </span>
                             </td>
 
                             {{-- Aksi --}}
-                            <td class="py-4 px-4 text-right sm:pr-6">
+                            <td class="py-4 px-4 text-right sm:pr-6 align-middle whitespace-nowrap">
                                 <a href="{{ route('admin.damage-cases.show', $case->id) }}"
                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 transition-all border border-slate-200/80">
                                     <span>Detail & Tangani</span>
@@ -308,7 +290,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-12 px-4 text-center">
+                            <td colspan="7" class="py-12 px-4 text-center">
                                 <div class="max-w-sm mx-auto space-y-3">
                                     <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -330,7 +312,7 @@
 
                     {{-- Dynamic Instant Filter Empty State --}}
                     <tr x-show="filteredCount === 0 && casesData.length > 0" class="border-b border-slate-100">
-                        <td colspan="8" class="py-12 px-4 text-center">
+                        <td colspan="7" class="py-12 px-4 text-center">
                             <div class="max-w-sm mx-auto space-y-3">
                                 <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -376,8 +358,7 @@
     function damageCaseManagement() {
         return {
             searchQuery: {!! json_encode((string) request('search', '')) !!},
-            selectedCaseStatus: {!! json_encode((string) (request('status') ?? request('case_status', ''))) !!},
-            selectedPaymentStatus: {!! json_encode((string) request('payment_status', '')) !!},
+            selectedUnifiedStatus: {!! json_encode((string) (request('status') ?? request('case_status', ''))) !!},
 
             casesData: {!! json_encode($damageCases->map(function ($c) {
                 $report = $c->damageReport;
@@ -386,8 +367,7 @@
                 $product = $unit?->product;
                 return [
                     'id' => (int) $c->id,
-                    'case_status' => (string) $c->case_status,
-                    'payment_status' => (string) $c->payment_status,
+                    'unified_key' => (string) $c->unified_status['key'],
                     'order_number' => (string) ($order?->order_number ?? ''),
                     'unit_code' => (string) ($unit?->unit_code ?? ''),
                     'serial_number' => (string) ($unit?->serial_number ?? ''),
@@ -402,23 +382,8 @@
                 const c = this.casesData.find(item => item.id === caseId);
                 if (!c) return true;
 
-                // Filter status kasus
-                if (this.selectedCaseStatus) {
-                    if (this.selectedCaseStatus === 'terbuka' && !['terbuka', 'menunggu_respons', 'menunggu_tanggapan'].includes(c.case_status)) {
-                        return false;
-                    } else if (this.selectedCaseStatus === 'dalam_tinjauan' && !['dalam_tinjauan', 'negosiasi'].includes(c.case_status)) {
-                        return false;
-                    } else if (this.selectedCaseStatus === 'kompensasi_dibayar' && !['kompensasi_dibayar', 'menunggu_verifikasi'].includes(c.case_status)) {
-                        return false;
-                    } else if (this.selectedCaseStatus === 'selesai' && !['selesai', 'lunas'].includes(c.case_status)) {
-                        return false;
-                    } else if (!['terbuka', 'dalam_tinjauan', 'kompensasi_dibayar', 'selesai'].includes(this.selectedCaseStatus) && c.case_status !== this.selectedCaseStatus) {
-                        return false;
-                    }
-                }
-
-                // Filter status pembayaran
-                if (this.selectedPaymentStatus && c.payment_status !== this.selectedPaymentStatus) {
+                // Filter status terpadu
+                if (this.selectedUnifiedStatus && c.unified_key !== this.selectedUnifiedStatus) {
                     return false;
                 }
 
@@ -458,13 +423,12 @@
             },
 
             get hasActiveFilters() {
-                return Boolean(this.searchQuery.trim() || this.selectedCaseStatus || this.selectedPaymentStatus);
+                return Boolean(this.searchQuery.trim() || this.selectedUnifiedStatus);
             },
 
             resetFilters() {
                 this.searchQuery = '';
-                this.selectedCaseStatus = '';
-                this.selectedPaymentStatus = '';
+                this.selectedUnifiedStatus = '';
             }
         };
     }

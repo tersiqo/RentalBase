@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"
      x-data="{
-         avatarPreview: '{{ $user->avatar ? (str_starts_with($user->avatar, 'http') ? $user->avatar : \Illuminate\Support\Facades\Storage::url($user->avatar)) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=f97316&color=fff&bold=true' }}',
+         avatarPreview: '{{ $user->avatar ? storage_url($user->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=f97316&color=fff&bold=true' }}',
          showCurrentPass: false,
          showNewPass: false,
          showConfirmPass: false

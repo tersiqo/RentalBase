@@ -474,7 +474,7 @@ class CustomerCheckoutController extends Controller
             $quantity = $available < 1 ? 0 : min((int) $item['quantity'], $available);
 
             $imageUrl = ! empty($item['main_image'])
-                ? Storage::url($item['main_image'])
+                ? storage_url($item['main_image'])
                 : null;
 
             $itemHash = ! empty($item['hash']) ? $item['hash'] : (is_string($hash) && strlen($hash) > 10 ? $hash : md5($item['product_id'].$item['start_date'].$item['end_date']));

@@ -424,7 +424,12 @@
                 </button>
             </div>
 
-            <form action="{{ route('admin.subscriptions.renew') }}" method="POST" enctype="multipart/form-data" class="mt-6 space-y-4">
+            <form action="{{ route('admin.subscriptions.renew') }}" 
+                  method="POST" 
+                  enctype="multipart/form-data" 
+                  x-data="{ submitting: false }"
+                  @submit="submitting = true"
+                  class="mt-6 space-y-4">
                 @csrf
                 <div class="p-4 rounded-2xl bg-orange-50/60 border border-orange-200/60 space-y-2">
                     <div class="flex justify-between text-xs">
@@ -457,11 +462,14 @@
                 </div>
 
                 <div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
-                    <button type="button" @click="renewModalOpen = false" class="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:bg-stone-100 transition">
+                    <button type="button" @click="renewModalOpen = false" :disabled="submitting" class="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:bg-stone-100 transition">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-xs transition">
-                        Kirim Pengajuan Perpanjangan
+                    <button type="submit" 
+                            :disabled="submitting"
+                            :class="submitting ? 'opacity-70 cursor-not-allowed' : ''"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-xs transition">
+                        <span x-text="submitting ? 'Mengirim Pengajuan...' : 'Kirim Pengajuan Perpanjangan'"></span>
                     </button>
                 </div>
             </form>
@@ -490,7 +498,12 @@
                 </button>
             </div>
 
-            <form action="{{ route('admin.subscriptions.upgrade') }}" method="POST" enctype="multipart/form-data" class="mt-6 space-y-4">
+            <form action="{{ route('admin.subscriptions.upgrade') }}" 
+                  method="POST" 
+                  enctype="multipart/form-data" 
+                  x-data="{ submitting: false }"
+                  @submit="submitting = true"
+                  class="mt-6 space-y-4">
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
@@ -534,11 +547,14 @@
                 </div>
 
                 <div class="pt-4 flex items-center justify-end gap-3 border-t border-gray-100">
-                    <button type="button" @click="upgradeModalOpen = false" class="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:bg-stone-100 transition">
+                    <button type="button" @click="upgradeModalOpen = false" :disabled="submitting" class="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:bg-stone-100 transition">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-xs transition">
-                        Kirim Pengajuan Upgrade
+                    <button type="submit" 
+                            :disabled="submitting"
+                            :class="submitting ? 'opacity-70 cursor-not-allowed' : ''"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold bg-orange-500 hover:bg-orange-600 text-white shadow-xs transition">
+                        <span x-text="submitting ? 'Mengirim Pengajuan...' : 'Kirim Pengajuan Upgrade'"></span>
                     </button>
                 </div>
             </form>

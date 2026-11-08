@@ -7,9 +7,7 @@
     $storeLogo = $currentProfile?->logo_path ?? $currentClient?->logo ?? null;
     $storeLogoUrl = null;
     if ($storeLogo) {
-        $storeLogoUrl = str_starts_with($storeLogo, 'http')
-            ? $storeLogo
-            : \Illuminate\Support\Facades\Storage::url($storeLogo);
+        $storeLogoUrl = storage_url($storeLogo);
     }
 
     // Notifikasi operasional untuk toko aktif
@@ -1081,56 +1079,56 @@
                             this.playChime();
                             this.addToast('Pesanan Baru Masuk!', e.message || `Pesanan #${e.order_number} baru saja dibuat oleh customer.`, `/admin/orders/${e.order_id}`);
                             if (isOrderPage(e.order_id)) {
-                                this.triggerReload(800);
+                                this.triggerReload(1500);
                             }
                         })
                         .listen('.payment.uploaded', (e) => {
                             this.playChime();
                             this.addToast('Bukti Pembayaran Diunggah!', e.message || `Bukti bayar untuk pesanan #${e.order_number} telah diupload.`, `/admin/orders/${e.order_id}`);
                             if (isOrderPage(e.order_id) || window.location.pathname === '/admin/payments') {
-                                this.triggerReload(800);
+                                this.triggerReload(1500);
                             }
                         })
                         .listen('.identity.uploaded', (e) => {
                             this.playChime();
                             this.addToast('Revisi KTP Diunggah!', e.message || `Customer mengunggah revisi identitas pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
                             if (isOrderPage(e.order_id)) {
-                                this.triggerReload(800);
+                                this.triggerReload(1500);
                             }
                         })
                         .listen('.return.requested', (e) => {
                             this.playChime();
                             this.addToast('Pengajuan Retur Barang!', e.message || `Customer mengajukan retur untuk pesanan #${e.order_number}.`, `/admin/returns`);
                             if (isOrderPage(e.order_id) || window.location.pathname === '/admin/returns') {
-                                this.triggerReload(800);
+                                this.triggerReload(1500);
                             }
                         })
                         .listen('.order.received', (e) => {
                             this.playChime();
                             this.addToast('Pesanan Telah Diterima!', e.message || `Customer telah menerima pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
                             if (isOrderPage(e.order_id) || window.location.pathname === '/admin/shipments') {
-                                this.triggerReload(800);
+                                this.triggerReload(1500);
                             }
                         })
                         .listen('.order.cancelled', (e) => {
                             this.playChime();
                             this.addToast('Pesanan Dibatalkan!', e.message || `Customer membatalkan pesanan #${e.order_number}.`, `/admin/orders/${e.order_id}`);
                             if (isOrderPage(e.order_id)) {
-                                this.triggerReload(800);
+                                this.triggerReload(1500);
                             }
                         })
                         .listen('.late_fee.uploaded', (e) => {
                             this.playChime();
                             this.addToast('Bukti Denda Diunggah!', e.message || `Bukti pembayaran denda pesanan #${e.order_number} telah diupload.`, `/admin/returns`);
                             if (window.location.pathname.includes('/admin/returns') || window.location.pathname.includes('/admin/orders/' + e.order_id)) {
-                                this.triggerReload(800);
+                                this.triggerReload(1500);
                             }
                         })
                         .listen('.damage.payment_uploaded', (e) => {
                             this.playChime();
                             this.addToast('Bukti Kompensasi Kerusakan!', e.message || `Customer mengunggah bukti bayar kompensasi kerusakan.`, `/admin/damage-cases/${e.case_id}`);
                             if (window.location.pathname.includes('/admin/damage-cases') || window.location.pathname.includes('/admin/orders')) {
-                                this.triggerReload(800);
+                                this.triggerReload(1500);
                             }
                         })
                         .listen('.tenant.quota_alert', (e) => {
@@ -1150,17 +1148,21 @@
                     }, 150);
                 }
             },
-            triggerReload(delay = 800, forceFull = false) {
+            triggerReload(delay = 1500, forceFull = false) {
                 if (this._reloadTimer) return;
                 this._reloadTimer = setTimeout(async () => {
                     this._reloadTimer = null;
 
-                    if (forceFull) {
+                    const persistToasts = () => {
                         try {
                             if (this.toasts && this.toasts.length > 0) {
                                 sessionStorage.setItem('rb_pending_toast_admin', JSON.stringify(this.toasts));
                             }
                         } catch (err) {}
+                    };
+
+                    if (forceFull) {
+                        persistToasts();
                         window.location.reload();
                         return;
                     }
@@ -1193,6 +1195,7 @@
                         return;
                     }
 
+                    persistToasts();
                     window.location.reload();
                 }, delay);
             },

@@ -37,7 +37,7 @@
                                 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                                     <tr>
                                         <td width="28" valign="top">
-                                            <span style="display: inline-block; width: 22px; height: 22px; background-color: #e11d48; color: #ffffff; border-radius: 50%; text-align: center; line-height: 22px; font-size: 13px; font-weight: bold;">✕</span>
+                                            <span style="display: inline-block; width: 22px; height: 22px; background-color: #e11d48; color: #ffffff; border-radius: 50%; text-align: center; line-height: 22px; font-size: 13px; font-weight: bold;">&#10005;</span>
                                         </td>
                                         <td>
                                             <span style="font-size: 13px; font-weight: 700; color: #9f1239; display: block; margin-bottom: 4px;">Alasan Penolakan:</span>

@@ -434,7 +434,7 @@
                             $profile = $tenant->tenantProfile;
                             $tenantName = $profile?->name ?? $tenant->nama_usaha ?? $tenant->business_name ?? 'Mitra Rental';
                             $desc = $profile?->description ?: ($tenant->description ?: 'Penyedia sewa perlengkapan terpercaya dengan layanan profesional.');
-                            $logoUrl = $profile?->logo_path ? \Illuminate\Support\Facades\Storage::url($profile->logo_path) : null;
+                            $logoUrl = $profile?->logo_path ? storage_url($profile->logo_path) : null;
                             $themeColor = $profile?->theme_color ?? '#f97316';
                             $textColor = $profile?->text_color ?? '#ffffff';
                             $initial = strtoupper(substr($tenantName, 0, 1));

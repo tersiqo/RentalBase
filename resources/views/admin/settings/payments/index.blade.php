@@ -218,7 +218,11 @@
                                         <p class="text-[11px] text-gray-400 mt-0.5">a.n. <strong class="text-gray-700">{{ $method->account_name }}</strong></p>
                                     @else
                                         <p class="font-extrabold text-gray-900 text-sm tracking-tight">{{ $method->qris_merchant_name }}</p>
-                                        <p class="text-[11px] text-gray-400 mt-0.5">NMID / Label Merchant</p>
+                                        @if($method->account_number)
+                                            <p class="text-[11px] font-mono font-semibold text-gray-600 mt-0.5">NMID: <strong class="text-gray-800">{{ $method->account_number }}</strong></p>
+                                        @else
+                                            <p class="text-[11px] text-gray-400 mt-0.5">NMID / Label Merchant</p>
+                                        @endif
                                     @endif
                                 </td>
 
@@ -232,9 +236,9 @@
                                         @if($method->qris_image_path)
                                             <div class="flex items-center gap-2.5">
                                                 <button type="button"
-                                                        @click="openImageLightbox('{{ Storage::url($method->qris_image_path) }}', '{{ $method->qris_merchant_name }}')"
+                                                        @click="openImageLightbox('{{ storage_url($method->qris_image_path) }}', '{{ $method->qris_merchant_name }}')"
                                                         class="w-12 h-12 rounded-xl border border-gray-200 overflow-hidden p-1 bg-white hover:ring-2 hover:ring-orange-500 transition-all shrink-0 group/img">
-                                                    <img src="{{ Storage::url($method->qris_image_path) }}"
+                                                    <img src="{{ storage_url($method->qris_image_path) }}"
                                                          alt="QRIS Barcode"
                                                          class="w-full h-full object-contain">
                                                 </button>
@@ -264,7 +268,7 @@
                                     <div class="flex items-center justify-end gap-2">
                                         {{-- Tombol Edit --}}
                                         <button type="button"
-                                                @click="openEditModal(@js($method), @js($method->qris_image_path ? Storage::url($method->qris_image_path) : null))"
+                                                @click="openEditModal(@js($method), @js($method->qris_image_path ? storage_url($method->qris_image_path) : null))"
                                                 class="w-8 h-8 rounded-lg bg-stone-100 text-gray-600 hover:bg-orange-50 hover:text-orange-600 flex items-center justify-center transition-colors"
                                                 title="Edit Metode">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -400,6 +404,7 @@
                                    list="bank-presets"
                                    placeholder="Contoh: BCA / Bank Central Asia"
                                    :required="form.type === 'bank_transfer'"
+                                   :disabled="form.type !== 'bank_transfer'"
                                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
                             <datalist id="bank-presets">
                                 <option value="BCA">
@@ -422,6 +427,7 @@
                                        x-model="form.account_number"
                                        placeholder="Contoh: 1234567890"
                                        :required="form.type === 'bank_transfer'"
+                                       :disabled="form.type !== 'bank_transfer'"
                                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-mono font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
                             </div>
 
@@ -434,6 +440,7 @@
                                        x-model="form.account_name"
                                        placeholder="Contoh: Budi Santoso"
                                        :required="form.type === 'bank_transfer'"
+                                       :disabled="form.type !== 'bank_transfer'"
                                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
                             </div>
                         </div>
@@ -450,7 +457,24 @@
                                    x-model="form.qris_merchant_name"
                                    placeholder="Contoh: RENTALBASE SURABAYA / NMID..."
                                    :required="form.type === 'qris'"
+                                   :disabled="form.type !== 'qris'"
                                    class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500">
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-600">
+                                    Nomor NMID / ID QRIS <span class="text-xs text-gray-400 font-normal lowercase">(opsional)</span>
+                                </label>
+                                <span class="text-[10px] text-gray-400">Tertera di bawah barcode QRIS</span>
+                            </div>
+                            <input type="text"
+                                   name="account_number"
+                                   x-model="form.account_number"
+                                   placeholder="Contoh: ID1098765432109"
+                                   :disabled="form.type !== 'qris'"
+                                   class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-mono font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500">
+                            <p class="text-[11px] text-gray-400 mt-1">Nomor National Merchant ID (NMID) untuk memudahkan customer mencocokkan pembayaran barcode.</p>
                         </div>
 
                         {{-- Uploader Gambar Barcode QRIS dengan Instant Preview --}}

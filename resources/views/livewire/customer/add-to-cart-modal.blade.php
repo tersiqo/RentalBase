@@ -83,7 +83,7 @@
                     <!-- Product Summary -->
                     <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
                         <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden flex-shrink-0">
-                            <img src="{{ $product->main_image ? Storage::url($product->main_image) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" class="w-full h-full object-cover">
+                            <img src="{{ $product->main_image ? storage_url($product->main_image) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" class="w-full h-full object-cover">
                         </div>
                         <div>
                             <h4 class="font-bold text-gray-900 line-clamp-1">{{ $product->name }}</h4>

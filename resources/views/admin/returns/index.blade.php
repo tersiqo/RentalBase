@@ -322,7 +322,9 @@
                         <h3 class="text-base font-bold text-gray-900" id="modal-title">
                             Proses Pengembalian #<span x-text="activeOrder.order_number"></span>
                         </h3>
-                        <button type="button" @click="closeModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg p-1">✕</button>
+                        <button type="button" @click="closeModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
                     </div>
 
                     {{-- Modal Body --}}
@@ -481,7 +483,7 @@
                             <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-md text-xs space-y-1.5">
                                 <div class="flex items-center justify-between font-bold text-blue-900 text-[11px] uppercase tracking-wide">
                                     <span class="flex items-center gap-1.5">
-                                        <span>📄</span>
+                                        <svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                         <span>Bukti Pembayaran Denda Customer</span>
                                     </span>
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
@@ -492,8 +494,9 @@
                                     Customer telah mengunggah bukti pembayaran denda keterlambatan. Periksa bukti transfer sebelum menyelesaikan pengembalian.
                                 </p>
                                 <div class="pt-1 flex items-center gap-2">
-                                    <a :href="activeOrder.late_fee_proof_url" target="_blank" class="inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-900 underline text-xs">
-                                        🔍 Buka Bukti Pembayaran Denda (Tab Baru)
+                                    <a :href="activeOrder.late_fee_proof_url" target="_blank" class="inline-flex items-center gap-1.5 font-bold text-blue-700 hover:text-blue-900 underline text-xs">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                        <span>Buka Bukti Pembayaran Denda (Tab Baru)</span>
                                     </a>
                                 </div>
                             </div>

@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-5xl mx-auto space-y-8"
      x-data="tenantProfileApp({
-         initialLogo: @js($profile->logo_path ? Storage::url($profile->logo_path) : ($client->logo ? Storage::url($client->logo) : null)),
+         initialLogo: @js($profile->logo_path ? storage_url($profile->logo_path) : ($client->logo ? storage_url($client->logo) : null)),
          initialColor: @js(old('theme_color', $profile->theme_color ?? $client->theme_color ?? '#F97316')),
          isStarter: @js(str_contains(strtolower($client->plan ?? $subscription?->plan_name ?? 'starter'), 'starter')),
          initialHeroMode: @js(old('hero_showcase_mode', $heroShowcase['mode'] ?? 'illustration')),
@@ -258,6 +258,12 @@
                               placeholder="Ceritakan profil singkat usaha rental Anda, jaminan kebersihan peralatan, keunggulan layanan, atau info jam operasional..."
                               {{ !Auth::user()?->isPrimaryAdmin() ? 'readonly' : '' }}
                               class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors {{ !Auth::user()?->isPrimaryAdmin() ? 'bg-gray-50 cursor-not-allowed' : 'bg-white' }}">{{ old('description', $profile->description ?? $client->description) }}</textarea>
+                    <p class="text-[11px] text-gray-500 mt-1.5 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-orange-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Deskripsi ini akan ditampilkan sebagai teks sambutan di banner atas halaman katalog yang dilihat oleh customer.</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -561,7 +567,7 @@
                                 x-model="heroProductId"
                                 {{ !Auth::user()?->isPrimaryAdmin() ? 'disabled' : '' }}
                                 class="w-full px-4 py-2.5 rounded-xl border border-amber-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors {{ !Auth::user()?->isPrimaryAdmin() ? 'bg-gray-50 cursor-not-allowed' : '' }}">
-                            <option value="">✨ Otomatis (Produk Terpopuler / Terbaru yang Tersedia)</option>
+                            <option value="">Otomatis (Produk Terpopuler / Terbaru yang Tersedia)</option>
                             @foreach ($products as $prod)
                                 <option value="{{ $prod->id }}">
                                     {{ $prod->name }} — Rp {{ number_format($prod->rental_price_per_day, 0, ',', '.') }}/hari

@@ -132,6 +132,16 @@ class DamageReportController extends Controller
         }
 
         if (! $damageCase->can_pay) {
+            // Jika bukti pembayaran kompensasi sebenarnya baru saja diupload (misal karena double-click / resubmit)
+            $recentPayment = $order->payments()
+                ->where('notes', 'LIKE', '%#' . $damageCase->id . '%')
+                ->where('created_at', '>=', now()->subSeconds(60))
+                ->first();
+
+            if ($recentPayment) {
+                return back()->with('success', 'Bukti pembayaran kompensasi Anda sudah berhasil dikirim dan saat ini dalam antrean verifikasi toko.');
+            }
+
             return back()->with('error', 'Tagihan kompensasi ini tidak dalam status dapat dibayar (sudah lunas atau sedang diverifikasi).');
         }
 

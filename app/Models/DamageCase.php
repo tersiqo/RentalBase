@@ -55,7 +55,7 @@ class DamageCase extends Model
         return match ($status) {
             'terbuka', 'menunggu_respons', 'menunggu_tanggapan' => 'Menunggu Tanggapan',
             'negosiasi', 'dalam_tinjauan' => 'Dalam Tinjauan',
-            'menunggu_pembayaran', 'menunggu_pembayaran_kompensasi' => 'Menunggu Pembayaran Kompensasi',
+            'menunggu_pembayaran', 'menunggu_pembayaran_kompensasi' => 'Menunggu Pembayaran',
             'kompensasi_dibayar', 'menunggu_verifikasi' => 'Menunggu Verifikasi Toko',
             'lunas' => 'Lunas',
             'selesai' => 'Selesai',
@@ -101,6 +101,64 @@ class DamageCase extends Model
             'menunggu_pembayaran', 'belum_dibayar', 'unpaid' => 'bg-rose-100 text-rose-800 border-rose-200',
             default => 'bg-gray-100 text-gray-800 border-gray-200',
         };
+    }
+
+    public function getUnifiedStatusAttribute(): array
+    {
+        $caseStatus = strtolower(trim(str_replace(['-', ' '], '_', $this->case_status ?? 'terbuka')));
+        $paymentStatus = strtolower(trim(str_replace(['-', ' '], '_', $this->payment_status ?? 'belum_dibayar')));
+
+        // 1. Selesai / Lunas
+        if (in_array($caseStatus, ['selesai', 'lunas']) || $paymentStatus === 'lunas') {
+            return [
+                'label' => 'Selesai & Lunas',
+                'color' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                'key'   => 'selesai',
+            ];
+        }
+
+        // 2. Dibatalkan
+        if ($caseStatus === 'dibatalkan') {
+            return [
+                'label' => 'Dibatalkan',
+                'color' => 'bg-gray-100 text-gray-800 border-gray-200',
+                'key'   => 'dibatalkan',
+            ];
+        }
+
+        // 3. Verifikasi Pembayaran (bukti bayar kompensasi sudah diupload)
+        if (in_array($caseStatus, ['kompensasi_dibayar', 'menunggu_verifikasi']) || in_array($paymentStatus, ['menunggu_verifikasi', 'verifikasi'])) {
+            return [
+                'label' => 'Verifikasi Pembayaran',
+                'color' => 'bg-purple-100 text-purple-800 border-purple-200',
+                'key'   => 'kompensasi_dibayar',
+            ];
+        }
+
+        // 4. Menunggu Pembayaran
+        if (in_array($caseStatus, ['menunggu_pembayaran', 'menunggu_pembayaran_kompensasi'])) {
+            return [
+                'label' => 'Menunggu Pembayaran',
+                'color' => 'bg-rose-100 text-rose-800 border-rose-200',
+                'key'   => 'menunggu_pembayaran',
+            ];
+        }
+
+        // 5. Dalam Tinjauan / Negosiasi
+        if (in_array($caseStatus, ['dalam_tinjauan', 'negosiasi'])) {
+            return [
+                'label' => 'Dalam Tinjauan',
+                'color' => 'bg-blue-100 text-blue-800 border-blue-200',
+                'key'   => 'dalam_tinjauan',
+            ];
+        }
+
+        // 6. Default: Menunggu Tanggapan
+        return [
+            'label' => 'Menunggu Tanggapan',
+            'color' => 'bg-amber-100 text-amber-800 border-amber-200',
+            'key'   => 'terbuka',
+        ];
     }
 
     public function getTimelineNotesAttribute(): array

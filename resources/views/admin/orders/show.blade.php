@@ -73,7 +73,7 @@
                 </span>
             </div>
             <p class="text-xs text-gray-500 mt-1">
-                Dibuat pada {{ $order->created_at ? $order->created_at->translatedFormat('l, d F Y - H:i') : '-' }} WIB
+                Dibuat pada {{ $order->created_at ? $order->created_at->timezone('Asia/Jakarta')->translatedFormat('l, d F Y - H:i') : '-' }} WIB
             </p>
         </div>
 
@@ -82,7 +82,8 @@
             <div class="flex items-center gap-2">
                 @if(! $order->canProcessHandover())
                     <span class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5" title="{{ $order->handover_blocked_reason }}">
-                        <span>🔒 Belum Jadwal Serah Terima</span>
+                        <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <span>Belum Jadwal Serah Terima</span>
                     </span>
                 @endif
                 <a href="{{ route('admin.shipments.index', ['search' => $order->order_number]) }}"
@@ -217,9 +218,7 @@
                 @forelse($order->orderItems as $item)
                     @php
                         $mainImg = $item->product?->main_image;
-                        $imgUrl = ($mainImg && str_starts_with($mainImg, 'http'))
-                            ? $mainImg
-                            : ($mainImg ? \Illuminate\Support\Facades\Storage::url($mainImg) : null);
+                        $imgUrl = $mainImg ? storage_url($mainImg) : null;
                     @endphp
                     <div class="py-3.5 flex items-center justify-between gap-4">
                         <div class="flex items-center gap-3.5">
@@ -458,8 +457,11 @@
                         </span>
                     </div>
                     @if($paymentMethod)
+                        @php
+                            $isQrisMethod = strtoupper($paymentMethod->bank_name ?? '') === 'QRIS' || !empty($paymentMethod->qris_image);
+                        @endphp
                         <div class="flex justify-between items-center text-gray-500">
-                            <span>Rekening Tujuan:</span>
+                            <span>{{ $isQrisMethod ? 'NMID / Merchant:' : 'Rekening Tujuan:' }}</span>
                             <span class="font-medium text-gray-700">
                                 {{ $paymentMethod->account_number }} (a/n {{ $paymentMethod->account_holder }})
                             </span>
@@ -468,7 +470,7 @@
                     @if($order->latestPayment->paid_at)
                         <div class="flex justify-between items-center text-gray-500 pt-1 border-t border-gray-200/50">
                             <span>Waktu Unggah:</span>
-                            <span class="font-medium text-gray-700">{{ $order->latestPayment->paid_at->translatedFormat('d M Y, H:i') }}</span>
+                            <span class="font-medium text-gray-700">{{ $order->latestPayment->paid_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') }} WIB</span>
                         </div>
                     @endif
                     @if($order->latestPayment->notes)
