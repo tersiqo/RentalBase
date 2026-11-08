@@ -356,4 +356,94 @@ class OwnerAuthAndDashboardTest extends TestCase
         $pastSubscription->refresh();
         $this->assertEquals('kadaluarsa', $pastSubscription->status);
     }
+
+    public function test_tc_int_mod01_006_owner_login_page_is_publicly_accessible(): void
+    {
+        $response = $this->get('/owner/login');
+
+        $response->assertStatus(200);
+        $response->assertSee('Portal Owner Platform');
+    }
+
+    public function test_tc_int_mod01_007_owner_can_login_with_valid_credentials(): void
+    {
+        $owner = User::create([
+            'name' => 'Owner Platform RentalBase',
+            'email' => 'superowner@rentalbase.id',
+            'password' => Hash::make('password123'),
+            'role' => 'owner',
+            'status' => 'aktif',
+        ]);
+
+        $payload = [
+            'email' => 'superowner@rentalbase.id',
+            'password' => 'password123',
+        ];
+
+        $response = $this->post('/owner/login', $payload);
+
+        $response->assertRedirect('/owner/dashboard');
+        $this->assertAuthenticatedAs($owner);
+    }
+
+    public function test_tc_int_mod01_008_non_owner_user_cannot_login_via_owner_portal(): void
+    {
+        $customer = User::create([
+            'name' => 'Customer Budi Santoso',
+            'email' => 'customer.budi@test.com',
+            'password' => Hash::make('password123'),
+            'role' => 'customer',
+            'status' => 'aktif',
+        ]);
+
+        $payload = [
+            'email' => 'customer.budi@test.com',
+            'password' => 'password123',
+        ];
+
+        $response = $this->post('/owner/login', $payload);
+
+        $response->assertSessionHasErrors(['email']);
+        $this->assertGuest();
+    }
+
+    public function test_tc_int_mod01_011_non_owner_cannot_access_owner_dashboard(): void
+    {
+        $client = Client::create([
+            'business_name' => 'Toko Admin',
+            'subdomain' => 'tokoadmin',
+            'status' => 'aktif',
+        ]);
+
+        $admin = User::create([
+            'client_id' => $client->id,
+            'name' => 'Admin Rental',
+            'email' => 'admin@tokoadmin.test',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/owner/dashboard');
+
+        $response->assertRedirect('/admin/dashboard');
+    }
+
+    public function test_tc_int_mod03_001_owner_can_access_owner_dashboard(): void
+    {
+        $owner = User::create([
+            'name' => 'Super Owner',
+            'email' => 'super@rentalbase.id',
+            'password' => Hash::make('password123'),
+            'role' => 'owner',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->actingAs($owner)->get('/owner/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('owner.dashboard');
+        $response->assertViewHas('totalTenant');
+        $response->assertViewHas('tenantAktif');
+    }
 }

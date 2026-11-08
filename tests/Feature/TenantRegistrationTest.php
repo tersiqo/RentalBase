@@ -367,4 +367,111 @@ class TenantRegistrationTest extends TestCase
 
         $response->assertSessionHasErrors(['password']);
     }
+
+    public function test_tc_int_mod01_001_registration_page_is_publicly_accessible(): void
+    {
+        $response = $this->get('/register-tenant');
+
+        $response->assertStatus(200);
+        $response->assertSee('Pendaftaran admin rental');
+    }
+
+    public function test_tc_int_mod01_002_step_one_tenant_registration_stores_account_in_session(): void
+    {
+        $payload = [
+            'username' => 'newrentalowner',
+            'email' => 'newowner@testrental.id',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'plan' => 'business',
+        ];
+
+        $response = $this->post('/register-tenant', $payload);
+
+        $response->assertRedirect('/register-tenant');
+        $response->assertSessionHas('tenant_registration.account');
+        $this->assertEquals('newowner@testrental.id', session('tenant_registration.account')['email']);
+    }
+
+    public function test_tc_int_mod01_003_step_one_validation_fails_on_invalid_credentials(): void
+    {
+        $payload = [
+            'username' => 'owner',
+            'email' => 'bukan-email',
+            'password' => '123',
+            'password_confirmation' => '456',
+        ];
+
+        $response = $this->post('/register-tenant', $payload);
+
+        $response->assertSessionHasErrors(['email', 'password']);
+    }
+
+    public function test_tc_int_mod01_004_full_tenant_setup_creates_client_and_registration_record(): void
+    {
+        $user = User::create([
+            'name' => 'calonowner',
+            'email' => 'calonowner@rentalsetup.test',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'pending_setup',
+        ]);
+
+        $payload = [
+            'business_name' => 'Maju Rental Abadi',
+            'subdomain' => 'majurental',
+            'description' => 'Sewa alat proyek konstruksi',
+            'owner_name' => 'Haji Lulung',
+            'phone' => '081233445566',
+            'address' => 'Jl. Kebon Jeruk No. 5',
+            'plan_name' => 'starter',
+            'terms' => '1',
+        ];
+
+        $response = $this->actingAs($user)->post('/register-tenant', $payload);
+
+        $response->assertRedirect('/register-tenant');
+        $this->assertDatabaseHas('clients', [
+            'business_name' => 'Maju Rental Abadi',
+            'subdomain' => 'majurental',
+            'status' => 'menunggu_verifikasi',
+        ]);
+        $this->assertDatabaseHas('client_registrations', [
+            'subdomain' => 'majurental',
+            'admin_email' => 'calonowner@rentalsetup.test',
+            'status' => 'menunggu_verifikasi',
+        ]);
+    }
+
+    public function test_tc_int_mod01_005_setup_tenant_fails_with_duplicate_subdomain(): void
+    {
+        Client::create([
+            'business_name' => 'Kamera Jaya Rental',
+            'subdomain' => 'kamerajaya',
+            'status' => 'aktif',
+        ]);
+
+        $user = User::create([
+            'name' => 'duplicator',
+            'email' => 'duplicator@rentalsetup.test',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'pending_setup',
+        ]);
+
+        $payload = [
+            'business_name' => 'Kamera Kembar',
+            'subdomain' => 'kamerajaya',
+            'description' => 'Toko duplikat',
+            'owner_name' => 'Bambang',
+            'phone' => '081233445577',
+            'address' => 'Jl. Merdeka',
+            'plan_name' => 'starter',
+            'terms' => '1',
+        ];
+
+        $response = $this->actingAs($user)->post('/register-tenant', $payload);
+
+        $response->assertSessionHasErrors(['subdomain']);
+    }
 }

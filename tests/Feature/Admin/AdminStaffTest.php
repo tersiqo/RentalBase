@@ -275,5 +275,111 @@ class AdminStaffTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_tc_int_mod04_002_primary_admin_can_view_staff_management_and_quota(): void
+    {
+        $response = $this->actingAs($this->primaryAdminA)->get('/admin/admins');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('admin.admins.index');
+        $response->assertViewHas('maxAdmins');
+        $response->assertViewHas('activeAdminsCount');
+        $response->assertSee('Fiza Admin Utama');
+    }
+
+    public function test_tc_int_mod04_003_non_primary_staff_admin_forbidden_from_staff_management(): void
+    {
+        $this->staffAdminA->update(['status' => 'aktif']);
+
+        $response = $this->actingAs($this->staffAdminA)->get('/admin/admins');
+
+        $response->assertStatus(403);
+    }
+
+    public function test_tc_int_mod04_004_primary_admin_can_create_new_staff_when_quota_allows(): void
+    {
+        Subscription::create([
+            'client_id' => $this->clientB->id,
+            'plan_name' => 'business',
+            'max_products' => 50,
+            'max_users' => 5,
+            'price' => 99000,
+            'billing_cycle' => 'monthly',
+            'start_date' => Carbon::now()->subDays(5),
+            'end_date' => Carbon::now()->addDays(25),
+            'status' => 'aktif',
+        ]);
+
+        $payload = [
+            'name' => 'Staf Baru Toko B QA',
+            'email' => 'staf.baru.b.qa@outdoortokob.test',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ];
+
+        $response = $this->actingAs($this->primaryAdminB)->post('/admin/admins', $payload);
+
+        $response->assertRedirect('/admin/admins');
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'staf.baru.b.qa@outdoortokob.test',
+            'client_id' => $this->clientB->id,
+            'role' => 'admin_rental',
+            'status' => 'aktif',
+        ]);
+    }
+
+    public function test_tc_int_mod04_005_creating_staff_is_rejected_when_quota_is_full(): void
+    {
+        $payload = [
+            'name' => 'Staf Baru Melebihi Kuota QA',
+            'email' => 'staf.over.qa@kamerajaya.test',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ];
+
+        $response = $this->actingAs($this->primaryAdminA)->post('/admin/admins', $payload);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertDatabaseMissing('users', [
+            'email' => 'staf.over.qa@kamerajaya.test',
+        ]);
+    }
+
+    public function test_tc_int_mod04_006_cannot_deactivate_primary_admin_account(): void
+    {
+        $response = $this->actingAs($this->primaryAdminA)->post("/admin/admins/{$this->primaryAdminA->id}/status", [
+            'status' => 'nonaktif',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+
+        $this->primaryAdminA->refresh();
+        $this->assertEquals('aktif', $this->primaryAdminA->status);
+    }
+
+    public function test_tc_int_mod02_003_admin_staff_isolation_between_tenants(): void
+    {
+        $response = $this->actingAs($this->primaryAdminA)->get('/admin/admins');
+
+        $response->assertStatus(200);
+        $response->assertSee('Staff Toko A');
+        $response->assertDontSee('Admin Utama Toko B');
+    }
+
+    public function test_tc_int_mod02_004_admin_cannot_toggle_status_of_other_tenant_staff(): void
+    {
+        $response = $this->actingAs($this->primaryAdminA)->post("/admin/admins/{$this->primaryAdminB->id}/status", [
+            'status' => 'nonaktif',
+        ]);
+
+        $response->assertStatus(403);
+
+        $this->primaryAdminB->refresh();
+        $this->assertEquals('aktif', $this->primaryAdminB->status);
+    }
 }
 

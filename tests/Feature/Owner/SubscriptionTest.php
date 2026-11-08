@@ -555,4 +555,135 @@ class SubscriptionTest extends TestCase
         $sub->refresh();
         $this->assertEquals('menunggu_verifikasi', $sub->status);
     }
+
+    public function test_tc_int_mod03_012_owner_can_access_subscriptions_monitoring(): void
+    {
+        Subscription::create([
+            'client_id'      => $this->clientA->id,
+            'plan_name'      => 'starter',
+            'price'          => 0,
+            'billing_cycle'  => 'monthly',
+            'start_date'     => Carbon::now()->subMonth(),
+            'end_date'       => Carbon::now()->addMonth(),
+            'status'         => 'aktif',
+            'payment_status' => 'lunas',
+        ]);
+
+        $response = $this->actingAs($this->owner)->get('/owner/subscriptions');
+
+        $response->assertStatus(200);
+        $response->assertSee('Masa Aktif Tenant');
+        $response->assertSee('Estimasi MRR');
+        $response->assertSee('Rental Bayi Ceria');
+    }
+
+    public function test_tc_int_mod03_013_owner_can_renew_active_subscription(): void
+    {
+        Storage::fake('public');
+
+        $sub = Subscription::create([
+            'client_id'      => $this->clientA->id,
+            'plan_name'      => 'starter',
+            'price'          => 0,
+            'billing_cycle'  => 'monthly',
+            'start_date'     => Carbon::now()->subMonths(2),
+            'end_date'       => Carbon::now()->addDays(10),
+            'status'         => 'aktif',
+            'payment_status' => 'lunas',
+        ]);
+
+        $file = UploadedFile::fake()->image('bukti_transfer_qa.jpg');
+
+        $payload = [
+            'reference_number' => 'REF-BCA-2026-QA',
+            'payment_proof' => $file,
+        ];
+
+        $oldEndDate = $sub->end_date->copy();
+
+        $response = $this->actingAs($this->owner)->post("/owner/subscriptions/{$sub->id}/renew", $payload);
+
+        $response->assertRedirect('/owner/subscriptions');
+        $response->assertSessionHas('success');
+
+        $sub->refresh();
+        $this->assertTrue($sub->end_date->greaterThan($oldEndDate));
+        $this->assertEquals('aktif', $sub->status);
+
+        $this->assertDatabaseHas('activity_logs', [
+            'client_id' => $this->clientA->id,
+            'user_id' => $this->owner->id,
+            'action' => 'subscription_renewed',
+        ]);
+    }
+
+    public function test_tc_int_mod03_014_renewing_expired_subscription_starts_from_now(): void
+    {
+        Storage::fake('public');
+
+        $expiredSub = Subscription::create([
+            'client_id' => $this->clientB->id,
+            'plan_name' => 'starter',
+            'price' => 0,
+            'billing_cycle' => 'monthly',
+            'start_date' => Carbon::now()->subMonths(3),
+            'end_date' => Carbon::now()->subDays(10),
+            'status' => 'kadaluarsa',
+            'payment_status' => 'lunas',
+        ]);
+
+        $file = UploadedFile::fake()->image('bukti_bayar_expired_qa.png');
+
+        $response = $this->actingAs($this->owner)->post("/owner/subscriptions/{$expiredSub->id}/renew", [
+            'reference_number' => 'REF-EXP-001-QA',
+            'payment_proof' => $file,
+        ]);
+
+        $response->assertRedirect('/owner/subscriptions');
+
+        $expiredSub->refresh();
+        $this->assertEquals('aktif', $expiredSub->status);
+        $this->assertTrue($expiredSub->end_date->isFuture());
+    }
+
+    public function test_tc_int_mod03_015_subscription_renewal_validation_fails_without_required_fields(): void
+    {
+        $sub = Subscription::create([
+            'client_id'      => $this->clientA->id,
+            'plan_name'      => 'starter',
+            'price'          => 0,
+            'billing_cycle'  => 'monthly',
+            'start_date'     => Carbon::now()->subMonth(),
+            'end_date'       => Carbon::now()->addMonth(),
+            'status'         => 'aktif',
+            'payment_status' => 'lunas',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post("/owner/subscriptions/{$sub->id}/renew", []);
+
+        $response->assertSessionHasErrors(['reference_number', 'payment_proof']);
+    }
+
+    public function test_tc_int_mod03_016_owner_can_verify_pending_subscription_payment(): void
+    {
+        $pendingSub = Subscription::create([
+            'client_id' => $this->clientA->id,
+            'plan_name' => 'business',
+            'price' => 99000,
+            'billing_cycle' => 'monthly',
+            'start_date' => Carbon::now(),
+            'end_date' => Carbon::now()->addMonth(),
+            'status' => 'menunggu_konfirmasi',
+            'payment_status' => 'menunggu',
+            'payment_proof' => 'subscriptions/proofs/test_proof_qa.jpg',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post("/owner/subscriptions/{$pendingSub->id}/verify");
+
+        $response->assertRedirect('/owner/subscriptions');
+
+        $pendingSub->refresh();
+        $this->assertEquals('aktif', $pendingSub->status);
+        $this->assertEquals('diverifikasi', $pendingSub->payment_status);
+    }
 }

@@ -770,4 +770,79 @@ class ReportTest extends TestCase
         $this->assertStringContainsString('attachment', (string) $response->headers->get('Content-Disposition'));
         $this->assertStringContainsString('.pdf', (string) $response->headers->get('Content-Disposition'));
     }
+
+    public function test_tc_int_mod04_007_authorized_admin_can_access_reports_page(): void
+    {
+        $response = $this->actingAs($this->adminA)->get('/admin/reports');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('admin.reports.index');
+        $response->assertSee('Laporan Transaksi Toko');
+    }
+
+    public function test_tc_int_mod04_008_admin_can_filter_reports_by_date_range(): void
+    {
+        $targetDate = Carbon::create(2026, 10, 15, 10, 0, 0);
+
+        Order::create([
+            'client_id' => $this->clientA->id,
+            'user_id' => $this->customer->id,
+            'order_number' => 'ORD-FILTER-MATCH-QA',
+            'rental_start_date' => $targetDate,
+            'rental_end_date' => $targetDate->copy()->addDays(2),
+            'duration_days' => 2,
+            'total_amount' => 350000,
+            'shipping_address' => 'Jl. Mataram No. 10',
+            'status' => 'selesai',
+            'created_at' => $targetDate,
+        ]);
+
+        $outsideDate = Carbon::create(2026, 1, 10, 10, 0, 0);
+        Order::create([
+            'client_id' => $this->clientA->id,
+            'user_id' => $this->customer->id,
+            'order_number' => 'ORD-FILTER-OUTSIDE-QA',
+            'rental_start_date' => $outsideDate,
+            'rental_end_date' => $outsideDate->copy()->addDays(2),
+            'duration_days' => 2,
+            'total_amount' => 150000,
+            'shipping_address' => 'Jl. Mataram No. 10',
+            'status' => 'selesai',
+            'created_at' => $outsideDate,
+        ]);
+
+        $response = $this->actingAs($this->adminA)->get('/admin/reports?start_date=2026-10-01&end_date=2026-10-31');
+
+        $response->assertStatus(200);
+        $response->assertSee('ORD-FILTER-MATCH-QA');
+        $response->assertDontSee('ORD-FILTER-OUTSIDE-QA');
+    }
+
+    public function test_tc_int_mod04_009_admin_can_export_reports_to_csv(): void
+    {
+        $response = $this->actingAs($this->adminA)->get('/admin/reports/export');
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    }
+
+    public function test_tc_int_mod02_002_reports_strict_data_isolation_between_tenants(): void
+    {
+        Order::create([
+            'client_id' => $this->clientB->id,
+            'user_id' => $this->customer->id,
+            'order_number' => 'ORD-TOKO-B-999-QA',
+            'rental_start_date' => now(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 3,
+            'total_amount' => 750000,
+            'shipping_address' => 'Jl. Ijen No. 1 Malang',
+            'status' => 'selesai',
+        ]);
+
+        $response = $this->actingAs($this->adminA)->get('/admin/reports');
+
+        $response->assertStatus(200);
+        $response->assertDontSee('ORD-TOKO-B-999-QA');
+    }
 }
