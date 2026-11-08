@@ -257,4 +257,93 @@ class NotificationTest extends TestCase
         $response->assertRedirect('/owner/registrations');
         $this->assertTrue($notif->fresh()->is_read);
     }
+
+    public function test_tc_int_mod03_017_owner_can_view_notifications_center(): void
+    {
+        $owner = User::factory()->create(['role' => 'owner', 'status' => 'aktif']);
+
+        Notification::create([
+            'user_id' => $owner->id,
+            'title' => 'Pendaftaran Baru: Rental Jaya Makmur QA',
+            'message' => 'Tenant baru telah mengajukan pendaftaran toko.',
+            'type' => 'registration',
+            'is_read' => false,
+        ]);
+
+        $response = $this->actingAs($owner)->get('/owner/notifications');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('owner.notifications.index');
+        $response->assertSee('Pendaftaran Baru: Rental Jaya Makmur QA');
+    }
+
+    public function test_tc_int_mod03_018_owner_can_mark_single_notification_as_read(): void
+    {
+        $owner = User::factory()->create(['role' => 'owner', 'status' => 'aktif']);
+
+        $notif = Notification::create([
+            'user_id' => $owner->id,
+            'title' => 'Tagihan Subscription Mendekati Tempo QA',
+            'message' => 'Segera konfirmasi pembayaran tenant.',
+            'type' => 'subscription',
+            'is_read' => false,
+        ]);
+
+        $response = $this->actingAs($owner)->post("/owner/notifications/{$notif->id}/read");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $notif->refresh();
+        $this->assertTrue((bool) $notif->is_read);
+    }
+
+    public function test_tc_int_mod03_019_owner_cannot_mark_other_user_notification_as_read(): void
+    {
+        $owner = User::factory()->create(['role' => 'owner', 'status' => 'aktif']);
+        $customer = User::factory()->create(['role' => 'customer', 'status' => 'aktif']);
+
+        $notifCustomer = Notification::create([
+            'user_id' => $customer->id,
+            'title' => 'Notifikasi Pesanan Customer QA',
+            'message' => 'Pesanan Anda telah diterima.',
+            'type' => 'order',
+            'is_read' => false,
+        ]);
+
+        $response = $this->actingAs($owner)->post("/owner/notifications/{$notifCustomer->id}/read");
+
+        $response->assertStatus(403);
+
+        $notifCustomer->refresh();
+        $this->assertFalse((bool) $notifCustomer->is_read);
+    }
+
+    public function test_tc_int_mod03_020_owner_can_mark_all_notifications_as_read(): void
+    {
+        $owner = User::factory()->create(['role' => 'owner', 'status' => 'aktif']);
+
+        Notification::create([
+            'user_id' => $owner->id,
+            'title' => 'Notif 1 QA',
+            'message' => 'Pesan 1',
+            'type' => 'alert',
+            'is_read' => false,
+        ]);
+        Notification::create([
+            'user_id' => $owner->id,
+            'title' => 'Notif 2 QA',
+            'message' => 'Pesan 2',
+            'type' => 'subscription',
+            'is_read' => false,
+        ]);
+
+        $response = $this->actingAs($owner)->post('/owner/notifications/mark-all-read');
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $unreadCount = Notification::where('user_id', $owner->id)->where('is_read', false)->count();
+        $this->assertEquals(0, $unreadCount);
+    }
 }

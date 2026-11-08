@@ -295,5 +295,73 @@ class OwnerTenantTest extends TestCase
 
         $response->assertSessionHasErrors(['plan_name']);
     }
+
+    public function test_tc_int_mod03_007_owner_can_view_and_search_tenant_list(): void
+    {
+        $response = $this->actingAs($this->owner)->get('/owner/tenants?search=Bintang');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('owner.tenants.index');
+        $response->assertSee('Bintang Kamera Rental');
+    }
+
+    public function test_tc_int_mod03_008_owner_can_update_tenant_status_and_sync_admin(): void
+    {
+        $payload = [
+            'status' => 'suspended',
+        ];
+
+        $response = $this->actingAs($this->owner)->post("/owner/tenants/{$this->client->id}/status", $payload);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->client->refresh();
+        $this->adminRental->refresh();
+        $this->assertEquals('suspended', $this->client->status);
+        $this->assertEquals('suspended', $this->adminRental->status);
+    }
+
+    public function test_tc_int_mod03_009_tenant_status_update_fails_on_invalid_status(): void
+    {
+        $payload = [
+            'status' => 'status_ngawur',
+        ];
+
+        $response = $this->actingAs($this->owner)->post("/owner/tenants/{$this->client->id}/status", $payload);
+
+        $response->assertSessionHasErrors(['status']);
+    }
+
+    public function test_tc_int_mod03_010_owner_can_update_tenant_subscription_plan(): void
+    {
+        $payload = [
+            'plan_name' => 'business',
+            'end_date' => Carbon::now()->addMonths(3)->format('Y-m-d'),
+            'billing_cycle' => 'monthly',
+        ];
+
+        $response = $this->actingAs($this->owner)->put("/owner/tenants/{$this->client->id}/subscription", $payload);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('subscriptions', [
+            'client_id' => $this->client->id,
+            'plan_name' => 'business',
+        ]);
+    }
+
+    public function test_tc_int_mod03_011_tenant_subscription_update_fails_with_invalid_plan(): void
+    {
+        $payload = [
+            'plan_name' => 'paket_fiktif',
+            'end_date' => Carbon::now()->addMonths(1)->format('Y-m-d'),
+        ];
+
+        $response = $this->actingAs($this->owner)->put("/owner/tenants/{$this->client->id}/subscription", $payload);
+
+        $response->assertSessionHasErrors(['plan_name']);
+    }
 }
 

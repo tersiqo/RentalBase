@@ -347,5 +347,56 @@ class AdminDashboardTest extends TestCase
         $response->assertRedirect('/');
         $this->assertGuest();
     }
+
+    public function test_tc_int_mod04_001_authorized_admin_can_access_dashboard_with_metrics(): void
+    {
+        $response = $this->actingAs($this->adminA)->get('/admin/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertViewIs('admin.dashboard');
+        $response->assertSee('Kamera Jaya Rental');
+    }
+
+    public function test_tc_int_mod01_009_guest_is_redirected_when_accessing_admin_dashboard(): void
+    {
+        $response = $this->get('/admin/dashboard');
+
+        $response->assertRedirect('/');
+        $response->assertSessionHas('error');
+    }
+
+    public function test_tc_int_mod01_010_customer_cannot_access_admin_dashboard(): void
+    {
+        $response = $this->actingAs($this->customer)->get('/admin/dashboard');
+
+        $response->assertRedirect('/');
+        $response->assertSessionHas('error');
+    }
+
+    public function test_tc_int_mod02_001_tenant_product_data_isolation_on_dashboard(): void
+    {
+        Product::create([
+            'client_id' => $this->clientA->id,
+            'category_id' => $this->categoryA->id,
+            'name' => 'Sony A7 IV Toko A',
+            'slug' => 'sony-a7-iv-a',
+            'rental_price_per_day' => 250000,
+            'status' => 'aktif',
+        ]);
+
+        Product::create([
+            'client_id' => $this->clientB->id,
+            'category_id' => $this->categoryB->id,
+            'name' => 'Tenda Dome Toko B',
+            'slug' => 'tenda-dome-b',
+            'rental_price_per_day' => 100000,
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->actingAs($this->adminA)->get('/admin/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertViewHas('totalProduk', 1);
+    }
 }
 

@@ -788,4 +788,167 @@ class OwnerRegistrationVerificationTest extends TestCase
         $reg->refresh();
         $this->assertEquals('menunggu_verifikasi', $reg->status);
     }
+
+    public function test_tc_int_mod03_002_owner_can_view_registration_queue(): void
+    {
+        ClientRegistration::create([
+            'business_name' => 'Outdoor Pro Malang QA',
+            'description' => 'Sewa tenda',
+            'subdomain' => 'outdoorpromlgqa',
+            'plan_name' => 'starter',
+            'admin_name' => 'Anto Subagio',
+            'admin_email' => 'antoqa@outdoorpro.test',
+            'admin_phone' => '081234567888',
+            'admin_password' => Hash::make('password123'),
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $response = $this->actingAs($this->owner)->get('/owner/registrations');
+
+        $response->assertStatus(200);
+        $response->assertSee('Outdoor Pro Malang QA');
+        $response->assertSee('antoqa@outdoorpro.test');
+    }
+
+    public function test_tc_int_mod03_003_owner_can_verify_tenant_registration(): void
+    {
+        Mail::fake();
+
+        $client = Client::create([
+            'business_name' => 'Studio Musik Harmoni QA',
+            'subdomain' => 'harmonifa',
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $user = User::create([
+            'client_id' => $client->id,
+            'name' => 'Harmoni Admin',
+            'email' => 'adminqa@harmoni.test',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        Subscription::create([
+            'client_id' => $client->id,
+            'plan_name' => 'starter',
+            'price' => 0,
+            'billing_cycle' => 'monthly',
+            'start_date' => now(),
+            'end_date' => now()->addMonth(),
+            'status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        $reg = ClientRegistration::create([
+            'business_name' => 'Studio Musik Harmoni QA',
+            'subdomain' => 'harmonifa',
+            'description' => 'Sewa alat musik',
+            'plan_name' => 'starter',
+            'admin_name' => 'Harmoni Admin',
+            'admin_email' => 'adminqa@harmoni.test',
+            'admin_phone' => '081233344455',
+            'admin_password' => $user->password,
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post("/owner/registrations/{$reg->id}/verify");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('client_registrations', [
+            'id' => $reg->id,
+            'status' => 'disetujui',
+        ]);
+        $this->assertDatabaseHas('clients', [
+            'id' => $client->id,
+            'status' => 'aktif',
+        ]);
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'status' => 'aktif',
+        ]);
+
+        Mail::assertSent(TenantApproved::class, function ($mail) use ($user) {
+            return $mail->hasTo($user->email);
+        });
+    }
+
+    public function test_tc_int_mod03_004_owner_can_reject_tenant_registration_with_reason(): void
+    {
+        Mail::fake();
+
+        $reg = ClientRegistration::create([
+            'business_name' => 'Rental Fiktif QA',
+            'subdomain' => 'rentalfiktifqa',
+            'description' => 'Persewaan',
+            'plan_name' => 'starter',
+            'admin_name' => 'Fiktif Admin',
+            'admin_email' => 'adminqa@fiktif.test',
+            'admin_phone' => '081200000000',
+            'admin_password' => Hash::make('password123'),
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $payload = [
+            'rejection_reason' => 'Data identitas tidak valid dan nomor kontak tidak aktif.',
+        ];
+
+        $response = $this->actingAs($this->owner)->post("/owner/registrations/{$reg->id}/reject", $payload);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('client_registrations', [
+            'id' => $reg->id,
+            'status' => 'ditolak',
+            'rejection_reason' => 'Data identitas tidak valid dan nomor kontak tidak aktif.',
+        ]);
+
+        Mail::assertSent(TenantRejected::class, function ($mail) use ($reg) {
+            return $mail->hasTo($reg->admin_email);
+        });
+    }
+
+    public function test_tc_int_mod03_005_rejection_fails_without_rejection_reason(): void
+    {
+        $reg = ClientRegistration::create([
+            'business_name' => 'Rental No Reason QA',
+            'subdomain' => 'noreasonqa',
+            'description' => 'Deskripsi',
+            'plan_name' => 'starter',
+            'admin_name' => 'No Reason',
+            'admin_email' => 'noreasonqa@test.id',
+            'admin_phone' => '081211111111',
+            'admin_password' => Hash::make('password123'),
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post("/owner/registrations/{$reg->id}/reject", []);
+
+        $response->assertSessionHasErrors(['rejection_reason']);
+    }
+
+    public function test_tc_int_mod03_006_cannot_reject_already_approved_registration(): void
+    {
+        $reg = ClientRegistration::create([
+            'business_name' => 'Rental Sudah Aktif QA',
+            'subdomain' => 'sudahaktifqa',
+            'description' => 'Deskripsi',
+            'plan_name' => 'starter',
+            'admin_name' => 'Admin Aktif',
+            'admin_email' => 'aktifqa@test.id',
+            'admin_phone' => '081222222222',
+            'admin_password' => Hash::make('password123'),
+            'status' => 'disetujui',
+        ]);
+
+        $response = $this->actingAs($this->owner)->post("/owner/registrations/{$reg->id}/reject", [
+            'rejection_reason' => 'Mau ditolak terlambat',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+    }
 }
