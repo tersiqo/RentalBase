@@ -25,6 +25,21 @@ outdoor.rentalbase.com
 
 RentalBase bukan merupakan marketplace. Customer mengakses rental tertentu melalui domain atau subdomain client tersebut.
 
+## Cloud Deployment & Environments
+
+RentalBase menerapkan standar Continuous Integration & Continuous Deployment (CI/CD) dengan arsitektur dua environment cloud terisolasi:
+
+| Environment | Live URL | Tracking Branch | Database & Storage (Supabase) | Keterangan |
+| :--- | :--- | :--- | :--- | :--- |
+| **Production** | [rentalbase-88c9.onrender.com](https://rentalbase-88c9.onrender.com) | `main` | Project `yudycdpipplsmtkbypon` | Server rilis resmi & penilaian dosen (data bersih). |
+| **Staging / Testing** | [rentalbase-testing.onrender.com](https://rentalbase-testing.onrender.com) | `staging` | Project `hfsvquwlxvtekfyzjgzo` | Server simulasi QA & bug bash (terisi data dummy lengkap). |
+
+### Workflow Staging & Branching Strategy
+1. **Fitur Baru (`feature/*`)**: Dikembangkan di branch lokal dan diuji secara mandiri.
+2. **Pull Request ke `staging`**: Setiap fitur baru wajib di-merge ke branch `staging` untuk auto-deploy ke server testing.
+3. **QA & Bug Bash**: Dilakukan pengujian lintas-peran di environment staging.
+4. **Promotion ke `main`**: Setelah diverifikasi bebas kendala, branch `staging` di-merge ke `main` untuk rilis production.
+
 ## Aktor Sistem
 
 RentalBase memiliki tiga aktor utama:
