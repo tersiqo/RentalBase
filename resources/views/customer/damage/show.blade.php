@@ -305,7 +305,7 @@
                             <div class="flex items-center justify-between mt-3">
                                 <span class="text-[11px] text-gray-400">Minimal 5 karakter. Tanggapan Anda akan langsung dibaca pihak toko.</span>
                                 <button type="submit"
-                                        class="px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-xl transition shadow-sm">
+                                        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl transition shadow-sm">
                                     Kirim Tanggapan
                                 </button>
                             </div>

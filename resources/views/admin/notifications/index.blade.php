@@ -151,7 +151,7 @@
                             @csrf
                             <input type="hidden" name="redirect_to" value="{{ $notif->admin_target_url }}">
                             <button type="submit"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-900 text-white hover:bg-orange-600 transition shadow-2xs">
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold {{ ! $notif->is_read ? 'bg-orange-600 text-white hover:bg-orange-700 shadow-xs' : 'bg-stone-100 text-gray-700 hover:bg-stone-200' }} transition">
                                 <span>Buka Tindakan</span>
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/>

@@ -855,7 +855,7 @@
                 <div class="mt-5">
                     <button type="button"
                             @click="showQuotaAlert = false"
-                            class="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-900 text-white hover:bg-slate-800 transition">
+                            class="w-full py-2.5 rounded-xl font-bold text-xs bg-orange-600 text-white hover:bg-orange-700 transition shadow-sm">
                         Mengerti
                     </button>
                 </div>
