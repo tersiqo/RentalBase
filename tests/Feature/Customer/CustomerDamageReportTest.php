@@ -159,7 +159,7 @@ class CustomerDamageReportTest extends TestCase
         $response->assertSee('8920192831');
     }
 
-    public function test_customer_cannot_view_damage_report_of_another_customer(): void
+    public function test_it_10_027_customer_cannot_view_damage_report_of_another_customer(): void
     {
         $otherCustomer = User::create([
             'name' => 'Siti Nurhaliza',

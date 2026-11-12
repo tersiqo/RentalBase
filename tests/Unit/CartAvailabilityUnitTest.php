@@ -38,4 +38,26 @@ class CartAvailabilityUnitTest extends TestCase
 
         $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class, $product->units());
     }
+
+    /**
+     * [7.2-I1] Memastikan accessor cover_image_url menghasilkan fallback placeholder saat gambar utama kosong.
+     */
+    public function test_ut_06_004_product_cover_image_url_fallback(): void
+    {
+        $product = new Product(['name' => 'Kamera Sony A7IV', 'main_image' => null]);
+
+        $this->assertNotNull($product->cover_image_url);
+        $this->assertStringContainsString('placehold.co', $product->cover_image_url);
+    }
+
+    /**
+     * [7.2-I1] Memastikan relasi model Product terhubung ke Category dan Client via BelongsTo.
+     */
+    public function test_ut_06_005_product_category_and_client_relationships(): void
+    {
+        $product = new Product();
+
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $product->category());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $product->client());
+    }
 }

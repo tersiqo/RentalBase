@@ -66,4 +66,38 @@ class CheckoutBookingUnitTest extends TestCase
         $this->assertNotNull($guarantee->selfie_photo_url);
         $this->assertStringContainsString('selfie/face_user.jpg', $guarantee->selfie_photo_url);
     }
+
+    /**
+     * [7.2-I2] Memastikan accessor status_label mengembalikan label bahasa Indonesia resmi.
+     */
+    public function test_ut_07_009_order_status_label_accessor(): void
+    {
+        $order = new Order(['status' => 'menunggu_pembayaran']);
+
+        $this->assertEquals('Menunggu Pembayaran', $order->status_label);
+    }
+
+    /**
+     * [7.2-I2] Memastikan pesanan berstatus menunggu pembayaran mengizinkan pembatalan (can_cancel = true).
+     */
+    public function test_ut_07_010_order_can_cancel_when_awaiting_payment(): void
+    {
+        $order = new Order(['status' => 'menunggu_pembayaran']);
+
+        $this->assertTrue($order->can_cancel);
+    }
+
+    /**
+     * [7.2-I2] Memastikan accessor foto KTP mengembalikan null saat dokumen identitas kosong.
+     */
+    public function test_ut_07_011_identity_guarantee_id_card_photo_url_returns_null_when_empty(): void
+    {
+        $guarantee = new IdentityGuarantee([
+            'identity_document_image' => null,
+            'ktp_photo' => null,
+            'id_card_photo' => null,
+        ]);
+
+        $this->assertNull($guarantee->id_card_photo_url);
+    }
 }

@@ -338,7 +338,7 @@ class SystemLoopholesRefinementTest extends TestCase
         $this->assertEquals('tersedia', $unit->status);
     }
 
-    public function test_admin_rental_cannot_access_checkout_page(): void
+    public function test_it_07_015_admin_rental_cannot_access_checkout_page(): void
     {
         $response = $this->actingAs($this->admin)
             ->get(route('customer.checkout', $this->client->subdomain));
@@ -480,7 +480,7 @@ class SystemLoopholesRefinementTest extends TestCase
         $this->assertEquals('menunggu_konfirmasi', $order->status);
     }
 
-    public function test_cross_tenant_cart_items_are_isolated_per_shop(): void
+    public function test_it_06_005_cross_tenant_cart_items_are_isolated_per_shop(): void
     {
         $tenantB = Client::create([
             'business_name' => 'Kamera Rental Test',

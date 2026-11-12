@@ -96,7 +96,7 @@ class CustomerProfileTest extends TestCase
         ]);
     }
 
-    public function test_customer_cannot_update_profile_with_empty_name(): void
+    public function test_it_01_018_customer_cannot_update_profile_with_empty_name(): void
     {
         $response = $this->actingAs($this->customer)
             ->put(route('customer.profile.update', ['subdomain' => $this->client->subdomain]), [
@@ -143,7 +143,7 @@ class CustomerProfileTest extends TestCase
         $this->assertTrue(Hash::check('newsecretpassword123', $this->customer->fresh()->password));
     }
 
-    public function test_customer_cannot_update_password_with_wrong_current_password(): void
+    public function test_it_01_019_customer_cannot_update_password_with_wrong_current_password(): void
     {
         $response = $this->actingAs($this->customer)
             ->put(route('customer.profile.password', ['subdomain' => $this->client->subdomain]), [

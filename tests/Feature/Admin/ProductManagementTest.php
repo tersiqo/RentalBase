@@ -186,7 +186,7 @@ class ProductManagementTest extends TestCase
         Storage::disk(config('filesystems.default', 'public'))->assertExists($created->main_image);
     }
 
-    public function test_create_product_fails_when_plan_limit_reached(): void
+    public function test_it_05_007_create_product_fails_when_plan_limit_reached(): void
     {
         // Starter plan limit is 10 products
         for ($i = 1; $i <= 10; $i++) {

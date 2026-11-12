@@ -53,4 +53,26 @@ class CustomerProfileUnitTest extends TestCase
 
         $this->assertTrue(Hash::check($plainPassword, $hashed));
     }
+
+    /**
+     * [9.2-I1] Memastikan user dengan role 'customer' mengembalikan false pada pengecekan admin toko.
+     */
+    public function test_ut_01_011_customer_role_returns_false_for_admin_checks(): void
+    {
+        $customer = new User(['role' => 'customer', 'client_id' => null]);
+
+        $this->assertFalse($customer->isPrimaryAdmin());
+        $this->assertFalse($customer->isStaffAdmin());
+    }
+
+    /**
+     * [9.2-I1] Memastikan casts password pada model User dikonfigurasi ke hashed.
+     */
+    public function test_ut_01_012_user_password_is_cast_to_hashed(): void
+    {
+        $user = new User(['password' => 'secret123']);
+
+        $this->assertArrayHasKey('password', $user->getCasts());
+        $this->assertEquals('hashed', $user->getCasts()['password']);
+    }
 }

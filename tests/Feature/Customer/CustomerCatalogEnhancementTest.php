@@ -364,7 +364,7 @@ class CustomerCatalogEnhancementTest extends TestCase
             ->assertDispatched('cart-updated');
     }
 
-    public function test_catalog_opens_add_to_cart_modal_and_confirms_item()
+    public function test_it_06_006_catalog_opens_add_to_cart_modal_and_confirms_item()
     {
         $product = Product::create([
             'client_id' => $this->client->id,
