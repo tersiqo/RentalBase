@@ -44,4 +44,27 @@ class DamageCaseUnitTest extends TestCase
         $casePaid = new DamageCase(['case_status' => 'kompensasi_dibayar']);
         $this->assertEquals('Menunggu Verifikasi Toko', $casePaid->status_label);
     }
+
+    /**
+     * [9.1-I1] Memastikan kalkulasi total biaya kompensasi tetap presisi saat denda bernilai nol.
+     */
+    public function test_ut_10_016_total_amount_calculation_without_fine(): void
+    {
+        $damageCase = new DamageCase([
+            'repair_cost' => 120000,
+            'fine_amount' => 0,
+        ]);
+
+        $this->assertEquals(120000.0, $damageCase->total_amount);
+    }
+
+    /**
+     * [8.1-I4] Memastikan mapping status kasus kerusakan mengembalikan label 'Selesai' saat kasus lunas.
+     */
+    public function test_ut_10_017_status_label_completed(): void
+    {
+        $caseCompleted = new DamageCase(['case_status' => 'selesai']);
+
+        $this->assertEquals('Selesai', $caseCompleted->status_label);
+    }
 }

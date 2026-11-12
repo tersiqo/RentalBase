@@ -98,4 +98,29 @@ class CatalogAndInventoryUnitTest extends TestCase
         $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $order->user());
         $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class, $order->items());
     }
+
+    /**
+     * [8.1-I1] Memastikan atribut slug pada kategori terisi string slug URL ramah SEO.
+     */
+    public function test_ut_05_007_category_slug_and_attributes(): void
+    {
+        $category = new Category([
+            'name' => 'Kamera & Lensa',
+            'slug' => 'kamera-dan-lensa',
+        ]);
+
+        $this->assertEquals('kamera-dan-lensa', $category->slug);
+        $this->assertEquals('Kamera & Lensa', $category->name);
+    }
+
+    /**
+     * [8.1-I2] Memastikan nilai harga sewa harian produk tersimpan dengan presisi numerik integer.
+     */
+    public function test_ut_05_008_product_rental_price_integer_precision(): void
+    {
+        $product = new Product(['rental_price_per_day' => 175000]);
+
+        $this->assertEquals(175000, (int) $product->rental_price_per_day);
+        $this->assertGreaterThan(0, $product->rental_price_per_day);
+    }
 }

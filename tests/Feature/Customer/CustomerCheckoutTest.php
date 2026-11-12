@@ -135,7 +135,7 @@ class CustomerCheckoutTest extends TestCase
         $this->assertSame($hashes, session('checkout_items'));
     }
 
-    public function test_create_rejects_items_with_different_periods(): void
+    public function test_it_07_017_create_rejects_items_with_different_periods(): void
     {
         $productA = $this->makeProduct('Box Bayi', 35000);
         $cart = session()->get('cart', []);
@@ -277,7 +277,7 @@ class CustomerCheckoutTest extends TestCase
         $this->assertTrue($order->isPickup());
     }
 
-    public function test_store_rejects_invalid_shipping_method(): void
+    public function test_it_07_016_store_rejects_invalid_shipping_method(): void
     {
         $product = $this->makeProduct('Box Bayi', 35000);
         $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));

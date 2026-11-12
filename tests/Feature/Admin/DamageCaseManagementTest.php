@@ -344,7 +344,7 @@ class DamageCaseManagementTest extends TestCase
         $this->assertEquals('baik', $this->unitA->condition);
     }
 
-    public function test_tenant_isolation_admin_cannot_access_other_store_damage_case(): void
+    public function test_it_10_028_tenant_isolation_admin_cannot_access_other_store_damage_case(): void
     {
         // Admin B (Toko Sebelah) mencoba membuka kasus Toko A
         $response = $this->actingAs($this->adminB)
