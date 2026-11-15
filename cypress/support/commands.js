@@ -1,25 +1,23 @@
-// ***********************************************
-// This example commands.js shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add('login', (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add('drag', { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+// Custom Cypress Commands for RentalBase
+
+Cypress.Commands.add('loginCustomer', (email = 'rizky@gmail.com', password = 'password123') => {
+  cy.session(['customer', email], () => {
+    cy.visit('/login');
+    cy.contains('button', 'Customer').click({ force: true });
+    cy.get('#email').clear().type(email);
+    cy.get('#password').clear().type(password);
+    cy.contains('button[type="submit"]', 'Masuk').first().click();
+    cy.url().should('not.include', '/login');
+  });
+});
+
+Cypress.Commands.add('loginAdmin', (email = 'budi@babyrental.com', password = 'password123') => {
+  cy.session(['admin', email], () => {
+    cy.visit('/login');
+    cy.contains('button', 'Admin Toko').click({ force: true });
+    cy.get('#email').clear().type(email);
+    cy.get('#password').clear().type(password);
+    cy.contains('button[type="submit"]', 'Masuk').first().click();
+    cy.url().should('not.include', '/login');
+  });
+});

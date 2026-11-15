@@ -286,7 +286,7 @@ class EquipmentUnitTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_update_unit(): void
+    public function test_it_05_013_admin_can_update_unit(): void
     {
         $unit = EquipmentUnit::create([
             'client_id' => $this->client->id,

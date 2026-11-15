@@ -60,4 +60,16 @@ class CartAvailabilityUnitTest extends TestCase
         $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $product->category());
         $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $product->client());
     }
+
+    /**
+     * [7.2-I1] Memastikan model Cart dan CartItem dapat diinstansiasi dengan benar untuk penyimpanan session dan database.
+     */
+    public function test_ut_06_006_cart_and_cart_item_models_instantiation(): void
+    {
+        $cart = new \App\Models\Cart();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Model::class, $cart);
+
+        $cartItem = new \App\Models\CartItem();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Model::class, $cartItem);
+    }
 }
