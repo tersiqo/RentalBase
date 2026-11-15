@@ -67,8 +67,14 @@ class AdminActivityLogLogicTest extends TestCase
         $query = ActivityLog::query()->filter($filters);
         $sql = $query->toSql();
 
-        $this->assertStringContainsString('date("created_at") >= ?', $sql);
-        $this->assertStringContainsString('date("created_at") <= ?', $sql);
+        $this->assertTrue(
+            str_contains($sql, 'date("created_at") >= ?') || str_contains($sql, 'strftime(\'%Y-%m-%d\', "created_at") >='),
+            'Query harus memfilter tanggal created_at awal.'
+        );
+        $this->assertTrue(
+            str_contains($sql, 'date("created_at") <= ?') || str_contains($sql, 'strftime(\'%Y-%m-%d\', "created_at") <='),
+            'Query harus memfilter tanggal created_at akhir.'
+        );
         $this->assertStringContainsString('"client_id" = ?', $sql);
         $this->assertStringContainsString('"user_id" = ?', $sql);
         $this->assertStringContainsString('"module" = ?', $sql);

@@ -880,7 +880,7 @@ class CustomerCatalogEnhancementTest extends TestCase
         $lw->assertSee('Tersedia');
     }
 
-    public function test_product_detail_page_shows_bookable_status_when_currently_rented_today()
+    public function test_it_05_009_product_detail_page_renders_gallery_and_booking_status()
     {
         Carbon::setTestNow('2026-11-01 10:00:00');
 

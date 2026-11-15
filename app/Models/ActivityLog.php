@@ -100,8 +100,12 @@ class ActivityLog extends Model
                 'label' => 'Akun & Tenant',
                 'bg'    => 'bg-orange-50 text-orange-700 border-orange-200',
             ],
+            'settings' => [
+                'label' => 'Pengaturan Toko',
+                'bg'    => 'bg-stone-50 text-stone-700 border-stone-200',
+            ],
             default => [
-                'label' => ucfirst($this->module ?? 'Sistem'),
+                'label' => 'Umum',
                 'bg'    => 'bg-slate-50 text-slate-700 border-slate-200',
             ],
         };

@@ -176,14 +176,16 @@ class AdminNotificationCenterTest extends TestCase
         // 1. Filter tab 'orders' -> hanya menampilkan booking
         $responseOrders = $this->actingAs($this->adminA)->get(route('admin.notifications.index', ['tab' => 'orders']));
         $responseOrders->assertStatus(200);
-        $responseOrders->assertSee('Booking Masuk #ORD-77');
-        $responseOrders->assertDontSee('Barang Retur Diterima #RET-88');
+        $ordersItems = collect($responseOrders->viewData('notifications')->items());
+        $this->assertTrue($ordersItems->contains('title', 'Booking Masuk #ORD-77'));
+        $this->assertFalse($ordersItems->contains('title', 'Barang Retur Diterima #RET-88'));
 
         // 2. Filter tab 'returns' -> hanya menampilkan retur
         $responseReturns = $this->actingAs($this->adminA)->get(route('admin.notifications.index', ['tab' => 'returns']));
         $responseReturns->assertStatus(200);
-        $responseReturns->assertSee('Barang Retur Diterima #RET-88');
-        $responseReturns->assertDontSee('Booking Masuk #ORD-77');
+        $returnsItems = collect($responseReturns->viewData('notifications')->items());
+        $this->assertTrue($returnsItems->contains('title', 'Barang Retur Diterima #RET-88'));
+        $this->assertFalse($returnsItems->contains('title', 'Booking Masuk #ORD-77'));
     }
 
     /**

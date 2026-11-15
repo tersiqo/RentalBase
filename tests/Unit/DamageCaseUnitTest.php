@@ -67,4 +67,50 @@ class DamageCaseUnitTest extends TestCase
 
         $this->assertEquals('Selesai', $caseCompleted->status_label);
     }
+
+    /**
+     * [8.1-I4] Memastikan accessor can_pay dan unified_status mengembalikan status badge dan izin pembayaran kompensasi.
+     */
+    public function test_ut_10_018_damage_case_can_pay_and_unified_status_accessors(): void
+    {
+        $caseUnpaid = new DamageCase([
+            'repair_cost' => 100000,
+            'case_status' => 'menunggu_respons',
+            'payment_status' => 'belum_dibayar',
+        ]);
+
+        $this->assertTrue($caseUnpaid->can_pay);
+
+        $unified = $caseUnpaid->unified_status;
+        $this->assertIsArray($unified);
+        $this->assertArrayHasKey('label', $unified);
+        $this->assertArrayHasKey('color', $unified);
+        $this->assertArrayHasKey('key', $unified);
+
+        $casePaid = new DamageCase([
+            'case_status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu_verifikasi',
+        ]);
+        $this->assertFalse($casePaid->can_pay);
+    }
+
+    /**
+     * [8.1-I4] Memastikan model DamageReport memiliki relasi Eloquent ke Order, EquipmentUnit, User reporter, dan accessor images_list.
+     */
+    public function test_ut_10_019_damage_report_relations_and_images_list_accessor(): void
+    {
+        $report = new \App\Models\DamageReport([
+            'image' => 'reports/foto_rusak_1.jpg,reports/foto_rusak_2.jpg',
+        ]);
+
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $report->order());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $report->equipmentUnit());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $report->reporter());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\HasOne::class, $report->damageCase());
+
+        $imagesList = $report->images_list;
+        $this->assertIsArray($imagesList);
+        $this->assertCount(2, $imagesList);
+        $this->assertStringContainsString('foto_rusak_1.jpg', $imagesList[0]);
+    }
 }

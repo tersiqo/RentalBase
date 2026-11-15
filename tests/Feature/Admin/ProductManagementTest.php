@@ -231,7 +231,7 @@ class ProductManagementTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_update_product(): void
+    public function test_it_05_010_admin_can_update_product(): void
     {
         $product = Product::create([
             'client_id' => $this->client->id,
@@ -287,7 +287,7 @@ class ProductManagementTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_admin_can_toggle_product_status(): void
+    public function test_it_05_011_admin_can_toggle_product_status(): void
     {
         $product = Product::create([
             'client_id' => $this->client->id,
@@ -348,7 +348,7 @@ class ProductManagementTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id]);
     }
 
-    public function test_admin_can_delete_product_without_orders(): void
+    public function test_it_05_012_admin_can_delete_product_without_orders(): void
     {
         $product = Product::create([
             'client_id' => $this->client->id,

@@ -270,7 +270,7 @@ class DamageCaseManagementTest extends TestCase
         $response->assertSee('Rp 150.000');
     }
 
-    public function test_admin_can_respond_to_damage_case(): void
+    public function test_it_10_029_admin_can_respond_to_damage_case(): void
     {
         $response = $this->actingAs($this->adminA)
             ->post(route('admin.damage-cases.respond', $this->damageCaseA->id), [
@@ -286,7 +286,7 @@ class DamageCaseManagementTest extends TestCase
         $this->assertEquals('menunggu_respons', $this->damageCaseA->case_status);
     }
 
-    public function test_admin_can_verify_compensation_payment(): void
+    public function test_it_10_030_admin_can_verify_compensation_payment(): void
     {
         $payMethod = ClientPaymentMethod::create([
             'client_id' => $this->clientA->id,
@@ -324,7 +324,7 @@ class DamageCaseManagementTest extends TestCase
         $this->assertStringContainsString('Pembayaran Kompensasi Terverifikasi', $this->damageCaseA->resolution_notes);
     }
 
-    public function test_admin_can_close_damage_case_and_update_unit_status(): void
+    public function test_it_10_031_admin_can_close_damage_case_and_update_unit_status(): void
     {
         $response = $this->actingAs($this->adminA)
             ->post(route('admin.damage-cases.close', $this->damageCaseA->id), [

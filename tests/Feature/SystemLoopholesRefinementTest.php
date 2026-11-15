@@ -420,7 +420,7 @@ class SystemLoopholesRefinementTest extends TestCase
         $response->assertSessionHas('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
     }
 
-    public function test_admin_can_request_ktp_reupload_without_cancelling_order(): void
+    public function test_it_07_018_customer_can_reupload_identity_guarantee(): void
     {
         $order = Order::create([
             'client_id' => $this->client->id,
@@ -527,7 +527,7 @@ class SystemLoopholesRefinementTest extends TestCase
         $response->assertSessionHas('error', 'Keranjang belanja kamu di toko ini masih kosong.');
     }
 
-    public function test_customer_cannot_pay_using_other_tenant_payment_method(): void
+    public function test_it_08_001_customer_cannot_pay_using_other_tenant_payment_method(): void
     {
         $tenantB = Client::create([
             'business_name' => 'Toko B Beda Tenant',
@@ -574,6 +574,61 @@ class SystemLoopholesRefinementTest extends TestCase
             ]);
 
         $response->assertSessionHasErrors(['client_payment_method_id']);
+    }
+
+    public function test_it_08_002_customer_can_upload_valid_rental_payment_proof(): void
+    {
+        Storage::fake('public');
+
+        $paymentMethod = ClientPaymentMethod::create([
+            'client_id' => $this->client->id,
+            'bank_name' => 'BCA',
+            'account_number' => '987654321',
+            'account_holder' => 'Rental Base Official',
+            'is_active' => true,
+        ]);
+
+        $order = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $this->customer->id,
+            'order_number' => 'ORD-VALID-PAY',
+            'rental_start_date' => now()->addDays(2),
+            'rental_end_date' => now()->addDays(4),
+            'duration_days' => 2,
+            'total_amount' => 150000,
+            'status' => 'menunggu_pembayaran',
+            'shipping_method' => 'kurir',
+            'shipping_address' => 'Jl. Kenanga No 5',
+        ]);
+
+        IdentityGuarantee::create([
+            'order_id' => $order->id,
+            'customer_id' => $this->customer->id,
+            'full_name' => 'Customer Test',
+            'identity_number' => '3578000000000004',
+            'identity_address' => 'Jl. Kenanga No 5',
+            'identity_document_image' => 'ktp.jpg',
+            'face_image' => 'selfie.jpg',
+            'status' => 'diverifikasi',
+        ]);
+
+        $response = $this->actingAs($this->customer)
+            ->post(route('customer.orders.payment', $order->id), [
+                'payment_proof' => UploadedFile::fake()->image('bukti_transfer_valid.jpg'),
+                'client_payment_method_id' => $paymentMethod->id,
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $order->refresh();
+        $this->assertEquals('menunggu_verifikasi', $order->status);
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $order->id,
+            'client_payment_method_id' => $paymentMethod->id,
+            'amount' => 150000,
+            'status' => 'menunggu_konfirmasi',
+        ]);
     }
 
     public function test_closing_damage_case_completes_order_and_returns_ktp(): void
