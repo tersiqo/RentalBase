@@ -343,4 +343,124 @@ class OwnerPlatformIntegrationTest extends TestCase
         $response = $this->get(route('owner.subscriptions.history', $sub->id));
         $response->assertRedirect(route('owner.login'));
     }
+
+    // ========================================================================
+    // ITEM 6: OWNER EDIT PROFIL MASTER TENANT
+    // ========================================================================
+
+    public function test_it_mod_03_item_6_owner_can_update_master_tenant_profile(): void
+    {
+        $owner = $this->getOwnerUser();
+        $client = $this->getTestClient();
+
+        try {
+            DB::beginTransaction();
+
+            $admin = null;
+            try {
+                $admin = $client->adminUser ?? User::where('client_id', $client->id)->first();
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+
+            $adminEmail = $admin?->email ?? 'budi@babyrental.com';
+            $adminName  = $admin?->name ?? 'Budi Setiawan Admin';
+
+            $payload = [
+                'business_name' => $client->business_name,
+                'subdomain'     => $client->subdomain,
+                'description'   => 'Pusat sewa perlengkapan bayi dan balita terpercaya di Indonesia.',
+                'theme_color'   => '#10B981',
+                'admin_name'    => $adminName,
+                'admin_email'   => $adminEmail,
+                'admin_phone'   => '081234567890',
+                'admin_address' => 'Jl. Boulevard Raya Blok A4 No. 12',
+            ];
+
+            $response = $this->actingAs($owner, 'web')
+                ->put(route('owner.tenants.update', $client->id), $payload);
+
+            $response->assertRedirect();
+            $response->assertSessionHas('success');
+        } finally {
+            try {
+                DB::rollBack();
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
+    }
+
+    public function test_it_mod_03_item_6_owner_update_tenant_fails_with_reserved_subdomain(): void
+    {
+        $owner = $this->getOwnerUser();
+        $client = $this->getTestClient();
+
+        try {
+            DB::beginTransaction();
+
+            $payload = [
+                'business_name' => $client->business_name,
+                'subdomain'     => 'admin', // Kata cadangan sistem (reserved_subdomain)
+                'description'   => 'Deskripsi uji coba reserved',
+                'admin_name'    => 'Budi Admin',
+                'admin_email'   => 'budi@babyrental.com',
+                'admin_phone'   => '081234567890',
+            ];
+
+            $response = $this->actingAs($owner, 'web')
+                ->put(route('owner.tenants.update', $client->id), $payload);
+
+            $response->assertSessionHasErrors(['subdomain']);
+        } finally {
+            try {
+                DB::rollBack();
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
+    }
+
+    public function test_it_mod_03_item_6_owner_update_tenant_fails_with_duplicate_admin_email(): void
+    {
+        $owner = $this->getOwnerUser();
+        $client = $this->getTestClient();
+
+        try {
+            DB::beginTransaction();
+
+            // Pastikan user pemilik email lain ada di database jika tabel users tersedia
+            if (Schema::hasTable('users')) {
+                User::firstOrCreate(
+                    ['email' => 'owner@rentalbase.id'],
+                    [
+                        'name'     => 'Owner Platform',
+                        'role'     => 'owner',
+                        'status'   => 'aktif',
+                        'password' => bcrypt('password123'),
+                    ]
+                );
+            }
+
+            $payload = [
+                'business_name' => $client->business_name,
+                'subdomain'     => $client->subdomain,
+                'description'   => 'Deskripsi uji coba duplicate email',
+                'admin_name'    => 'Budi Admin',
+                'admin_email'   => 'owner@rentalbase.id', // Sudah terdaftar milik Owner
+                'admin_phone'   => '081234567890',
+            ];
+
+            $response = $this->actingAs($owner, 'web')
+                ->put(route('owner.tenants.update', $client->id), $payload);
+
+            $response->assertSessionHasErrors(['admin_email']);
+        } finally {
+            try {
+                DB::rollBack();
+            } catch (\Throwable $e) {
+                // Ignore
+            }
+        }
+    }
 }
