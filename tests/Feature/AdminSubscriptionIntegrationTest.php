@@ -153,4 +153,93 @@ class AdminSubscriptionIntegrationTest extends TestCase
             $response->assertRedirect('/');
         }
     }
+
+    // =========================================================================
+    // IT-MOD-04 - Item 9: Admin Toko Request Perpanjang + Upload Bukti Bayar (POST /admin/subscriptions/renew)
+    // =========================================================================
+
+    public function test_it_04_009_primary_admin_can_request_subscription_renewal_with_payment_proof(): void
+    {
+        Storage::fake(config('filesystems.default', 'public'));
+        [$client, $admin] = $this->resolveTenantAndAdmin();
+
+        // Hindari throttling 60 detik duplikasi dengan meng-age out created_at jika ada pending sebelumnya
+        Subscription::where('client_id', $client->id)
+            ->where('status', 'menunggu_konfirmasi')
+            ->where('created_at', '>=', now()->subSeconds(60))
+            ->update(['created_at' => now()->subMinutes(5)]);
+
+        $file = UploadedFile::fake()->create('bukti_transfer_renew.jpg', 800, 'image/jpeg');
+
+        $payload = [
+            'payment_proof' => $file,
+            'notes' => 'Perpanjangan paket toko untuk periode berikutnya via Transfer Bank BCA.',
+        ];
+
+        $response = $this->actingAs($admin)->post(route('admin.subscriptions.renew'), $payload);
+
+        $response->assertRedirect(route('admin.subscriptions.index'));
+        $response->assertSessionHas('success');
+
+        // Verifikasi record subscription baru tersimpan di database
+        $this->assertDatabaseHas('subscriptions', [
+            'client_id' => $client->id,
+            'status' => 'menunggu_konfirmasi',
+            'payment_status' => 'menunggu',
+            'notes' => 'Perpanjangan paket toko untuk periode berikutnya via Transfer Bank BCA.',
+        ]);
+
+        // Verifikasi pencatatan Activity Log audit
+        $this->assertDatabaseHas('activity_logs', [
+            'client_id' => $client->id,
+            'user_id' => $admin->id,
+            'action' => 'subscription_renewal_requested',
+            'module' => 'subscriptions',
+        ]);
+    }
+
+    public function test_it_04_009_request_renew_validation_fails_without_payment_proof(): void
+    {
+        [$client, $admin] = $this->resolveTenantAndAdmin();
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.subscriptions.index'))
+            ->post(route('admin.subscriptions.renew'), [
+                'notes' => 'Mencoba perpanjang tanpa bukti bayar',
+            ]);
+
+        $response->assertRedirect(route('admin.subscriptions.index'));
+        $response->assertSessionHasErrors(['payment_proof']);
+    }
+
+    public function test_it_04_009_request_renew_validation_fails_with_invalid_file_extension(): void
+    {
+        Storage::fake(config('filesystems.default', 'public'));
+        [$client, $admin] = $this->resolveTenantAndAdmin();
+
+        $invalidFile = UploadedFile::fake()->create('script_malicious.exe', 500, 'application/octet-stream');
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.subscriptions.index'))
+            ->post(route('admin.subscriptions.renew'), [
+                'payment_proof' => $invalidFile,
+            ]);
+
+        $response->assertRedirect(route('admin.subscriptions.index'));
+        $response->assertSessionHasErrors(['payment_proof']);
+    }
+
+    public function test_it_04_009_staff_admin_cannot_request_subscription_renewal(): void
+    {
+        [$client] = $this->resolveTenantAndAdmin();
+        $staffAdmin = $this->createStaffAdmin($client);
+
+        $file = UploadedFile::fake()->create('bukti_transfer.jpg', 500, 'image/jpeg');
+
+        $response = $this->actingAs($staffAdmin)->post(route('admin.subscriptions.renew'), [
+            'payment_proof' => $file,
+        ]);
+
+        $response->assertStatus(403);
+    }
 }
