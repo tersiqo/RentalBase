@@ -3,9 +3,16 @@
 namespace Tests\Unit;
 
 use App\Models\Client;
+use App\Models\Product;
 use App\Models\TenantProfile;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Tests\TestCase;
 
+/**
+ * ============================================================================
+ * UNIT TEST: UT-MOD-04 (TENANT PROFILE & THEME COLOR CONTRAST)
+ * ============================================================================
+ */
 class TenantProfileTest extends TestCase
 {
     public function test_fillable_attributes_are_properly_configured(): void
@@ -33,10 +40,37 @@ class TenantProfileTest extends TestCase
     {
         $profile = new TenantProfile();
 
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $profile->client());
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $profile->tenant());
+        $this->assertInstanceOf(BelongsTo::class, $profile->client());
+        $this->assertInstanceOf(BelongsTo::class, $profile->tenant());
         $this->assertSame('client_id', $profile->client()->getForeignKeyName());
         $this->assertSame('client_id', $profile->tenant()->getForeignKeyName());
+        $this->assertInstanceOf(Client::class, $profile->client()->getRelated());
+    }
+
+    public function test_hero_featured_product_relationship_returns_belongs_to(): void
+    {
+        $profile = new TenantProfile();
+
+        $relation = $profile->heroFeaturedProduct();
+
+        $this->assertInstanceOf(BelongsTo::class, $relation);
+        $this->assertSame('hero_featured_product_id', $relation->getForeignKeyName());
+        $this->assertInstanceOf(Product::class, $relation->getRelated());
+    }
+
+    public function test_tenant_profile_appends_and_casts_configuration(): void
+    {
+        $profile = new TenantProfile();
+
+        $this->assertContains('text_color', $profile->getAppends());
+
+        $profileWithData = new TenantProfile([
+            'client_id' => '10',
+            'hero_featured_product_id' => '25',
+        ]);
+
+        $this->assertSame(10, $profileWithData->client_id);
+        $this->assertSame(25, $profileWithData->hero_featured_product_id);
     }
 
     public function test_get_text_color_attribute_calculates_yiq_for_dark_colors(): void
@@ -83,5 +117,23 @@ class TenantProfileTest extends TestCase
         // 3 karakter hex terang (#EEE)
         $profile = new TenantProfile(['theme_color' => '#EEE']);
         $this->assertSame('#000000', $profile->text_color);
+    }
+
+    public function test_get_text_color_attribute_defaults_to_white_when_theme_color_is_null(): void
+    {
+        // Default color adalah #F97316 (RentalBase orange, YIQ < 150) -> menghasilkan teks putih
+        $profile = new TenantProfile(['theme_color' => null]);
+        $this->assertSame('#ffffff', $profile->text_color);
+    }
+
+    public function test_get_text_color_attribute_fallback_when_hex_is_invalid(): void
+    {
+        // Non-hex strings atau format salah
+        $invalidColors = ['invalid', '#12', '#GGGGGG', '', 'abcde'];
+
+        foreach ($invalidColors as $color) {
+            $profile = new TenantProfile(['theme_color' => $color]);
+            $this->assertSame('#ffffff', $profile->text_color, "Format '{$color}' harus fallback ke teks putih #ffffff.");
+        }
     }
 }
