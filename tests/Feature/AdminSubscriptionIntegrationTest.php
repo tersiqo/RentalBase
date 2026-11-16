@@ -242,4 +242,125 @@ class AdminSubscriptionIntegrationTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    // =========================================================================
+    // IT-MOD-04 - Item 10: Admin Toko Request Upgrade Paket (POST /admin/subscriptions/upgrade)
+    // =========================================================================
+
+    public function test_it_04_010_primary_admin_can_request_upgrade_to_business(): void
+    {
+        Storage::fake(config('filesystems.default', 'public'));
+        [$client, $admin] = $this->resolveTenantAndAdmin();
+
+        Subscription::where('client_id', $client->id)
+            ->where('status', 'menunggu_konfirmasi')
+            ->where('created_at', '>=', now()->subSeconds(60))
+            ->update(['created_at' => now()->subMinutes(5)]);
+
+        $file = UploadedFile::fake()->create('bukti_upgrade_business.png', 1024, 'image/png');
+
+        $payload = [
+            'plan_name' => 'business',
+            'payment_proof' => $file,
+            'notes' => 'Request upgrade toko ke paket Business untuk penambahan kuota produk.',
+        ];
+
+        $response = $this->actingAs($admin)->post(route('admin.subscriptions.upgrade'), $payload);
+
+        $response->assertRedirect(route('admin.subscriptions.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('subscriptions', [
+            'client_id' => $client->id,
+            'plan_name' => 'Business',
+            'status' => 'menunggu_konfirmasi',
+            'payment_status' => 'menunggu',
+            'notes' => 'Request upgrade toko ke paket Business untuk penambahan kuota produk.',
+        ]);
+
+        $this->assertDatabaseHas('activity_logs', [
+            'client_id' => $client->id,
+            'user_id' => $admin->id,
+            'action' => 'subscription_upgrade_requested',
+            'module' => 'subscriptions',
+        ]);
+    }
+
+    public function test_it_04_010_primary_admin_can_request_upgrade_to_professional(): void
+    {
+        Storage::fake(config('filesystems.default', 'public'));
+        [$client, $admin] = $this->resolveTenantAndAdmin();
+
+        Subscription::where('client_id', $client->id)
+            ->where('status', 'menunggu_konfirmasi')
+            ->where('created_at', '>=', now()->subSeconds(60))
+            ->update(['created_at' => now()->subMinutes(5)]);
+
+        $file = UploadedFile::fake()->create('bukti_upgrade_pro.pdf', 1200, 'application/pdf');
+
+        $payload = [
+            'plan_name' => 'professional',
+            'payment_proof' => $file,
+            'notes' => 'Request upgrade toko ke paket Professional.',
+        ];
+
+        $response = $this->actingAs($admin)->post(route('admin.subscriptions.upgrade'), $payload);
+
+        $response->assertRedirect(route('admin.subscriptions.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('subscriptions', [
+            'client_id' => $client->id,
+            'plan_name' => 'Professional',
+            'status' => 'menunggu_konfirmasi',
+            'payment_status' => 'menunggu',
+        ]);
+    }
+
+    public function test_it_04_010_request_upgrade_validation_fails_with_invalid_plan_name(): void
+    {
+        Storage::fake(config('filesystems.default', 'public'));
+        [$client, $admin] = $this->resolveTenantAndAdmin();
+
+        $file = UploadedFile::fake()->create('bukti.jpg', 500, 'image/jpeg');
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.subscriptions.index'))
+            ->post(route('admin.subscriptions.upgrade'), [
+                'plan_name' => 'enterprise_invalid',
+                'payment_proof' => $file,
+            ]);
+
+        $response->assertRedirect(route('admin.subscriptions.index'));
+        $response->assertSessionHasErrors(['plan_name']);
+    }
+
+    public function test_it_04_010_request_upgrade_validation_fails_without_payment_proof(): void
+    {
+        [$client, $admin] = $this->resolveTenantAndAdmin();
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.subscriptions.index'))
+            ->post(route('admin.subscriptions.upgrade'), [
+                'plan_name' => 'business',
+            ]);
+
+        $response->assertRedirect(route('admin.subscriptions.index'));
+        $response->assertSessionHasErrors(['payment_proof']);
+    }
+
+    public function test_it_04_010_staff_admin_cannot_request_subscription_upgrade(): void
+    {
+        [$client] = $this->resolveTenantAndAdmin();
+        $staffAdmin = $this->createStaffAdmin($client);
+
+        $file = UploadedFile::fake()->create('bukti.jpg', 500, 'image/jpeg');
+
+        $response = $this->actingAs($staffAdmin)->post(route('admin.subscriptions.upgrade'), [
+            'plan_name' => 'business',
+            'payment_proof' => $file,
+        ]);
+
+        $response->assertStatus(403);
+    }
 }
