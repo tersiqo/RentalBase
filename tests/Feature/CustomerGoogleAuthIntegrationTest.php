@@ -25,7 +25,7 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_it_01_007_google_oauth_customer_login_and_redirect_flow(): void
+    public function test_it_01_027_google_oauth_customer_login_and_redirect_flow(): void
     {
         $provider = Mockery::mock('Laravel\Socialite\Two\GoogleProvider');
         $provider->shouldReceive('redirect')

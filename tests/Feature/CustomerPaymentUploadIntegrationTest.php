@@ -58,7 +58,7 @@ class CustomerPaymentUploadIntegrationTest extends TestCase
         return [$client, $paymentMethod, $customer, $order];
     }
 
-    public function test_it_08_001_customer_can_upload_payment_proof_for_own_order(): void
+    public function test_it_08_008_customer_can_upload_payment_proof_for_own_order(): void
     {
         Storage::fake('public');
         [$client, $paymentMethod, $customer, $order] = $this->createOrderFixture();

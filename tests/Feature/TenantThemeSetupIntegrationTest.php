@@ -17,7 +17,7 @@ class TenantThemeSetupIntegrationTest extends TestCase
         $this->withoutVite();
     }
 
-    public function test_it_02_005_tenant_onboarding_theme_color_setup_flow(): void
+    public function test_it_02_009_tenant_onboarding_theme_color_setup_flow(): void
     {
         $client = Client::create([
             'business_name' => 'Kamera Rent Studio',

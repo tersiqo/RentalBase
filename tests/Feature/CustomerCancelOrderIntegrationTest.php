@@ -47,7 +47,7 @@ class CustomerCancelOrderIntegrationTest extends TestCase
         return [$client, $customer, $order];
     }
 
-    public function test_it_07_005_customer_can_cancel_own_unpaid_order_successfully(): void
+    public function test_it_07_023_customer_can_cancel_own_unpaid_order_successfully(): void
     {
         [$client, $customer, $order] = $this->createCustomerWithOrder('menunggu_pembayaran');
 
