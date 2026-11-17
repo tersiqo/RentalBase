@@ -1090,12 +1090,7 @@
                     };
 
                     if (ctx.state === 'suspended') {
-                        let allowed = true;
-                        const timer = setTimeout(() => { allowed = false; }, 60);
-                        ctx.resume().then(() => {
-                            clearTimeout(timer);
-                            if (allowed) executeChime();
-                        }).catch(() => {});
+                        ctx.resume().then(() => executeChime()).catch(() => executeChime());
                     } else {
                         executeChime();
                     }

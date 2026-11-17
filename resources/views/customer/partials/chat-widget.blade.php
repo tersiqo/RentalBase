@@ -499,9 +499,7 @@ function customerChatWidget(config) {
                     this.messages.push(e);
 
                     if (e.sender_role === 'admin') {
-                        if (!this.isOpen || document.hidden) {
-                            this.playChime();
-                        }
+                        this.playChime();
                         if (!this.isOpen) {
                             this.unreadCount++;
                         } else {
@@ -692,12 +690,7 @@ function customerChatWidget(config) {
                 };
 
                 if (ctx.state === 'suspended') {
-                    let allowed = true;
-                    const timer = setTimeout(() => { allowed = false; }, 60);
-                    ctx.resume().then(() => {
-                        clearTimeout(timer);
-                        if (allowed) executeChime();
-                    }).catch(() => {});
+                    ctx.resume().then(() => executeChime()).catch(() => executeChime());
                 } else {
                     executeChime();
                 }
