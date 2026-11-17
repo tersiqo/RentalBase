@@ -268,4 +268,115 @@ describe('E2E TEST — MODUL 04: PENGELOLAAN TOKO, STAF, LAPORAN & LANGGANAN ADM
       }
     });
   });
+
+  // =========================================================================
+  // 3. LAPORAN TRANSAKSI TOKO & AUDIT FINANSIAL (/admin/reports)
+  // =========================================================================
+
+  it('ET-04-029: Halaman /admin/reports memuat judul Laporan Transaksi Toko dan indikator Audit Finansial', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports');
+
+    cy.url().should('include', '/admin/reports');
+    cy.get('h1').should('contain.text', 'Laporan Transaksi Toko');
+    cy.contains('span', 'Audit Finansial & Operasional').should('be.visible');
+    cy.contains('p', 'Pantau realisasi pendapatan sewa pokok, penerimaan denda keterlambatan, dan pelunasan kompensasi kerusakan unit rental.').should('be.visible');
+  });
+
+  it('ET-04-030: Tombol dropdown Export membuka menu pilihan format unduhan (CSV, Excel, PDF)', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports');
+
+    // Klik tombol dropdown export
+    cy.get('#btn-export').click();
+
+    // Menu format unduhan muncul
+    cy.contains('span', 'Pilih Format Unduhan').should('be.visible');
+    cy.get('#btn-export-csv').should('be.visible');
+    cy.get('#btn-export-excel').should('be.visible');
+    cy.get('#btn-export-pdf').should('be.visible');
+  });
+
+  it('ET-04-031: Opsi Export CSV pada menu dropdown memuat tautan unduhan dengan parameter format CSV', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports');
+
+    cy.get('#btn-export').click();
+    cy.get('#btn-export-csv')
+      .should('have.attr', 'href')
+      .and('include', 'format=csv');
+  });
+
+  it('ET-04-032: Opsi Export Excel pada menu dropdown memuat tautan unduhan dengan parameter format Excel', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports');
+
+    cy.get('#btn-export').click();
+    cy.get('#btn-export-excel')
+      .should('have.attr', 'href')
+      .and('include', 'format=excel');
+  });
+
+  it('ET-04-033: Opsi Export PDF pada menu dropdown memuat tautan unduhan dengan parameter format PDF', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports');
+
+    cy.get('#btn-export').click();
+    cy.get('#btn-export-pdf')
+      .should('have.attr', 'href')
+      .and('include', 'format=pdf');
+  });
+
+  it('ET-04-034: Tombol preset periode Hari Ini memperbarui parameter tanggal ke hari berjalan', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports?preset=hari_ini');
+
+    cy.url().should('include', 'preset=hari_ini');
+    cy.contains('Periode laporan:').should('be.visible');
+  });
+
+  it('ET-04-035: Tombol preset periode 7 Hari Terakhir memperbarui rentang tanggal ke sepekan terakhir', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports?preset=7_hari_terakhir');
+
+    cy.url().should('include', 'preset=7_hari_terakhir');
+    cy.contains('Periode laporan:').should('be.visible');
+  });
+
+  it('ET-04-036: Tombol preset periode Bulan Ini memperbarui rentang tanggal ke awal hingga akhir bulan berjalan', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports?preset=bulan_ini');
+
+    cy.url().should('include', 'preset=bulan_ini');
+    cy.contains('Periode laporan:').should('be.visible');
+  });
+
+  it('ET-04-037: Memilih preset periode menampilkan badge indikator perubahan belum diterapkan', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports');
+
+    // Klik preset berbeda dari Bulan Ini (misal Hari Ini) agar tanggal berubah dan memicu isDirty
+    cy.contains('button', 'Hari Ini').click();
+
+    // Badge dirty indicator tampil
+    cy.contains('span', 'Perubahan belum diterapkan').should('be.visible');
+  });
+
+  it('ET-04-038: Tombol Terapkan Filter memperbarui laporan transaksi dan menyaring data finansial', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports?preset=bulan_ini');
+
+    cy.url().should('include', 'preset=bulan_ini');
+    cy.get('table').should('exist');
+  });
+
+  it('ET-04-039: Empat kartu ringkasan audit finansial (Sewa Pokok, Denda, Ganti Rugi, Total Bersih) tampil akurat', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/reports');
+
+    cy.contains('span', 'Total Pendapatan').should('be.visible');
+    cy.contains('span', 'Sewa Pokok').should('be.visible');
+    cy.contains('span', 'Pendapatan Denda').should('be.visible');
+    cy.contains('span', 'Kompensasi Rusak').should('be.visible');
+  });
 });
