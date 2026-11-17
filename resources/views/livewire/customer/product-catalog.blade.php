@@ -11,7 +11,7 @@
                         </span>
                         @guest
                             <span class="inline-flex items-center gap-1.5 tenant-badge rounded-full px-3 py-1 text-[12px] font-bold shadow-2xs">
-                                <span class="w-1.5 h-1.5 rounded-full tenant-badge-dot animate-pulse"></span>
+                                <span class="w-1.5 h-1.5 rounded-full tenant-badge-dot"></span>
                                 Pratinjau Koleksi
                             </span>
                         @endguest
@@ -113,7 +113,7 @@
                                     </div>
                                     @if($featAvailable > 0)
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             {{ $featAvailable }} Tersedia
                                         </span>
                                     @else
@@ -150,7 +150,7 @@
                         <!-- Top-Right Floating Pill -->
                         <div class="absolute -right-1 top-4 animate-float-slow z-20">
                             <div class="bg-white/95 backdrop-blur-md border border-gray-100 rounded-full px-3.5 py-1.5 text-[12px] font-bold text-gray-800 shadow-[0_14px_28px_-10px_rgba(0,0,0,0.25)] flex items-center gap-2 hover:scale-105 transition-transform">
-                                <span class="w-2 h-2 rounded-full bg-primary-500 animate-pulse" style="box-shadow: 0 0 0 4px color-mix(in srgb, var(--tenant-theme) 22%, white);"></span>
+                                <span class="w-2 h-2 rounded-full bg-primary-500" style="box-shadow: 0 0 0 4px color-mix(in srgb, var(--tenant-theme) 22%, white);"></span>
                                 {{ $featAvailable > 0 ? 'Unit siap antar' : 'Koleksi Unggulan' }}
                             </div>
                         </div>
@@ -180,7 +180,7 @@
                         </div>
                         <div class="absolute -right-1.5 top-5 animate-float-slow">
                             <div class="bg-white/95 backdrop-blur-md border border-gray-100 rounded-full px-4 py-2 text-[13px] font-bold text-gray-800 shadow-[0_14px_28px_-10px_rgba(0,0,0,0.25)] flex items-center gap-2 hover:scale-105 transition-transform">
-                                <span class="w-2 h-2 rounded-full bg-primary-500 animate-pulse" style="box-shadow: 0 0 0 4px color-mix(in srgb, var(--tenant-theme) 22%, white);"></span>Unit siap antar
+                                <span class="w-2 h-2 rounded-full bg-primary-500" style="box-shadow: 0 0 0 4px color-mix(in srgb, var(--tenant-theme) 22%, white);"></span>Unit siap antar
                             </div>
                         </div>
                     </div>
@@ -254,7 +254,7 @@
                     @if($startDate && $endDate)
                         <div class="p-2 tenant-badge rounded-lg text-[11.5px] font-medium flex items-center justify-between">
                             <span>Filter stok aktif per tanggal</span>
-                            <span class="w-2 h-2 rounded-full tenant-badge-dot animate-pulse"></span>
+                            <span class="w-2 h-2 rounded-full tenant-badge-dot"></span>
                         </div>
                     @endif
                 </div>
@@ -514,7 +514,7 @@
                                         </svg>
                                     </div>
                                     <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-bold tenant-badge mb-2.5">
-                                        <span class="w-1.5 h-1.5 rounded-full tenant-badge-dot animate-pulse"></span>
+                                        <span class="w-1.5 h-1.5 rounded-full tenant-badge-dot"></span>
                                         Buka Akses Penuh
                                     </div>
                                     <h3 class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-2.5 tracking-tight">

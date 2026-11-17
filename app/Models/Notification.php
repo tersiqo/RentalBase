@@ -25,6 +25,49 @@ class Notification extends Model
     ];
 
     /**
+     * Otomatis kirimkan Web Push Notification (OS native) saat notifikasi dibuat.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (self $notification) {
+            try {
+                $service = app(\App\Services\WebPushService::class);
+                $recipient = $notification->user;
+                $role = $recipient?->role;
+
+                // Tentukan target URL akurat berdasarkan role penerima & jenis notifikasi
+                if ($role === 'customer') {
+                    $targetUrl = url('/my-orders');
+                } elseif ($role === 'admin_rental' || ($notification->client_id && $role !== 'owner')) {
+                    $targetUrl = $notification->admin_target_url;
+                } else {
+                    $targetUrl = $notification->owner_target_url;
+                }
+
+                $payload = [
+                    'title' => $notification->title,
+                    'body'  => $notification->message,
+                    'url'   => $targetUrl,
+                    'type'  => $notification->type,
+                    'tag'   => 'rb-notif-' . $notification->id,
+                ];
+
+                if ($role === 'admin_rental' && $notification->client_id) {
+                    $service->sendToClientAdmins((int) $notification->client_id, $payload);
+                } elseif ($notification->user_id) {
+                    $service->sendToUser((int) $notification->user_id, $payload);
+                } elseif ($notification->client_id) {
+                    $service->sendToClientAdmins((int) $notification->client_id, $payload);
+                } else {
+                    $service->sendToOwner($payload);
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('[WebPush] Error hook Notification: ' . $e->getMessage());
+            }
+        });
+    }
+
+    /**
      * Relasi ke User penerima notifikasi.
      */
     public function user()

@@ -135,6 +135,18 @@
         @else
         <!-- Authenticated State: Message Container -->
         <div class="flex-1 flex flex-col min-h-0 bg-stone-50/50">
+
+            <!-- Bar Notifikasi Background Perangkat (Customer Chat) -->
+            <div x-data="rbWebPush()" x-init="init()" x-show="isSupported && !isSubscribed" x-cloak class="px-3.5 py-2 bg-orange-50/90 border-b border-orange-100 flex items-center justify-between gap-2 shrink-0">
+                <span class="text-[11px] font-medium text-orange-900 truncate">Terima notif balasan saat web ditutup?</span>
+                <button type="button"
+                        @click="subscribe()"
+                        :disabled="isLoading"
+                        class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-orange-500 text-white hover:bg-orange-600 transition shrink-0 cursor-pointer">
+                    <span x-show="!isLoading">Aktifkan</span>
+                    <span x-show="isLoading">...</span>
+                </button>
+            </div>
             
             <!-- Message List Scrollable -->
             <div id="customer-chat-messages" 
@@ -381,6 +393,11 @@ function customerChatWidget(config) {
 
             if (config.isAuthenticated) {
                 this.loadActiveConversation();
+            }
+
+            if (window.location.search.includes('open_chat=1') || window.location.hash === '#open-chat') {
+                this.isOpen = true;
+                this.$nextTick(() => this.scrollToBottom());
             }
 
             // Dengarkan event untuk toggle/buka chat dari toast notifikasi global

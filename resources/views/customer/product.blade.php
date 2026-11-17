@@ -63,7 +63,6 @@
                 @if($availToday > 0)
                 <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 bg-white/95 backdrop-blur-sm px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-green-200 shadow-sm flex items-center gap-1.5">
                     <span class="relative flex h-2 sm:h-2.5 w-2 sm:w-2.5">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-green-500"></span>
                     </span>
                     <span class="text-[11px] sm:text-xs font-bold text-green-700">{{ $availToday }} Unit Tersedia</span>

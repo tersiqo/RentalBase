@@ -15,6 +15,7 @@
     
     <!-- Scripts/Styles (Vite) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="{{ asset('js/rentalbase-webpush.js') }}"></script>
     @livewireStyles
 
     @php

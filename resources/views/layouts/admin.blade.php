@@ -37,6 +37,7 @@
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="{{ asset('js/rentalbase-webpush.js') }}"></script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -540,6 +541,40 @@
                         </button>
                     </form>
                 @endif
+            </div>
+
+            {{-- Web Push OS Device Notification Bar --}}
+            <div x-data="rbWebPush()" x-init="init()" class="px-4 py-2.5 bg-gradient-to-r from-orange-50/80 to-amber-50/50 border-b border-orange-100/70">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2 h-2 rounded-full shrink-0" :class="isSubscribed ? 'bg-emerald-500' : 'bg-gray-400'"></span>
+                        <div class="min-w-0">
+                            <p class="font-bold text-gray-800 text-[11px] truncate" x-text="isSubscribed ? 'Notifikasi Perangkat: Aktif' : 'Notifikasi Saat Tab Ditutup'"></p>
+                            <p class="text-[10px] text-gray-500 truncate" x-text="isSubscribed ? 'Pesanan & chat masuk ke layar desktop' : 'Terima pesanan walau browser ditutup'"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button"
+                                x-show="isSubscribed"
+                                @click="sendTestNotification()"
+                                :disabled="isLoading"
+                                class="px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 transition cursor-pointer"
+                                title="Kirim notifikasi tes ke layar Anda">
+                            Tes
+                        </button>
+                        <button type="button"
+                                @click="toggleSubscription()"
+                                :disabled="isLoading"
+                                class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer"
+                                :class="isSubscribed 
+                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' 
+                                    : 'bg-orange-500 text-white hover:bg-orange-600 shadow-2xs'">
+                            <span x-show="!isLoading" x-text="isSubscribed ? 'Aktif ✓' : 'Aktifkan'"></span>
+                            <span x-show="isLoading" class="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full"></span>
+                        </button>
+                    </div>
+                </div>
+                <p x-show="feedbackMessage" x-text="feedbackMessage" class="text-[10px] text-orange-700 mt-1.5 font-semibold"></p>
             </div>
 
             {{-- 5 Latest Notifications List --}}

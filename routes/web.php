@@ -237,3 +237,12 @@ Route::get('/client/{subdomain}/cart', CartPage::class)
 Route::get('/auth/google', [GoogleController::class, 'redirect'])
     ->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
+
+// Web Push Notifications API (Background OS Push)
+Route::get('/webpush/vapid-public-key', [\App\Http\Controllers\WebPushController::class, 'getPublicKey'])->name('webpush.public-key');
+Route::middleware(['auth'])->group(function () {
+    Route::post('/webpush/subscribe', [\App\Http\Controllers\WebPushController::class, 'subscribe'])->name('webpush.subscribe');
+    Route::post('/webpush/unsubscribe', [\App\Http\Controllers\WebPushController::class, 'unsubscribe'])->name('webpush.unsubscribe');
+    Route::post('/webpush/test', [\App\Http\Controllers\WebPushController::class, 'testPush'])->name('webpush.test');
+});
+
