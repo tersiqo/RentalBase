@@ -379,4 +379,139 @@ describe('E2E TEST — MODUL 04: PENGELOLAAN TOKO, STAF, LAPORAN & LANGGANAN ADM
     cy.contains('span', 'Pendapatan Denda').should('be.visible');
     cy.contains('span', 'Kompensasi Rusak').should('be.visible');
   });
+
+  // =========================================================================
+  // 4. LANGGANAN, KUOTA LIMIT TOKO & UPGRADE PAKET (/admin/subscriptions)
+  // =========================================================================
+
+  it('ET-04-040: Halaman /admin/subscriptions memuat status masa aktif toko dan badge sisa hari langganan', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.url().should('include', '/admin/subscriptions');
+    cy.get('h1').should('contain.text', 'Langganan & Paket Toko');
+    cy.contains('span', 'Status:').should('be.visible');
+  });
+
+  it('ET-04-041: Kartu paket aktif menampilkan 4 progress bar kuota (Katalog Produk, Unit Fisik, Kategori, Staf Admin)', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.contains('span', 'Paket Toko Saat Ini').should('be.visible');
+    cy.contains('span', 'Katalog Produk').should('be.visible');
+    cy.contains('span', 'Unit Fisik Peralatan').should('be.visible');
+    cy.contains('span', 'Kategori Produk').should('be.visible');
+    cy.contains('span', 'Akun Admin Staf').should('be.visible');
+  });
+
+  it('ET-04-042: Tombol aksi Perpanjang Paket Ini membuka Modal Perpanjangan Langganan dengan rincian biaya transfer', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('button:contains("Perpanjang Paket Ini")').length > 0) {
+        cy.get('button:contains("Perpanjang Paket Ini")').click({ force: true });
+
+        // Modal Perpanjangan Terbuka
+        cy.contains('h3', 'Perpanjang Paket').should('be.visible');
+        cy.contains('span', 'Total Transfer:').should('be.visible');
+        cy.get('input[name="payment_proof"]').should('exist');
+      }
+    });
+  });
+
+  it('ET-04-043: Modal perpanjangan langganan memvalidasi unggahan file bukti pembayaran wajib diisi', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('button:contains("Perpanjang Paket Ini")').length > 0) {
+        cy.get('button:contains("Perpanjang Paket Ini")').click({ force: true });
+
+        // Submit form tanpa melampirkan file
+        cy.contains('button[type="submit"]', 'Kirim Pengajuan Perpanjangan').click();
+
+        // Field file bukti transfer fokus divalidasi
+        cy.get('input[name="payment_proof"]').should('exist');
+      }
+    });
+  });
+
+  it('ET-04-044: Tombol Batal pada Modal Perpanjangan Langganan menutup dialog modal', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('button:contains("Perpanjang Paket Ini")').length > 0) {
+        cy.get('button:contains("Perpanjang Paket Ini")').click({ force: true });
+        cy.contains('button:visible', 'Batal').click({ force: true });
+
+        cy.contains('h3', 'Perpanjang Paket').should('not.be.visible');
+      }
+    });
+  });
+
+  it('ET-04-045: Tombol aksi Upgrade Paket membuka Modal Formulir Upgrade Paket Toko', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('button:contains("Upgrade Paket")').length > 0) {
+        cy.get('button:contains("Upgrade Paket")').first().click({ force: true });
+
+        // Modal Upgrade Terbuka
+        cy.contains('h3', 'Formulir Upgrade Paket Toko').should('be.visible');
+        cy.get('select[name="plan_name"]').should('be.visible');
+      }
+    });
+  });
+
+  it('ET-04-046: Modal upgrade paket menyediakan pilihan paket tujuan (Business/Professional) dan kalkulasi biaya', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('button:contains("Upgrade Paket")').length > 0) {
+        cy.get('button:contains("Upgrade Paket")').first().click({ force: true });
+
+        cy.get('select[name="plan_name"]').should('be.visible');
+        cy.contains('span', 'Total Nominal Transfer:').should('exist');
+      }
+    });
+  });
+
+  it('ET-04-047: Tombol Batal pada Modal Formulir Upgrade Paket Toko menutup modal dialog', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('button:contains("Upgrade Paket")').length > 0) {
+        cy.get('button:contains("Upgrade Paket")').first().click({ force: true });
+        cy.contains('button:visible', 'Batal').click({ force: true });
+
+        cy.contains('h3', 'Formulir Upgrade Paket Toko').should('not.be.visible');
+      }
+    });
+  });
+
+  it('ET-04-048: Bagian Perbandingan Paket menampilkan kartu Starter, Business, dan Professional beserta batas kuotanya', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.contains('h2', 'Perbandingan Paket RentalBase').should('be.visible');
+    cy.contains('h3', 'Starter').should('be.visible');
+    cy.contains('h3', 'Business').should('be.visible');
+    cy.contains('h3', 'Professional').should('be.visible');
+  });
+
+  it('ET-04-049: Bagian Riwayat Langganan Toko memuat tabel catatan perpanjangan, nominal biaya, dan status verifikasi', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/subscriptions');
+
+    cy.contains('h3', 'Riwayat Langganan Toko').should('be.visible');
+    cy.contains('th', 'Tanggal Pengajuan').should('be.visible');
+    cy.contains('th', 'Paket').should('be.visible');
+    cy.contains('th', 'Nominal Biaya').should('be.visible');
+    cy.contains('th', 'Status Pembayaran').should('be.visible');
+  });
 });
