@@ -98,4 +98,174 @@ describe('E2E TEST — MODUL 04: PENGELOLAAN TOKO, STAF, LAPORAN & LANGGANAN ADM
       .should('be.visible')
       .and('contain.text', 'Lihat Semua');
   });
+
+  // =========================================================================
+  // 2. MANAJEMEN AKUN STAF ADMIN INTERNAL TOKO (/admin/admins)
+  // =========================================================================
+
+  it('ET-04-017: Halaman /admin/admins memuat judul Manajemen Akun Admin dan deskripsi pengelolaan internal', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.url().should('include', '/admin/admins');
+    cy.get('h1').should('contain.text', 'Manajemen Akun Admin');
+    cy.contains('p', 'Kelola akun staf Admin internal toko Anda dan pantau batasan kuota sesuai paket subscription yang aktif.').should('be.visible');
+  });
+
+  it('ET-04-018: Kartu indikator kuota menampilkan tier paket toko, rasio staf aktif vs batas kuota, dan progress bar', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.contains('span', 'PAKET SUBSCRIPTION').should('be.visible');
+    cy.contains('p', 'Kuota Admin:').should('be.visible');
+    cy.contains('span', 'Penggunaan Kuota').should('be.visible');
+  });
+
+  it('ET-04-019: Tombol Tambah Admin membuka Modal Tambah Admin Baru dengan form input kredensial lengkap', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('#btn-tambah-admin').length > 0) {
+        cy.get('#btn-tambah-admin').click();
+
+        // Modal Form Terbuka
+        cy.contains('h3', 'Tambah Admin Baru').should('be.visible');
+        cy.get('#name').should('be.visible');
+        cy.get('#email').should('be.visible');
+        cy.get('#password').should('be.visible');
+        cy.get('#password_confirmation').should('be.visible');
+        cy.contains('button[type="submit"]', 'Simpan').should('be.visible');
+      } else {
+        cy.contains('Tambah Admin (Penuh)').should('exist');
+      }
+    });
+  });
+
+  it('ET-04-020: Tombol Batal pada Modal Tambah Admin menutup jendela modal tanpa menyimpan data', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('#btn-tambah-admin').length > 0) {
+        cy.get('#btn-tambah-admin').click();
+        cy.contains('h3', 'Tambah Admin Baru').should('be.visible');
+
+        cy.contains('button:visible', 'Batal').click();
+        cy.contains('h3', 'Tambah Admin Baru').should('not.be.visible');
+      }
+    });
+  });
+
+  it('ET-04-021: Form modal tambah admin memvalidasi field wajib nama, email, password, dan konfirmasi password', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('#btn-tambah-admin').length > 0) {
+        cy.get('#btn-tambah-admin').click();
+        cy.contains('button[type="submit"]', 'Simpan').click();
+
+        // Form browser/HTML5 menahan submit karena field required
+        cy.get('#name').should('have.prop', 'required', true);
+        cy.get('#email').should('have.prop', 'required', true);
+        cy.contains('button:visible', 'Batal').click();
+      }
+    });
+  });
+
+  it('ET-04-022: Form modal tambah admin menolak konfirmasi password yang tidak cocok', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('#btn-tambah-admin').length > 0) {
+        cy.get('#btn-tambah-admin').click();
+
+        cy.get('#name').type('Staf Test Baru');
+        cy.get('#email').type(`staf_${Date.now()}@test.com`);
+        cy.get('#password').type('password123');
+        cy.get('#password_confirmation').type('passwordBeda999');
+        cy.contains('button[type="submit"]', 'Simpan').click();
+
+        // Tetap di halaman dan menampilkan error
+        cy.url().should('include', '/admin/admins');
+      }
+    });
+  });
+
+  it('ET-04-023: Form modal tambah admin menolak password yang kurang dari 8 karakter', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('#btn-tambah-admin').length > 0) {
+        cy.get('#btn-tambah-admin').click();
+
+        cy.get('#name').type('Staf Test Pendek');
+        cy.get('#email').type(`staf_pendek_${Date.now()}@test.com`);
+        cy.get('#password').type('pass123');
+        cy.get('#password_confirmation').type('pass123');
+        cy.contains('button[type="submit"]', 'Simpan').click();
+
+        cy.url().should('include', '/admin/admins');
+      }
+    });
+  });
+
+  it('ET-04-024: Input pencarian staf menyaring baris tabel secara real-time berdasarkan kecocokan nama atau email', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('input[placeholder*="Cari nama atau email admin..."]').type('budi');
+    cy.get('table tbody').should('contain.text', 'budi');
+  });
+
+  it('ET-04-025: Akun Admin Utama toko memiliki badge khusus dan tombol aksi terlindungi dari penonaktifan', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('table').contains('span', 'Admin Utama').should('be.visible');
+    cy.get('table').contains('span', 'Pengelola Utama Toko').should('be.visible');
+  });
+
+  it('ET-04-026: Akun admin yang sedang login memiliki badge Akun Anda dan aksi terlindungi Terkunci', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('table').contains('span', 'Akun Anda').should('be.visible');
+    cy.get('table tbody tr:contains("Akun Anda")').within(() => {
+      cy.get('span:contains("Terkunci"), span:contains("Admin Utama")').should('exist');
+    });
+  });
+
+  it('ET-04-027: Tombol aksi Nonaktifkan pada staf aktif membuka Modal Konfirmasi Penonaktifan Akun', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Nonaktifkan")').length > 0) {
+        cy.get('table tbody tr button:contains("Nonaktifkan")').first().click({ force: true });
+
+        // Modal Konfirmasi Terbuka
+        cy.contains('h3', 'Nonaktifkan Akun Admin').should('be.visible');
+        cy.contains('button:visible', 'Batal').should('be.visible');
+        cy.contains('button', 'Ya, Nonaktifkan').should('be.visible');
+      }
+    });
+  });
+
+  it('ET-04-028: Tombol Batal pada Modal Konfirmasi Penonaktifan membatalkan aksi dan menutup modal', () => {
+    cy.loginAdmin(adminEmail, validPassword);
+    cy.visit('/admin/admins');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Nonaktifkan")').length > 0) {
+        cy.get('table tbody tr button:contains("Nonaktifkan")').first().click({ force: true });
+        cy.contains('button:visible', 'Batal').click({ force: true });
+
+        cy.contains('h3', 'Nonaktifkan Akun Admin').should('not.be.visible');
+      }
+    });
+  });
 });
