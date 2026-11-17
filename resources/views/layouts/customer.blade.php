@@ -214,31 +214,37 @@
     </style>
 </head>
 <body class="bg-[#FAFAFA] text-gray-600 font-sans antialiased min-h-screen flex flex-col"
-      x-data="{ howToRentModalOpen: false, helpModalOpen: false, mobileMenuOpen: false }"
+      x-data="{ 
+          howToRentModalOpen: false, 
+          helpModalOpen: false, 
+          mobileMenuOpen: false,
+          cartToast: { show: false, title: '', message: '' }
+      }"
+      @show-cart-toast.window="cartToast = { show: true, title: $event.detail.title || 'Berhasil', message: $event.detail.message || '' }; setTimeout(() => cartToast.show = false, 4000)"
       @keydown.escape.window="howToRentModalOpen = false; helpModalOpen = false; mobileMenuOpen = false">
 
     <!-- Header -->
     <header class="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
-        <div class="max-w-[1260px] mx-auto px-6">
-            <div class="flex justify-between items-center h-[68px]">
+        <div class="max-w-[1260px] mx-auto px-4 sm:px-6">
+            <div class="flex justify-between items-center h-[68px] gap-2.5">
                 <!-- Logo & Name -->
-                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="flex items-center gap-3 font-extrabold text-gray-900 text-[17px] group">
+                <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="flex items-center gap-2.5 sm:gap-3 font-extrabold text-gray-900 text-[15px] sm:text-[17px] group min-w-0 shrink">
                     @if($logoUrl)
                         <img src="{{ $logoUrl }}"
                              alt="{{ $tenantProfile?->name ?? $client->nama_usaha ?? 'Logo Toko' }}"
                              onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';"
-                             class="w-[40px] h-[40px] rounded-xl object-contain border border-gray-100 p-0.5 shadow-sm group-hover:scale-105 transition-transform bg-white">
-                        <div class="hidden w-[38px] h-[38px] rounded-xl items-center justify-center font-bold shadow-sm transition-all"
+                             class="w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] shrink-0 rounded-xl object-contain border border-gray-100 p-0.5 shadow-sm group-hover:scale-105 transition-transform bg-white">
+                        <div class="hidden w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] shrink-0 rounded-xl items-center justify-center font-bold shadow-sm transition-all"
                              style="background-color: var(--tenant-theme); color: var(--tenant-text);">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M3 4h3l2 11h10M6 8h13l-2 6H8"/></svg>
                         </div>
                     @else
-                        <div class="w-[38px] h-[38px] rounded-xl flex items-center justify-center font-bold shadow-sm transition-all"
+                        <div class="w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] shrink-0 rounded-xl flex items-center justify-center font-bold shadow-sm transition-all"
                              style="background-color: var(--tenant-theme); color: var(--tenant-text);">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M3 4h3l2 11h10M6 8h13l-2 6H8"/></svg>
                         </div>
                     @endif
-                    <span>{{ $tenantProfile?->name ?? $client->nama_usaha ?? ($client->name ?? 'RentalBase Tenant') }}</span>
+                    <span class="truncate max-w-[155px] sm:max-w-[220px] md:max-w-none">{{ $tenantProfile?->name ?? $client->nama_usaha ?? ($client->name ?? 'RentalBase Tenant') }}</span>
                 </a>
 
                 <!-- Center Navigation -->
@@ -255,10 +261,7 @@
                 </nav>
 
                 <!-- Right Actions -->
-                <div class="flex items-center space-x-5">
-                    <!-- Search Bar (Header) -->
-                    <!-- Search Bar Navbar Dihapus agar tidak double dengan hero search -->
-
+                <div class="flex items-center gap-2 sm:gap-3.5 shrink-0">
                     <!-- Cart -->
                     <livewire:customer.cart-icon :client="$client" />
 
@@ -277,13 +280,13 @@
                                 : route('customer.notifications.index');
                         @endphp
                         <a href="{{ $notifRoute }}"
-                           class="relative p-2 rounded-xl text-gray-600 hover:text-primary-500 hover:bg-gray-100 transition-colors"
+                           class="relative w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] shrink-0 aspect-square rounded-xl border border-gray-200 flex items-center justify-center bg-white text-gray-700 hover:border-primary-500 hover:text-primary-500 transition-colors"
                            title="Pemberitahuan">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
                             </svg>
                             @if($unreadCustomerNotifs > 0)
-                                <span class="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-black text-white bg-primary-500 rounded-full ring-2 ring-white">
+                                <span class="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[19px] h-[19px] px-1 text-[10px] font-black text-white bg-primary-500 rounded-full shadow-sm">
                                     {{ $unreadCustomerNotifs > 99 ? '99+' : $unreadCustomerNotifs }}
                                 </span>
                             @endif
@@ -292,17 +295,17 @@
 
                     @auth
                         <!-- Login / Avatar (Alpine Dropdown) -->
-                        <div x-data="{ open: false }" class="relative flex items-center ml-1">
-                            <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none cursor-pointer">
+                        <div x-data="{ open: false }" class="relative flex items-center shrink-0">
+                            <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none cursor-pointer shrink-0">
                                 @php
                                     $userAvatar = auth()->user()->avatar 
                                         ? storage_url(auth()->user()->avatar)
-                                        : "https://ui-avatars.com/api/?name=" . urlencode(auth()->user()->name) . "&background=f97316&color=fff&bold=true";
+                                        : "https://ui-avatars.com/api/?name=" . urlencode(auth()->user()->name) . "&background=f97316&color=fff&bold=true&size=128";
                                 @endphp
                                 <img src="{{ $userAvatar }}" 
                                      alt="Profile" 
-                                     onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=f97316&color=fff&bold=true'"
-                                     class="w-[42px] h-[42px] rounded-xl object-cover border border-gray-200 hover:border-primary-500 transition-colors">
+                                     onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=f97316&color=fff&bold=true&size=128'"
+                                     class="w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] shrink-0 aspect-square rounded-xl object-cover border border-gray-200 hover:border-primary-500 transition-colors">
                             </button>
                             
                             <div x-show="open" 
@@ -332,12 +335,12 @@
                         </div>
                     @else
                         <!-- Guest Actions -->
-                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="hidden sm:inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 text-[14px] transition-colors">Masuk</a>
-                        <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-transparent bg-primary-500 text-white tenant-shadow-sm hover:bg-primary-600 active:scale-95 text-[14px] transition-all">Daftar</a>
+                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="hidden sm:inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 text-[14px] transition-colors shrink-0">Masuk</a>
+                        <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-3 sm:px-4 py-[7px] sm:py-[9px] border border-transparent bg-primary-500 text-white tenant-shadow-sm hover:bg-primary-600 active:scale-95 text-[13px] sm:text-[14px] transition-all shrink-0">Daftar</a>
                     @endauth
                     
                     <!-- Mobile menu button -->
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-gray-500 hover:text-gray-900 focus:outline-none">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-gray-500 hover:text-gray-900 focus:outline-none p-1.5 shrink-0">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </button>
                 </div>
@@ -354,18 +357,14 @@
                 @if(request()->routeIs('customer.checkout*'))
                     <span class="block px-3 py-2 rounded-lg text-base font-medium text-primary-600 bg-primary-50 font-semibold">Checkout</span>
                 @endif
-                @auth
-                    <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Profil Saya</a>
-                    <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pesanan Saya</a>
-                    <a href="{{ $notifRoute ?? route('customer.notifications.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.notifications*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pemberitahuan</a>
-                @endauth
                 <button type="button" @click.prevent="helpModalOpen = true; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 cursor-pointer">Bantuan</button>
                 
                 @auth
                     <div class="border-t border-gray-100 pt-2 mt-2">
                         <div class="px-3 py-1 text-xs font-bold text-gray-400 uppercase">Akun Saya</div>
                         <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600' }}">Profil Saya</a>
-                        <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-semibold text-primary-600 hover:bg-primary-50">Pesanan Saya</a>
+                        <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600' }}">Pesanan Saya</a>
+                        <a href="{{ $notifRoute ?? route('customer.notifications.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.notifications*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pemberitahuan</a>
                         <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50">Log out</a>
                     </div>
                 @else
@@ -863,6 +862,15 @@
                             if (window.location.pathname.includes('/my-orders')) {
                                 this.triggerReload(800);
                             }
+                        })
+                        .listen('.damage.responded', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: damage.responded', e);
+                            this.playChime();
+                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id + '/damage') : '/my-orders';
+                            this.addToast('Tanggapan Baru dari Toko!', e.message || `Toko menanggapi klaim pesanan #${e.order_number}.`, targetUrl);
+                            if (window.location.pathname.includes('/damage') || window.location.pathname.includes('/my-orders')) {
+                                this.triggerReload(800);
+                            }
                         });
                     return true;
                 };
@@ -1056,6 +1064,29 @@
     </script>
     @endif
     @endauth
+
+    <!-- Global Floating Cart Toast Notification -->
+    <div x-show="cartToast.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+         x-cloak
+         style="display: none;"
+         class="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 flex items-start gap-3 pointer-events-auto">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-200">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+            <h5 class="text-sm font-bold text-gray-900" x-text="cartToast.title"></h5>
+            <p class="text-xs text-gray-600 mt-0.5 line-clamp-2" x-text="cartToast.message"></p>
+        </div>
+        <button type="button" @click="cartToast.show = false" class="text-gray-400 hover:text-gray-600 transition p-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
 
     @livewireScriptConfig
 </body>

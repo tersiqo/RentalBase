@@ -110,6 +110,7 @@ class PageController extends Controller
                 'shipment',
                 'payments',
                 'returnModel',
+                'damageReports.damageCase',
             ]);
 
         if ($client && isset($client->id)) {
@@ -134,6 +135,7 @@ class PageController extends Controller
             'shipment',
             'payments',
             'returnModel',
+            'damageReports.damageCase',
         ]);
 
         $client = $order->client;

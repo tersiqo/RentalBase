@@ -132,11 +132,14 @@
                     Pesanan <b class="font-mono text-gray-900" x-text="returnOrderNumber"></b>. Silakan pilih rencana pengembalian dan berikan keterangan kondisi barang saat selesai sewa.
                 </p>
                 <div class="space-y-4">
+                    @php
+                        $defaultReturnMethod = old('return_method', $order->isPickup() ? 'ambil_toko' : 'kurir');
+                    @endphp
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Metode Pengembalian</label>
                         <select name="return_method" class="w-full text-xs sm:text-sm p-2.5 rounded-xl border border-gray-300 focus:ring-primary-500 focus:border-primary-500 font-medium">
-                            <option value="ambil_toko">Diantar langsung ke toko rental</option>
-                            <option value="kurir">Dijemput kurir / dikirim via ekspedisi</option>
+                            <option value="ambil_toko" {{ $defaultReturnMethod === 'ambil_toko' ? 'selected' : '' }}>Diantar langsung ke toko rental</option>
+                            <option value="kurir" {{ $defaultReturnMethod === 'kurir' ? 'selected' : '' }}>Dijemput kurir / dikirim via ekspedisi</option>
                         </select>
                     </div>
                     <div>

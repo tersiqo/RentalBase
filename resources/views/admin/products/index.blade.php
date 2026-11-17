@@ -425,7 +425,7 @@
                             <select name="category_id" required class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition text-slate-700">
                                 <option value="">-- Pilih Kategori --</option>
                                 @foreach($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    <option value="{{ $category->id }}" {{ (string) old('category_id') === (string) $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -436,8 +436,8 @@
                                 Status Tayang <span class="text-orange-500">*</span>
                             </label>
                             <select name="status" required class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition text-slate-700">
-                                <option value="aktif" selected>Aktif (Tampil di Katalog)</option>
-                                <option value="nonaktif">Nonaktif (Disembunyikan)</option>
+                                <option value="aktif" {{ old('status', 'aktif') === 'aktif' ? 'selected' : '' }}>Aktif (Tampil di Katalog)</option>
+                                <option value="nonaktif" {{ old('status') === 'nonaktif' ? 'selected' : '' }}>Nonaktif (Disembunyikan)</option>
                             </select>
                         </div>
 

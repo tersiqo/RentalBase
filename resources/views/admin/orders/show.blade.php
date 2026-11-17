@@ -77,9 +77,15 @@
             </p>
         </div>
 
-        {{-- Tombol Tindakan Cepat ke Pengiriman jika sudah siap kirim --}}
+        {{-- Tombol Tindakan Cepat sesuai status alur pesanan --}}
         @if(in_array($order->status, ['siap_kirim', 'diproses']))
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id, 'type' => 'sebelum_serah', 'return_to' => 'order']) }}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition shadow-2xs"
+                   title="Catat pemeriksaan fisik unit sebelum diserahkan">
+                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <span>Cek Fisik Awal</span>
+                </a>
                 @if(! $order->canProcessHandover())
                     <span class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5" title="{{ $order->handover_blocked_reason }}">
                         <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
@@ -88,7 +94,28 @@
                 @endif
                 <a href="{{ route('admin.shipments.index', ['search' => $order->order_number]) }}"
                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition shadow-xs">
-                    <span>Buka di Daftar Pengiriman</span>
+                    <span>Buka di Pengiriman</span>
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+        @elseif(in_array($order->status, ['sedang_disewa', 'dikembalikan', 'menunggu_pembayaran_denda']))
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id, 'type' => 'setelah_kembali', 'return_to' => 'order']) }}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition shadow-2xs">
+                    <svg class="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <span>Cek Fisik Unit</span>
+                </a>
+                <a href="{{ route('admin.returns.index', ['search' => $order->order_number]) }}"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition shadow-xs">
+                    <span>Buka di Pengembalian</span>
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+        @elseif($order->status === 'dikirim')
+            <div class="flex items-center gap-2">
+                <a href="{{ route('admin.shipments.index', ['search' => $order->order_number]) }}"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition shadow-xs">
+                    <span>Pantau di Pengiriman</span>
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </a>
             </div>
@@ -272,11 +299,11 @@
                         $isFulfilled = ($allocatedCount >= $neededCount);
                     @endphp
                     <div class="p-4 rounded-lg border {{ $isFulfilled ? 'bg-emerald-50/30 border-emerald-200' : 'bg-gray-50/50 border-gray-200' }}">
-                        <div class="flex items-center justify-between mb-2.5">
-                            <p class="text-sm font-bold text-gray-900">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-2.5">
+                            <p class="text-sm font-bold text-gray-900 min-w-0">
                                 {{ $item->product->name ?? 'Produk' }}
                             </p>
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full {{ $isFulfilled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
+                            <span class="self-start sm:self-auto shrink-0 whitespace-nowrap text-xs font-semibold px-2.5 py-0.5 rounded-full {{ $isFulfilled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                                 {{ $allocatedCount }}/{{ $neededCount }} Unit Dialokasikan
                             </span>
                         </div>
@@ -293,16 +320,26 @@
                                             </span>
                                             <span class="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-medium">Siap Sewa</span>
                                         </div>
-                                        @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']))
-                                            <form action="{{ route('admin.orders.deallocate', [$order->id, $allocation->id]) }}" method="POST" onsubmit="return confirm('Batalkan alokasi unit ini untuk memilih unit lain?');" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold hover:underline flex items-center gap-1 transition cursor-pointer" title="Batalkan alokasi unit ini">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                    <span>Ganti Unit</span>
-                                                </button>
-                                            </form>
-                                        @endif
+                                        <div class="flex items-center gap-3">
+                                            {{-- Pintasan Cek Fisik Unit --}}
+                                            <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id, 'unit_id' => $allocation->equipment_unit_id, 'return_to' => 'order']) }}"
+                                               class="text-xs text-orange-600 hover:text-orange-800 font-semibold hover:underline flex items-center gap-1 transition"
+                                               title="Catat atau lihat kondisi fisik unit ini">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                                <span>Cek Fisik</span>
+                                            </a>
+
+                                            @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']))
+                                                <form action="{{ route('admin.orders.deallocate', [$order->id, $allocation->id]) }}" method="POST" onsubmit="return confirm('Batalkan alokasi unit ini untuk memilih unit lain?');" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold hover:underline flex items-center gap-1 transition cursor-pointer" title="Batalkan alokasi unit ini">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                        <span>Ganti Unit</span>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -318,11 +355,11 @@
                                 });
                             @endphp
                             @if($matchingUnits->isNotEmpty())
-                                <form action="{{ route('admin.orders.allocate', $order->id) }}" method="POST" class="flex gap-2 mt-2">
+                                <form action="{{ route('admin.orders.allocate', $order->id) }}" method="POST" class="flex flex-col sm:flex-row gap-2 mt-2">
                                     @csrf
                                     <input type="hidden" name="order_item_id" value="{{ $item->id }}">
                                     <select name="equipment_unit_id"
-                                            class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                                            class="w-full sm:flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                                             required>
                                         <option value="">-- Pilih Nomor Seri Unit Tersedia --</option>
                                         @foreach($matchingUnits as $unit)
@@ -333,7 +370,7 @@
                                         @endforeach
                                     </select>
                                     <button type="submit"
-                                            class="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-md transition shrink-0 shadow-xs">
+                                            class="w-full sm:w-auto px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-md transition shrink-0 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
                                         + Pasangkan Unit
                                     </button>
                                 </form>

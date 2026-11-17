@@ -312,13 +312,10 @@
                                         Pilih Ekspedisi <span class="text-red-500">*</span>
                                     </label>
                                     <select name="courier_name" required class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-orange-500 focus:border-orange-500 px-3 py-2 border">
-                                        <option value="" disabled selected>-- Pilih Kurir --</option>
-                                        <option value="JNE">JNE</option>
-                                        <option value="J&T Express">J&T Express</option>
-                                        <option value="SiCepat">SiCepat</option>
-                                        <option value="GoSend">GoSend</option>
-                                        <option value="GrabExpress">GrabExpress</option>
-                                        <option value="Kurir Toko">Kurir Toko</option>
+                                        <option value="" disabled {{ !old('courier_name') ? 'selected' : '' }}>-- Pilih Kurir --</option>
+                                        @foreach(['JNE', 'J&T Express', 'SiCepat', 'GoSend', 'GrabExpress', 'Kurir Toko'] as $cName)
+                                            <option value="{{ $cName }}" {{ old('courier_name') === $cName ? 'selected' : '' }}>{{ $cName }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 

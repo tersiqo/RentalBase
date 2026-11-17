@@ -260,7 +260,7 @@
                             {{-- 6. Aksi --}}
                             <td class="px-6 py-4 align-middle text-center whitespace-nowrap">
                                 <div class="inline-flex items-center justify-center gap-2">
-                                    <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id]) }}"
+                                    <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id, 'return_to' => 'returns']) }}"
                                        title="Klik untuk mencatat pemeriksaan kondisi fisik barang"
                                        class="inline-flex items-center justify-center px-3 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md transition">
                                         Cek Fisik
@@ -405,7 +405,7 @@
                                    x-text="activeOrder.checked_return_count > 0 ? 'Unit sudah diperiksa (' + activeOrder.checked_return_count + ' unit).' : 'Pastikan kondisi fisik barang telah diperiksa.'"></p>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
-                                <a :href="'/admin/condition-checks?order_id=' + activeOrder.id"
+                                <a :href="'/admin/condition-checks?order_id=' + activeOrder.id + '&return_to=returns'"
                                    class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold rounded-md transition">
                                     Cek Fisik
                                 </a>

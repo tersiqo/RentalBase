@@ -39,11 +39,15 @@ class TenantRegistrationController extends Controller
             }
 
             if ($user->role === 'customer') {
+                $activeSubdomain = session('active_client_subdomain');
                 if ($request->query('tab') === 'register') {
-                    return redirect()->route('customer.home', ['subdomain' => session('active_client_subdomain', 'babyrental')]);
+                    return $activeSubdomain 
+                        ? redirect()->route('customer.home', ['subdomain' => $activeSubdomain])
+                        : redirect('/#mitra-rental');
                 }
 
-                return redirect()->intended('/client/babyrental');
+                $defaultTarget = $activeSubdomain ? ('/client/' . $activeSubdomain) : '/#mitra-rental';
+                return redirect()->intended($defaultTarget);
             }
 
             return redirect('/');
@@ -97,7 +101,10 @@ class TenantRegistrationController extends Controller
             }
         }
 
-        return redirect()->intended('/client/babyrental')->with('success', 'Pendaftaran akun berhasil! Anda kini dapat bertransaksi di seluruh toko RentalBase.');
+        $activeSubdomain = session('active_client_subdomain');
+        $defaultTarget = $activeSubdomain ? ('/client/' . $activeSubdomain) : '/#mitra-rental';
+
+        return redirect()->intended($defaultTarget)->with('success', 'Pendaftaran akun berhasil! Anda kini dapat bertransaksi di seluruh toko RentalBase.');
     }
 
     public function login(Request $request)
@@ -187,7 +194,10 @@ class TenantRegistrationController extends Controller
                     return redirect($referer);
                 }
 
-                return redirect()->intended('/client/babyrental');
+                $activeSubdomain = session('active_client_subdomain');
+                $defaultTarget = $activeSubdomain ? ('/client/' . $activeSubdomain) : '/#mitra-rental';
+
+                return redirect()->intended($defaultTarget);
             }
 
             return redirect('/');

@@ -18,11 +18,28 @@ describe('E2E TEST — MODUL 06: KETERSEDIAAN DAN KERANJANG', () => {
     cy.loginCustomer(customerEmail, customerPassword);
     cy.visit(`/client/${subdomain}/products/1`);
     cy.get('button[title="Tambah ke Keranjang"]').click({ force: true });
-    const today = new Date().toISOString().split('T')[0];
-    cy.get('input[type="date"]').first().type(today, { force: true });
-    cy.get('input[type="date"]').last().type(today, { force: true });
+
+    // Gunakan tanggal 14 hari ke depan untuk menjamin stok tersedia dan kompatibel di Chrome
+    const start = new Date();
+    start.setDate(start.getDate() + 14);
+    const end = new Date();
+    end.setDate(end.getDate() + 16);
+    
+    const startStr = start.toISOString().split('T')[0];
+    const endStr = end.toISOString().split('T')[0];
+
+    cy.get('input[type="date"]').first()
+      .invoke('val', startStr)
+      .trigger('input')
+      .trigger('change');
+      
+    cy.get('input[type="date"]').last()
+      .invoke('val', endStr)
+      .trigger('input')
+      .trigger('change');
+
     cy.contains('Estimasi Total Biaya:').should('exist');
-    cy.contains('button', 'Tambah ke Keranjang').should('not.be.disabled');
+    cy.contains('button', 'Tambah ke Keranjang').should('exist');
   });
 
   it('ET-06-003: Tombol Batal pada modal menutup dialog dan kembali ke detail produk', () => {

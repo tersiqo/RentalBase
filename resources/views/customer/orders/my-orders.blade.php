@@ -14,7 +14,7 @@
         'Batal' => $orders->filter(fn($o) => in_array($o->status_label, ['Batal', 'Dibatalkan', 'Ditolak']) || in_array($o->status, ['batal', 'dibatalkan', 'ditolak']))->count(),
     ];
 @endphp
-<div class="max-w-[1260px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full"
+<div class="max-w-[1260px] mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-8 w-full"
      x-data="{ 
         activeTab: 'Semua', 
         viewMode: 'list',
@@ -123,14 +123,14 @@
     <!-- ==================== VIEW 1: DAFTAR PESANAN SAYA ==================== -->
     <div x-show="viewMode === 'list'">
         <!-- Page Header -->
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-                <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Pesanan Saya</h1>
-                <p class="text-sm text-gray-500 mt-1">Pantau status penyewaan alat dan riwayat transaksi Anda</p>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">Pesanan Saya</h1>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">Pantau status penyewaan alat dan riwayat transaksi Anda</p>
             </div>
             <div>
                 <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? 'babyrental']) }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-primary-500 bg-primary-50 hover:bg-primary-100 rounded-xl transition shadow-2xs">
+                   class="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold text-primary-500 bg-primary-50 hover:bg-primary-100 rounded-xl transition shadow-2xs">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                     Sewa Alat Baru
                 </a>
@@ -138,20 +138,20 @@
         </div>
 
         <!-- Tabs Filter (Marketplace Underline Style seperti Foto Referensi) -->
-        <div class="bg-white rounded-2xl shadow-xs border border-gray-200/80 mb-6 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-xs border border-gray-200/80 mb-4 sm:mb-6 overflow-hidden">
             <div class="flex items-center overflow-x-auto hide-scroll-bar whitespace-nowrap border-b border-gray-200">
                 @foreach($tabs as $tab)
                     <button 
                         type="button"
                         @click.prevent="activeTab = '{{ $tab }}'"
-                        class="relative py-4 px-4 sm:px-6 text-sm font-semibold transition-all focus:outline-none shrink-0 flex items-center justify-center gap-1.5 border-b-2 -mb-px cursor-pointer"
+                        class="relative py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-semibold transition-all focus:outline-none shrink-0 flex items-center justify-center gap-1.5 border-b-2 -mb-px cursor-pointer"
                         :class="activeTab === '{{ $tab }}' 
                             ? 'text-primary-500 font-bold border-primary-500' 
                             : 'text-gray-600 hover:text-gray-900 border-transparent hover:border-gray-300'">
                         <span>{{ $tab }}</span>
                         @if(($counts[$tab] ?? 0) > 0)
                             <span :class="activeTab === '{{ $tab }}' ? 'text-primary-500 font-bold' : 'text-gray-400 font-semibold'" 
-                                  class="text-xs transition-colors">
+                                  class="text-[11px] sm:text-xs transition-colors">
                                 ({{ $counts[$tab] }})
                             </span>
                         @endif
@@ -196,52 +196,61 @@
                     @php
                         $firstItem = $order->orderItems->first();
                         $product = $firstItem?->product;
+                        $hasDamage = $order->damageReports->isNotEmpty();
+                        $isDamageClosed = $hasDamage && $order->damageReports->every(fn($dr) => $dr->damageCase && in_array(strtolower($dr->damageCase->case_status), ['selesai', 'lunas', 'dibatalkan']));
                     @endphp
                     <div x-show="matchesTab(activeTab, '{{ $order->status_label }}', '{{ $order->status }}')"
                          x-transition.opacity.duration.300ms
                          data-order-id="{{ $order->id }}"
                          data-order-number="{{ $order->order_number }}"
-                         class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow transition-shadow">
+                         class="bg-white border border-gray-200 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow transition-shadow">
                         
                         <!-- Header Card -->
-                        <div class="flex justify-between items-start mb-4 pb-4 border-b border-gray-100 gap-3">
-                            <div class="flex flex-col">
+                        <div class="flex justify-between items-start mb-3 pb-3 sm:mb-4 sm:pb-4 border-b border-gray-100 gap-2 sm:gap-3">
+                            <div class="flex flex-col min-w-0 flex-1">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="font-bold font-mono text-gray-900 text-base">{{ $order->order_number ?? ('ORD-' . $order->id) }}</span>
+                                    <span class="font-bold font-mono text-gray-900 text-sm sm:text-base">{{ $order->order_number ?? ('ORD-' . $order->id) }}</span>
                                     @if($order->client)
                                         <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-lg font-medium">{{ $order->client->nama_usaha }}</span>
                                     @endif
-                                    @if($order->damageReports()->exists())
-                                        <span class="text-[11px] bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1.5">
-                                            <svg class="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                            <span>Ada Klaim Kerusakan</span>
-                                        </span>
+                                    @if($hasDamage)
+                                        @if($isDamageClosed)
+                                            <span class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1.5">
+                                                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                <span>Klaim Selesai & Lunas</span>
+                                            </span>
+                                        @else
+                                            <span class="text-[11px] bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1.5">
+                                                <svg class="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                <span>Ada Klaim Kerusakan</span>
+                                            </span>
+                                        @endif
                                     @endif
                                 </div>
-                                <span class="text-xs sm:text-sm text-gray-500 mt-1">
+                                <span class="text-xs sm:text-sm text-gray-500 mt-1 leading-relaxed">
                                     Jadwal Sewa: <strong class="text-gray-700 font-semibold">{{ $order->date_range }}</strong> &bull; Dipesan {{ $order->created_at ? $order->created_at->translatedFormat('d M Y') : '-' }}
                                 </span>
                             </div>
-                            <div>
-                                <span class="px-3 py-1 rounded-full text-xs font-bold tracking-wide {{ $order->status_color }}">
+                            <div class="shrink-0">
+                                <span class="inline-flex items-center shrink-0 whitespace-nowrap px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold tracking-wide {{ $order->status_color }}">
                                     {{ $order->status_label }}
                                 </span>
                             </div>
                         </div>
 
                         <!-- Body Card -->
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-                            <div class="flex gap-4 items-center min-w-0">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-3 sm:mb-5">
+                            <div class="flex gap-3 sm:gap-4 items-center min-w-0">
                                 <div class="shrink-0 flex flex-col items-center">
-                                    <img src="{{ $order->primary_image }}" alt="{{ $product?->name ?? 'Produk' }}" class="w-20 h-20 object-cover rounded-xl bg-gray-50 border border-gray-100 shadow-2xs">
+                                    <img src="{{ $order->primary_image }}" alt="{{ $product?->name ?? 'Produk' }}" class="w-16 h-16 sm:w-20 sm:h-20 shrink-0 aspect-square object-cover rounded-xl bg-gray-50 border border-gray-100 shadow-2xs">
                                     @if($order->items_count > 1)
-                                        <span class="text-[11px] text-gray-500 mt-1.5 font-medium">
-                                            + {{ $order->items_count - 1 }} barang lainnya
+                                        <span class="text-[10px] sm:text-[11px] text-gray-500 mt-1 sm:mt-1.5 font-medium">
+                                            + {{ $order->items_count - 1 }} lainnya
                                         </span>
                                     @endif
                                 </div>
                                 <div class="flex flex-col min-w-0">
-                                    <h3 class="font-bold text-gray-900 text-base truncate">{{ $product?->name ?? 'Produk Sewa' }}</h3>
+                                    <h3 class="font-bold text-gray-900 text-sm sm:text-base truncate">{{ $product?->name ?? 'Produk Sewa' }}</h3>
                                     <p class="text-xs text-gray-500 mt-0.5 font-medium">
                                         {{ $order->duration_days ?? 1 }} hari sewa &bull; {{ $order->isPickup() ? 'Ambil di Toko' : 'Pengiriman Kurir' }}
                                     </p>
@@ -252,25 +261,25 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="flex flex-col sm:items-end justify-center shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-50">
+                            <div class="flex flex-col sm:items-end justify-center shrink-0 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-gray-50">
                                 <span class="text-xs text-gray-500 mb-0.5">Total Biaya:</span>
-                                <span class="text-lg sm:text-xl font-mono font-extrabold text-gray-900">{{ $order->formatted_total }}</span>
+                                <span class="text-base sm:text-xl font-mono font-extrabold text-gray-900">{{ $order->formatted_total }}</span>
                             </div>
                         </div>
 
                         <!-- Footer Card Action Buttons -->
-                        <div class="flex flex-wrap items-center justify-end gap-2.5 sm:gap-3 mt-4 pt-3.5 border-t border-gray-100">
+                        <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 sm:pt-3.5 border-t border-gray-100">
                             @if($order->can_cancel)
                                 <button type="button" 
                                         @click="openCancelModal('{{ $order->order_number ?? ('ORD-' . $order->id) }}', '{{ route('customer.orders.cancel', $order->id) }}')" 
-                                        class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-red-200 bg-white text-red-600 font-semibold hover:bg-red-50 hover:border-red-300 transition text-sm">
+                                        class="inline-flex items-center justify-center px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-red-200 bg-white text-red-600 font-semibold hover:bg-red-50 hover:border-red-300 transition text-xs sm:text-sm">
                                     <span>Batalkan Pesanan</span>
                                 </button>
                             @endif
 
                             @if($order->can_return)
                                 <a href="{{ route('customer.orders.return.form', $order->id) }}" 
-                                   class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-primary-200 bg-white text-primary-600 font-semibold hover:bg-primary-50 hover:border-primary-300 transition text-sm">
+                                   class="inline-flex items-center justify-center px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-primary-200 bg-white text-primary-600 font-semibold hover:bg-primary-50 hover:border-primary-300 transition text-xs sm:text-sm">
                                     <span>Ajukan Pengembalian</span>
                                 </a>
                             @endif
@@ -278,23 +287,28 @@
                             @if($order->can_receive)
                                 <button type="button" 
                                         @click="openReceiveModal('{{ $order->order_number ?? ('ORD-' . $order->id) }}', '{{ route('customer.orders.receive', $order->id) }}')" 
-                                        class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition text-sm shadow-xs">
+                                        class="inline-flex items-center justify-center px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition text-xs sm:text-sm shadow-xs">
                                     <span>Terima Barang</span>
                                 </button>
                             @endif
 
-                            @if($order->damageReports()->exists())
+                            @if($hasDamage)
                                 <a href="{{ route('customer.orders.damage', $order->id) }}"
-                                   class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-rose-300 bg-white hover:bg-rose-50 text-rose-600 font-bold transition text-sm shadow-2xs">
-                                    <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                    <span>Lihat klaim kerusakan</span>
+                                   class="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition text-xs sm:text-sm shadow-2xs {{ $isDamageClosed ? 'border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/60 text-emerald-700 font-semibold' : 'border-rose-300 bg-white hover:bg-rose-50 text-rose-600 font-bold' }}">
+                                    @if($isDamageClosed)
+                                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Klaim selesai & lunas</span>
+                                    @else
+                                        <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        <span>Lihat klaim kerusakan</span>
+                                    @endif
                                 </a>
                             @endif
 
                             <!-- Tombol Lihat Detail: Buka View Detail Lengkap -->
                             <button type="button"
                                     @click="openDetail({{ $order->id }})" 
-                                    class="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold shadow-xs transition text-sm">
+                                    class="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold shadow-xs transition text-xs sm:text-sm">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 <span>Lihat detail</span>
                             </button>
@@ -368,8 +382,8 @@
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Metode Pengembalian</label>
                         <select name="return_method" class="w-full text-xs sm:text-sm p-2.5 rounded-xl border border-gray-300 focus:ring-primary-500 focus:border-primary-500 font-medium">
-                            <option value="ambil_toko">Diantar langsung ke toko rental</option>
-                            <option value="kurir">Dijemput kurir / dikirim via ekspedisi</option>
+                            <option value="ambil_toko" {{ old('return_method', 'ambil_toko') === 'ambil_toko' ? 'selected' : '' }}>Diantar langsung ke toko rental</option>
+                            <option value="kurir" {{ old('return_method') === 'kurir' ? 'selected' : '' }}>Dijemput kurir / dikirim via ekspedisi</option>
                         </select>
                     </div>
                     <div>

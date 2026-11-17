@@ -296,7 +296,7 @@
 
             {{-- Filter Paket --}}
             <select name="plan" onchange="this.form.submit()"
-                    class="bg-white border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
+                    class="w-full sm:w-auto min-w-0 max-w-full bg-white border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
                 <option value="">Semua Paket</option>
                 <option value="starter" {{ request('plan') === 'starter' ? 'selected' : '' }}>Starter</option>
                 <option value="business" {{ request('plan') === 'business' ? 'selected' : '' }}>Business</option>

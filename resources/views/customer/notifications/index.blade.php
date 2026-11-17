@@ -62,19 +62,23 @@
     @endphp
     <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-gray-100">
         <a href="{{ $tabUrl('all') }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 {{ $filter === 'all' ? 'bg-gray-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 {{ $filter === 'all' ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+           @if($filter === 'all') style="background-color: var(--tenant-theme, #f97316);" @endif>
             Semua ({{ $totalAll }})
         </a>
         <a href="{{ $tabUrl('unread') }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 {{ $filter === 'unread' ? 'bg-gray-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 {{ $filter === 'unread' ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+           @if($filter === 'unread') style="background-color: var(--tenant-theme, #f97316);" @endif>
             Belum Dibaca ({{ $totalUnread }})
         </a>
         <a href="{{ $tabUrl('orders') }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 {{ $filter === 'orders' ? 'bg-gray-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 {{ $filter === 'orders' ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+           @if($filter === 'orders') style="background-color: var(--tenant-theme, #f97316);" @endif>
             Pesanan &amp; Verifikasi
         </a>
         <a href="{{ $tabUrl('logistics') }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 {{ $filter === 'logistics' ? 'bg-gray-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 {{ $filter === 'logistics' ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+           @if($filter === 'logistics') style="background-color: var(--tenant-theme, #f97316);" @endif>
             Pengiriman &amp; Pengembalian
         </a>
     </div>
