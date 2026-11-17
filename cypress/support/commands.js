@@ -21,3 +21,13 @@ Cypress.Commands.add('loginAdmin', (email = 'budi@babyrental.com', password = 'p
     cy.url().should('not.include', '/login');
   });
 });
+
+Cypress.Commands.add('loginOwner', (email = 'owner@rentalbase.id', password = 'password123') => {
+  cy.session(['owner', email], () => {
+    cy.visit('/owner/login');
+    cy.get('#email').clear().type(email);
+    cy.get('#password').clear().type(password);
+    cy.contains('button[type="submit"]', 'Masuk').first().click();
+    cy.url().should('not.include', '/owner/login');
+  });
+});
