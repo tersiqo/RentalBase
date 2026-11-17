@@ -468,7 +468,7 @@
     <div class="flex items-center gap-2 text-xs font-medium min-w-0">
         <span class="font-bold text-gray-900 truncate max-w-[130px] sm:max-w-[200px]">{{ $storeName }}</span>
         <span class="text-gray-300 shrink-0">/</span>
-        <span class="text-gray-500 truncate max-w-[150px] sm:max-w-[260px] md:max-w-none">@yield('page-title', 'Dashboard Operasional')</span>
+        <span id="topbar-page-title" class="text-gray-500 truncate max-w-[150px] sm:max-w-[260px] md:max-w-none">@yield('page-title', 'Dashboard Operasional')</span>
     </div>
 
     {{-- Spacer --}}
@@ -876,6 +876,28 @@
                     script.parentNode.replaceChild(newScript, script);
                 });
 
+                // Synchronize topbar page title
+                const currentPageTitle = document.getElementById('topbar-page-title');
+                const newPageTitle = doc.getElementById('topbar-page-title');
+                if (currentPageTitle && newPageTitle) {
+                    currentPageTitle.textContent = newPageTitle.textContent;
+                }
+
+                // Synchronize sidebar active link styling without destroying Alpine state
+                const currentNavLinks = document.querySelectorAll('#sidebar nav a[href]');
+                const newNavLinks = doc.querySelectorAll('#sidebar nav a[href]');
+                if (currentNavLinks.length === newNavLinks.length) {
+                    currentNavLinks.forEach((curLink, i) => {
+                        const newLink = newNavLinks[i];
+                        curLink.className = newLink.className;
+                        const curIcon = curLink.querySelector('span');
+                        const newIcon = newLink.querySelector('span');
+                        if (curIcon && newIcon) {
+                            curIcon.className = newIcon.className;
+                        }
+                    });
+                }
+
                 // Synchronize notification bell & dropdown in topbar
                 const currentBell = document.getElementById('btn-admin-notifications');
                 const newBell = doc.getElementById('btn-admin-notifications');
@@ -928,6 +950,8 @@
                             behavior: 'smooth'
                         });
                     }
+                } else {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 }
             } catch (err) {
                 if (err.name === 'AbortError') {
@@ -976,17 +1000,34 @@
             });
         });
 
-        // 2. Intercept Reset, Pagination, and Notification tab links inside main
+        // 2. Intercept Sidebar Navigation, Toast Action, Reset, Pagination, and Notification tab links
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a');
             if (!link || !link.href) return;
             if (link.target && link.target !== '_self') return;
             if (link.hasAttribute('download') || link.hasAttribute('data-no-ajax')) return;
             if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-            if (!link.closest('main')) return;
 
             const url = new URL(link.href, window.location.origin);
             if (url.origin !== window.location.origin) return;
+
+            const isSidebarLink = Boolean(link.closest('#sidebar nav'));
+            const isToastLink = Boolean(link.closest('[x-data^="realtimeNotification"]'));
+
+            if (isSidebarLink || isToastLink) {
+                e.preventDefault();
+                if (typeof window.__rbUnlockAudio === 'function') {
+                    window.__rbUnlockAudio();
+                }
+                window.adminPartialSwap(link.href, {
+                    pushHistory: true,
+                    preserveFocus: false,
+                    scrollToTable: false
+                });
+                return;
+            }
+
+            if (!link.closest('main')) return;
 
             const isResetLink = link.closest('form[method="GET"], form[method="get"]') ||
                                 link.hasAttribute('data-ajax-reset') ||
@@ -1086,21 +1127,164 @@
 </div>
 
 <script>
-    // Global Audio Unlocker & Pre-Warmer untuk Autoplay Policy Browser
-    window.__rbAudioCtx = window.__rbAudioCtx || null;
-    const unlockAudio = () => {
+    // Global Audio Unlocker, Pre-Encoded WAV Chime & WebAudio Engine
+    (function() {
+        function buildChimeWavUri() {
+            try {
+                const sampleRate = 22050;
+                const duration = 0.38;
+                const numSamples = Math.floor(sampleRate * duration);
+                const buffer = new ArrayBuffer(44 + numSamples * 2);
+                const view = new DataView(buffer);
+                const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+
+                writeStr(0, 'RIFF');
+                view.setUint32(4, 36 + numSamples * 2, true);
+                writeStr(8, 'WAVE');
+                writeStr(12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeStr(36, 'data');
+                view.setUint32(40, numSamples * 2, true);
+
+                let phase = 0;
+                for (let i = 0; i < numSamples; i++) {
+                    const t = i / sampleRate;
+                    const freq = t < 0.08 ? 880 : 1174.66;
+                    phase += (2 * Math.PI * freq) / sampleRate;
+                    const env = 0.42 * Math.exp(-t * 9.5);
+                    const sample = Math.max(-1, Math.min(1, Math.sin(phase) * env));
+                    view.setInt16(44 + i * 2, sample * 32767, true);
+                }
+
+                const bytes = new Uint8Array(buffer);
+                let bin = '';
+                for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                return 'data:audio/wav;base64,' + btoa(bin);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        const wavUri = buildChimeWavUri();
+        if (wavUri && !window.__rbChimeAudio) {
+            try {
+                window.__rbChimeAudio = new Audio(wavUri);
+                window.__rbChimeAudio.preload = 'auto';
+            } catch (e) {}
+        }
+
         try {
             if (!window.__rbAudioCtx) {
-                window.__rbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (window.__rbAudioCtx.state === 'suspended') {
-                window.__rbAudioCtx.resume();
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) window.__rbAudioCtx = new AudioCtx();
             }
         } catch (e) {}
-    };
-    ['click', 'touchstart', 'keydown', 'pointerdown'].forEach(ev => document.addEventListener(ev, unlockAudio, { once: true }));
-    window.addEventListener('focus', unlockAudio);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) unlockAudio(); });
+
+        let audioWarmed = false;
+        const unlockAudio = () => {
+            try {
+                if (!window.__rbAudioCtx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) window.__rbAudioCtx = new AudioCtx();
+                }
+                const ctx = window.__rbAudioCtx;
+                if (ctx) {
+                    if (ctx.state === 'suspended') {
+                        ctx.resume().catch(() => {});
+                    }
+                    if (!audioWarmed && ctx.state === 'running') {
+                        audioWarmed = true;
+                        const buf = ctx.createBuffer(1, 1, 22050);
+                        const src = ctx.createBufferSource();
+                        src.buffer = buf;
+                        src.connect(ctx.destination);
+                        src.start(0);
+                    }
+                }
+            } catch (e) {}
+        };
+        window.__rbUnlockAudio = unlockAudio;
+
+        ['mousedown', 'mouseup', 'click', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'keydown'].forEach(ev => {
+            document.addEventListener(ev, unlockAudio, { passive: true, capture: true });
+        });
+        window.addEventListener('focus', unlockAudio);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) unlockAudio(); });
+
+        let lastChimeAt = 0;
+        window.__rbPlayChime = function() {
+            const nowMs = Date.now();
+            if (nowMs - lastChimeAt < 250) return;
+            lastChimeAt = nowMs;
+
+            try {
+                if (!window.__rbAudioCtx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) window.__rbAudioCtx = new AudioCtx();
+                }
+                const ctx = window.__rbAudioCtx;
+
+                const executeWebAudio = () => {
+                    const now = ctx.currentTime;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.setValueAtTime(1174.66, now + 0.08);
+                    gain.gain.setValueAtTime(0.42, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.38);
+                };
+
+                if (ctx && ctx.state === 'running') {
+                    executeWebAudio();
+                    return;
+                }
+
+                // Fallback 1: Coba HTML5 Audio WAV (mendukung Chrome Media Engagement Index)
+                if (window.__rbChimeAudio) {
+                    try {
+                        window.__rbChimeAudio.currentTime = 0;
+                        const playPromise = window.__rbChimeAudio.play();
+                        if (playPromise && typeof playPromise.then === 'function') {
+                            playPromise.catch(() => {
+                                // Fallback 2: Coba resume AudioContext dengan guard 150ms agar tidak nyangkut menunggu klik
+                                if (ctx && ctx.state === 'suspended') {
+                                    let active = true;
+                                    const guard = setTimeout(() => { active = false; }, 150);
+                                    ctx.resume().then(() => {
+                                        clearTimeout(guard);
+                                        if (active) executeWebAudio();
+                                    }).catch(() => {});
+                                }
+                            });
+                            return;
+                        }
+                    } catch (e) {}
+                }
+
+                if (ctx && ctx.state === 'suspended') {
+                    let active = true;
+                    const guard = setTimeout(() => { active = false; }, 150);
+                    ctx.resume().then(() => {
+                        clearTimeout(guard);
+                        if (active) executeWebAudio();
+                    }).catch(() => {});
+                }
+            } catch (err) {
+                console.warn('[RentalBase] Chime error:', err);
+            }
+        };
+    })();
 
     function realtimeNotification(clientId) {
         return {
@@ -1207,9 +1391,9 @@
                         })
                         .listen('.chat.message', (e) => {
                             if (e.sender_role === 'customer') {
+                                this.playChime();
                                 const isOnChatPage = window.location.pathname.includes('/admin/chat');
                                 if (!isOnChatPage) {
-                                    this.playChime();
                                     this.addToast('Pesan Baru dari ' + (e.sender_name || 'Penyewa') + '!', e.message || 'Pesan baru diterima.', '/admin/chat?conversation_id=' + e.conversation_id, 'Buka Chat &rarr;');
                                 }
                                 window.dispatchEvent(new CustomEvent('admin-new-chat-message', { detail: e }));
@@ -1288,35 +1472,8 @@
                 this.toasts = this.toasts.filter(t => t.id !== id);
             },
             playChime() {
-                try {
-                    if (!window.__rbAudioCtx) {
-                        window.__rbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    }
-                    const ctx = window.__rbAudioCtx;
-
-                    const executeChime = () => {
-                        const now = ctx.currentTime;
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'sine';
-                        // Nada cerah instan (A5 -> D6) tanpa delay: 880Hz langsung di 0ms, lalu 1174Hz di 80ms
-                        osc.frequency.setValueAtTime(880, now);
-                        osc.frequency.setValueAtTime(1174.66, now + 0.08);
-                        gain.gain.setValueAtTime(0.38, now);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start(now);
-                        osc.stop(now + 0.38);
-                    };
-
-                    if (ctx.state === 'suspended') {
-                        ctx.resume().then(() => executeChime()).catch(() => executeChime());
-                    } else {
-                        executeChime();
-                    }
-                } catch (err) {
-                    console.warn('[RentalBase] Chime error:', err);
+                if (typeof window.__rbPlayChime === 'function') {
+                    window.__rbPlayChime();
                 }
             }
         };
