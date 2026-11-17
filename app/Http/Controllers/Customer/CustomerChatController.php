@@ -11,6 +11,7 @@ use App\Models\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CustomerChatController extends Controller
 {
@@ -51,7 +52,7 @@ class CustomerChatController extends Controller
         // Tandai pesan sebagai dibaca untuk customer
         if ($conversation->unread_by_customer > 0) {
             $conversation->markAsReadFor('customer');
-            event(new ChatMessagesRead($conversation->id, 'customer'));
+            $this->safeBroadcast(new ChatMessagesRead($conversation->id, 'customer'));
         }
 
         return response()->json([
@@ -87,7 +88,7 @@ class CustomerChatController extends Controller
 
         if ($conversation->unread_by_customer > 0) {
             $conversation->markAsReadFor('customer');
-            event(new ChatMessagesRead($conversation->id, 'customer'));
+            $this->safeBroadcast(new ChatMessagesRead($conversation->id, 'customer'));
         }
 
         return response()->json([
@@ -152,7 +153,7 @@ class CustomerChatController extends Controller
         $conversation->recordNewMessage($chatMessage);
 
         // Siarkan secara instan via WebSocket Reverb (0-delay)
-        event(new ChatMessageSent($chatMessage));
+        $this->safeBroadcast(new ChatMessageSent($chatMessage));
 
         return response()->json([
             'success' => true,
@@ -171,7 +172,7 @@ class CustomerChatController extends Controller
         }
 
         $conversation->markAsReadFor('customer');
-        event(new ChatMessagesRead($conversation->id, 'customer'));
+        $this->safeBroadcast(new ChatMessagesRead($conversation->id, 'customer'));
 
         return response()->json(['success' => true]);
     }
@@ -238,5 +239,17 @@ class CustomerChatController extends Controller
             'created_at'      => $m->created_at?->toIso8601String(),
             'time_formatted'  => $m->created_at?->format('H:i') ?? now()->format('H:i'),
         ];
+    }
+
+    /**
+     * Siarkan event WebSocket secara aman tanpa memicu 500 error jika provider push bermasalah.
+     */
+    private function safeBroadcast(object $event): void
+    {
+        try {
+            event($event);
+        } catch (\Throwable $e) {
+            Log::warning('[RentalBase LiveChat] Broadcast failed: ' . $e->getMessage());
+        }
     }
 }

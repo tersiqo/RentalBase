@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class AdminChatController extends Controller
@@ -43,14 +44,14 @@ class AdminChatController extends Controller
                 ->get();
 
             // Tandai sudah dibaca oleh admin jika obrolan langsung dibuka
-            if ($activeConversation->unread_by_admin > 0) {
+            if ($activeConversation->unread_by_admin > 0 || $activeConversation->messages()->where('sender_role', 'customer')->where('is_read', false)->exists()) {
                 $activeConversation->markAsReadFor('admin');
                 $activeConversation->unread_by_admin = 0;
                 $convInList = $conversations->firstWhere('id', $activeConversation->id);
                 if ($convInList) {
                     $convInList->unread_by_admin = 0;
                 }
-                event(new ChatMessagesRead($activeConversation->id, 'admin'));
+                $this->safeBroadcast(new ChatMessagesRead($activeConversation->id, 'admin'));
             }
         }
 
@@ -116,9 +117,9 @@ class AdminChatController extends Controller
             ->values();
 
         // Tandai pesan sebagai dibaca
-        if ($conversation->unread_by_admin > 0) {
+        if ($conversation->unread_by_admin > 0 || $conversation->messages()->where('sender_role', 'customer')->where('is_read', false)->exists()) {
             $conversation->markAsReadFor('admin');
-            event(new ChatMessagesRead($conversation->id, 'admin'));
+            $this->safeBroadcast(new ChatMessagesRead($conversation->id, 'admin'));
         }
 
         // Ambil pesanan aktif customer di toko ini
@@ -187,7 +188,7 @@ class AdminChatController extends Controller
         $conversation->recordNewMessage($chatMessage);
 
         // Siarkan secara instan via WebSocket Reverb (0-delay)
-        event(new ChatMessageSent($chatMessage));
+        $this->safeBroadcast(new ChatMessageSent($chatMessage));
 
         return response()->json([
             'success' => true,
@@ -204,7 +205,7 @@ class AdminChatController extends Controller
         $this->authorizeConversation($conversation, $client);
 
         $conversation->markAsReadFor('admin');
-        event(new ChatMessagesRead($conversation->id, 'admin'));
+        $this->safeBroadcast(new ChatMessagesRead($conversation->id, 'admin'));
 
         return response()->json(['success' => true]);
     }
@@ -268,5 +269,17 @@ class AdminChatController extends Controller
             'created_at'      => $m->created_at?->toIso8601String(),
             'time_formatted'  => $m->created_at?->format('H:i') ?? now()->format('H:i'),
         ];
+    }
+
+    /**
+     * Siarkan event WebSocket secara aman tanpa memicu 500 error jika provider push bermasalah.
+     */
+    private function safeBroadcast(object $event): void
+    {
+        try {
+            event($event);
+        } catch (\Throwable $e) {
+            Log::warning('[RentalBase LiveChat] Broadcast failed: ' . $e->getMessage());
+        }
     }
 }

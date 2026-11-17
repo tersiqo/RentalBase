@@ -721,17 +721,26 @@
                  x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100 translate-y-0"
                  x-transition:leave-end="opacity-0 translate-y-2">
-                <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                     :class="toast.url === '#open-chat' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'">
+                    <template x-if="toast.url === '#open-chat'">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                    </template>
+                    <template x-if="toast.url !== '#open-chat'">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </template>
                 </div>
                 <div class="flex-1">
                     <h4 class="text-sm font-bold text-gray-900" x-text="toast.title"></h4>
                     <p class="text-xs text-gray-600 mt-0.5" x-text="toast.message"></p>
                     <div class="mt-2 flex items-center gap-2">
-                        <a x-show="toast.url" :href="toast.url" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Buka Pesanan &rarr;</a>
-                        <button @click="removeToast(toast.id)" class="text-xs text-gray-400 hover:text-gray-600 ml-auto">Tutup</button>
+                        <a x-show="toast.url && toast.url !== '#open-chat'" :href="toast.url" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Buka Pesanan &rarr;</a>
+                        <button type="button" x-show="toast.url === '#open-chat'" @click="window.dispatchEvent(new CustomEvent('toggle-customer-chat')); removeToast(toast.id)" class="text-xs font-semibold text-orange-600 hover:text-orange-700 cursor-pointer">Buka Obrolan &rarr;</button>
+                        <button @click="removeToast(toast.id)" class="text-xs text-gray-400 hover:text-gray-600 ml-auto cursor-pointer">Tutup</button>
                     </div>
                 </div>
             </div>
@@ -870,6 +879,21 @@
                             this.addToast('Tanggapan Baru dari Toko!', e.message || `Toko menanggapi klaim pesanan #${e.order_number}.`, targetUrl);
                             if (window.location.pathname.includes('/damage') || window.location.pathname.includes('/my-orders')) {
                                 this.triggerReload(800);
+                            }
+                        })
+                        .listen('.chat.message', (e) => {
+                            console.log('[RentalBase Realtime Customer] Event received: chat.message', e);
+                            if (e.sender_role === 'admin') {
+                                const chatWidget = window.__rbCustomerChat;
+                                const isChatOpen = chatWidget && chatWidget.isOpen;
+                                if (!isChatOpen) {
+                                    this.playChime();
+                                    this.addToast(
+                                        'Pesan Baru dari ' + (e.sender_name || 'Toko') + '!',
+                                        e.message || 'Pesan baru diterima.',
+                                        '#open-chat'
+                                    );
+                                }
                             }
                         });
                     return true;
@@ -1045,18 +1069,36 @@
             },
             playChime() {
                 try {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(659.25, ctx.currentTime);
-                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
-                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.5);
+                    if (!window.__rbAudioCtx) {
+                        window.__rbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    const ctx = window.__rbAudioCtx;
+
+                    const executeChime = () => {
+                        const now = ctx.currentTime;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(880, now);
+                        osc.frequency.setValueAtTime(1174.66, now + 0.08);
+                        gain.gain.setValueAtTime(0.35, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.38);
+                    };
+
+                    if (ctx.state === 'suspended') {
+                        let allowed = true;
+                        const timer = setTimeout(() => { allowed = false; }, 60);
+                        ctx.resume().then(() => {
+                            clearTimeout(timer);
+                            if (allowed) executeChime();
+                        }).catch(() => {});
+                    } else {
+                        executeChime();
+                    }
                 } catch (err) {}
             }
         };
