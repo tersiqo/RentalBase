@@ -377,9 +377,20 @@ function customerChatWidget(config) {
         },
 
         initWidget() {
+            window.__rbCustomerChat = this;
+
             if (config.isAuthenticated) {
                 this.loadActiveConversation();
             }
+
+            // Dengarkan event untuk toggle/buka chat dari toast notifikasi global
+            window.addEventListener('toggle-customer-chat', () => {
+                this.isOpen = true;
+                if (config.isAuthenticated && !this.conversation) {
+                    this.loadActiveConversation();
+                }
+                this.$nextTick(() => this.scrollToBottom());
+            });
 
             // Dengarkan event global dari tombol di halaman produk / pesanan
             window.addEventListener('open-chat', (e) => {
@@ -503,11 +514,13 @@ function customerChatWidget(config) {
                 .listen('.chat.read', (e) => {
                     console.log('[RentalBase Chat] Messages marked as read by admin:', e);
                     if (e.reader_role === 'admin') {
-                        this.messages.forEach(m => {
+                        this.messages = this.messages.map(m => {
                             if (m.sender_role === 'customer') {
-                                m.is_read = true;
+                                return { ...m, is_read: true };
                             }
+                            return m;
                         });
+                        this.$nextTick(() => this.scrollToBottom());
                     }
                 });
 

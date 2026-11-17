@@ -510,6 +510,7 @@ function adminChatInbox(config) {
                 const c = this.conversations.find(x => x.id === this.activeConvId);
                 if (c) c.unread_by_admin = 0;
 
+                this.markActiveAsRead();
                 this.$nextTick(() => this.scrollToBottom());
             } catch (err) {
                 console.error('[RentalBase Admin Chat] Load messages error:', err);
@@ -565,11 +566,13 @@ function adminChatInbox(config) {
                 .listen('.chat.read', (e) => {
                     console.log('[RentalBase Admin Chat] Read event received:', e);
                     if (e.reader_role === 'customer') {
-                        this.activeMessages.forEach(m => {
+                        this.activeMessages = this.activeMessages.map(m => {
                             if (m.sender_role === 'admin') {
-                                m.is_read = true;
+                                return { ...m, is_read: true };
                             }
+                            return m;
                         });
+                        this.$nextTick(() => this.scrollToBottom());
                     }
                 });
         },

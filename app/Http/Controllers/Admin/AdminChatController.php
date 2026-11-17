@@ -44,7 +44,7 @@ class AdminChatController extends Controller
                 ->get();
 
             // Tandai sudah dibaca oleh admin jika obrolan langsung dibuka
-            if ($activeConversation->unread_by_admin > 0) {
+            if ($activeConversation->unread_by_admin > 0 || $activeConversation->messages()->where('sender_role', 'customer')->where('is_read', false)->exists()) {
                 $activeConversation->markAsReadFor('admin');
                 $activeConversation->unread_by_admin = 0;
                 $convInList = $conversations->firstWhere('id', $activeConversation->id);
@@ -117,7 +117,7 @@ class AdminChatController extends Controller
             ->values();
 
         // Tandai pesan sebagai dibaca
-        if ($conversation->unread_by_admin > 0) {
+        if ($conversation->unread_by_admin > 0 || $conversation->messages()->where('sender_role', 'customer')->where('is_read', false)->exists()) {
             $conversation->markAsReadFor('admin');
             $this->safeBroadcast(new ChatMessagesRead($conversation->id, 'admin'));
         }
