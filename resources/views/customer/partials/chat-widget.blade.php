@@ -679,7 +679,12 @@ function customerChatWidget(config) {
                 };
 
                 if (ctx.state === 'suspended') {
-                    ctx.resume().then(() => executeChime());
+                    let allowed = true;
+                    const timer = setTimeout(() => { allowed = false; }, 60);
+                    ctx.resume().then(() => {
+                        clearTimeout(timer);
+                        if (allowed) executeChime();
+                    }).catch(() => {});
                 } else {
                     executeChime();
                 }
