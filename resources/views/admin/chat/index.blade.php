@@ -461,11 +461,14 @@ function adminChatInbox(config) {
                 this.selectConversation(this.activeConvId);
             }
 
-            // Dengarkan event broadcast baru dari listener layout global
-            window.addEventListener('admin-new-chat-message', (e) => {
+            if (window._rbAdminChatMsgHandler) {
+                window.removeEventListener('admin-new-chat-message', window._rbAdminChatMsgHandler);
+            }
+            window._rbAdminChatMsgHandler = (e) => {
                 const msg = e.detail;
                 this.handleIncomingGlobalMessage(msg);
-            });
+            };
+            window.addEventListener('admin-new-chat-message', window._rbAdminChatMsgHandler);
         },
 
         async selectConversation(convId) {
@@ -520,62 +523,83 @@ function adminChatInbox(config) {
         },
 
         bindEchoChannel() {
-            if (!this.activeConvId || !window.Echo) return;
+            if (!this.activeConvId) return;
 
-            // Lepas channel lama jika ada
-            if (this.currentEchoChannel) {
-                window.Echo.leave(this.currentEchoChannel);
+            const tryBind = () => {
+                const echo = (typeof window.ensureAdminEcho === 'function')
+                    ? window.ensureAdminEcho()
+                    : (window.Echo && typeof window.Echo.private === 'function' ? window.Echo : null);
+
+                if (!echo) return false;
+
+                if (this.currentEchoChannel) {
+                    echo.leave(this.currentEchoChannel);
+                }
+
+                this.currentEchoChannel = 'chat.conversation.' + this.activeConvId;
+                console.log('[RentalBase Admin Chat] Listening on Echo:', this.currentEchoChannel);
+
+                echo.private(this.currentEchoChannel)
+                    .listen('.chat.message', (e) => {
+                        console.log('[RentalBase Admin Chat] Message received:', e);
+                        if (this.activeMessages.some(m => m.id === e.id)) return;
+
+                        // Cek jika ini pesan temp kita sendiri
+                        const tempIdx = this.activeMessages.findIndex(m => 
+                            typeof m.id === 'string' && m.id.startsWith('temp_') && m.message === e.message
+                        );
+                        if (tempIdx !== -1) {
+                            this.activeMessages.splice(tempIdx, 1, e);
+                            this.$nextTick(() => this.scrollToBottom());
+                            return;
+                        }
+
+                        this.activeMessages.push(e);
+
+                        if (e.sender_role === 'customer') {
+                            this.playChime();
+                            this.markActiveAsRead();
+                        }
+
+                        // Update list preview
+                        const conv = this.conversations.find(c => Number(c.id) === Number(this.activeConvId));
+                        if (conv) {
+                            conv.last_message_preview = e.message;
+                            conv.last_message_at = 'Baru saja';
+                        }
+
+                        this.$nextTick(() => this.scrollToBottom());
+                    })
+                    .listen('.chat.read', (e) => {
+                        console.log('[RentalBase Admin Chat] Read event received:', e);
+                        if (e.reader_role === 'customer') {
+                            this.activeMessages = this.activeMessages.map(m => {
+                                if (m.sender_role === 'admin') {
+                                    return { ...m, is_read: true };
+                                }
+                                return m;
+                            });
+                            this.$nextTick(() => this.scrollToBottom());
+                        }
+                    });
+                return true;
+            };
+
+            if (!tryBind()) {
+                let attempts = 0;
+                const poll = setInterval(() => {
+                    attempts++;
+                    if (tryBind() || attempts >= 25) {
+                        clearInterval(poll);
+                    }
+                }, 150);
             }
-
-            this.currentEchoChannel = 'chat.conversation.' + this.activeConvId;
-            console.log('[RentalBase Admin Chat] Listening on Echo:', this.currentEchoChannel);
-
-            window.Echo.private(this.currentEchoChannel)
-                .listen('.chat.message', (e) => {
-                    console.log('[RentalBase Admin Chat] Message received:', e);
-                    if (this.activeMessages.some(m => m.id === e.id)) return;
-
-                    // Cek jika ini pesan temp kita sendiri
-                    const tempIdx = this.activeMessages.findIndex(m => 
-                        typeof m.id === 'string' && m.id.startsWith('temp_') && m.message === e.message
-                    );
-                    if (tempIdx !== -1) {
-                        this.activeMessages.splice(tempIdx, 1, e);
-                        this.$nextTick(() => this.scrollToBottom());
-                        return;
-                    }
-
-                    this.activeMessages.push(e);
-
-                    if (e.sender_role === 'customer') {
-                        this.playChime();
-                        this.markActiveAsRead();
-                    }
-
-                    // Update list preview
-                    const conv = this.conversations.find(c => Number(c.id) === Number(this.activeConvId));
-                    if (conv) {
-                        conv.last_message_preview = e.message;
-                        conv.last_message_at = 'Baru saja';
-                    }
-
-                    this.$nextTick(() => this.scrollToBottom());
-                })
-                .listen('.chat.read', (e) => {
-                    console.log('[RentalBase Admin Chat] Read event received:', e);
-                    if (e.reader_role === 'customer') {
-                        this.activeMessages = this.activeMessages.map(m => {
-                            if (m.sender_role === 'admin') {
-                                return { ...m, is_read: true };
-                            }
-                            return m;
-                        });
-                        this.$nextTick(() => this.scrollToBottom());
-                    }
-                });
         },
 
         handleIncomingGlobalMessage(msg) {
+            if (!msg) return;
+            this.playChime();
+
             // Update preview di kontak terkait
             const conv = this.conversations.find(c => Number(c.id) === Number(msg.conversation_id));
             if (conv) {
@@ -583,9 +607,13 @@ function adminChatInbox(config) {
                 conv.last_message_at = 'Baru saja';
                 if (Number(this.activeConvId) !== Number(msg.conversation_id)) {
                     conv.unread_by_admin = (conv.unread_by_admin || 0) + 1;
-                    this.playChime();
                 } else {
                     conv.unread_by_admin = 0;
+                    if (!this.activeMessages.some(m => m.id === msg.id)) {
+                        this.activeMessages.push(msg);
+                        this.markActiveAsRead();
+                        this.$nextTick(() => this.scrollToBottom());
+                    }
                 }
             } else {
                 // Percakapan baru belum ada di list -> refresh
@@ -727,36 +755,8 @@ function adminChatInbox(config) {
         },
 
         playChime() {
-            try {
-                if (typeof unlockAudio === 'function') unlockAudio();
-                if (!window.__rbAudioCtx) {
-                    window.__rbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                const ctx = window.__rbAudioCtx;
-
-                const executeChime = () => {
-                    const now = ctx.currentTime;
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    // Nada cerah instan (A5 -> D6) tanpa delay: 880Hz langsung di 0ms, lalu 1174Hz di 80ms
-                    osc.frequency.setValueAtTime(880, now);
-                    osc.frequency.setValueAtTime(1174.66, now + 0.08);
-                    gain.gain.setValueAtTime(0.38, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.38);
-                };
-
-                if (ctx.state === 'suspended') {
-                    ctx.resume().then(() => executeChime()).catch(() => executeChime());
-                } else {
-                    executeChime();
-                }
-            } catch (err) {
-                console.warn('[RentalBase] Chime error:', err);
+            if (typeof window.__rbPlayChime === 'function') {
+                window.__rbPlayChime();
             }
         }
     };
