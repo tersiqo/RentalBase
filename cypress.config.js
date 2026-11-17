@@ -5,6 +5,8 @@ export default defineConfig({
     baseUrl: 'http://localhost:8000',
     defaultCommandTimeout: 15000,
     pageLoadTimeout: 60000,
+    responseTimeout: 60000,
+    requestTimeout: 30000,
     screenshotOnRunFailure: false,
     video: false,
     setupNodeEvents(on, config) {
