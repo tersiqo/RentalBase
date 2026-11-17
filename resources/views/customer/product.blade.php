@@ -183,12 +183,12 @@
                     <button type="button" 
                             x-data 
                             @click="$dispatch('open-cart-modal')" 
-                            class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm sm:text-lg py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-center transition-all shadow-lg shadow-primary-500/30 flex items-center justify-center gap-2 cursor-pointer">
+                            class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm sm:text-lg py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-center transition-all shadow-lg shadow-primary-500/30 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap">
                         <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         Sewa Sekarang
                     </button>
                     @else
-                    <span aria-disabled="true" tabindex="-1" class="flex-1 bg-primary-600 opacity-50 cursor-not-allowed pointer-events-none text-white font-bold text-sm sm:text-lg py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-center flex items-center justify-center gap-2">
+                    <span aria-disabled="true" tabindex="-1" class="flex-1 bg-primary-600 opacity-50 cursor-not-allowed pointer-events-none text-white font-bold text-sm sm:text-lg py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-center flex items-center justify-center gap-2 whitespace-nowrap">
                         <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         Stok Habis
                     </span>

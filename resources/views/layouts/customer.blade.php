@@ -1088,6 +1088,9 @@
         </button>
     </div>
 
+    <!-- Customer Floating Real-time Live Chat Widget -->
+    @include('customer.partials.chat-widget')
+
     @livewireScriptConfig
 </body>
 </html>

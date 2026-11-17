@@ -21,6 +21,8 @@
         $adminUnreadNotificationsCount = \App\Models\Notification::where('client_id', $currentClient->id)
             ->where('is_read', false)
             ->count();
+        $adminUnreadChatCount = (int) \App\Models\ChatConversation::where('client_id', $currentClient->id)
+            ->sum('unread_by_admin');
     }
 @endphp
 <!DOCTYPE html>
@@ -186,6 +188,36 @@
                     {{ $adminUnreadNotificationsCount > 99 ? '99+' : $adminUnreadNotificationsCount }}
                 </span>
             @endif
+        </a>
+
+        {{-- Chat Penyewa --}}
+        <a href="{{ route('admin.chat.index') }}"
+           title="Layanan obrolan langsung (Live Chat) real-time dengan penyewa / customer toko Anda."
+           class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 relative
+                  {{ request()->routeIs('admin.chat.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
+            <div class="flex items-center gap-3 min-w-0">
+                <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.chat.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                </span>
+                <span x-show="!collapsed || mobileOpen" class="truncate">Chat Penyewa</span>
+            </div>
+            
+            <!-- Real-time Unread Badge -->
+            <span x-show="unreadChatCount > 0 && (!collapsed || mobileOpen)"
+                  x-cloak
+                  x-transition:enter="transition ease-out duration-200"
+                  x-transition:enter-start="scale-0 opacity-0"
+                  x-transition:enter-end="scale-100 opacity-100"
+                  class="shrink-0 px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-500 text-white shadow-2xs"
+                  x-text="unreadChatCount > 99 ? '99+' : unreadChatCount">
+            </span>
+
+            <!-- Dot indikator jika sidebar di-collapse -->
+            <span x-show="unreadChatCount > 0 && collapsed && !mobileOpen"
+                  x-cloak
+                  class="absolute top-2 right-2 w-2.5 h-2.5 bg-orange-500 border-2 border-white rounded-full"></span>
         </a>
 
         {{-- Pesanan --}}
@@ -648,10 +680,25 @@
             collapsed: false,
             mobileOpen: false,
             isMobile: false,
+            unreadChatCount: {{ (int) ($adminUnreadChatCount ?? 0) }},
 
             init() {
                 this.checkMobile();
                 window.addEventListener('resize', () => this.checkMobile());
+
+                // Tangkap event saat ada chat baru masuk secara real-time
+                window.addEventListener('admin-new-chat-message', (e) => {
+                    const isOnChatPage = window.location.pathname.includes('/admin/chat');
+                    if (!isOnChatPage) {
+                        this.unreadChatCount++;
+                    }
+                });
+
+                // Tangkap event saat chat sudah dibaca
+                window.addEventListener('admin-chat-read', (e) => {
+                    const decrement = e.detail?.count || 1;
+                    this.unreadChatCount = Math.max(0, this.unreadChatCount - decrement);
+                });
             },
 
             checkMobile() {
@@ -1030,7 +1077,7 @@
                 <h4 class="text-sm font-bold text-gray-900" x-text="toast.title"></h4>
                 <p class="text-xs text-gray-600 mt-0.5" x-text="toast.message"></p>
                 <div class="mt-2 flex items-center gap-2">
-                    <a x-show="toast.url" :href="toast.url" class="text-xs font-semibold text-orange-600 hover:text-orange-700">Lihat Pesanan &rarr;</a>
+                    <a x-show="toast.url" :href="toast.url" class="text-xs font-semibold text-orange-600 hover:text-orange-700" x-html="toast.actionLabel || 'Lihat Detail &rarr;'"></a>
                     <button @click="removeToast(toast.id)" class="text-xs text-gray-400 hover:text-gray-600 ml-auto">Tutup</button>
                 </div>
             </div>
@@ -1039,6 +1086,22 @@
 </div>
 
 <script>
+    // Global Audio Unlocker & Pre-Warmer untuk Autoplay Policy Browser
+    window.__rbAudioCtx = window.__rbAudioCtx || null;
+    const unlockAudio = () => {
+        try {
+            if (!window.__rbAudioCtx) {
+                window.__rbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (window.__rbAudioCtx.state === 'suspended') {
+                window.__rbAudioCtx.resume();
+            }
+        } catch (e) {}
+    };
+    ['click', 'touchstart', 'keydown', 'pointerdown'].forEach(ev => document.addEventListener(ev, unlockAudio, { once: true }));
+    window.addEventListener('focus', unlockAudio);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) unlockAudio(); });
+
     function realtimeNotification(clientId) {
         return {
             toasts: [],
@@ -1141,6 +1204,16 @@
                         .listen('.tenant.quota_alert', (e) => {
                             this.playChime();
                             this.addToast('Peringatan Kuota Produk!', e.message, '/admin/products');
+                        })
+                        .listen('.chat.message', (e) => {
+                            if (e.sender_role === 'customer') {
+                                const isOnChatPage = window.location.pathname.includes('/admin/chat');
+                                if (!isOnChatPage) {
+                                    this.playChime();
+                                    this.addToast('Pesan Baru dari ' + (e.sender_name || 'Penyewa') + '!', e.message || 'Pesan baru diterima.', '/admin/chat?conversation_id=' + e.conversation_id, 'Buka Chat &rarr;');
+                                }
+                                window.dispatchEvent(new CustomEvent('admin-new-chat-message', { detail: e }));
+                            }
                         });
                     return true;
                 };
@@ -1206,9 +1279,9 @@
                     window.location.reload();
                 }, delay);
             },
-            addToast(title, message, url = null) {
+            addToast(title, message, url = null, actionLabel = 'Lihat Detail &rarr;') {
                 const id = Date.now() + Math.floor(Math.random() * 1000);
-                this.toasts.push({ id, title, message, url });
+                this.toasts.push({ id, title, message, url, actionLabel });
                 setTimeout(() => this.removeToast(id), 6000);
             },
             removeToast(id) {
@@ -1216,19 +1289,35 @@
             },
             playChime() {
                 try {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
-                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.5);
-                } catch (err) {}
+                    if (!window.__rbAudioCtx) {
+                        window.__rbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    const ctx = window.__rbAudioCtx;
+
+                    const executeChime = () => {
+                        const now = ctx.currentTime;
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        // Nada cerah instan (A5 -> D6) tanpa delay: 880Hz langsung di 0ms, lalu 1174Hz di 80ms
+                        osc.frequency.setValueAtTime(880, now);
+                        osc.frequency.setValueAtTime(1174.66, now + 0.08);
+                        gain.gain.setValueAtTime(0.38, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.38);
+                    };
+
+                    if (ctx.state === 'suspended') {
+                        ctx.resume().then(() => executeChime());
+                    } else {
+                        executeChime();
+                    }
+                } catch (err) {
+                    console.warn('[RentalBase] Chime error:', err);
+                }
             }
         };
     }

@@ -62,6 +62,12 @@ Route::middleware('auth')->group(function () {
 
     // Customer Profile Global Alias
     Route::get('/profile', [ProfileController::class, 'showGlobal'])->name('customer.profile.global');
+
+    // Customer Real-time Live Chat
+    Route::get('/chat/conversation', [\App\Http\Controllers\Customer\CustomerChatController::class, 'getActiveConversation'])->name('customer.chat.active');
+    Route::get('/chat/messages/{conversation}', [\App\Http\Controllers\Customer\CustomerChatController::class, 'getMessages'])->name('customer.chat.messages');
+    Route::post('/chat/send', [\App\Http\Controllers\Customer\CustomerChatController::class, 'sendMessage'])->name('customer.chat.send');
+    Route::post('/chat/read/{conversation}', [\App\Http\Controllers\Customer\CustomerChatController::class, 'markAsRead'])->name('customer.chat.read');
 });
 
 Route::get('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showRegister'])->name('tenant.register');
@@ -182,6 +188,13 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     // Jejak Audit Aktivitas Toko / Tenant (Minggu 9.2-A1)
     Route::get('/activity-logs', [AdminActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::get('/activity-logs/{activityLog}', [AdminActivityLogController::class, 'show'])->name('activity-logs.show');
+
+    // Pusat Obrolan Toko (Live Chat Admin <-> Customer)
+    Route::get('/chat', [\App\Http\Controllers\Admin\AdminChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/conversations', [\App\Http\Controllers\Admin\AdminChatController::class, 'getConversationsJson'])->name('chat.conversations');
+    Route::get('/chat/conversations/{conversation}/messages', [\App\Http\Controllers\Admin\AdminChatController::class, 'getMessages'])->name('chat.messages');
+    Route::post('/chat/conversations/{conversation}/send', [\App\Http\Controllers\Admin\AdminChatController::class, 'sendMessage'])->name('chat.send');
+    Route::post('/chat/conversations/{conversation}/read', [\App\Http\Controllers\Admin\AdminChatController::class, 'markAsRead'])->name('chat.read');
 });
 
 Route::prefix('owner')->name('owner.')->group(function () {

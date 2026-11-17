@@ -80,6 +80,16 @@
                         <span>Kembali ke Pesanan Saya</span>
                     </button>
                 @endif
+
+                <!-- Tombol Chat Toko Contextual Order -->
+                <button type="button"
+                        @click="window.dispatchEvent(new CustomEvent('open-chat', { detail: { type: 'order', id: {{ $order->id }}, order_number: '{{ $order->order_number ?? ('ORD-' . $order->id) }}' } }))"
+                        class="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-primary-700 bg-primary-50 border border-primary-200 rounded-xl hover:bg-primary-100 transition shadow-2xs cursor-pointer">
+                    <svg class="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    <span>Chat Toko</span>
+                </button>
             </div>
         </div>
     </div>
