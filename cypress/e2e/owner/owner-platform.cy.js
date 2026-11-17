@@ -369,4 +369,102 @@ describe('E2E TEST — MODUL 03: MANAJEMEN PLATFORM OWNER', () => {
       }
     });
   });
+
+  // =========================================================================
+  // 4. MANAJEMEN & RIWAYAT SUBSCRIPTION PLATFORM (/owner/subscriptions)
+  // =========================================================================
+
+  it('ET-03-030: Halaman /owner/subscriptions memuat 4 kartu metrik langganan (Tenant Aktif, Jatuh Tempo H-7, Kedaluwarsa, Estimasi MRR)', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/subscriptions');
+
+    cy.url().should('include', '/owner/subscriptions');
+    cy.get('h1').should('contain.text', 'Subscription & Masa Aktif Tenant');
+
+    // 4 Kartu Metrik Subscription
+    cy.contains('p', 'Masa aktif berlaku').should('be.visible');
+    cy.contains('p', 'Berakhir dalam 7 hari').should('be.visible');
+    cy.contains('p', 'Perlu perpanjangan masa aktif').should('be.visible');
+    cy.contains('p', 'Recurring revenue bulanan').should('be.visible');
+  });
+
+  it('ET-03-031: Form filter subscription memvalidasi input #search, select #plan, select #status, dan tombol Terapkan Filter', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/subscriptions');
+
+    cy.get('#search').should('be.visible');
+    cy.get('#plan').select('business');
+    cy.get('#status').select('active');
+    cy.contains('button[type="submit"]', 'Filter').click();
+
+    cy.url().should('include', 'plan=business');
+    cy.url().should('include', 'status=active');
+  });
+
+  it('ET-03-032: Tombol tautan Reset pada form filter membersihkan seluruh parameter dan memuat ulang data langganan', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/subscriptions?plan=professional&status=expired');
+
+    cy.get('a[title*="Reset filter"]').click();
+    cy.url().should('not.include', 'plan=professional');
+  });
+
+  it('ET-03-033: Tombol aksi Perpanjang pada baris langganan membuka Modal Perpanjangan Subscription', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Perpanjang")').length > 0) {
+        cy.get('table tbody tr button:contains("Perpanjang")').first().click({ force: true });
+
+        // Modal Perpanjangan Subscription Muncul
+        cy.contains('h3', 'Perpanjang Subscription').should('be.visible');
+        cy.get('#reference_number').should('be.visible');
+        cy.get('#payment_proof').should('exist');
+      }
+    });
+  });
+
+  it('ET-03-034: Modal perpanjangan subscription menyediakan pilihan durasi masa aktif dan tombol Batal', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Perpanjang")').length > 0) {
+        cy.get('table tbody tr button:contains("Perpanjang")').first().click({ force: true });
+
+        // Cek info durasi perpanjangan otomatis sesuai paket
+        cy.contains('Durasi Perpanjangan').should('be.visible');
+        cy.get('[x-show="showRenewModal"]').contains('button', 'Batal').click({ force: true });
+        cy.contains('h3', 'Perpanjang Subscription').should('not.be.visible');
+      }
+    });
+  });
+
+  it('ET-03-035: Tombol aksi Riwayat pada baris langganan membuka Modal Riwayat Perpanjangan Subscription', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Riwayat")').length > 0) {
+        cy.get('table tbody tr button:contains("Riwayat")').first().click({ force: true });
+
+        // Modal Riwayat Terbuka
+        cy.contains('h3', 'Riwayat Aktivitas & Perpanjangan').should('be.visible');
+      }
+    });
+  });
+
+  it('ET-03-036: Tombol Tutup pada Modal Riwayat Perpanjangan menutup kembali jendela dialog riwayat', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/subscriptions');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Riwayat")').length > 0) {
+        cy.get('table tbody tr button:contains("Riwayat")').first().click({ force: true });
+        cy.get('[x-show="showHistoryModal"]').contains('button', 'Tutup').click({ force: true });
+        cy.contains('h3', 'Riwayat Aktivitas & Perpanjangan').should('not.be.visible');
+      }
+    });
+  });
 });
