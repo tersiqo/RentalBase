@@ -10,6 +10,7 @@
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="{{ asset('js/rentalbase-webpush.js') }}"></script>
 
     <style>
         [x-cloak] { display: none !important; }

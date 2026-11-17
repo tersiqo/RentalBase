@@ -190,6 +190,21 @@ class AdminChatController extends Controller
         // Siarkan secara instan via WebSocket Reverb (0-delay)
         $this->safeBroadcast(new ChatMessageSent($chatMessage));
 
+        // Kirim Web Push Notification ke perangkat Customer (latar belakang / browser tertutup)
+        try {
+            $customerUrl = $client->subdomain
+                ? route('customer.home', ['subdomain' => $client->subdomain, 'open_chat' => 1])
+                : url('/?open_chat=1');
+
+            app(\App\Services\WebPushService::class)->sendToUser($conversation->customer_id, [
+                'title' => 'Balasan dari ' . ($client->nama_usaha ?? $client->business_name ?? 'Admin Toko'),
+                'body'  => $chatMessage->message ?: 'Mengirim foto lampiran',
+                'url'   => $customerUrl,
+                'type'  => 'chat',
+                'tag'   => 'rb-chat-conv-' . $conversation->id,
+            ]);
+        } catch (\Throwable $e) {}
+
         return response()->json([
             'success' => true,
             'message' => $this->formatMessagePayload($chatMessage, $conversation),

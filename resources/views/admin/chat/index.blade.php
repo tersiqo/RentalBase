@@ -15,7 +15,27 @@
             </p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2.5">
+            <div x-data="rbWebPush()" x-init="init()" x-show="isSupported" x-cloak class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs shadow-2xs">
+                <span class="w-2 h-2 rounded-full shrink-0" :class="isSubscribed ? 'bg-emerald-500' : 'bg-gray-400'"></span>
+                <span class="font-semibold text-gray-700" x-text="isSubscribed ? 'Notif Background: Aktif' : 'Notif Saat Tab Ditutup'"></span>
+                <button type="button"
+                        x-show="isSubscribed"
+                        @click="sendTestNotification()"
+                        :disabled="isLoading"
+                        class="ml-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 transition cursor-pointer">
+                    Tes
+                </button>
+                <button type="button"
+                        @click="toggleSubscription()"
+                        :disabled="isLoading"
+                        class="ml-0.5 px-2.5 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                        :class="isSubscribed ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-orange-500 text-white hover:bg-orange-600'">
+                    <span x-show="!isLoading" x-text="isSubscribed ? 'Aktif ✓' : 'Aktifkan'"></span>
+                    <span x-show="isLoading">...</span>
+                </button>
+            </div>
+
             <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-bold shadow-2xs">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
                 <span>Live Chat Aktif</span>
