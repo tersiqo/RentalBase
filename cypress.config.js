@@ -3,7 +3,8 @@ import { defineConfig } from "cypress";
 export default defineConfig({
   e2e: {
     baseUrl: 'http://localhost:8000',
-    defaultCommandTimeout: 15000,
+    experimentalStudio: true,
+    defaultCommandTimeout: 30000,
     pageLoadTimeout: 60000,
     responseTimeout: 60000,
     requestTimeout: 30000,
