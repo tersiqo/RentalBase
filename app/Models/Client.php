@@ -78,6 +78,11 @@ class Client extends Model
         return $this->hasOne(TenantProfile::class);
     }
 
+    public function chatConversations()
+    {
+        return $this->hasMany(ChatConversation::class);
+    }
+
     public function getLogoUrlAttribute(): ?string
     {
         $logo = $this->tenantProfile?->logo_path ?? $this->logo;
