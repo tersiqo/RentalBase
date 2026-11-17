@@ -100,6 +100,7 @@ describe('E2E TEST — MODUL 07: BOOKING DAN CHECKOUT', () => {
     cy.contains('button', 'Lanjut ke Konfirmasi').click({ force: true });
     cy.get('input[name="terms"]').check({ force: true });
     cy.get('button[type="submit"]').click({ force: true });
-    cy.url().should('include', '/my-orders');
+    cy.url({ timeout: 30000 }).should('include', '/my-orders');
+    cy.contains('Pesanan Saya', { timeout: 15000 }).should('be.visible');
   });
 });

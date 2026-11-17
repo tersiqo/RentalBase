@@ -190,7 +190,7 @@
     </section>
 
     <!-- Main Catalog Section -->
-    <main class="max-w-[1260px] mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-9" id="katalog">
+    <main class="max-w-[1260px] mx-auto px-4 sm:px-6 py-8 sm:py-10 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 lg:gap-9" id="katalog">
         
         <!-- Mobile Filter Toggle -->
         <div class="lg:hidden mb-4">
@@ -318,14 +318,14 @@
                         <p class="text-[13px] text-gray-500">{{ $this->products->total() ?? $this->products->count() }} peralatan ditemukan</p>
                     @else
                         <p class="text-[13px] text-gray-500">
-                            Menampilkan koleksi pilihan • 
-                            <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="text-primary-600 font-bold hover:underline">Masuk</a> untuk melihat seluruh {{ $this->allProductsCount }} alat siap sewa
+                            Menampilkan {{ min(3, $this->allProductsCount) }} dari {{ $this->allProductsCount }} alat.
+                            <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="text-primary-600 font-bold hover:underline ml-1">Masuk untuk lihat semua &rarr;</a>
                         </p>
                     @endauth
                 </div>
-                <div class="flex items-center gap-2">
-                    <label for="so" class="text-[13px] text-gray-600 font-semibold">Urutkan</label>
-                    <select id="so" wire:model.live="sort" class="border border-gray-200 rounded-xl p-[9px_34px_9px_14px] bg-white font-semibold text-[13px] cursor-pointer focus:ring-0 focus:border-primary-500 transition-colors">
+                <div class="flex items-center gap-2 min-w-0">
+                    <label for="so" class="text-[13px] text-gray-600 font-semibold shrink-0">Urutkan</label>
+                    <select id="so" wire:model.live="sort" class="min-w-0 max-w-full border border-gray-200 rounded-xl p-[9px_34px_9px_14px] bg-white font-semibold text-[13px] cursor-pointer focus:ring-0 focus:border-primary-500 transition-colors">
                         <option value="terbaru">Terbaru</option>
                         <option value="termurah">Harga terendah</option>
                         <option value="termahal">Harga tertinggi</option>
@@ -358,7 +358,7 @@
                 </div>
             </div>
 
-            <div wire:loading.class="opacity-30 pointer-events-none" wire:target="search,selectedCategory,availableOnly,minPrice,maxPrice,sort,startDate,endDate,resetFilters" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[22px] min-h-[420px]">
+            <div wire:loading.class="opacity-30 pointer-events-none" wire:target="search,selectedCategory,availableOnly,minPrice,maxPrice,sort,startDate,endDate,resetFilters" class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-[22px] min-h-[420px]">
                 
                 @if($this->products->isEmpty())
                     <div class="col-span-full text-center p-[70px_20px] border-2 border-dashed border-gray-200 rounded-[28px] self-start mt-8">
@@ -378,9 +378,9 @@
 
                     @foreach($displayedProducts as $index => $item)
                         <!-- Card -->
-                        <article wire:key="product-{{ $item->id }}" class="bg-white border border-gray-100 rounded-[24px] overflow-hidden flex flex-col shadow-[0_10px_30px_-14px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl {{ ($item->total_units_count ?? 0) > 0 ? '' : 'opacity-60 grayscale-[0.2]' }} group animate-fade-in-up" style="animation-delay: {{ $index * 130 }}ms">
+                        <article wire:key="product-{{ $item->id }}" class="bg-white border border-gray-100 rounded-2xl sm:rounded-[24px] overflow-hidden flex flex-col shadow-[0_10px_30px_-14px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl {{ ($item->total_units_count ?? 0) > 0 ? '' : 'opacity-60 grayscale-[0.2]' }} group animate-fade-in-up" style="animation-delay: {{ $index * 130 }}ms">
                             
-                            <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="relative h-[190px] flex items-center justify-center overflow-hidden bg-gray-100">
+                            <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="relative aspect-square sm:aspect-auto sm:h-[190px] flex items-center justify-center overflow-hidden bg-gray-100">
                                 @if($item->main_image)
                                     <img src="{{ storage_url($item->main_image) }}" 
                                          alt="{{ $item->name }}" 
@@ -414,47 +414,48 @@
                                                  <rect x="63" y="65" width="23" height="22" rx="3" stroke-width="2.6" fill="#fff" fill-opacity="0.18" />
                                                  <circle cx="60" cy="35" r="4" fill="#fff" />
                                              </svg>
-                                         </div>
+                                        </div>
                                     </div>
                                 @endif
                                 
                                 @if($item->available_units_count > 0)
-                                    <span class="absolute right-3.5 top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-[12px] font-bold flex items-center gap-1.5 text-green-700 shadow-sm border border-green-200">
-                                        <i class="w-[7px] h-[7px] rounded-full bg-green-500 block"></i> Tersedia {{ $item->available_units_count }}
+                                    <span class="absolute right-2 top-2 sm:right-3.5 sm:top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[12px] font-bold flex items-center gap-1 sm:gap-1.5 text-green-700 shadow-sm border border-green-200">
+                                        <i class="w-[5px] h-[5px] sm:w-[7px] sm:h-[7px] rounded-full bg-green-500 block"></i> Tersedia {{ $item->available_units_count }}
                                     </span>
                                 @elseif(($item->total_units_count ?? 0) > 0)
-                                    <span class="absolute right-3.5 top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-[12px] font-bold flex items-center gap-1.5 text-amber-700 shadow-sm border border-amber-200">
-                                        <i class="w-[7px] h-[7px] rounded-full bg-amber-500 block"></i> Sedang Disewa
+                                    <span class="absolute right-2 top-2 sm:right-3.5 sm:top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[12px] font-bold flex items-center gap-1 sm:gap-1.5 text-amber-700 shadow-sm border border-amber-200">
+                                        <i class="w-[5px] h-[5px] sm:w-[7px] sm:h-[7px] rounded-full bg-amber-500 block"></i> <span class="sm:hidden">Disewa</span><span class="hidden sm:inline">Sedang Disewa</span>
                                     </span>
                                 @else
-                                    <span class="absolute right-3.5 top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-[12px] font-bold flex items-center gap-1.5 text-gray-500 shadow-sm border border-gray-200">
-                                        <i class="w-[7px] h-[7px] rounded-full bg-gray-400 block"></i> Stok Habis
+                                    <span class="absolute right-2 top-2 sm:right-3.5 sm:top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[12px] font-bold flex items-center gap-1 sm:gap-1.5 text-gray-500 shadow-sm border border-gray-200">
+                                        <i class="w-[5px] h-[5px] sm:w-[7px] sm:h-[7px] rounded-full bg-gray-400 block"></i> <span class="sm:hidden">Habis</span><span class="hidden sm:inline">Stok Habis</span>
                                     </span>
                                 @endif
                             </a>
                             
-                            <div class="p-[20px_22px_22px] flex flex-col flex-1">
+                            <div class="p-3 sm:p-[20px_22px_22px] flex flex-col flex-1">
                                 <!-- Category Badge -->
-                                <div class="mb-1.5">
-                                    <span class="inline-block tenant-badge text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                <div class="mb-1 sm:mb-1.5">
+                                    <span class="inline-block tenant-badge text-[9px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded-full uppercase tracking-wider truncate max-w-full">
                                         {{ $item->category->name ?? 'Peralatan' }}
                                     </span>
                                 </div>
 
                                 <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate>
-                                    <h3 class="text-gray-900 text-[17px] font-bold leading-[1.3] line-clamp-2 hover:text-primary-600 transition-colors">{{ $item->name }}</h3>
+                                    <h3 class="text-gray-900 text-[13px] sm:text-[17px] font-bold leading-snug sm:leading-[1.3] line-clamp-2 hover:text-primary-600 transition-colors">{{ $item->name }}</h3>
                                 </a>
-                                <p class="text-[13px] mt-1 mb-4 text-gray-500 line-clamp-2">{{ strip_tags($item->description) }}</p>
+                                <p class="hidden sm:block text-[13px] mt-1 mb-4 text-gray-500 line-clamp-2">{{ strip_tags($item->description) }}</p>
                                 
-                                <div class="mt-auto flex items-baseline gap-1.5 text-gray-900 mb-4">
-                                    <b class="text-[22px] font-extrabold tracking-tight">Rp{{ number_format($item->rental_price_per_day, 0, ',', '.') }}</b>
-                                    <span class="text-[13px] text-gray-400 font-semibold">per hari</span>
+                                <div class="mt-auto flex flex-col sm:flex-row sm:items-baseline gap-0 sm:gap-1.5 text-gray-900 mb-2 sm:mb-4 pt-1 sm:pt-0">
+                                    <b class="text-[14px] sm:text-[22px] font-extrabold tracking-tight">Rp{{ number_format($item->rental_price_per_day, 0, ',', '.') }}</b>
+                                    <span class="text-[10px] sm:text-[13px] text-gray-400 font-semibold">/ hari</span>
                                 </div>
                                 
                                 <!-- Card Action Buttons -->
-                                <div class="flex items-center gap-2 mt-2">
-                                    <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="flex-1 inline-flex justify-center items-center rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 transition-all text-[13px]">
-                                        Lihat detail
+                                <div class="flex items-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
+                                    <a href="{{ route('customer.product.show', ['subdomain' => $client->subdomain, 'product' => $item->id]) }}" wire:navigate class="flex-1 inline-flex justify-center items-center rounded-lg sm:rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-1.5 sm:py-2.5 px-2 transition-all text-[11px] sm:text-[13px]">
+                                        <span class="sm:hidden">Detail</span>
+                                        <span class="hidden sm:inline">Lihat detail</span>
                                     </a>
                                     @if(($item->total_units_count ?? 0) > 0)
                                         @auth
@@ -462,24 +463,24 @@
                                                     wire:click="openAddToCartModal({{ $item->id }})" 
                                                     title="{{ $item->available_units_count > 0 ? 'Tambah ke Keranjang' : 'Pilih Jadwal Booking' }}"
                                                     aria-label="{{ $item->available_units_count > 0 ? 'Tambah ke Keranjang' : 'Pilih Jadwal Booking' }}"
-                                                    class="flex-none inline-flex justify-center items-center gap-1 rounded-xl bg-primary-500 text-white font-bold px-3 py-2.5 tenant-shadow-sm hover:bg-primary-600 active:scale-95 transition-all cursor-pointer">
-                                                <span class="text-[14px] font-black leading-none">+</span>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
+                                                    class="flex-none inline-flex justify-center items-center gap-0.5 sm:gap-1 rounded-lg sm:rounded-xl bg-primary-500 text-white font-bold p-1.5 sm:px-3 sm:py-2.5 tenant-shadow-sm hover:bg-primary-600 active:scale-95 transition-all cursor-pointer">
+                                                <span class="text-[12px] sm:text-[14px] font-black leading-none">+</span>
+                                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
                                             </button>
                                         @else
                                             <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}"
                                                title="Masuk untuk menyewa alat ini"
-                                               class="flex-none inline-flex justify-center items-center gap-1 rounded-xl bg-primary-500 text-white font-bold px-3 py-2.5 tenant-shadow-sm hover:bg-primary-600 active:scale-95 transition-all cursor-pointer">
-                                                <span class="text-[14px] font-black leading-none">+</span>
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
+                                               class="flex-none inline-flex justify-center items-center gap-0.5 sm:gap-1 rounded-lg sm:rounded-xl bg-primary-500 text-white font-bold p-1.5 sm:px-3 sm:py-2.5 tenant-shadow-sm hover:bg-primary-600 active:scale-95 transition-all cursor-pointer">
+                                                <span class="text-[12px] sm:text-[14px] font-black leading-none">+</span>
+                                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
                                             </a>
                                         @endauth
                                     @else
                                         <button disabled 
                                                 title="Stok Habis"
-                                                class="flex-none inline-flex justify-center items-center gap-1 rounded-xl bg-gray-100 text-gray-400 font-bold px-3 py-2.5 cursor-not-allowed">
-                                            <span class="text-[14px] font-black leading-none">+</span>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
+                                                class="flex-none inline-flex justify-center items-center gap-0.5 sm:gap-1 rounded-lg sm:rounded-xl bg-gray-100 text-gray-400 font-bold p-1.5 sm:px-3 sm:py-2.5 cursor-not-allowed">
+                                            <span class="text-[12px] sm:text-[14px] font-black leading-none">+</span>
+                                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
                                         </button>
                                     @endif
                                 </div>
@@ -491,7 +492,7 @@
                         <!-- Locked Catalog Teaser Section for Guests -->
                         <div class="col-span-full relative mt-4">
                             <!-- Blurred Skeleton Cards in background -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[22px] filter blur-[6px] opacity-30 select-none pointer-events-none" aria-hidden="true">
+                            <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-[22px] filter blur-[6px] opacity-30 select-none pointer-events-none" aria-hidden="true">
                                 @for($k = 1; $k <= 3; $k++)
                                     <div class="bg-white border border-gray-200 rounded-[24px] overflow-hidden flex flex-col p-5 shadow-sm">
                                         <div class="h-[180px] bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl mb-4 flex items-center justify-center">

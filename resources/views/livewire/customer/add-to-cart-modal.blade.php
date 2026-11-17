@@ -39,8 +39,8 @@
     @keydown.escape.window="isOpen = false">
     
     <!-- Button Trigger -->
-    <button @click="isOpen = true" type="button" class="flex-none bg-white border-2 border-primary-200 text-primary-600 hover:bg-primary-50 hover:border-primary-300 font-bold text-lg py-4 px-6 rounded-xl text-center transition-all flex items-center justify-center gap-2 {{ $product->units->count() == 0 ? 'opacity-50 cursor-not-allowed pointer-events-none' : '' }}" title="Tambah ke Keranjang">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
+    <button @click="isOpen = true" type="button" class="flex-none bg-white border-2 border-primary-200 text-primary-600 hover:bg-primary-50 hover:border-primary-300 font-bold text-sm sm:text-lg py-3 sm:py-4 px-4 sm:px-6 rounded-xl text-center transition-all flex items-center justify-center gap-2 {{ $product->units->count() == 0 ? 'opacity-50 cursor-not-allowed pointer-events-none' : '' }}" title="Tambah ke Keranjang">
+        <svg class="w-5 h-5 sm:w-[22px] sm:h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
         <span class="hidden xl:inline">Keranjang</span>
     </button>
 
@@ -69,38 +69,38 @@
                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="flex justify-between items-start mb-5">
-                        <h3 class="text-xl leading-6 font-bold text-gray-900" id="modal-title">Pilih Jadwal Sewa</h3>
+                <div class="bg-white px-3.5 pt-4 pb-3 sm:p-6 sm:pb-4">
+                    <div class="flex justify-between items-start mb-3.5 sm:mb-5">
+                        <h3 class="text-lg sm:text-xl leading-6 font-bold text-gray-900" id="modal-title">Pilih Jadwal Sewa</h3>
                         <button @click="isOpen = false" class="text-gray-400 hover:text-gray-500 transition-colors">
                             <span class="sr-only">Tutup</span>
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
 
                     <!-- Product Summary -->
-                    <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
-                        <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden flex-shrink-0">
+                    <div class="flex items-center gap-3 sm:gap-4 p-2.5 sm:p-3 bg-gray-50 rounded-xl mb-4 sm:mb-6">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden flex-shrink-0">
                             <img src="{{ $product->main_image ? storage_url($product->main_image) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" class="w-full h-full object-cover">
                         </div>
                         <div>
-                            <h4 class="font-bold text-gray-900 line-clamp-1">{{ $product->name }}</h4>
-                            <p class="text-sm text-primary-600 font-medium">Rp {{ number_format($product->rental_price_per_day, 0, ',', '.') }} <span class="text-gray-500 text-xs">/ hari</span></p>
+                            <h4 class="font-bold text-xs sm:text-sm text-gray-900 line-clamp-1">{{ $product->name }}</h4>
+                            <p class="text-xs sm:text-sm text-primary-600 font-medium">Rp {{ number_format($product->rental_price_per_day, 0, ',', '.') }} <span class="text-gray-500 text-[10px] sm:text-xs">/ hari</span></p>
                         </div>
                     </div>
 
-                    <div class="space-y-4">
+                    <div class="space-y-3.5 sm:space-y-4">
                         <!-- Date Pickers -->
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-2.5 sm:gap-4">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
-                                <input type="date" x-model="startDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" @input="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" min="{{ date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
+                                <input type="date" x-model="startDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" @input="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" min="{{ date('Y-m-d') }}" class="w-full py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
-                                <input type="date" x-model="endDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" @input="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" :min="startDate || '{{ date('Y-m-d') }}'" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
+                                <input type="date" x-model="endDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" @input="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" :min="startDate || '{{ date('Y-m-d') }}'" class="w-full py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm">
                             </div>
                         </div>
 
@@ -125,6 +125,12 @@
                             </div>
                         </div>
 
+                        <!-- Info prompt if duration === 0 -->
+                        <div x-show="duration === 0" class="flex items-center gap-2 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                            <svg class="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Silakan tentukan tanggal mulai dan selesai sewa untuk memeriksa ketersediaan unit.</span>
+                        </div>
+
                         @if($errorMessage)
                             <div class="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                                 {{ $errorMessage }}
@@ -133,41 +139,41 @@
 
                         <!-- Quantity -->
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah Unit (Maks: {{ $availableUnits }})</label>
-                            <input type="number" x-model="quantity" min="1" max="{{ max(1, $availableUnits) }}" class="w-full sm:w-1/3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                            <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Jumlah Unit (Maks: {{ $availableUnits }})</label>
+                            <input type="number" x-model="quantity" min="1" max="{{ max(1, $availableUnits) }}" class="w-full sm:w-1/3 py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm">
                         </div>
 
                         <!-- Calculation Auto-Update -->
-                        <div class="bg-primary-50 border border-primary-100 p-4 rounded-xl mt-6">
+                        <div class="bg-primary-50 border border-primary-100 p-3 sm:p-4 rounded-xl mt-4 sm:mt-6">
                             <div class="flex justify-between items-center mb-1">
-                                <span class="text-sm text-primary-800">Durasi Sewa:</span>
-                                <span class="font-bold text-primary-900" x-text="duration + ' Hari'"></span>
+                                <span class="text-xs sm:text-sm text-primary-800">Durasi Sewa:</span>
+                                <span class="font-bold text-xs sm:text-sm text-primary-900" x-text="duration + ' Hari'"></span>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="text-sm text-primary-800">Kuantitas:</span>
-                                <span class="font-bold text-primary-900" x-text="quantity + ' Unit'"></span>
+                                <span class="text-xs sm:text-sm text-primary-800">Kuantitas:</span>
+                                <span class="font-bold text-xs sm:text-sm text-primary-900" x-text="quantity + ' Unit'"></span>
                             </div>
-                            <hr class="border-primary-200 my-2">
+                            <hr class="border-primary-200 my-1.5 sm:my-2">
                             <div class="flex justify-between items-end">
-                                <span class="text-sm font-bold text-primary-900">Estimasi Total Biaya:</span>
-                                <span class="text-2xl font-black text-primary-600" x-text="'Rp ' + formattedTotal"></span>
+                                <span class="text-xs sm:text-sm font-bold text-primary-900">Estimasi Total Biaya:</span>
+                                <span class="text-xl sm:text-2xl font-black text-primary-600" x-text="'Rp ' + formattedTotal"></span>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-gray-50 px-4 py-4 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100">
-                    <button type="button" @click="isOpen = false" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm transition-colors">
+                <div class="bg-gray-50 px-3.5 py-3 sm:px-6 sm:py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100">
+                    <button type="button" @click="isOpen = false" class="mt-2 sm:mt-0 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-3.5 py-2 sm:px-4 sm:py-2.5 bg-white text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:w-auto transition-colors">
                         Batal
                     </button>
                     <!-- Tambah ke Keranjang -->
                     <button type="button" @click="submit" 
                             :disabled="duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}"
                             :class="(duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}) ? 'opacity-50 cursor-not-allowed' : ''"
-                            class="w-full inline-flex justify-center items-center rounded-lg border border-primary-200 shadow-sm px-4 py-2.5 bg-primary-50 text-base font-semibold text-primary-700 hover:bg-primary-100 focus:outline-none sm:w-auto sm:text-sm transition-colors relative">
+                            class="w-full inline-flex justify-center items-center rounded-lg border border-primary-200 shadow-sm px-3.5 py-2 sm:px-4 sm:py-2.5 bg-primary-50 text-xs sm:text-sm font-semibold text-primary-700 hover:bg-primary-100 focus:outline-none sm:w-auto transition-colors relative">
                         <span wire:loading.remove wire:target="confirm">Tambah ke Keranjang</span>
-                        <span wire:loading wire:target="confirm" class="flex items-center gap-2">
-                            <svg class="animate-spin h-4 w-4 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span wire:loading wire:target="confirm" class="flex items-center gap-1.5 sm:gap-2">
+                            <svg class="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             Memproses...
                         </span>
                     </button>
@@ -175,10 +181,10 @@
                     <button type="button" @click="submitDirect" 
                             :disabled="duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}"
                             :class="(duration === 0 || {{ $availableUnits < 1 ? 'true' : 'false' }}) ? 'opacity-50 cursor-not-allowed' : ''"
-                            class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-base font-bold text-white hover:bg-primary-700 focus:outline-none sm:w-auto sm:text-sm transition-colors relative shadow-sm">
+                            class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2 sm:px-5 sm:py-2.5 bg-primary-600 text-xs sm:text-sm font-bold text-white hover:bg-primary-700 focus:outline-none sm:w-auto transition-colors relative shadow-sm">
                         <span wire:loading.remove wire:target="confirmAndCheckout">Sewa Sekarang</span>
-                        <span wire:loading wire:target="confirmAndCheckout" class="flex items-center gap-2">
-                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span wire:loading wire:target="confirmAndCheckout" class="flex items-center gap-1.5 sm:gap-2">
+                            <svg class="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             Memproses...
                         </span>
                     </button>

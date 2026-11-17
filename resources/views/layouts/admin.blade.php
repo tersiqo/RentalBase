@@ -433,17 +433,17 @@
     </button>
 
     {{-- Breadcrumb/Page title --}}
-    <div class="flex items-center gap-2 text-xs font-medium">
-        <span class="font-bold text-gray-900">{{ $storeName }}</span>
-        <span class="text-gray-300">/</span>
-        <span class="text-gray-500">@yield('page-title', 'Dashboard Operasional')</span>
+    <div class="flex items-center gap-2 text-xs font-medium min-w-0">
+        <span class="font-bold text-gray-900 truncate max-w-[130px] sm:max-w-[200px]">{{ $storeName }}</span>
+        <span class="text-gray-300 shrink-0">/</span>
+        <span class="text-gray-500 truncate max-w-[150px] sm:max-w-[260px] md:max-w-none">@yield('page-title', 'Dashboard Operasional')</span>
     </div>
 
     {{-- Spacer --}}
     <div class="flex-1"></div>
 
     {{-- Date --}}
-    <div class="hidden lg:flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+    <div class="hidden lg:flex items-center gap-1.5 text-xs text-gray-500 font-medium shrink-0">
         <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -454,18 +454,18 @@
     {{-- Subscription badge --}}
     <a href="{{ route('admin.subscriptions.index') }}"
        title="Kelola Langganan & Upgrade Paket"
-       class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-50/80 hover:bg-orange-100/90 border border-orange-200/60 rounded-full transition-colors cursor-pointer group">
+       class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-50/80 hover:bg-orange-100/90 border border-orange-200/60 rounded-full transition-colors cursor-pointer group shrink-0">
         <span class="w-2 h-2 rounded-full bg-orange-500 group-hover:scale-125 transition-transform"></span>
         <span class="text-xs font-bold text-orange-700">Paket: {{ $subscription->plan_name ?? 'Business' }} (Aktif)</span>
     </a>
 
     {{-- Bell Notification Dropdown --}}
-    <div x-data="{ notifOpen: false }" class="relative" @keydown.escape.stop="notifOpen = false">
+    <div x-data="{ notifOpen: false }" class="relative shrink-0" @keydown.escape.stop="notifOpen = false">
         <button @click="notifOpen = !notifOpen"
                 type="button"
                 id="btn-admin-notifications"
                 title="Pemberitahuan Operasional Toko"
-                class="relative w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
+                class="relative w-9 h-9 shrink-0 aspect-square rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
                 :aria-expanded="notifOpen.toString()">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
@@ -560,15 +560,15 @@
     </div>
 
     {{-- Profile Dropdown --}}
-    <div x-data="{ profileOpen: false }" class="relative" @keydown.escape.stop="profileOpen = false">
+    <div x-data="{ profileOpen: false }" class="relative shrink-0" @keydown.escape.stop="profileOpen = false">
         <button @click="profileOpen = !profileOpen"
                 type="button"
                 id="btn-profile-dropdown"
                 title="Menu Profil Admin"
-                class="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-sm hover:ring-2 hover:ring-orange-500 hover:ring-offset-2 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                class="w-9 h-9 shrink-0 aspect-square rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-sm hover:ring-2 hover:ring-orange-500 hover:ring-offset-2 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 :aria-expanded="profileOpen.toString()">
             @if(Auth::user()?->avatar)
-                <img src="{{ storage_url(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="w-full h-full rounded-full object-cover">
+                <img src="{{ storage_url(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="w-full h-full shrink-0 aspect-square rounded-full object-cover">
             @else
                 <span class="sr-only">Buka menu profil</span>
                 <span class="uppercase font-semibold text-xs">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</span>
@@ -1129,6 +1129,13 @@
                             this.addToast('Bukti Kompensasi Kerusakan!', e.message || `Customer mengunggah bukti bayar kompensasi kerusakan.`, `/admin/damage-cases/${e.case_id}`);
                             if (window.location.pathname.includes('/admin/damage-cases') || window.location.pathname.includes('/admin/orders')) {
                                 this.triggerReload(1500);
+                            }
+                        })
+                        .listen('.damage.responded', (e) => {
+                            this.playChime();
+                            this.addToast('Tanggapan Baru dari Penyewa!', e.message || `Customer menanggapi kasus kerusakan #${e.case_id}.`, `/admin/damage-cases/${e.case_id}`);
+                            if (window.location.pathname.includes('/admin/damage-cases')) {
+                                this.triggerReload(1200);
                             }
                         })
                         .listen('.tenant.quota_alert', (e) => {

@@ -6,7 +6,7 @@
 @section('content')
 
 {{-- Page Header --}}
-<div class="mb-8 pt-3 lg:pt-4">
+<div class="mb-6 pt-2 lg:pt-3">
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
             <p class="text-[11px] font-bold uppercase tracking-widest text-orange-500 mb-1 flex items-center gap-1.5">

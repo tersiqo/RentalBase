@@ -286,6 +286,21 @@ class DamageCaseManagementTest extends TestCase
         $this->assertEquals('menunggu_respons', $this->damageCaseA->case_status);
     }
 
+    public function test_it_broadcasts_damage_case_responded_event_when_admin_submits_response(): void
+    {
+        \Illuminate\Support\Facades\Event::fake([\App\Events\DamageCaseResponded::class]);
+
+        $this->actingAs($this->adminA)
+            ->post(route('admin.damage-cases.respond', $this->damageCaseA->id), [
+                'notes' => 'Tanggapan uji coba realtime websocket admin.',
+                'case_status' => 'menunggu_respons',
+            ]);
+
+        \Illuminate\Support\Facades\Event::assertDispatched(\App\Events\DamageCaseResponded::class, function ($event) {
+            return $event->sender === 'admin' && $event->damageCase->id === $this->damageCaseA->id;
+        });
+    }
+
     public function test_it_10_030_admin_can_verify_compensation_payment(): void
     {
         $payMethod = ClientPaymentMethod::create([
@@ -351,5 +366,36 @@ class DamageCaseManagementTest extends TestCase
             ->get(route('admin.damage-cases.show', $this->damageCaseA->id));
 
         $response->assertStatus(403);
+    }
+
+    public function test_it_10_032_admin_response_status_selection_persists_in_dropdown_and_does_not_revert(): void
+    {
+        // 1. Admin mengirim tanggapan dengan status menunggu_pembayaran
+        $response = $this->actingAs($this->adminA)
+            ->post(route('admin.damage-cases.respond', $this->damageCaseA->id), [
+                'notes' => 'Silakan lakukan pembayaran kompensasi sesuai rincian tagihan.',
+                'case_status' => 'menunggu_pembayaran',
+            ]);
+
+        $response->assertRedirect();
+        $this->damageCaseA->refresh();
+        $this->assertEquals('menunggu_pembayaran', $this->damageCaseA->case_status);
+
+        // 2. Admin membuka halaman detail, pastikan opsi menunggu_pembayaran berstatus selected
+        $viewResponse = $this->actingAs($this->adminA)
+            ->get(route('admin.damage-cases.show', $this->damageCaseA->id));
+
+        $viewResponse->assertOk();
+        $viewResponse->assertSee('value="menunggu_pembayaran" selected', false);
+
+        // 3. Admin mengirim tanggapan lanjutan tanpa mengubah status (null), status tidak boleh reset ke default
+        $followUpResponse = $this->actingAs($this->adminA)
+            ->post(route('admin.damage-cases.respond', $this->damageCaseA->id), [
+                'notes' => 'Mengingatkan kembali perihal pembayaran kompensasi.',
+            ]);
+
+        $followUpResponse->assertRedirect();
+        $this->damageCaseA->refresh();
+        $this->assertEquals('menunggu_pembayaran', $this->damageCaseA->case_status);
     }
 }

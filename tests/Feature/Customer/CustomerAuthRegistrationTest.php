@@ -131,7 +131,7 @@ class CustomerAuthRegistrationTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $registerCustomerResponse->assertRedirect('/client/babyrental');
+        $registerCustomerResponse->assertRedirect('/#mitra-rental');
         $this->assertAuthenticated();
         $this->assertEquals('customer', auth()->user()->role);
         $this->assertEquals('aktif', auth()->user()->status);

@@ -297,17 +297,27 @@
                                       placeholder="Tuliskan penjelasan, rincian ganti rugi baru, atau klarifikasi toko untuk customer..."
                                       class="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"></textarea>
 
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs text-slate-500 font-medium">Ubah Status Kasus:</span>
-                                    <select name="case_status" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none">
-                                        <option value="menunggu_respons">Menunggu Tanggapan Penyewa</option>
-                                        <option value="dalam_tinjauan">Dalam Tinjauan Toko</option>
-                                        <option value="menunggu_pembayaran">Menunggu Pembayaran Kompensasi</option>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2.5 w-full sm:w-auto min-w-0">
+                                    <label for="case_status_select" class="text-xs text-slate-600 font-semibold shrink-0">
+                                        Ubah Status Kasus:
+                                    </label>
+                                    @php
+                                        $currentCaseStatus = old('case_status', strtolower(trim(str_replace(['-', ' '], '_', $damageCase->case_status ?? 'terbuka'))));
+                                    @endphp
+                                    <select id="case_status_select"
+                                            name="case_status" 
+                                            class="w-full sm:w-auto min-w-0 max-w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors">
+                                        <option value="menunggu_respons" {{ in_array($currentCaseStatus, ['menunggu_respons', 'terbuka', 'menunggu_tanggapan']) ? 'selected' : '' }}>Menunggu Tanggapan Penyewa</option>
+                                        <option value="dalam_tinjauan" {{ in_array($currentCaseStatus, ['dalam_tinjauan', 'negosiasi']) ? 'selected' : '' }}>Dalam Tinjauan Toko</option>
+                                        <option value="menunggu_pembayaran" {{ in_array($currentCaseStatus, ['menunggu_pembayaran', 'menunggu_pembayaran_kompensasi']) ? 'selected' : '' }}>Menunggu Pembayaran Kompensasi</option>
+                                        @if(in_array($currentCaseStatus, ['kompensasi_dibayar', 'menunggu_verifikasi']))
+                                            <option value="kompensasi_dibayar" selected>Kompensasi Dibayar (Verifikasi)</option>
+                                        @endif
                                     </select>
                                 </div>
                                 <button type="submit"
-                                        class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-orange-600 text-white hover:bg-orange-700 transition-all shadow-sm">
+                                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white transition-all shadow-sm shrink-0 cursor-pointer">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                                     <span>Kirim Tanggapan</span>
                                 </button>
@@ -450,9 +460,9 @@
                         Status Unit Fisik [{{ $unit->unit_code ?? '-' }}] Selanjutnya:
                     </label>
                     <select name="unit_status_after" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-rose-500">
-                        <option value="tersedia">Tersedia (Sudah Diperbaiki & Siap Disewa Kembali)</option>
-                        <option value="maintenance">Perawatan (Maintenance / Dalam Proses Servis)</option>
-                        <option value="rusak">Tetap Rusak (Damaged / Belum Bisa Dipakai)</option>
+                        <option value="tersedia" {{ old('unit_status_after', 'tersedia') === 'tersedia' ? 'selected' : '' }}>Tersedia (Sudah Diperbaiki & Siap Disewa Kembali)</option>
+                        <option value="maintenance" {{ old('unit_status_after') === 'maintenance' ? 'selected' : '' }}>Perawatan (Maintenance / Dalam Proses Servis)</option>
+                        <option value="rusak" {{ old('unit_status_after') === 'rusak' ? 'selected' : '' }}>Tetap Rusak (Damaged / Belum Bisa Dipakai)</option>
                     </select>
                 </div>
 
