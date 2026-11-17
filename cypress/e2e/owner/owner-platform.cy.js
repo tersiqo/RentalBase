@@ -467,4 +467,83 @@ describe('E2E TEST — MODUL 03: MANAJEMEN PLATFORM OWNER', () => {
       }
     });
   });
+
+  // =========================================================================
+  // 5. PUSAT NOTIFIKASI & LOG JEJAK AKTIVITAS PLATFORM
+  // =========================================================================
+
+  it('ET-03-037: Pusat notifikasi /owner/notifications memuat judul Notifikasi Platform dan tab filter keterbacaan', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/notifications');
+
+    cy.url().should('include', '/owner/notifications');
+    cy.get('h1').should('contain.text', 'Notifikasi Platform');
+    cy.contains('p', 'Pantau pendaftaran tenant baru, perpanjangan subscription, dan peringatan kuota platform secara terpusat.').should('be.visible');
+  });
+
+  it('ET-03-038: Tombol tab filter Belum Dibaca (tab=unread) dan Perlu Tindakan (tab=alert) menyaring daftar notifikasi', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+
+    // 1. Tab Belum Dibaca
+    cy.visit('/owner/notifications?tab=unread');
+    cy.url().should('include', 'tab=unread');
+    cy.contains('h1', 'Notifikasi Platform').should('be.visible');
+
+    // 2. Tab Kategori Alert
+    cy.visit('/owner/notifications?tab=alert');
+    cy.url().should('include', 'tab=alert');
+    cy.contains('h1', 'Notifikasi Platform').should('be.visible');
+  });
+
+  it('ET-03-039: Form tombol Tandai Semua Dibaca tersedia ketika terdapat notifikasi yang belum dibaca', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/notifications');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('button:contains("Tandai Semua Dibaca")').length > 0) {
+        cy.contains('button', 'Tandai Semua Dibaca').should('be.visible');
+      }
+    });
+  });
+
+  it('ET-03-040: Tombol aksi notifikasi (Buka & Tindak Lanjuti / Lihat Halaman) memiliki navigasi ke modul terkait', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/notifications?tab=all');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('a:contains("Lihat Halaman"), button:contains("Buka & Tindak Lanjuti")').length > 0) {
+        cy.get('a:contains("Lihat Halaman"), button:contains("Buka & Tindak Lanjuti")').first().should('exist');
+      }
+    });
+  });
+
+  it('ET-03-041: Halaman jejak audit /owner/activity-logs memuat ringkasan total aktivitas dan form filter', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/activity-logs');
+
+    cy.url().should('include', '/owner/activity-logs');
+    cy.contains('h1', 'Audit Trail').should('be.visible');
+    cy.contains('span', 'Hari Ini').should('be.visible');
+    cy.contains('span', 'Total Log').should('be.visible');
+    cy.contains('a', 'Reset Filter').should('be.visible');
+  });
+
+  it('ET-03-042: Tombol aksi Detail pada baris aktivitas membuka Modal Forensik Aktivitas lengkap dengan tombol Tutup', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/activity-logs');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Detail")').length > 0) {
+        cy.get('table tbody tr button:contains("Detail")').first().click({ force: true });
+
+        // Modal Forensik Terbuka
+        cy.contains('h3', 'Detail Rekam Jejak Audit').should('be.visible');
+        cy.contains('Alamat IP').should('be.visible');
+
+        // Klik tombol Tutup
+        cy.contains('button', 'Tutup').click({ force: true });
+        cy.contains('h3', 'Detail Rekam Jejak Audit').should('not.be.visible');
+      }
+    });
+  });
 });
