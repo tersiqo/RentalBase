@@ -548,9 +548,7 @@ function adminChatInbox(config) {
                     this.activeMessages.push(e);
 
                     if (e.sender_role === 'customer') {
-                        if (document.hidden) {
-                            this.playChime();
-                        }
+                        this.playChime();
                         this.markActiveAsRead();
                     }
 
@@ -753,12 +751,7 @@ function adminChatInbox(config) {
                 };
 
                 if (ctx.state === 'suspended') {
-                    let allowed = true;
-                    const timer = setTimeout(() => { allowed = false; }, 60);
-                    ctx.resume().then(() => {
-                        clearTimeout(timer);
-                        if (allowed) executeChime();
-                    }).catch(() => {});
+                    ctx.resume().then(() => executeChime()).catch(() => executeChime());
                 } else {
                     executeChime();
                 }
