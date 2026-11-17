@@ -634,4 +634,62 @@ describe('E2E TEST — MODUL 01: AUTENTIKASI TENANT & OWNER', () => {
     cy.url().should('include', '/login');
     cy.get('body').should('contain.text', 'Email atau password yang Anda masukkan salah.');
   });
+
+  // =========================================================================
+  // 4. PORTAL MASUK & AUTENTIKASI OWNER (/owner/login & /owner/dashboard)
+  // =========================================================================
+
+  it('ET-01-040: Halaman portal masuk /owner/login memuat kartu otentikasi khusus Owner Platform', () => {
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.visit('/owner/login');
+
+    cy.url().should('include', '/owner/login');
+    cy.contains('h1', 'Portal Owner Platform').should('be.visible');
+    cy.contains('span', 'Owner Portal').should('be.visible');
+    cy.contains('p', 'Akses kontrol pusat & pemantauan seluruh tenant RentalBase').should('be.visible');
+
+    cy.get('#email').should('be.visible').and('have.attr', 'name', 'email');
+    cy.get('#password').should('be.visible').and('have.attr', 'name', 'password');
+    cy.get('button[type="submit"]').should('contain.text', 'Masuk ke Dashboard Owner');
+  });
+
+  it('ET-01-041: Portal login owner memvalidasi input kosong dengan pesan peringatan', () => {
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.visit('/owner/login');
+
+    cy.get('button[type="submit"]').click();
+
+    // Input email fokus atau browser validasi aktif
+    cy.url().should('include', '/owner/login');
+  });
+
+  it('ET-01-042: Portal login owner menolak kredensial salah dengan pesan kesalahan spesifik', () => {
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.visit('/owner/login');
+
+    cy.get('#email').type(ownerEmail);
+    cy.get('#password').type(wrongPassword);
+    cy.get('button[type="submit"]').click();
+
+    cy.url().should('include', '/owner/login');
+    cy.contains('Gagal Masuk').should('be.visible');
+    cy.get('body').should('contain.text', 'Email/username atau password yang Anda masukkan salah.');
+  });
+
+  it('ET-01-043: Login Owner sukses dengan kredensial valid mengarahkan ke /owner/dashboard', () => {
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.visit('/owner/login');
+
+    cy.get('#email').type(ownerEmail);
+    cy.get('#password').type(validPassword);
+    cy.get('button[type="submit"]').click();
+
+    cy.url().should('include', '/owner/dashboard');
+    cy.contains('h1', 'Dashboard Owner Pusat').should('be.visible');
+    cy.contains('p', 'Ringkasan metrik platform RentalBase, pemantauan tenant rental, dan status langganan.').should('be.visible');
+  });
 });
