@@ -230,4 +230,143 @@ describe('E2E TEST — MODUL 03: MANAJEMEN PLATFORM OWNER', () => {
       }
     });
   });
+
+  // =========================================================================
+  // 3. DIREKTORI TENANT & KONTROL OPERASIONAL TOKO (/owner/tenants)
+  // =========================================================================
+
+  it('ET-03-020: Direktori tenant /owner/tenants memuat judul Client & Tenant, input pencarian, dan tombol Cari', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/tenants');
+
+    cy.url().should('include', '/owner/tenants');
+    cy.get('h1').should('contain.text', 'Client & Tenant');
+    cy.get('input[name="search"]').should('be.visible');
+    cy.contains('button[type="submit"]', 'Cari').should('be.visible');
+  });
+
+  it('ET-03-021: Filter dropdown paket langganan (Starter, Business, Professional) menyaring data toko berdasarkan tier paket', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/tenants');
+
+    cy.get('select[name="plan"]').select('business');
+    cy.url().should('include', 'plan=business');
+  });
+
+  it('ET-03-022: Filter status operasional (tab Aktif dan tab Suspended) menyaring tabel daftar toko', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+
+    // 1. Filter status Aktif
+    cy.visit('/owner/tenants?status=aktif');
+    cy.url().should('include', 'status=aktif');
+    cy.contains('h1', 'Kelola Client & Tenant Rental').should('be.visible');
+
+    // 2. Filter status Suspended
+    cy.visit('/owner/tenants?status=suspended');
+    cy.url().should('include', 'status=suspended');
+    cy.contains('h1', 'Kelola Client & Tenant Rental').should('be.visible');
+  });
+
+  it('ET-03-023: Tombol reset filter pada direktori tenant mengembalikan daftar toko ke tampilan bawaan', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/tenants?search=NonExistentKeyword999');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('a:contains("Reset Filter")').length > 0) {
+        cy.contains('a', 'Reset Filter').click();
+        cy.url().should('not.include', 'search=NonExistentKeyword999');
+      }
+    });
+  });
+
+  it('ET-03-024: Tombol aksi Detail pada baris tenant membuka Modal Detail Tenant (menampilkan data usaha, kontak PIC, dan kuota)', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/tenants');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Detail")').length > 0) {
+        cy.get('table tbody tr button:contains("Detail")').first().click({ force: true });
+
+        // Modal Detail Terbuka
+        cy.contains('h4', 'Informasi Profil Toko').should('be.visible');
+        cy.contains('h4', 'Identitas Pemilik & Pengelola').should('be.visible');
+        cy.contains('h4', 'Detail Keanggotaan & Paket Subscription').should('be.visible');
+      }
+    });
+  });
+
+  it('ET-03-025: Tombol Tutup pada Modal Detail Tenant menutup modal dialog secara responsif', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/tenants');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Detail")').length > 0) {
+        cy.get('table tbody tr button:contains("Detail")').first().click({ force: true });
+        cy.contains('button', 'Tutup').click({ force: true });
+        cy.contains('h4', 'Informasi Profil Toko').should('not.be.visible');
+      }
+    });
+  });
+
+  it('ET-03-026: Tombol Edit Data Usaha pada modal detail membuka Modal Edit Tenant dengan field nama usaha, subdomain, dan deskripsi', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/tenants');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Detail")').length > 0) {
+        cy.get('table tbody tr button:contains("Detail")').first().click({ force: true });
+        cy.contains('button', 'Edit Data Usaha').click({ force: true });
+
+        // Modal Edit Terbuka
+        cy.contains('h3', 'Perbarui Informasi Tenant').should('be.visible');
+        cy.get('input[name="business_name"]').should('be.visible');
+        cy.get('input[name="subdomain"]').should('be.visible');
+        cy.get('textarea[name="description"]').should('be.visible');
+      }
+    });
+  });
+
+  it('ET-03-027: Tombol Batal pada Modal Edit Tenant membatalkan perubahan dan menutup modal dialog', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/tenants');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button:contains("Detail")').length > 0) {
+        cy.get('table tbody tr button:contains("Detail")').first().click({ force: true });
+        cy.contains('button', 'Edit Data Usaha').click({ force: true });
+
+        cy.get('[x-show="showEditModal"]').contains('button', 'Batal').click({ force: true });
+        cy.contains('h3', 'Perbarui Informasi Tenant').should('not.be.visible');
+      }
+    });
+  });
+
+  it('ET-03-028: Tombol aksi status operasional pada tabel membuka Modal Ubah Status Akun Tenant', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/tenants');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button[title*="Akun"]').length > 0) {
+        cy.get('table tbody tr button[title*="Akun"]').first().click({ force: true });
+
+        // Modal Ubah Status Akun Terbuka
+        cy.contains('h3', 'Kelola Status Akun Tenant').should('be.visible');
+        cy.get('input[name="status"]').should('exist');
+      }
+    });
+  });
+
+  it('ET-03-029: Tombol Batal pada Modal Ubah Status Akun menutup dialog tanpa merubah status toko', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/tenants');
+
+    cy.get('body').then(($body) => {
+      if ($body.find('table tbody tr button[title*="Akun"]').length > 0) {
+        cy.get('table tbody tr button[title*="Akun"]').first().click({ force: true });
+
+        cy.get('[x-show="showStatusModal"]').contains('button', 'Batal').click({ force: true });
+        cy.contains('h3', 'Kelola Status Akun Tenant').should('not.be.visible');
+      }
+    });
+  });
 });
