@@ -692,4 +692,30 @@ describe('E2E TEST — MODUL 01: AUTENTIKASI TENANT & OWNER', () => {
     cy.contains('h1', 'Dashboard Owner Pusat').should('be.visible');
     cy.contains('p', 'Ringkasan metrik platform RentalBase, pemantauan tenant rental, dan status langganan.').should('be.visible');
   });
+
+  // =========================================================================
+  // 5. PROTEKSI MIDDLEWARE & LOGOUT OWNER
+  // =========================================================================
+
+  it('ET-01-044: Middleware OwnerMiddleware mencegat tamu tanpa sesi yang mengakses /owner/dashboard', () => {
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.visit('/owner/dashboard');
+
+    // Harus dicegat dan dialihkan ke login owner
+    cy.url().should('include', '/owner/login');
+    cy.contains('Silakan masuk terlebih dahulu untuk mengakses Portal Owner.').should('be.visible');
+  });
+
+  it('ET-01-045: Logout Owner melalui sidebar mengakhiri sesi dan mengarahkan kembali ke /owner/login', () => {
+    cy.loginOwner(ownerEmail, validPassword);
+    cy.visit('/owner/dashboard');
+    cy.url().should('include', '/owner/dashboard');
+
+    // Eksekusi tombol logout owner di sidebar
+    cy.get('form[action*="owner/logout"]').first().submit();
+
+    cy.url().should('include', '/owner/login');
+    cy.contains('Anda telah berhasil keluar dari Portal Owner.').should('be.visible');
+  });
 });
