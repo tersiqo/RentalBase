@@ -40,25 +40,71 @@ function rbWebPush() {
                     this.permission = Notification.permission;
                 }
 
-                // Sinkronkan subscription aktif ke server sekali per halaman agar database selalu up-to-date
-                if (sub && !window.__rbWebPushSynced) {
-                    window.__rbWebPushSynced = true;
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    const subJson = sub.toJSON();
-                    if (subJson && subJson.keys) {
-                        fetch('/webpush/subscribe', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': token || '',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                endpoint: sub.endpoint,
-                                keys: subJson.keys,
-                                content_encoding: 'aes128gcm'
-                            })
-                        }).catch(() => {});
+                if (sub) {
+                    // Validasi apakah kunci VAPID perangkat cocok dengan server saat ini (auto-heal jika key mismatch)
+                    try {
+                        const resKey = await fetch('/webpush/vapid-public-key', { headers: { 'Accept': 'application/json' } });
+                        if (resKey.ok) {
+                            const { publicKey } = await resKey.json();
+                            const currentServerKeyBytes = this.urlBase64ToUint8Array(publicKey);
+                            const rawKey = sub.options?.applicationServerKey;
+                            if (rawKey) {
+                                const subKeyBytes = new Uint8Array(rawKey);
+                                let match = (subKeyBytes.length === currentServerKeyBytes.length);
+                                if (match) {
+                                    for (let i = 0; i < subKeyBytes.length; i++) {
+                                        if (subKeyBytes[i] !== currentServerKeyBytes[i]) { match = false; break; }
+                                    }
+                                }
+                                if (!match) {
+                                    console.warn('[RentalBase WebPush] VAPID key mismatch detected. Auto-renewing subscription...');
+                                    await sub.unsubscribe();
+                                    const newSub = await reg.pushManager.subscribe({
+                                        userVisibleOnly: true,
+                                        applicationServerKey: currentServerKeyBytes
+                                    });
+                                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                                    const newJson = newSub.toJSON();
+                                    await fetch('/webpush/subscribe', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': token || '',
+                                            'Accept': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            endpoint: newSub.endpoint,
+                                            keys: newJson.keys,
+                                            content_encoding: 'aes128gcm'
+                                        })
+                                    });
+                                    this.broadcastState(true);
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (keyCheckErr) {}
+
+                    // Sinkronkan subscription aktif ke server sekali per halaman agar database selalu up-to-date
+                    if (!window.__rbWebPushSynced) {
+                        window.__rbWebPushSynced = true;
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        const subJson = sub.toJSON();
+                        if (subJson && subJson.keys) {
+                            fetch('/webpush/subscribe', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': token || '',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    endpoint: sub.endpoint,
+                                    keys: subJson.keys,
+                                    content_encoding: 'aes128gcm'
+                                })
+                            }).catch(() => {});
+                        }
                     }
                 }
             } catch (err) {}

@@ -451,7 +451,7 @@
                             <div>
                                 <div class="flex items-center gap-2 mb-0.5 sm:mb-1">
                                     <span class="font-bold text-xs sm:text-sm text-gray-900">#{{ $order->order_number }}</span>
-                                    <span class="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold {{ $order->status_color ?? 'bg-gray-100 text-gray-700 border border-gray-200' }}">
+                                    <span class="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold {{ $order->status_color ?? 'bg-slate-100 text-slate-700' }}">
                                         <span class="w-1.5 h-1.5 rounded-full {{ $order->status_dot_color ?? 'bg-gray-400' }}"></span>
                                         {{ $order->status_label ?? ucfirst(str_replace('_', ' ', $order->status)) }}
                                     </span>

@@ -33,8 +33,19 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') - {{ $storeName }}</title>
     <meta name="description" content="Panel Admin RentalBase — Kelola pesanan, produk, dan operasional rental peralatan bayi Anda.">
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="{{ $storeName }}">
+    <meta name="application-name" content="{{ $storeName }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="{{ asset('js/rentalbase-webpush.js') }}"></script>
@@ -123,21 +134,15 @@
         @if($storeLogoUrl)
             <img src="{{ $storeLogoUrl }}"
                  alt="{{ $storeName }}"
-                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';"
+                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='block';"
                  class="shrink-0 w-9 h-9 rounded-xl object-contain border border-gray-100 p-0.5 bg-white shadow-sm">
-            <div class="hidden shrink-0 w-9 h-9 bg-orange-500 rounded-xl items-center justify-center shadow-md shadow-orange-500/30">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                </svg>
-            </div>
+            <img src="{{ asset('images/rentalbase-icon.svg') }}"
+                 alt="{{ $storeName }}"
+                 class="hidden shrink-0 w-9 h-9 drop-shadow-xs">
         @else
-            <div class="shrink-0 w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center shadow-md shadow-orange-500/30">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                </svg>
-            </div>
+            <img src="{{ asset('images/rentalbase-icon.svg') }}"
+                 alt="{{ $storeName }}"
+                 class="shrink-0 w-9 h-9 drop-shadow-xs">
         @endif
         <div x-show="!collapsed || mobileOpen"
              x-transition:enter="transition-opacity duration-150"

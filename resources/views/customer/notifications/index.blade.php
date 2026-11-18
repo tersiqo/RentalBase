@@ -147,7 +147,7 @@
                         <div>
                             {{-- Badge Tipe & Waktu --}}
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border {{ $badge['bg'] }}">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold {{ $badge['bg'] }}">
                                     {{ $badge['label'] }}
                                 </span>
                                 <span class="text-[11px] text-gray-400">

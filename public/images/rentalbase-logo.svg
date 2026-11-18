@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 362 76" role="img" aria-label="Logo RentalBase — Isometric Storage Crate Stack" overflow="visible">
+  <style>@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&amp;display=swap');</style>
+  <g id="isometric-crates">
+    <polygon points="32,8 53,20 32,32 11,20" fill="#FB923C"/>
+    <polygon points="11,20 32,32 32,42.5 11,30.5" fill="#F97316"/>
+    <polygon points="11,33.5 32,45.5 32,56 11,44" fill="#F97316"/>
+    <polygon points="32,32 53,20 53,30.5 32,42.5" fill="#EA580C"/>
+    <polygon points="32,45.5 53,33.5 53,44 32,56" fill="#EA580C"/>
+  </g>
+  <text x="76" y="50" fill="#0F172A" font-family="'Plus Jakarta Sans', 'Inter', -apple-system, system-ui, sans-serif" font-weight="800" font-size="52" textLength="270" lengthAdjust="spacingAndGlyphs">Rental<tspan fill="#F97316">Base</tspan></text>
+</svg>

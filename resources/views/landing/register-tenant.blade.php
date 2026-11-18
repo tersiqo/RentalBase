@@ -4,8 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Tenant - RentalBase</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="RentalBase">
+    <meta name="application-name" content="RentalBase">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     
     <!-- CDN Links -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -48,9 +59,7 @@
     <nav class="bg-white border-b border-gray-100 h-20 flex items-center shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <a href="/" class="flex-shrink-0 flex items-center gap-2 w-max group">
-                <div class="w-10 h-10 bg-brand text-white rounded-lg flex items-center justify-center text-xl font-bold group-hover:bg-brand-hover transition">
-                    <i class="fa-solid fa-box-open"></i>
-                </div>
+                <img src="{{ asset('images/rentalbase-icon.svg') }}" alt="RentalBase" class="w-10 h-10 drop-shadow-xs group-hover:scale-105 transition-transform duration-200">
                 <span class="font-extrabold text-2xl text-gray-900 tracking-tight">Rental<span class="text-brand">Base</span></span>
             </a>
         </div>

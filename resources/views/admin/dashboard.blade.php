@@ -22,16 +22,16 @@
         </div>
 
         {{-- Header Quick Actions --}}
-        <div class="flex items-center gap-2.5">
-            <div class="relative">
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+            <div class="relative w-full sm:w-auto">
                 <input type="text"
                        placeholder="Cek Ketersediaan Perlengkapan Bayi"
-                       class="w-52 lg:w-64 pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm">
+                       class="w-full sm:w-52 lg:w-64 pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-sm">
                 <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
             </div>
-            <button class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold shadow-sm shadow-orange-500/30 flex items-center gap-1.5 transition-all">
+            <button class="w-full sm:w-auto justify-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold shadow-sm shadow-orange-500/30 flex items-center gap-1.5 transition-all shrink-0">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -256,16 +256,16 @@
                     @php
                         $statusLabel = $order->status_label;
                         $statusBadge = match(strtolower(trim(str_replace(['-', ' '], '_', $order->status ?? '')))) {
-                            'menunggu_konfirmasi'                  => 'bg-orange-50 text-orange-600 border-orange-200/60 ring-orange-500',
-                            'menunggu_pembayaran', 'belum_dibayar' => 'bg-amber-50 text-amber-700 border-amber-200/60 ring-amber-500',
-                            'menunggu_verifikasi', 'verifikasi'    => 'bg-yellow-50 text-yellow-700 border-yellow-200/60 ring-yellow-500',
-                            'siap_kirim', 'diproses', 'dikonfirmasi'=> 'bg-indigo-50 text-indigo-600 border-indigo-200/60 ring-indigo-500',
-                            'dikirim'                              => 'bg-purple-50 text-purple-600 border-purple-200/60 ring-purple-500',
-                            'sedang_disewa'                        => 'bg-blue-50 text-blue-600 border-blue-200/60 ring-blue-500',
-                            'dikembalikan'                         => 'bg-cyan-50 text-cyan-600 border-cyan-200/60 ring-cyan-500',
-                            'selesai'                              => 'bg-teal-50 text-teal-600 border-teal-200/60 ring-teal-500',
-                            'dibatalkan', 'batal', 'ditolak'       => 'bg-red-50 text-red-600 border-red-200/60 ring-red-500',
-                            default                                => 'bg-gray-100 text-gray-600 border-gray-200/60 ring-gray-400',
+                            'menunggu_konfirmasi'                  => 'bg-orange-50 text-orange-700',
+                            'menunggu_pembayaran', 'belum_dibayar' => 'bg-amber-50 text-amber-700',
+                            'menunggu_verifikasi', 'verifikasi'    => 'bg-yellow-50 text-yellow-800',
+                            'siap_kirim', 'diproses', 'dikonfirmasi'=> 'bg-indigo-50 text-indigo-700',
+                            'dikirim'                              => 'bg-purple-50 text-purple-700',
+                            'sedang_disewa'                        => 'bg-blue-50 text-blue-700',
+                            'dikembalikan'                         => 'bg-cyan-50 text-cyan-700',
+                            'selesai'                              => 'bg-emerald-50 text-emerald-700',
+                            'dibatalkan', 'batal', 'ditolak'       => 'bg-rose-50 text-rose-700',
+                            default                                => 'bg-slate-100 text-slate-700',
                         };
                         
                         $startDate = \Carbon\Carbon::parse($order->rental_start_date);
@@ -295,8 +295,8 @@
                         </td>
                         <td class="px-4 py-3.5 font-bold text-gray-900 whitespace-nowrap">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td>
                         <td class="px-4 py-3.5 whitespace-nowrap">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border {{ $statusBadge }}">
-                                <span class="w-1.5 h-1.5 rounded-full ring-current bg-current"></span>
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold {{ $statusBadge }}">
+                                <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                                 {{ $statusLabel }}
                             </span>
                         </td>

@@ -52,7 +52,7 @@
             <div>
                 <div class="flex items-center gap-2.5 sm:gap-3">
                     <h3 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">Detail Pesanan</h3>
-                    <span class="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 px-3 py-1 rounded-full text-xs font-bold {{ $order->status_color }}">
+                    <span class="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 px-3 py-0.5 rounded-full text-xs font-semibold {{ $order->status_color }}">
                         {{ $order->status_label }}
                     </span>
                 </div>
@@ -62,7 +62,7 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
-                <span class="sm:hidden inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold {{ $order->status_color }}">
+                <span class="sm:hidden inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-semibold {{ $order->status_color }}">
                     {{ $order->status_label }}
                 </span>
 
@@ -548,11 +548,11 @@
                             <span class="text-gray-500">Status Refund</span>
                             <div>
                                 @if($refundStatus === 'refund_selesai')
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Refund Selesai</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">Refund Selesai</span>
                                 @elseif($refundStatus === 'menunggu_refund')
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">Menunggu Refund Admin</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">Menunggu Refund Admin</span>
                                 @else
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">Tidak Ada Refund</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Tidak Ada Refund</span>
                                 @endif
                             </div>
                         </div>

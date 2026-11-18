@@ -27,7 +27,7 @@
                     <span>Laporan Kerusakan & Klaim Kompensasi</span>
                 </h1>
                 @if($damageCase)
-                    <span class="inline-flex items-center whitespace-nowrap shrink-0 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold border {{ $damageCase->status_color }}">
+                    <span class="inline-flex items-center whitespace-nowrap shrink-0 px-2.5 sm:px-3 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold {{ $damageCase->status_color }}">
                         {{ $damageCase->status_label }}
                     </span>
                 @endif
