@@ -29,7 +29,19 @@
 @endif
 
 {{-- Navigasi Kembali & Header Utama --}}
-<div x-data="{ modalImage: null, openImageModal(url) { this.modalImage = url; }, closeImageModal() { this.modalImage = null; } }">
+<div x-data="{ 
+    modalImage: null, 
+    openImageModal(url) { this.modalImage = url; }, 
+    closeImageModal() { this.modalImage = null; },
+    deallocateModal: false,
+    deallocateAction: '',
+    deallocateUnitCode: '',
+    openDeallocateModal(action, code) {
+        this.deallocateAction = action;
+        this.deallocateUnitCode = code;
+        this.deallocateModal = true;
+    }
+}">
 <div class="mb-6">
     <div class="flex items-center gap-2 mb-3">
         <a href="{{ route('admin.orders.index') }}"
@@ -252,6 +264,7 @@
                             @if($imgUrl)
                                 <img src="{{ $imgUrl }}"
                                      alt="{{ $item->product->name ?? 'Produk' }}"
+                                     loading="lazy"
                                      class="w-12 h-12 rounded-lg object-cover border border-gray-200 shrink-0">
                             @else
                                 <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-gray-400">
@@ -330,14 +343,16 @@
                                             </a>
 
                                             @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']))
-                                                <form action="{{ route('admin.orders.deallocate', [$order->id, $allocation->id]) }}" method="POST" onsubmit="return confirm('Batalkan alokasi unit ini untuk memilih unit lain?');" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold hover:underline flex items-center gap-1 transition cursor-pointer" title="Batalkan alokasi unit ini">
-                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                        <span>Ganti Unit</span>
-                                                    </button>
-                                                </form>
+                                                @php
+                                                    $uCode = $allocation->equipmentUnit->unit_code ?? $allocation->equipmentUnit->asset_code ?? ('Unit #' . $allocation->equipment_unit_id);
+                                                @endphp
+                                                <button type="button" 
+                                                        @click="openDeallocateModal('{{ route('admin.orders.deallocate', [$order->id, $allocation->id]) }}', '{{ $uCode }}')"
+                                                        class="text-xs text-red-600 hover:text-red-800 font-semibold hover:underline flex items-center gap-1 transition cursor-pointer" 
+                                                        title="Batalkan alokasi unit ini">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    <span>Ganti Unit</span>
+                                                </button>
                                             @endif
                                         </div>
                                     </div>
@@ -533,6 +548,7 @@
                              @click="openImageModal('{{ $paymentProofUrl }}')">
                             <img src="{{ $paymentProofUrl }}"
                                  alt="Bukti Pembayaran"
+                                 loading="lazy"
                                  class="w-full h-44 object-contain bg-white group-hover:scale-102 transition duration-200">
                             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                                 <span class="px-3 py-1.5 bg-white text-gray-900 rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
@@ -611,6 +627,7 @@
                              @click="openImageModal('{{ $ktpUrl }}')">
                             <img src="{{ $ktpUrl }}"
                                  alt="Foto KTP"
+                                 loading="lazy"
                                  class="w-full h-40 object-contain bg-white group-hover:scale-102 transition duration-200">
                             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                                 <span class="px-3 py-1.5 bg-white text-gray-900 rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
@@ -646,6 +663,7 @@
                              @click="openImageModal('{{ $selfieUrl }}')">
                             <img src="{{ $selfieUrl }}"
                                  alt="Foto Selfie"
+                                 loading="lazy"
                                  class="w-full h-40 object-contain bg-white group-hover:scale-102 transition duration-200">
                             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                                 <span class="px-3 py-1.5 bg-white text-gray-900 rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
@@ -717,6 +735,39 @@
             alt="Preview Dokumen" 
             class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-sm"
         >
+    </div>
+</div>
+
+{{-- MODAL KONFIRMASI GANTI / BATAL ALOKASI UNIT --}}
+<div x-show="deallocateModal"
+     x-cloak
+     @keydown.escape.window="deallocateModal = false"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+     x-transition.opacity>
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 text-center space-y-4"
+         @click.away="deallocateModal = false"
+         x-transition.scale.95>
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div>
+            <h3 class="text-base font-extrabold text-slate-900">Batalkan Alokasi Unit?</h3>
+            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                Unit <strong class="font-mono font-bold text-slate-900" x-text="deallocateUnitCode"></strong> akan dilepaskan dari pesanan ini dan statusnya dikembalikan ke <strong>Siap Sewa</strong>.
+            </p>
+        </div>
+        <form :action="deallocateAction" method="POST">
+            @csrf
+            @method('DELETE')
+            <div class="grid grid-cols-2 gap-2.5 pt-2">
+                <button type="button" @click="deallocateModal = false" class="py-2.5 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                    Batal
+                </button>
+                <button type="submit" class="py-2.5 px-3 rounded-xl bg-red-600 text-xs font-bold text-white hover:bg-red-700 shadow-sm transition cursor-pointer">
+                    Ya, Batalkan
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

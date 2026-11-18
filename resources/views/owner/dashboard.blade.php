@@ -210,7 +210,7 @@
                                 <td class="py-4 px-6 align-middle">
                                     <div class="flex items-center gap-3">
                                         @if($logoUrl)
-                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}"
+                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}" loading="lazy"
                                                  class="w-10 h-10 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
                                         @else
                                             <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200/70 text-orange-600 font-extrabold text-xs flex items-center justify-center shrink-0">
@@ -361,7 +361,7 @@
                                        class="flex items-center gap-3 group-hover:text-orange-600 transition-colors"
                                        title="Buka detail di halaman Client/Tenant">
                                         @if($logoUrl)
-                                            <img src="{{ $logoUrl }}" alt="{{ $tenant->business_name }}"
+                                            <img src="{{ $logoUrl }}" alt="{{ $tenant->business_name }}" loading="lazy"
                                                  class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
                                         @else
                                             <div class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-xs shrink-0 border border-orange-100">
@@ -488,7 +488,7 @@
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
                 <div class="flex items-center gap-3">
                     <template x-if="activeTenant?.logo_url">
-                        <img :src="activeTenant?.logo_url" :alt="activeTenant?.business_name"
+                        <img :src="activeTenant?.logo_url" :alt="activeTenant?.business_name" loading="lazy"
                              class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
                     </template>
                     <template x-if="!activeTenant?.logo_url">
@@ -570,6 +570,7 @@
                                     <div class="relative rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs flex items-center justify-center">
                                         <img :src="activeTenant.payment_proof"
                                              :alt="'Bukti Bayar ' + activeTenant.business_name"
+                                             loading="lazy"
                                              class="w-full h-56 sm:h-64 object-contain bg-slate-900/5">
                                     </div>
                                     <div class="flex items-center justify-between text-xs px-0.5">

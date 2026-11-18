@@ -394,7 +394,7 @@
                                 <td class="py-4 px-6 align-middle">
                                     <div class="flex items-center gap-3">
                                         @if($logoUrl)
-                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}"
+                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}" loading="lazy"
                                                  class="w-10 h-10 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
                                         @else
                                             <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200/70 text-orange-600 font-extrabold text-xs flex items-center justify-center shrink-0">
@@ -614,6 +614,7 @@
                                     <div class="relative rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs flex items-center justify-center">
                                         <img :src="activeTenant.payment_proof"
                                              :alt="'Bukti Bayar ' + activeTenant.business_name"
+                                             loading="lazy"
                                              class="w-full h-56 sm:h-64 object-contain bg-slate-900/5">
                                     </div>
                                     <div class="flex items-center justify-between text-xs px-0.5">

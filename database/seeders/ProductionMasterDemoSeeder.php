@@ -56,7 +56,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'owner@rentalbase.id'],
             [
                 'name' => 'Owner RentalBase SaaS',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'owner',
                 'client_id' => null,
                 'phone' => '081122334455',
@@ -70,7 +70,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'iqouser@gmail.com'],
             [
                 'name' => 'Tersiqo Alfarezel',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'customer',
                 'client_id' => null,
                 'phone' => '081234567801',
@@ -84,7 +84,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'budi.santoso@gmail.com'],
             [
                 'name' => 'Budi Santoso',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'customer',
                 'client_id' => null,
                 'phone' => '081298765432',
@@ -98,7 +98,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'rizky@gmail.com'],
             [
                 'name' => 'Rizky Pelanggan',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'customer',
                 'client_id' => null,
                 'phone' => '085711223344',
@@ -112,7 +112,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'siti.customer@gmail.com'],
             [
                 'name' => 'Siti Rahmawati',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'customer',
                 'client_id' => null,
                 'phone' => '081388776655',
@@ -126,7 +126,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'budi@babyrental.com'],
             [
                 'name' => 'Budi Admin Baby Rental',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'client_id' => 1,
                 'phone' => '081234567890',
@@ -139,7 +139,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.mainan@rentalbase.id'],
             [
                 'name' => 'Admin EduPlay Mainan',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'client_id' => 76,
                 'phone' => '081234567891',
@@ -152,7 +152,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.tenda@rentalbase.id'],
             [
                 'name' => 'Admin Berkah Tenda',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'client_id' => 77,
                 'phone' => '081234567892',
@@ -165,7 +165,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.outdoor@rentalbase.id'],
             [
                 'name' => 'Admin Malang Outdoor',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'phone' => '081298765431',
                 'address' => 'Jl. Bondowoso No. 18, Klojen, Kota Malang',
@@ -177,7 +177,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.kamera@rentalbase.id'],
             [
                 'name' => 'Admin Lens & Light Studio',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'phone' => '081298765432',
                 'address' => 'Jl. Semeru No. 72, Oro-oro Dowo, Kota Malang',
@@ -189,7 +189,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.sound@rentalbase.id'],
             [
                 'name' => 'Admin SoundMaster Audio',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'phone' => '081298765433',
                 'address' => 'Jl. Kawi No. 34, Kauman, Klojen, Kota Malang',
@@ -984,7 +984,7 @@ class ProductionMasterDemoSeeder extends Seeder
                 'admin_name' => 'Rian Dirgantara',
                 'admin_email' => 'rian@dronefly.id',
                 'admin_phone' => '081234567899',
-                'admin_password' => Hash::make('password123'),
+                'admin_password' => Hash::make('12345678'),
                 'status' => 'menunggu_verifikasi',
                 'payment_status' => 'menunggu',
                 'payment_proof' => 'subscriptions/proofs/tf-sub-001.jpg',
@@ -1002,7 +1002,7 @@ class ProductionMasterDemoSeeder extends Seeder
                 'admin_name' => 'Doni Gamer',
                 'admin_email' => 'doni@gamerbatu.test',
                 'admin_phone' => '081234567888',
-                'admin_password' => Hash::make('password123'),
+                'admin_password' => Hash::make('12345678'),
                 'status' => 'ditolak',
                 'payment_status' => 'ditolak',
                 'payment_proof' => 'subscriptions/proofs/tf-sub-001.jpg',

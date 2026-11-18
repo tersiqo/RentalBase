@@ -242,7 +242,7 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-3 sm:mb-5">
                             <div class="flex gap-3 sm:gap-4 items-center min-w-0">
                                 <div class="shrink-0 flex flex-col items-center">
-                                    <img src="{{ $order->primary_image }}" alt="{{ $product?->name ?? 'Produk' }}" class="w-16 h-16 sm:w-20 sm:h-20 shrink-0 aspect-square object-cover rounded-xl bg-gray-50 border border-gray-100 shadow-2xs">
+                                    <img src="{{ $order->primary_image }}" alt="{{ $product?->name ?? 'Produk' }}" loading="lazy" class="w-16 h-16 sm:w-20 sm:h-20 shrink-0 aspect-square object-cover rounded-xl bg-gray-50 border border-gray-100 shadow-2xs">
                                     @if($order->items_count > 1)
                                         <span class="text-[10px] sm:text-[11px] text-gray-500 mt-1 sm:mt-1.5 font-medium">
                                             + {{ $order->items_count - 1 }} lainnya
@@ -263,7 +263,7 @@
                             </div>
                             <div class="flex flex-col sm:items-end justify-center shrink-0 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-gray-50">
                                 <span class="text-xs text-gray-500 mb-0.5">Total Biaya:</span>
-                                <span class="text-base sm:text-xl font-mono font-extrabold text-gray-900">{{ $order->formatted_total }}</span>
+                                <span class="text-base sm:text-xl font-extrabold text-gray-900 tracking-tight tabular-nums">{{ $order->formatted_total }}</span>
                             </div>
                         </div>
 
@@ -305,28 +305,18 @@
                                 </a>
                             @endif
 
-                            <!-- Tombol Lihat Detail: Buka View Detail Lengkap -->
-                            <button type="button"
-                                    @click="openDetail({{ $order->id }})" 
-                                    class="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold shadow-xs transition text-xs sm:text-sm">
+                            <!-- Tombol Lihat Detail: Buka Rute Detail Pesanan Spesifik -->
+                            <a href="{{ route('customer.orders.show', $order->id) }}" 
+                               class="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold shadow-xs transition text-xs sm:text-sm">
                                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 <span>Lihat detail</span>
-                            </button>
+                            </a>
                         </div>
 
                     </div>
                 @endforeach
             </div>
         @endif
-    </div>
-
-    <!-- ==================== VIEW 2: DETAIL PESANAN LENGKAP ==================== -->
-    <div x-show="viewMode === 'detail'" style="display: none;" x-transition>
-        @foreach($orders as $order)
-            <div x-show="selectedOrderId === {{ $order->id }}" style="display: none;">
-                @include('customer.orders.detail-content', ['order' => $order, 'client' => $client])
-            </div>
-        @endforeach
     </div>
 
     <!-- ==================== ACTION MODALS ==================== -->

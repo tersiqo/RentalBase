@@ -784,7 +784,7 @@
                                     <template x-if="!verifyData.proof_url.endsWith('.pdf')">
                                         <div class="text-center">
                                             <a :href="verifyData.proof_url" target="_blank" title="Klik untuk memperbesar">
-                                                <img :src="verifyData.proof_url" alt="Bukti Transfer" class="max-h-56 mx-auto rounded-lg object-contain shadow-xs hover:opacity-95 transition-opacity" />
+                                                <img :src="verifyData.proof_url" alt="Bukti Transfer" loading="lazy" class="max-h-56 mx-auto rounded-lg object-contain shadow-xs hover:opacity-95 transition-opacity" />
                                             </a>
                                             <p class="text-[11px] text-slate-400 mt-1">Klik gambar untuk melihat resolusi penuh di tab baru.</p>
                                         </div>

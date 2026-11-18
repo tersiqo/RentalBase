@@ -32,8 +32,8 @@
                     </span>
                 @endif
             </div>
-            <p class="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-1.5 font-mono">
-                Pesanan #{{ $order->order_number ?? $order->id }} &bull; Tenant: <span class="text-gray-800 font-medium font-sans">{{ $client->nama_usaha ?? 'RentalBase' }}</span>
+            <p class="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-1.5">
+                Pesanan <span class="font-mono font-semibold text-gray-700">#{{ $order->order_number ?? $order->id }}</span> &bull; Tenant: <span class="text-gray-800 font-medium">{{ $client->nama_usaha ?? 'RentalBase' }}</span>
             </p>
         </div>
 
@@ -180,7 +180,7 @@
 
                     <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start bg-gray-50/80 p-3 sm:p-4 rounded-xl border border-gray-100">
                         @if($product && $product->cover_image_url)
-                            <img src="{{ $product->cover_image_url }}" alt="{{ $product->name }}" class="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-xl border border-gray-200 bg-white shrink-0">
+                            <img src="{{ $product->cover_image_url }}" alt="{{ $product->name }}" loading="lazy" class="w-16 h-16 sm:w-24 sm:h-24 object-cover rounded-xl border border-gray-200 bg-white shrink-0">
                         @else
                             <div class="w-16 h-16 sm:w-24 sm:h-24 bg-gray-200 rounded-xl flex items-center justify-center text-gray-400 font-bold text-xs shrink-0">
                                 No Foto
@@ -243,12 +243,12 @@
                             @foreach($damageReport->images_list as $index => $imgUrl)
                                 <div class="group relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-square cursor-pointer shadow-sm hover:shadow-md transition"
                                      @click="activeImageModal = '{{ $imgUrl }}'">
-                                    <img src="{{ $imgUrl }}" alt="Bukti Kerusakan {{ $index + 1 }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                    <img src="{{ $imgUrl }}" alt="Bukti Kerusakan {{ $index + 1 }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1.5">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
                                         <span>Perbesar</span>
                                     </div>
-                                    <div class="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded bg-black/60 text-[10px] text-white font-mono">
+                                    <div class="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded bg-black/60 text-[10px] text-white font-semibold">
                                         Foto {{ $index + 1 }}
                                     </div>
                                 </div>
@@ -359,15 +359,15 @@
                         <div class="space-y-2.5 sm:space-y-3 text-xs sm:text-sm">
                             <div class="flex justify-between items-center text-gray-600">
                                 <span>Biaya Perbaikan Fisik</span>
-                                <span class="font-mono font-medium text-gray-900">{{ $damageCase->formatted_repair_cost }}</span>
+                                <span class="font-semibold text-gray-900 tabular-nums">{{ $damageCase->formatted_repair_cost }}</span>
                             </div>
                             <div class="flex justify-between items-center text-gray-600">
                                 <span>Denda / Kerugian Alat</span>
-                                <span class="font-mono font-medium text-gray-900">{{ $damageCase->formatted_fine_amount }}</span>
+                                <span class="font-semibold text-gray-900 tabular-nums">{{ $damageCase->formatted_fine_amount }}</span>
                             </div>
                             <div class="pt-2.5 sm:pt-3 border-t border-gray-100 flex justify-between items-baseline">
                                 <span class="font-bold text-gray-900">Total Kompensasi</span>
-                                <span class="text-lg sm:text-xl font-extrabold text-rose-600 font-mono">{{ $damageCase->formatted_total }}</span>
+                                <span class="text-lg sm:text-xl font-extrabold text-rose-600 tracking-tight tabular-nums">{{ $damageCase->formatted_total }}</span>
                             </div>
                         </div>
 
@@ -509,7 +509,7 @@
                                 <!-- Tab QRIS -->
                                 <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-4 border border-gray-200 rounded-xl bg-white">
                                     @if($qrisImg)
-                                        <img src="{{ $qrisImg }}" alt="Kode QRIS" class="w-44 h-44 mx-auto object-contain mb-2 rounded-lg border border-gray-100 p-1 shadow-xs">
+                                        <img src="{{ $qrisImg }}" alt="Kode QRIS" loading="lazy" class="w-44 h-44 mx-auto object-contain mb-2 rounded-lg border border-gray-100 p-1 shadow-xs">
                                     @else
                                         <div class="w-40 h-40 mx-auto mb-2 bg-gray-50 p-2 rounded-xl border border-gray-200 flex items-center justify-center">
                                             <svg viewBox="0 0 25 25" class="w-full h-full text-gray-900 fill-current" shape-rendering="crispEdges">

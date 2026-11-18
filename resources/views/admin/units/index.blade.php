@@ -292,6 +292,7 @@
                                             @if($unit->product?->main_image)
                                                 <img src="{{ storage_url($unit->product->main_image) }}"
                                                      alt="{{ $unit->product->name }}"
+                                                     loading="lazy"
                                                      class="w-full h-full object-cover"
                                                      onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=100&auto=format&fit=crop&q=60';">
                                             @else
@@ -444,6 +445,13 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- PAGINATION --}}
+            @if($units instanceof \Illuminate\Pagination\LengthAwarePaginator && $units->hasPages())
+                <div x-show="!hasActiveFilters" class="p-4 border-t border-slate-100 bg-slate-50/40">
+                    {{ $units->links() }}
+                </div>
+            @endif
         @else
             <div class="py-12 px-4 text-center">
                 <div class="max-w-sm mx-auto text-center">
