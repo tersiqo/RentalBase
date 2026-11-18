@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RentalBase - Kelola Bisnis Rental Peralatan dalam Satu Sistem</title>
+    <title>RentalBase</title>
     
     <!-- PWA & Mobile Web App Meta -->
     <meta name="apple-mobile-web-app-title" content="RentalBase">
