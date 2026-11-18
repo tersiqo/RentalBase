@@ -5,8 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $client->nama_usaha ?? 'RentalBase Tenant' }} - Katalog Sewa</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="{{ $client->nama_usaha ?? 'RentalBase' }}">
+    <meta name="application-name" content="{{ $client->nama_usaha ?? 'RentalBase' }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

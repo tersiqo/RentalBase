@@ -131,8 +131,8 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                 {{ $counts['menunggu'] }} Menunggu Verifikasi
             </span>
         </div>
@@ -434,19 +434,19 @@
                                 {{-- Status --}}
                                 <td class="py-4 px-6 align-middle whitespace-nowrap">
                                     @if($reg->status === 'menunggu_verifikasi')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF3C7] text-[#92400E]">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
                                             Menunggu Verifikasi
                                         </span>
                                     @elseif($reg->status === 'disetujui')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
                                             Disetujui
                                         </span>
                                     @elseif($reg->status === 'ditolak')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-600/20">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700">
                                             Ditolak
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                                             {{ ucfirst($reg->status) }}
                                         </span>
                                     @endif

@@ -30,11 +30,11 @@ class AdminActivityLogLogicTest extends TestCase
     public function test_ut_act_001_module_badge_accessor_menghasilkan_label_dan_style_yang_sesuai(): void
     {
         $expectedModules = [
-            'orders'           => ['label' => 'Pesanan', 'bg' => 'bg-blue-50 text-blue-700 border-blue-200'],
-            'shipments'        => ['label' => 'Logistik & Pengiriman', 'bg' => 'bg-purple-50 text-purple-700 border-purple-200'],
-            'returns'          => ['label' => 'Pengembalian & Denda', 'bg' => 'bg-amber-50 text-amber-700 border-amber-200'],
-            'condition_checks' => ['label' => 'Inspeksi Fisik', 'bg' => 'bg-teal-50 text-teal-700 border-teal-200'],
-            'settings'         => ['label' => 'Pengaturan Toko', 'bg' => 'bg-stone-50 text-stone-700 border-stone-200'],
+            'orders'           => ['label' => 'Pesanan', 'bg' => 'bg-blue-50 text-blue-700'],
+            'shipments'        => ['label' => 'Logistik & Pengiriman', 'bg' => 'bg-purple-50 text-purple-700'],
+            'returns'          => ['label' => 'Pengembalian & Denda', 'bg' => 'bg-amber-50 text-amber-700'],
+            'condition_checks' => ['label' => 'Inspeksi Fisik', 'bg' => 'bg-teal-50 text-teal-700'],
+            'settings'         => ['label' => 'Pengaturan Toko', 'bg' => 'bg-stone-50 text-stone-700'],
         ];
 
         foreach ($expectedModules as $module => $expected) {

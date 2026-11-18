@@ -184,16 +184,16 @@
 
                         {{-- Badge Status Modern --}}
                         <td class="px-6 py-4 align-top text-center whitespace-nowrap">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
-                                @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-50 text-amber-700 border border-amber-200
-                                @elseif(in_array($order->status, ['menunggu_pembayaran', 'belum_dibayar'])) bg-yellow-50 text-yellow-700 border border-yellow-200
-                                @elseif(in_array($order->status, ['menunggu_verifikasi', 'verifikasi'])) bg-blue-50 text-blue-700 border border-blue-200
-                                @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-50 text-indigo-700 border border-indigo-200
-                                @elseif($order->status === 'dikirim') bg-purple-50 text-purple-700 border border-purple-200
-                                @elseif($order->status === 'sedang_disewa') bg-sky-50 text-sky-700 border border-sky-200
-                                @elseif($order->status === 'selesai') bg-emerald-50 text-emerald-700 border border-emerald-200
-                                @elseif(in_array($order->status, ['batal', 'dibatalkan', 'ditolak'])) bg-red-50 text-red-700 border border-red-200
-                                @else bg-gray-50 text-gray-700 border border-gray-200 @endif">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold
+                                @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-50 text-amber-700
+                                @elseif(in_array($order->status, ['menunggu_pembayaran', 'belum_dibayar'])) bg-yellow-50 text-yellow-800
+                                @elseif(in_array($order->status, ['menunggu_verifikasi', 'verifikasi'])) bg-blue-50 text-blue-700
+                                @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-50 text-indigo-700
+                                @elseif($order->status === 'dikirim') bg-purple-50 text-purple-700
+                                @elseif($order->status === 'sedang_disewa') bg-sky-50 text-sky-700
+                                @elseif($order->status === 'selesai') bg-emerald-50 text-emerald-700
+                                @elseif(in_array($order->status, ['batal', 'dibatalkan', 'ditolak'])) bg-rose-50 text-rose-700
+                                @else bg-slate-100 text-slate-700 @endif">
                                 
                                 <span class="w-1.5 h-1.5 rounded-full
                                     @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-500

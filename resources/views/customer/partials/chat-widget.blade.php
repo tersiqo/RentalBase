@@ -216,7 +216,7 @@
                                             <div class="text-xs space-y-1">
                                                 <div class="flex items-center justify-between gap-2">
                                                     <span class="font-bold font-mono text-[11px]" x-text="m.context_data.order_number"></span>
-                                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                                                           :class="m.context_data.status_color"
                                                           x-text="m.context_data.status_label"></span>
                                                 </div>

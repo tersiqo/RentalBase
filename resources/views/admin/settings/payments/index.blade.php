@@ -256,8 +256,8 @@
                                         @csrf
                                         <button type="submit"
                                                 title="Klik untuk mengubah status aktif"
-                                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all {{ $method->is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100' : 'bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200' }}">
-                                            <span class="w-1.5 h-1.5 rounded-full {{ $method->is_active ? 'bg-emerald-500' : 'bg-gray-400' }}"></span>
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all {{ $method->is_active ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                                            <span class="w-1.5 h-1.5 rounded-full {{ $method->is_active ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
                                             <span>{{ $method->is_active ? 'Aktif' : 'Nonaktif' }}</span>
                                         </button>
                                     </form>

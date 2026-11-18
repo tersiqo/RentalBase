@@ -215,13 +215,13 @@
                                     @endif
                                     @if($hasDamage)
                                         @if($isDamageClosed)
-                                            <span class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1.5">
-                                                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            <span class="text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                                                <svg class="w-3 h-3 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                                 <span>Klaim Selesai & Lunas</span>
                                             </span>
                                         @else
-                                            <span class="text-[11px] bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1.5">
-                                                <svg class="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                            <span class="text-[11px] bg-rose-50 text-rose-700 px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                                                <svg class="w-3 h-3 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                                 <span>Ada Klaim Kerusakan</span>
                                             </span>
                                         @endif
@@ -232,7 +232,7 @@
                                 </span>
                             </div>
                             <div class="shrink-0">
-                                <span class="inline-flex items-center shrink-0 whitespace-nowrap px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold tracking-wide {{ $order->status_color }}">
+                                <span class="inline-flex items-center shrink-0 whitespace-nowrap px-2.5 sm:px-3 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold {{ $order->status_color }}">
                                     {{ $order->status_label }}
                                 </span>
                             </div>
@@ -294,10 +294,10 @@
 
                             @if($hasDamage)
                                 <a href="{{ route('customer.orders.damage', $order->id) }}"
-                                   class="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition text-xs sm:text-sm shadow-2xs {{ $isDamageClosed ? 'border-emerald-300 bg-emerald-50/50 hover:bg-emerald-100/60 text-emerald-700 font-semibold' : 'border-rose-300 bg-white hover:bg-rose-50 text-rose-600 font-bold' }}">
+                                   class="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition text-xs sm:text-sm shadow-2xs {{ $isDamageClosed ? 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold' : 'border-rose-300 bg-white hover:bg-rose-50 text-rose-600 font-bold' }}">
                                     @if($isDamageClosed)
-                                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                        <span>Klaim selesai & lunas</span>
+                                        <svg class="w-3.5 h-3.5 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        <span>Riwayat Klaim</span>
                                     @else
                                         <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                         <span>Lihat klaim kerusakan</span>

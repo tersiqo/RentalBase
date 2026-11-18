@@ -239,12 +239,12 @@
                                 {{-- Unit Fisik --}}
                                 <td class="py-3.5 px-4 text-center">
                                     @if($product->units_count > 0)
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             <span>{{ $product->available_units_count }} / {{ $product->units_count }} Tersedia</span>
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/60" title="Belum memiliki unit fisik. Kelola di menu Unit Fisik.">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700" title="Belum memiliki unit fisik. Kelola di menu Unit Fisik.">
                                             <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                             <span>0 Unit Fisik</span>
                                         </span>
@@ -268,8 +268,8 @@
                                         @csrf
                                         <button type="submit" 
                                                 title="Klik untuk {{ $product->status === 'aktif' ? 'nonaktifkan' : 'aktifkan' }} produk"
-                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer {{ $product->status === 'aktif' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                                            <span class="w-1.5 h-1.5 rounded-full {{ $product->status === 'aktif' ? 'bg-emerald-600' : 'bg-slate-400' }}"></span>
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all cursor-pointer {{ $product->status === 'aktif' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                                            <span class="w-1.5 h-1.5 rounded-full {{ $product->status === 'aktif' ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
                                             <span>{{ ucfirst($product->status) }}</span>
                                         </button>
                                     </form>

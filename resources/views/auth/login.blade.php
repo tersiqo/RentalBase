@@ -5,8 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Masuk ke Akun — RentalBase</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="RentalBase">
+    <meta name="application-name" content="RentalBase">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,11 +51,9 @@
             <!-- Brand Logo & Header -->
             <div class="text-center mb-6">
                 <a href="{{ route('landing.home') }}" class="inline-flex items-center gap-2.5 group">
-                    <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white font-black text-xl shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform duration-200">
-                        R
-                    </div>
+                    <img src="{{ asset('images/rentalbase-icon.svg') }}" alt="RentalBase" class="w-10 h-10 drop-shadow-sm group-hover:scale-105 transition-transform duration-200">
                     <span class="text-2xl font-extrabold tracking-tight text-slate-900 group-hover:text-orange-600 transition-colors">
-                        RentalBase
+                        Rental<span class="text-orange-500">Base</span>
                     </span>
                 </a>
                 

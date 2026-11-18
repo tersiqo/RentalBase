@@ -128,21 +128,30 @@ class WebPushService
             $authHeader = 'vapid t=' . $jwt . ', k=' . $vapid['public_key'];
 
             // 5. Kirim via cURL dengan timeout singkat
+            $headers = [
+                'Content-Type: application/octet-stream',
+                'Content-Encoding: aes128gcm',
+                'Content-Length: ' . strlen($encryptedBody),
+                'TTL: 86400',
+                'Urgency: high',
+                'Authorization: ' . $authHeader,
+            ];
+
+            // Tambahkan header khusus Apple APNs untuk iOS / Safari agar notifikasi bangun instan (Priority 10)
+            if (str_contains($endpoint, 'apple.com')) {
+                $headers[] = 'apns-push-type: alert';
+                $headers[] = 'apns-priority: 10';
+            }
+
             $ch = curl_init($endpoint);
             curl_setopt_array($ch, [
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => $encryptedBody,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 4,
-                CURLOPT_CONNECTTIMEOUT => 3,
-                CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/octet-stream',
-                    'Content-Encoding: aes128gcm',
-                    'Content-Length: ' . strlen($encryptedBody),
-                    'TTL: 86400',
-                    'Urgency: high',
-                    'Authorization: ' . $authHeader,
-                ],
+                CURLOPT_TIMEOUT => 6,
+                CURLOPT_CONNECTTIMEOUT => 4,
+                CURLOPT_HTTP_VERSION => defined('CURL_HTTP_VERSION_2_0') ? CURL_HTTP_VERSION_2_0 : CURL_HTTP_VERSION_1_1,
+                CURLOPT_HTTPHEADER => $headers,
             ]);
 
             $response = curl_exec($ch);
@@ -155,9 +164,9 @@ class WebPushService
                 return false;
             }
 
-            // Jika status 404 Not Found atau 410 Gone (user mencabut izin / endpoint kedaluwarsa)
-            if ($httpCode === 404 || $httpCode === 410) {
-                Log::info('[WebPush] Auto-pruning expired subscription #' . $subscription->id . ' (HTTP ' . $httpCode . ')');
+            // Jika status 404 Not Found, 410 Gone, atau VapidPkHashMismatch (kunci server berubah)
+            if ($httpCode === 404 || $httpCode === 410 || ($httpCode === 400 && str_contains((string) $response, 'VapidPkHashMismatch'))) {
+                Log::info('[WebPush] Auto-pruning invalid/expired subscription #' . $subscription->id . ' (HTTP ' . $httpCode . ')');
                 $subscription->delete();
                 return false;
             }

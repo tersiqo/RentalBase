@@ -61,25 +61,25 @@
                     $availToday = $product->available_units_count ?? $product->getAvailableUnitsForPeriod();
                 @endphp
                 @if($availToday > 0)
-                <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 bg-white/95 backdrop-blur-sm px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-green-200 shadow-sm flex items-center gap-1.5">
+                <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 bg-white/90 backdrop-blur-md px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-slate-200/60 shadow-xs flex items-center gap-1.5 font-semibold text-emerald-700">
                     <span class="relative flex h-2 sm:h-2.5 w-2 sm:w-2.5">
-                      <span class="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-green-500"></span>
+                      <span class="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-emerald-500"></span>
                     </span>
-                    <span class="text-[11px] sm:text-xs font-bold text-green-700">{{ $availToday }} Unit Tersedia</span>
+                    <span class="text-[11px] sm:text-xs">{{ $availToday }} Unit Tersedia</span>
                 </div>
                 @elseif($totalUsableUnits > 0)
-                <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 bg-white/95 backdrop-blur-sm px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-amber-200 shadow-sm flex items-center gap-1.5">
+                <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 bg-white/90 backdrop-blur-md px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-slate-200/60 shadow-xs flex items-center gap-1.5 font-semibold text-amber-700">
                     <span class="relative flex h-2 sm:h-2.5 w-2 sm:w-2.5">
                       <span class="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-amber-500"></span>
                     </span>
-                    <span class="text-[11px] sm:text-xs font-bold text-amber-700">Sedang Disewa (Bisa Booking Jadwal)</span>
+                    <span class="text-[11px] sm:text-xs">Sedang Disewa (Bisa Booking Jadwal)</span>
                 </div>
                 @else
-                <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 bg-white/95 backdrop-blur-sm px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-red-200 shadow-sm flex items-center gap-1.5">
+                <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 bg-white/90 backdrop-blur-md px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-slate-200/60 shadow-xs flex items-center gap-1.5 font-semibold text-slate-500">
                     <span class="relative flex h-2 sm:h-2.5 w-2 sm:w-2.5">
-                      <span class="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-red-500"></span>
+                      <span class="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-slate-400"></span>
                     </span>
-                    <span class="text-[11px] sm:text-xs font-bold text-red-700">Stok Kosong</span>
+                    <span class="text-[11px] sm:text-xs">Stok Kosong</span>
                 </div>
                 @endif
 

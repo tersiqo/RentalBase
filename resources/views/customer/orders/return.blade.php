@@ -81,7 +81,7 @@
             <div>
                 <div class="flex items-center gap-3 flex-wrap">
                     <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Form Pengembalian Barang</h1>
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {{ $order->status_color }}">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $order->status_color }}">
                         {{ $order->status_label }}
                     </span>
                 </div>

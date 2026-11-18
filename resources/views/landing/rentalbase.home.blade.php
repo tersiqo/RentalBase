@@ -4,8 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RentalBase - Kelola Bisnis Rental Peralatan dalam Satu Sistem</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="RentalBase">
+    <meta name="application-name" content="RentalBase">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     
     <!-- CDN Links -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -72,9 +83,7 @@
                        @click="handleLogoClick($event)"
                        class="flex-shrink-0 flex items-center gap-2 group cursor-pointer select-none"
                        title="RentalBase">
-                        <div class="w-10 h-10 bg-brand text-white rounded-lg flex items-center justify-center text-xl font-bold group-hover:bg-brand-hover transition">
-                            <i class="fa-solid fa-box-open"></i>
-                        </div>
+                        <img src="{{ asset('images/rentalbase-icon.svg') }}" alt="RentalBase" class="w-10 h-10 drop-shadow-xs group-hover:scale-105 transition-transform duration-200">
                         <span class="font-extrabold text-2xl text-gray-900 tracking-tight">Rental<span class="text-brand">Base</span></span>
                     </a>
                 </div>
@@ -725,9 +734,7 @@
                        @click="handleLogoClick($event)"
                        class="flex-shrink-0 flex items-center gap-2 mb-4 cursor-pointer select-none"
                        title="RentalBase">
-                        <div class="w-8 h-8 bg-brand text-white rounded-lg flex items-center justify-center font-bold">
-                            <i class="fa-solid fa-box-open"></i>
-                        </div>
+                        <img src="{{ asset('images/rentalbase-icon.svg') }}" alt="RentalBase" class="w-8 h-8 drop-shadow-xs">
                         <span class="font-extrabold text-xl text-gray-900 tracking-tight">Rental<span class="text-brand">Base</span></span>
                     </a>
                     <p class="text-gray-500 max-w-sm mb-6 leading-relaxed">Platform SaaS andalan pengusaha rental. Mendukung manajemen penyewaan alat fotografi, kendaraan, perlengkapan bayi, dan masih banyak lagi.</p>

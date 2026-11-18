@@ -43,12 +43,12 @@
 
         <div class="flex items-center gap-2.5 flex-wrap">
             {{-- Status Kasus Badge --}}
-            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-extrabold border {{ $damageCase->status_color }}">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $damageCase->status_color }}">
                 Status Kasus: {{ $damageCase->status_label }}
             </span>
 
             {{-- Status Bayar Badge --}}
-            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-extrabold border {{ $damageCase->payment_status_color }}">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $damageCase->payment_status_color }}">
                 Bayar: {{ $damageCase->payment_status_label }}
             </span>
 
@@ -194,7 +194,7 @@
                             <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                             <span>Pembayaran Kompensasi Penyewa</span>
                         </h3>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $damageCase->payment_status_color }}">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $damageCase->payment_status_color }}">
                             {{ $damageCase->payment_status_label }}
                         </span>
                     </div>
@@ -357,7 +357,7 @@
                 {{-- Status Finansial Pill --}}
                 <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 text-center">
                     <span class="text-[11px] text-slate-400 block mb-1">Status Pembayaran Ganti Rugi</span>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold border {{ $damageCase->payment_status_color }}">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $damageCase->payment_status_color }}">
                         {{ $damageCase->payment_status_label }}
                     </span>
                 </div>

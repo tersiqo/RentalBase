@@ -172,15 +172,15 @@
                             {{-- 5. Status Unit --}}
                             <td class="px-6 py-4 align-top text-center whitespace-nowrap">
                                 @if($isReadyToShip)
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-50 text-emerald-700">
                                         Unit Siap ({{ $totalAlloc }}/{{ $totalReq }})
                                     </span>
                                 @elseif($totalAlloc > 0)
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-50 text-amber-700">
                                         Sebagian Siap ({{ $totalAlloc }}/{{ $totalReq }})
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700">
                                         Siap Disiapkan (0/{{ $totalReq }})
                                     </span>
                                 @endif

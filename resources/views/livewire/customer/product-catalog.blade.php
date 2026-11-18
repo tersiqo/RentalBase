@@ -112,12 +112,12 @@
                                         </div>
                                     </div>
                                     @if($featAvailable > 0)
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shrink-0">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 shrink-0">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             {{ $featAvailable }} Tersedia
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 shrink-0">
                                             Booking Penuh
                                         </span>
                                     @endif
@@ -419,16 +419,16 @@
                                 @endif
                                 
                                 @if($item->available_units_count > 0)
-                                    <span class="absolute right-2 top-2 sm:right-3.5 sm:top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[12px] font-bold flex items-center gap-1 sm:gap-1.5 text-green-700 shadow-sm border border-green-200">
-                                        <i class="w-[5px] h-[5px] sm:w-[7px] sm:h-[7px] rounded-full bg-green-500 block"></i> Tersedia {{ $item->available_units_count }}
+                                    <span class="absolute right-2 top-2 sm:right-2.5 sm:top-2.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-1 text-emerald-700 shadow-2xs border border-slate-200/80">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span> Ready
                                     </span>
                                 @elseif(($item->total_units_count ?? 0) > 0)
-                                    <span class="absolute right-2 top-2 sm:right-3.5 sm:top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[12px] font-bold flex items-center gap-1 sm:gap-1.5 text-amber-700 shadow-sm border border-amber-200">
-                                        <i class="w-[5px] h-[5px] sm:w-[7px] sm:h-[7px] rounded-full bg-amber-500 block"></i> <span class="sm:hidden">Disewa</span><span class="hidden sm:inline">Sedang Disewa</span>
+                                    <span class="absolute right-2 top-2 sm:right-2.5 sm:top-2.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-1 text-amber-700 shadow-2xs border border-slate-200/80">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span> Disewa
                                     </span>
                                 @else
-                                    <span class="absolute right-2 top-2 sm:right-3.5 sm:top-3.5 bg-white/95 backdrop-blur-sm rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[12px] font-bold flex items-center gap-1 sm:gap-1.5 text-gray-500 shadow-sm border border-gray-200">
-                                        <i class="w-[5px] h-[5px] sm:w-[7px] sm:h-[7px] rounded-full bg-gray-400 block"></i> <span class="sm:hidden">Habis</span><span class="hidden sm:inline">Stok Habis</span>
+                                    <span class="absolute right-2 top-2 sm:right-2.5 sm:top-2.5 bg-white/95 backdrop-blur-md rounded-full px-2 py-0.5 text-[10px] font-bold flex items-center gap-1 text-slate-500 shadow-2xs border border-slate-200/80">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span> Habis
                                     </span>
                                 @endif
                             </a>
