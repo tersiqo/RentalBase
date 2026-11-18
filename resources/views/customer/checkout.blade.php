@@ -1033,14 +1033,14 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                             <label for="full_name" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nama Lengkap (Sesuai KTP) <span class="text-red-500">*</span></label>
-                            <input type="text" id="full_name" name="full_name" x-model="fullName" value="{{ old('full_name', $lastIdentity?->full_name ?? auth()->user()->name ?? '') }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Nama sesuai identitas" required>
+                            <input type="text" id="full_name" name="full_name" x-model="fullName" autocomplete="name" value="{{ old('full_name', $lastIdentity?->full_name ?? auth()->user()->name ?? '') }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Nama sesuai identitas" required>
                             @error('full_name')
                                 <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                             @enderror
                         </div>
                         <div>
                             <label for="identity_number" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nomor KTP / NIK <span class="text-red-500">*</span></label>
-                            <input type="text" id="identity_number" name="identity_number" x-model="identityNumber" value="{{ old('identity_number', $defaultIdentityNumber) }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="16 digit nomor NIK KTP" required>
+                            <input type="text" id="identity_number" name="identity_number" x-model="identityNumber" inputmode="numeric" pattern="[0-9]*" maxlength="16" autocomplete="off" value="{{ old('identity_number', $defaultIdentityNumber) }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="16 digit nomor NIK KTP" required>
                             @error('identity_number')
                                 <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                             @enderror

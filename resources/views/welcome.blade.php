@@ -170,7 +170,7 @@
             </div>
             <div class="flex-1 w-full relative">
                 <div class="absolute inset-0 bg-orange-100 rounded-[2rem] transform -rotate-3 scale-105 -z-10"></div>
-                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800" class="rounded-2xl shadow-xl border border-white" alt="Dashboard Workflow">
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800" class="rounded-2xl shadow-xl border border-white" alt="Dashboard Workflow" loading="lazy">
             </div>
         </div>
     </section>

@@ -28,7 +28,7 @@ class ProductController extends Controller
             }])
             ->where('client_id', $client->id);
 
-        $products = $query->orderBy('created_at', 'desc')->get();
+        $products = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
         $categories = Category::where('client_id', $client->id)
             ->orderBy('name')

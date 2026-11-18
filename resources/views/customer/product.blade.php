@@ -124,7 +124,8 @@
                                     class="relative shrink-0 w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all duration-200 bg-white"
                                     :class="activeIdx === idx ? 'border-primary-500 ring-2 ring-primary-500/30 scale-105 shadow-sm' : 'border-gray-200 hover:border-primary-300 opacity-70 hover:opacity-100'">
                                 <img :src="imgUrl" 
-                                     alt="Thumbnail" 
+                                     :alt="'Thumbnail ' + (idx + 1)" 
+                                     loading="lazy"
                                      class="w-full h-full object-cover"
                                      onerror="this.src='https://placehold.co/100x100/e2e8f0/475569?text=IMG'">
                             </button>

@@ -360,6 +360,7 @@
                                    name="name" 
                                    type="text" 
                                    x-model="registerName"
+                                   autocomplete="name"
                                    value="{{ old('name') }}"
                                    required 
                                    placeholder="Contoh: Budi Santoso"
@@ -396,6 +397,7 @@
                                    name="email" 
                                    type="email" 
                                    x-model="registerEmail"
+                                   autocomplete="email"
                                    value="{{ old('email') }}"
                                    required 
                                    placeholder="nama@email.com"
@@ -431,6 +433,8 @@
                             <input id="register-phone" 
                                    name="phone" 
                                    type="tel" 
+                                   inputmode="tel"
+                                   autocomplete="tel"
                                    x-model="registerPhone"
                                    value="{{ old('phone') }}"
                                    required 
@@ -468,6 +472,7 @@
                                    name="password" 
                                    :type="showRegisterPassword ? 'text' : 'password'"
                                    x-model="registerPassword"
+                                   autocomplete="new-password"
                                    required 
                                    placeholder="Minimal 8 karakter"
                                    :class="registerErrors.password ? 'border-red-500 text-red-900 bg-red-50/20 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 text-slate-900 focus:border-orange-500 focus:ring-orange-500/20'"
@@ -515,6 +520,7 @@
                                    name="password_confirmation" 
                                    :type="showRegisterConfirmPassword ? 'text' : 'password'"
                                    x-model="registerPasswordConfirm"
+                                   autocomplete="new-password"
                                    required 
                                    placeholder="Ulangi password Anda"
                                    :class="registerErrors.password_confirmation ? 'border-red-500 text-red-900 bg-red-50/20 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 text-slate-900 focus:border-orange-500 focus:ring-orange-500/20'"

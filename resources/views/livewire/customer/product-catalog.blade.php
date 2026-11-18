@@ -582,7 +582,10 @@
                         <!-- Product Summary -->
                         <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
                             <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden shrink-0">
-                                <img src="{{ $modalProduct->main_image ? storage_url($modalProduct->main_image) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" class="w-full h-full object-cover">
+                                <img src="{{ $modalProduct->main_image ? storage_url($modalProduct->main_image) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" 
+                                     alt="{{ $modalProduct->name }}" 
+                                     loading="lazy" 
+                                     class="w-full h-full object-cover">
                             </div>
                             <div>
                                 <h4 class="font-bold text-gray-900 line-clamp-1">{{ $modalProduct->name }}</h4>

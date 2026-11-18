@@ -263,9 +263,9 @@
                         class="mt-7 flex items-center gap-4 text-sm text-gray-500 sm:justify-center lg:justify-start"
                     >
                         <div class="flex -space-x-2">
-                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=1" alt="User">
-                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=2" alt="User">
-                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=3" alt="User">
+                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=1" alt="User" loading="lazy">
+                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=2" alt="User" loading="lazy">
+                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=3" alt="User" loading="lazy">
                         </div>
                         <p>Dipercaya oleh 500+ pemilik rental</p>
                     </div>
@@ -513,6 +513,7 @@
                                         @if($logoUrl)
                                             <img src="{{ $logoUrl }}" 
                                                  alt="{{ $tenantName }}"
+                                                 loading="lazy"
                                                  class="w-full h-full object-contain p-1 bg-white"
                                                  onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';">
                                             <span class="hidden font-black text-xl w-full h-full items-center justify-center">{{ $initial }}</span>
