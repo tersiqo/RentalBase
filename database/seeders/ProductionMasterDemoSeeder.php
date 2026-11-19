@@ -141,7 +141,7 @@ class ProductionMasterDemoSeeder extends Seeder
                 'name' => 'Admin EduPlay Mainan',
                 'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
-                'client_id' => 76,
+                'client_id' => null,
                 'phone' => '081234567891',
                 'address' => 'Jl. Soekarno Hatta No. 42B, Lowokwaru, Kota Malang',
                 'status' => 'aktif',
@@ -154,7 +154,7 @@ class ProductionMasterDemoSeeder extends Seeder
                 'name' => 'Admin Berkah Tenda',
                 'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
-                'client_id' => 77,
+                'client_id' => null,
                 'phone' => '081234567892',
                 'address' => 'Jl. Terusan Sulfat No. 88, Blimbing, Kota Malang',
                 'status' => 'aktif',
@@ -289,21 +289,19 @@ class ProductionMasterDemoSeeder extends Seeder
         );
 
         // -------------------------------------------------------------
-        // STORE 2: EduPlay Rental Mainan & Montessori (ID: 76)
+        // STORE 2: EduPlay Rental Mainan & Montessori
         // -------------------------------------------------------------
-        $client2 = Client::find(76) ?? Client::where('subdomain', 'eduplay')->first() ?? Client::where('subdomain', 'contoh-mainan-edukasi')->first();
-        if (! $client2) {
-            $client2 = Client::create(['id' => 76, 'subdomain' => 'eduplay', 'status' => 'aktif']);
-        }
-        $client2->update([
-            'subdomain' => 'eduplay',
-            'business_name' => 'EduPlay Rental Mainan & Montessori',
-            'description' => 'Persewaan mainan edukasi anak, peraga kayu Montessori, sensory play, playground indoor, dan peraga motorik higienis di Malang.',
-            'logo' => 'tenant-logos/eduplay-logo.png',
-            'theme_color' => '#0284c7',
-            'status' => 'aktif',
-            'primary_admin_id' => $users['adminMainan']->id,
-        ]);
+        $client2 = Client::updateOrCreate(
+            ['subdomain' => 'eduplay'],
+            [
+                'business_name' => 'EduPlay Rental Mainan & Montessori',
+                'description' => 'Persewaan mainan edukasi anak, peraga kayu Montessori, sensory play, playground indoor, dan peraga motorik higienis di Malang.',
+                'logo' => 'tenant-logos/eduplay-logo.png',
+                'theme_color' => '#0284c7',
+                'status' => 'aktif',
+                'primary_admin_id' => $users['adminMainan']->id,
+            ]
+        );
         $users['adminMainan']->update(['client_id' => $client2->id]);
 
         TenantProfile::updateOrCreate(
@@ -356,21 +354,19 @@ class ProductionMasterDemoSeeder extends Seeder
         );
 
         // -------------------------------------------------------------
-        // STORE 3: Berkah Tenda & Pesta Malang (ID: 77)
+        // STORE 3: Berkah Tenda & Pesta Malang
         // -------------------------------------------------------------
-        $client3 = Client::find(77) ?? Client::where('subdomain', 'berkahtenda')->first() ?? Client::where('subdomain', 'contoh-tenda-pesta')->first();
-        if (! $client3) {
-            $client3 = Client::create(['id' => 77, 'subdomain' => 'berkahtenda', 'status' => 'aktif']);
-        }
-        $client3->update([
-            'subdomain' => 'berkahtenda',
-            'business_name' => 'Berkah Tenda & Pesta Malang',
-            'description' => 'Sewa tenda roder, plafon dekorasi, sarnafil kerucut, panggung rigging, kursi Tiffany & Futura, serta misty fan blower acara outdoor.',
-            'logo' => 'tenant-logos/berkahtenda-logo.png',
-            'theme_color' => '#d97706',
-            'status' => 'aktif',
-            'primary_admin_id' => $users['adminTenda']->id,
-        ]);
+        $client3 = Client::updateOrCreate(
+            ['subdomain' => 'berkahtenda'],
+            [
+                'business_name' => 'Berkah Tenda & Pesta Malang',
+                'description' => 'Sewa tenda roder, plafon dekorasi, sarnafil kerucut, panggung rigging, kursi Tiffany & Futura, serta misty fan blower acara outdoor.',
+                'logo' => 'tenant-logos/berkahtenda-logo.png',
+                'theme_color' => '#d97706',
+                'status' => 'aktif',
+                'primary_admin_id' => $users['adminTenda']->id,
+            ]
+        );
         $users['adminTenda']->update(['client_id' => $client3->id]);
 
         TenantProfile::updateOrCreate(
