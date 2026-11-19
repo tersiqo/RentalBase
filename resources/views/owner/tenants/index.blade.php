@@ -453,7 +453,7 @@
                                 <td class="py-4 px-6 align-middle">
                                     <div class="flex items-center gap-3">
                                         @if($logoUrl)
-                                            <img src="{{ $logoUrl }}" alt="{{ $tenant->business_name }}"
+                                            <img src="{{ $logoUrl }}" alt="{{ $tenant->business_name }}" loading="lazy"
                                                  class="w-10 h-10 rounded-xl object-cover border border-slate-200/80 shadow-xs shrink-0">
                                         @else
                                             <div class="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs shadow-xs shrink-0"
@@ -645,7 +645,7 @@
             <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-gradient-to-r from-orange-50/60 to-white">
                 <div class="flex items-center gap-3.5">
                     <template x-if="activeTenant?.logo_url">
-                        <img :src="activeTenant?.logo_url" class="w-12 h-12 rounded-2xl object-cover border border-slate-200/80 shadow-xs">
+                        <img :src="activeTenant?.logo_url" :alt="activeTenant?.business_name || 'Logo Toko'" loading="lazy" class="w-12 h-12 rounded-2xl object-cover border border-slate-200/80 shadow-xs">
                     </template>
                     <template x-if="!activeTenant?.logo_url">
                         <div class="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200/70 text-orange-600 font-black text-sm flex items-center justify-center shadow-xs"

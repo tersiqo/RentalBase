@@ -76,7 +76,7 @@ class EquipmentUnitController extends Controller
             $query->where('condition', $condition);
         }
 
-        $units = $query->orderBy('created_at', 'desc')->get();
+        $units = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
         // Daftar produk milik toko untuk dropdown filter & modal
         $products = Product::where('client_id', $client->id)

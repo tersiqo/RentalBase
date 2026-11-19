@@ -240,6 +240,7 @@
                                                         class="w-12 h-12 rounded-xl border border-gray-200 overflow-hidden p-1 bg-white hover:ring-2 hover:ring-orange-500 transition-all shrink-0 group/img">
                                                     <img src="{{ storage_url($method->qris_image_path) }}"
                                                          alt="QRIS Barcode"
+                                                         loading="lazy"
                                                          class="w-full h-full object-contain">
                                                 </button>
                                                 <span class="text-[11px] text-gray-500 font-medium">Klik untuk perbesar</span>
@@ -425,6 +426,8 @@
                                 <input type="text"
                                        name="account_number"
                                        x-model="form.account_number"
+                                       inputmode="numeric"
+                                       pattern="[0-9]*"
                                        placeholder="Contoh: 1234567890"
                                        :required="form.type === 'bank_transfer'"
                                        :disabled="form.type !== 'bank_transfer'"

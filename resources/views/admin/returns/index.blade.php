@@ -386,6 +386,7 @@
                                         <a :href="activeOrder.late_fee_proof_url" target="_blank" rel="noopener noreferrer" class="block">
                                             <img :src="activeOrder.late_fee_proof_url"
                                                  alt="Bukti Pembayaran Denda"
+                                                 loading="lazy"
                                                  class="max-h-40 w-auto rounded-md border border-blue-200 bg-white p-1 object-contain shadow-xs">
                                         </a>
                                         <a :href="activeOrder.late_fee_proof_url" target="_blank" rel="noopener noreferrer"

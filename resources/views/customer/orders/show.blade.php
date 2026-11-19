@@ -206,7 +206,7 @@
             <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4 text-xs space-y-1">
                 <div class="flex justify-between items-center">
                     <span class="text-amber-800 font-medium">Tagihan Denda Keterlambatan:</span>
-                    <span class="font-bold text-amber-900 font-mono text-sm">Rp {{ number_format($lateFeeAmount, 0, ',', '.') }}</span>
+                    <span class="font-bold text-amber-900 text-sm tabular-nums">Rp {{ number_format($lateFeeAmount, 0, ',', '.') }}</span>
                 </div>
                 <p class="text-[11px] text-amber-700">Silakan transfer nominal di atas ke salah satu rekening toko di bawah ini, lalu unggah struk/bukti transfer.</p>
             </div>

@@ -96,7 +96,7 @@ class DamageCaseController extends Controller
             $query->where('payment_status', $selectedPaymentStatus);
         }
 
-        $damageCases = $query->latest()->get();
+        $damageCases = $query->latest()->paginate(15)->withQueryString();
 
         return view('admin.damage-cases.index', compact(
             'damageCases',

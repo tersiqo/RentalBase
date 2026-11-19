@@ -208,6 +208,7 @@
                                         <div class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 relative group">
                                             <img src="{{ $product->cover_image_url }}" 
                                                  alt="{{ $product->name }}" 
+                                                 loading="lazy"
                                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                                                  onerror="this.src='https://placehold.co/100x100/f8fafc/64748b?text=IMG'">
                                         </div>
@@ -739,7 +740,7 @@
                                         <div class="flex flex-wrap gap-2.5">
                                             <template x-for="(imgRel, idx) in existingGalleryImages" :key="idx">
                                                 <div class="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-xs group">
-                                                    <img :src="'/storage/' + imgRel" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100/e2e8f0/475569?text=IMG'">
+                                                    <img :src="'/storage/' + imgRel" alt="Foto galeri" loading="lazy" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100/e2e8f0/475569?text=IMG'">
                                                     <button type="button" 
                                                             @click="removeExistingGalleryImage(imgRel)"
                                                             class="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"

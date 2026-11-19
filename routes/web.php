@@ -77,6 +77,25 @@ Route::get('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::c
 Route::post('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'login']);
 Route::post('/logout', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'logout'])->name('logout');
 
+// Safe GET fallbacks for direct address bar / autocomplete access to logout
+Route::get('/logout', function (\Illuminate\Http\Request $request) {
+    if (auth()->check()) {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+    }
+    return redirect()->route('login');
+})->name('logout.get');
+
+Route::get('/admin/logout', function (\Illuminate\Http\Request $request) {
+    if (auth()->check()) {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+    }
+    return redirect()->route('login');
+})->name('admin.logout.get');
+
 Route::get('/register', fn (\Illuminate\Http\Request $request) => redirect()->route('login', array_merge(['tab' => 'register'], $request->query())))->name('register');
 Route::post('/register', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'registerCustomer'])->name('register.submit');
 

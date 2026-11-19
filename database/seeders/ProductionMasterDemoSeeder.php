@@ -56,7 +56,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'owner@rentalbase.id'],
             [
                 'name' => 'Owner RentalBase SaaS',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'owner',
                 'client_id' => null,
                 'phone' => '081122334455',
@@ -70,7 +70,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'iqouser@gmail.com'],
             [
                 'name' => 'Tersiqo Alfarezel',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'customer',
                 'client_id' => null,
                 'phone' => '081234567801',
@@ -84,7 +84,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'budi.santoso@gmail.com'],
             [
                 'name' => 'Budi Santoso',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'customer',
                 'client_id' => null,
                 'phone' => '081298765432',
@@ -98,7 +98,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'rizky@gmail.com'],
             [
                 'name' => 'Rizky Pelanggan',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'customer',
                 'client_id' => null,
                 'phone' => '085711223344',
@@ -112,7 +112,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'siti.customer@gmail.com'],
             [
                 'name' => 'Siti Rahmawati',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'customer',
                 'client_id' => null,
                 'phone' => '081388776655',
@@ -126,7 +126,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'budi@babyrental.com'],
             [
                 'name' => 'Budi Admin Baby Rental',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'client_id' => 1,
                 'phone' => '081234567890',
@@ -139,9 +139,9 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.mainan@rentalbase.id'],
             [
                 'name' => 'Admin EduPlay Mainan',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
-                'client_id' => 76,
+                'client_id' => null,
                 'phone' => '081234567891',
                 'address' => 'Jl. Soekarno Hatta No. 42B, Lowokwaru, Kota Malang',
                 'status' => 'aktif',
@@ -152,9 +152,9 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.tenda@rentalbase.id'],
             [
                 'name' => 'Admin Berkah Tenda',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
-                'client_id' => 77,
+                'client_id' => null,
                 'phone' => '081234567892',
                 'address' => 'Jl. Terusan Sulfat No. 88, Blimbing, Kota Malang',
                 'status' => 'aktif',
@@ -165,7 +165,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.outdoor@rentalbase.id'],
             [
                 'name' => 'Admin Malang Outdoor',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'phone' => '081298765431',
                 'address' => 'Jl. Bondowoso No. 18, Klojen, Kota Malang',
@@ -177,7 +177,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.kamera@rentalbase.id'],
             [
                 'name' => 'Admin Lens & Light Studio',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'phone' => '081298765432',
                 'address' => 'Jl. Semeru No. 72, Oro-oro Dowo, Kota Malang',
@@ -189,7 +189,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ['email' => 'admin.sound@rentalbase.id'],
             [
                 'name' => 'Admin SoundMaster Audio',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('12345678'),
                 'role' => 'admin_rental',
                 'phone' => '081298765433',
                 'address' => 'Jl. Kawi No. 34, Kauman, Klojen, Kota Malang',
@@ -289,21 +289,19 @@ class ProductionMasterDemoSeeder extends Seeder
         );
 
         // -------------------------------------------------------------
-        // STORE 2: EduPlay Rental Mainan & Montessori (ID: 76)
+        // STORE 2: EduPlay Rental Mainan & Montessori
         // -------------------------------------------------------------
-        $client2 = Client::find(76) ?? Client::where('subdomain', 'eduplay')->first() ?? Client::where('subdomain', 'contoh-mainan-edukasi')->first();
-        if (! $client2) {
-            $client2 = Client::create(['id' => 76, 'subdomain' => 'eduplay', 'status' => 'aktif']);
-        }
-        $client2->update([
-            'subdomain' => 'eduplay',
-            'business_name' => 'EduPlay Rental Mainan & Montessori',
-            'description' => 'Persewaan mainan edukasi anak, peraga kayu Montessori, sensory play, playground indoor, dan peraga motorik higienis di Malang.',
-            'logo' => 'tenant-logos/eduplay-logo.png',
-            'theme_color' => '#0284c7',
-            'status' => 'aktif',
-            'primary_admin_id' => $users['adminMainan']->id,
-        ]);
+        $client2 = Client::updateOrCreate(
+            ['subdomain' => 'eduplay'],
+            [
+                'business_name' => 'EduPlay Rental Mainan & Montessori',
+                'description' => 'Persewaan mainan edukasi anak, peraga kayu Montessori, sensory play, playground indoor, dan peraga motorik higienis di Malang.',
+                'logo' => 'tenant-logos/eduplay-logo.png',
+                'theme_color' => '#0284c7',
+                'status' => 'aktif',
+                'primary_admin_id' => $users['adminMainan']->id,
+            ]
+        );
         $users['adminMainan']->update(['client_id' => $client2->id]);
 
         TenantProfile::updateOrCreate(
@@ -356,21 +354,19 @@ class ProductionMasterDemoSeeder extends Seeder
         );
 
         // -------------------------------------------------------------
-        // STORE 3: Berkah Tenda & Pesta Malang (ID: 77)
+        // STORE 3: Berkah Tenda & Pesta Malang
         // -------------------------------------------------------------
-        $client3 = Client::find(77) ?? Client::where('subdomain', 'berkahtenda')->first() ?? Client::where('subdomain', 'contoh-tenda-pesta')->first();
-        if (! $client3) {
-            $client3 = Client::create(['id' => 77, 'subdomain' => 'berkahtenda', 'status' => 'aktif']);
-        }
-        $client3->update([
-            'subdomain' => 'berkahtenda',
-            'business_name' => 'Berkah Tenda & Pesta Malang',
-            'description' => 'Sewa tenda roder, plafon dekorasi, sarnafil kerucut, panggung rigging, kursi Tiffany & Futura, serta misty fan blower acara outdoor.',
-            'logo' => 'tenant-logos/berkahtenda-logo.png',
-            'theme_color' => '#d97706',
-            'status' => 'aktif',
-            'primary_admin_id' => $users['adminTenda']->id,
-        ]);
+        $client3 = Client::updateOrCreate(
+            ['subdomain' => 'berkahtenda'],
+            [
+                'business_name' => 'Berkah Tenda & Pesta Malang',
+                'description' => 'Sewa tenda roder, plafon dekorasi, sarnafil kerucut, panggung rigging, kursi Tiffany & Futura, serta misty fan blower acara outdoor.',
+                'logo' => 'tenant-logos/berkahtenda-logo.png',
+                'theme_color' => '#d97706',
+                'status' => 'aktif',
+                'primary_admin_id' => $users['adminTenda']->id,
+            ]
+        );
         $users['adminTenda']->update(['client_id' => $client3->id]);
 
         TenantProfile::updateOrCreate(
@@ -984,7 +980,7 @@ class ProductionMasterDemoSeeder extends Seeder
                 'admin_name' => 'Rian Dirgantara',
                 'admin_email' => 'rian@dronefly.id',
                 'admin_phone' => '081234567899',
-                'admin_password' => Hash::make('password123'),
+                'admin_password' => Hash::make('12345678'),
                 'status' => 'menunggu_verifikasi',
                 'payment_status' => 'menunggu',
                 'payment_proof' => 'subscriptions/proofs/tf-sub-001.jpg',
@@ -1002,7 +998,7 @@ class ProductionMasterDemoSeeder extends Seeder
                 'admin_name' => 'Doni Gamer',
                 'admin_email' => 'doni@gamerbatu.test',
                 'admin_phone' => '081234567888',
-                'admin_password' => Hash::make('password123'),
+                'admin_password' => Hash::make('12345678'),
                 'status' => 'ditolak',
                 'payment_status' => 'ditolak',
                 'payment_proof' => 'subscriptions/proofs/tf-sub-001.jpg',

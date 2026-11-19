@@ -56,8 +56,8 @@
                         {{ $order->status_label }}
                     </span>
                 </div>
-                <p class="text-xs sm:text-sm text-gray-500 mt-1 font-mono">
-                    {{ $order->order_number ?? ('ORD-' . $order->id) }} &bull; Dipesan pada {{ $order->created_at ? $order->created_at->translatedFormat('d M Y, H:i') : '-' }} WIB
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">
+                    <span class="font-mono font-semibold text-gray-700">{{ $order->order_number ?? ('ORD-' . $order->id) }}</span> &bull; Dipesan pada {{ $order->created_at ? $order->created_at->translatedFormat('d M Y, H:i') : '-' }} WIB
                 </p>
             </div>
 
@@ -279,7 +279,7 @@
                         @endphp
                         <div class="flex items-center justify-between p-2.5 sm:p-3.5 bg-gray-50/50 hover:bg-gray-50 border border-gray-100 rounded-xl gap-3 sm:gap-4 transition-colors">
                             <div class="flex items-center gap-3 sm:gap-3.5 min-w-0">
-                                <img src="{{ $img }}" alt="{{ $product?->name ?? 'Produk' }}" class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover bg-white border border-gray-200 shrink-0 shadow-2xs">
+                                <img src="{{ $img }}" alt="{{ $product?->name ?? 'Produk' }}" loading="lazy" class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover bg-white border border-gray-200 shrink-0 shadow-2xs">
                                 <div class="min-w-0">
                                     <h5 class="font-bold text-gray-900 text-xs sm:text-sm truncate">{{ $product?->name ?? 'Produk Sewa' }}</h5>
                                     <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 font-medium">
@@ -288,7 +288,7 @@
                                 </div>
                             </div>
                             <div class="text-right shrink-0">
-                                <span class="font-bold text-xs sm:text-sm text-gray-900 font-mono">
+                                <span class="font-bold text-xs sm:text-sm text-gray-900 tabular-nums">
                                     Rp {{ number_format((float) ($item->subtotal ?? (($item->price_per_day ?? 0) * ($item->quantity ?? 1) * ($order->duration_days ?? 1))), 0, ',', '.') }}
                                 </span>
                             </div>
@@ -300,15 +300,15 @@
                 <div class="pt-3.5 sm:pt-4 border-t border-gray-100 space-y-2 text-xs sm:text-sm">
                     <div class="flex justify-between text-gray-600">
                         <span>Subtotal Sewa</span>
-                        <span class="font-mono font-medium">Rp {{ number_format((float) ($order->orderItems->sum('subtotal') ?: $order->total_amount), 0, ',', '.') }}</span>
+                        <span class="font-semibold text-gray-900 tabular-nums">Rp {{ number_format((float) ($order->orderItems->sum('subtotal') ?: $order->total_amount), 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between text-gray-600">
                         <span>Ongkos Kirim</span>
-                        <span class="font-mono font-medium">{{ $isPickup ? 'Gratis (Ambil Sendiri)' : 'Gratis' }}</span>
+                        <span class="font-medium text-emerald-600">{{ $isPickup ? 'Gratis (Ambil Sendiri)' : 'Gratis' }}</span>
                     </div>
                     <div class="pt-2.5 sm:pt-3 border-t border-dashed border-gray-200 flex justify-between items-baseline text-sm sm:text-lg font-extrabold text-gray-900">
                         <span>Total Tagihan:</span>
-                        <span class="text-lg sm:text-2xl text-primary-600 font-mono font-extrabold">{{ $order->formatted_total }}</span>
+                        <span class="text-lg sm:text-2xl text-primary-600 font-extrabold tracking-tight tabular-nums">{{ $order->formatted_total }}</span>
                     </div>
                 </div>
             </section>
@@ -393,7 +393,7 @@
                                 @if($docImg)
                                     <div class="flex flex-col items-start gap-1">
                                         <button type="button" @click="openLightbox('{{ $docImg }}', 'Foto KTP')" class="group relative rounded-lg overflow-hidden border border-gray-200 bg-white hover:opacity-95 transition shadow-2xs">
-                                            <img src="{{ $docImg }}" alt="KTP" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\'/></svg><span>Foto KTP</span></div>';">
+                                            <img src="{{ $docImg }}" alt="KTP" loading="lazy" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\'/></svg><span>Foto KTP</span></div>';">
                                             <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold gap-1">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                 <span>Lihat</span>
@@ -406,7 +406,7 @@
                                 @if($faceImg)
                                     <div class="flex flex-col items-start gap-1">
                                         <button type="button" @click="openLightbox('{{ $faceImg }}', 'Foto Selfie memegang KTP')" class="group relative rounded-lg overflow-hidden border border-gray-200 bg-white hover:opacity-95 transition shadow-2xs">
-                                            <img src="{{ $faceImg }}" alt="Selfie" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\'/></svg><span>Selfie KTP</span></div>';">
+                                            <img src="{{ $faceImg }}" alt="Selfie" loading="lazy" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\'/></svg><span>Selfie KTP</span></div>';">
                                             <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold gap-1">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                 <span>Lihat</span>
@@ -559,7 +559,7 @@
 
                         <div class="flex justify-between items-center py-2 border-b border-gray-100">
                             <span class="text-gray-500">Nominal Pengembalian</span>
-                            <span class="font-mono font-bold text-gray-900 text-base">
+                            <span class="font-bold text-gray-900 text-base tabular-nums">
                                 {{ $refundStatus !== 'tidak_ada' ? $order->formatted_total : 'Rp 0' }}
                             </span>
                         </div>
@@ -575,7 +575,7 @@
                             <div class="pt-2">
                                 <span class="text-xs font-bold text-gray-600 block mb-1.5">Bukti Transfer Refund dari Toko:</span>
                                 <figure @click="openLightbox('{{ $refundProof }}', 'Bukti Transfer Pengembalian Dana')" class="border border-gray-200 rounded-xl overflow-hidden cursor-zoom-in bg-gray-50 group hover:border-primary-500 transition max-w-sm">
-                                    <img src="{{ $refundProof }}" alt="Bukti Refund" class="w-full max-h-48 object-contain bg-white">
+                                    <img src="{{ $refundProof }}" alt="Bukti Refund" loading="lazy" class="w-full max-h-48 object-contain bg-white">
                                     <figcaption class="p-2 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100 group-hover:text-primary-600 font-medium flex items-center justify-center gap-1.5">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         <span>Klik untuk melihat bukti transfer refund</span>
@@ -698,7 +698,7 @@
                     <!-- Belum dibayar: Tampilkan Metode Pembayaran & Upload Form -->
                     <div class="p-3.5 bg-primary-50 border border-dashed border-primary-300 rounded-xl mb-4 flex justify-between items-center">
                         <span class="text-xs text-primary-800 font-medium">Total Yang Harus Dibayar:</span>
-                        <b class="text-lg font-bold font-mono text-primary-700">{{ $order->formatted_total }}</b>
+                        <b class="text-lg font-extrabold text-primary-700 tracking-tight tabular-nums">{{ $order->formatted_total }}</b>
                     </div>
 
                     <!-- Payment Tabs -->
@@ -777,7 +777,7 @@
                     <!-- Tab QRIS -->
                     <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-4 border border-gray-200 rounded-xl mb-4 bg-white">
                         @if($qrisImg)
-                            <img src="{{ $qrisImg }}" alt="Kode QRIS" class="w-48 h-48 mx-auto object-contain mb-2 rounded-lg border border-gray-100 p-1 shadow-xs">
+                            <img src="{{ $qrisImg }}" alt="Kode QRIS" loading="lazy" class="w-48 h-48 mx-auto object-contain mb-2 rounded-lg border border-gray-100 p-1 shadow-xs">
                         @else
                             <!-- Dynamic QRIS Placeholder SVG from reference -->
                             <div class="w-44 h-44 mx-auto mb-2 bg-gray-50 p-2 rounded-xl border border-gray-200 flex items-center justify-center">
@@ -879,7 +879,7 @@
                             @if((float) ($return->late_fee_amount ?? 0) > 0)
                                 <p class="text-blue-800">
                                     Denda Keterlambatan ({{ $return->late_hours ?? 0 }} jam):
-                                    <b class="font-mono">Rp {{ number_format((float) $return->late_fee_amount, 0, ',', '.') }}</b>
+                                    <b class="font-bold tabular-nums">Rp {{ number_format((float) $return->late_fee_amount, 0, ',', '.') }}</b>
                                     ({{ ucfirst(str_replace('_', ' ', $return->late_fee_status ?? 'menunggu_pembayaran')) }})
                                 </p>
                             @endif

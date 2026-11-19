@@ -202,7 +202,7 @@
                                         <!-- Konteks Produk -->
                                         <template x-if="m.context_data.type === 'product'">
                                             <a :href="m.context_data.url" target="_blank" class="flex items-center gap-2.5 group">
-                                                <img :src="m.context_data.image" class="w-10 h-10 rounded-lg object-cover bg-white shrink-0">
+                                                <img :src="m.context_data.image" :alt="m.context_data.name || 'Produk'" loading="lazy" class="w-10 h-10 rounded-lg object-cover bg-white shrink-0">
                                                 <div class="min-w-0">
                                                     <div class="text-[10px] uppercase font-bold opacity-80">Tanya Produk</div>
                                                     <div class="text-xs font-bold truncate group-hover:underline" x-text="m.context_data.name"></div>
@@ -229,7 +229,7 @@
                                 <!-- Lampiran Gambar -->
                                 <template x-if="m.attachment_url">
                                     <div class="rounded-xl overflow-hidden cursor-pointer" @click="window.open(m.attachment_url, '_blank')">
-                                        <img :src="m.attachment_url" alt="Lampiran" class="max-h-48 w-full object-cover rounded-xl hover:opacity-95 transition">
+                                        <img :src="m.attachment_url" alt="Lampiran" loading="lazy" class="max-h-48 w-full object-cover rounded-xl hover:opacity-95 transition">
                                     </div>
                                 </template>
 
