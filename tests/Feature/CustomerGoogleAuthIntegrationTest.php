@@ -25,7 +25,7 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_it_01_007_google_oauth_customer_login_and_redirect_flow(): void
+    public function test_it_01_028_google_oauth_customer_login_and_redirect_flow(): void
     {
         $provider = Mockery::mock('Laravel\Socialite\Two\GoogleProvider');
         $provider->shouldReceive('redirect')
@@ -42,8 +42,9 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
         $response->assertRedirect('https://accounts.google.com/o/oauth2/auth');
     }
 
-    public function test_google_oauth_callback_creates_user_with_pending_setup(): void
+    public function test_it_01_029_google_oauth_callback_creates_user_with_pending_setup_and_active_admin(): void
     {
+        // 1. Kasus Pengguna Baru (Pending Setup)
         $socialiteUser = new SocialiteUser();
         $socialiteUser->id = 'google-id-12345';
         $socialiteUser->name = 'Budi Santoso';
@@ -69,35 +70,33 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
 
         $response->assertRedirect(route('tenant.register'));
         $this->assertAuthenticated();
-    }
 
-    public function test_google_oauth_callback_logs_in_active_admin_successfully(): void
-    {
-        $user = User::factory()->create([
+        // 2. Kasus Pengguna Aktif (Login Langsung ke Dashboard)
+        $activeUser = User::factory()->create([
             'email' => 'active.admin@rentalbase.com',
             'status' => 'aktif',
             'role' => 'admin_rental',
         ]);
 
-        $socialiteUser = new SocialiteUser();
-        $socialiteUser->id = 'google-id-999';
-        $socialiteUser->name = 'Active Admin';
-        $socialiteUser->email = 'active.admin@rentalbase.com';
+        $activeSocialiteUser = new SocialiteUser();
+        $activeSocialiteUser->id = 'google-id-999';
+        $activeSocialiteUser->name = 'Active Admin';
+        $activeSocialiteUser->email = 'active.admin@rentalbase.com';
 
-        $provider = Mockery::mock('Laravel\Socialite\Two\GoogleProvider');
-        $provider->shouldReceive('user')
+        $activeProvider = Mockery::mock('Laravel\Socialite\Two\GoogleProvider');
+        $activeProvider->shouldReceive('user')
             ->once()
-            ->andReturn($socialiteUser);
+            ->andReturn($activeSocialiteUser);
 
         Socialite::shouldReceive('driver')
             ->with('google')
             ->once()
-            ->andReturn($provider);
+            ->andReturn($activeProvider);
 
-        $response = $this->get('/auth/google/callback');
+        $activeResponse = $this->get('/auth/google/callback');
 
-        $response->assertRedirect('/admin/dashboard');
-        $this->assertAuthenticatedAs($user);
+        $activeResponse->assertRedirect('/admin/dashboard');
+        $this->assertAuthenticatedAs($activeUser);
     }
 
     public function test_google_oauth_callback_handles_failure_gracefully(): void
