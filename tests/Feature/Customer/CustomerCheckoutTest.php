@@ -730,5 +730,113 @@ class CustomerCheckoutTest extends TestCase
         );
         $this->assertSame(3, (int) $order->duration_days);
     }
+
+    /**
+     * IT-06-009: Livewire removeItem menghapus item keranjang dan memperbarui subtotal secara reaktif
+     */
+    public function test_it_06_009_cart_page_remove_item_reactive_modal_confirmation(): void
+    {
+        $product = $this->makeProduct('Tenda Dome 4P', 60000);
+        $start = now()->addDays(2)->format('Y-m-d');
+        $end = now()->addDays(4)->format('Y-m-d');
+        $hash = md5($product->id . $start . $end);
+
+        session()->put('cart', [
+            $hash => [
+                'hash' => $hash,
+                'client_id' => $this->client->id,
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'price' => 60000,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => $start,
+                'end_date' => $end,
+                'duration_days' => 3,
+                'quantity' => 1,
+                'subtotal' => 180000,
+            ],
+        ]);
+
+        Livewire::actingAs($this->user)
+            ->test(\App\Livewire\Customer\CartPage::class, ['subdomain' => $this->client->subdomain])
+            ->assertSee('Tenda Dome 4P')
+            ->call('removeItem', $hash)
+            ->assertDispatched('cart-updated')
+            ->assertSet('cart', []);
+
+        $this->assertEmpty(session('cart'));
+    }
+
+    /**
+     * IT-06-010: Isolasi keranjang multi-tenant antar-toko rental yang berbeda
+     */
+    public function test_it_06_010_cross_store_cart_isolation_and_reset_dialog(): void
+    {
+        $otherClient = Client::create([
+            'business_name' => 'CampGear Surabaya',
+            'subdomain' => 'campgear',
+            'status' => 'aktif',
+        ]);
+
+        $otherCat = \App\Models\Category::forceCreate([
+            'client_id' => $otherClient->id,
+            'name' => 'Outdoor',
+            'slug' => 'outdoor-gear',
+        ]);
+
+        $prodA = $this->makeProduct('Stroller Bayi', 50000);
+        $prodB = Product::create([
+            'client_id' => $otherClient->id,
+            'category_id' => $otherCat->id,
+            'name' => 'Carrier Gunung',
+            'slug' => 'carrier-gunung',
+            'rental_price_per_day' => 70000,
+            'deposit_fee' => 0,
+            'status' => 'aktif',
+        ]);
+
+        $start = now()->addDays(2)->format('Y-m-d');
+        $end = now()->addDays(4)->format('Y-m-d');
+        $hashA = md5($prodA->id . $start . $end);
+        $hashB = md5($prodB->id . $start . $end);
+
+        session()->put('cart', [
+            $hashA => [
+                'hash' => $hashA,
+                'client_id' => $this->client->id,
+                'product_id' => $prodA->id,
+                'name' => $prodA->name,
+                'price' => 50000,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => $start,
+                'end_date' => $end,
+                'duration_days' => 2,
+                'quantity' => 1,
+                'subtotal' => 100000,
+            ],
+            $hashB => [
+                'hash' => $hashB,
+                'client_id' => $otherClient->id,
+                'product_id' => $prodB->id,
+                'name' => $prodB->name,
+                'price' => 70000,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => $start,
+                'end_date' => $end,
+                'duration_days' => 2,
+                'quantity' => 1,
+                'subtotal' => 140000,
+            ],
+        ]);
+
+        Livewire::actingAs($this->user)
+            ->test(\App\Livewire\Customer\CartPage::class, ['subdomain' => $this->client->subdomain])
+            ->assertSee('Stroller Bayi')
+            ->assertDontSee('Carrier Gunung')
+            ->assertCount('cart', 1);
+    }
 }
 
