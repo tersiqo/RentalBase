@@ -48,4 +48,12 @@ return [
         'qris_image'     => env('PLATFORM_QRIS_IMAGE', 'images/qris-platform.png'),
     ],
 
+    'webpush' => [
+        'vapid' => [
+            'subject'     => env('VAPID_SUBJECT', env('APP_URL', 'https://rentalbase.com')),
+            'public_key'  => env('VAPID_PUBLIC_KEY'),
+            'private_key' => env('VAPID_PRIVATE_KEY'),
+        ],
+    ],
+
 ];

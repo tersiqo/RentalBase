@@ -202,8 +202,8 @@
             <div class="count" x-text="filtered.length + ' dari ' + categories.length + ' kategori'"></div>
         </div>
 
-        <div x-show="filtered.length > 0">
-            <table>
+        <div x-show="filtered.length > 0" class="overflow-x-auto" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+            <table style="min-width:560px">
                 <thead>
                     <tr><th>Nama Kategori</th><th>Deskripsi</th><th>Jumlah Produk</th><th x-show="canManage">Aksi</th></tr>
                 </thead>

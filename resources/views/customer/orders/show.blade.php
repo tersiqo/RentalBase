@@ -132,11 +132,14 @@
                     Pesanan <b class="font-mono text-gray-900" x-text="returnOrderNumber"></b>. Silakan pilih rencana pengembalian dan berikan keterangan kondisi barang saat selesai sewa.
                 </p>
                 <div class="space-y-4">
+                    @php
+                        $defaultReturnMethod = old('return_method', $order->isPickup() ? 'ambil_toko' : 'kurir');
+                    @endphp
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Metode Pengembalian</label>
                         <select name="return_method" class="w-full text-xs sm:text-sm p-2.5 rounded-xl border border-gray-300 focus:ring-primary-500 focus:border-primary-500 font-medium">
-                            <option value="ambil_toko">Diantar langsung ke toko rental</option>
-                            <option value="kurir">Dijemput kurir / dikirim via ekspedisi</option>
+                            <option value="ambil_toko" {{ $defaultReturnMethod === 'ambil_toko' ? 'selected' : '' }}>Diantar langsung ke toko rental</option>
+                            <option value="kurir" {{ $defaultReturnMethod === 'kurir' ? 'selected' : '' }}>Dijemput kurir / dikirim via ekspedisi</option>
                         </select>
                     </div>
                     <div>
@@ -203,7 +206,7 @@
             <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4 text-xs space-y-1">
                 <div class="flex justify-between items-center">
                     <span class="text-amber-800 font-medium">Tagihan Denda Keterlambatan:</span>
-                    <span class="font-bold text-amber-900 font-mono text-sm">Rp {{ number_format($lateFeeAmount, 0, ',', '.') }}</span>
+                    <span class="font-bold text-amber-900 text-sm tabular-nums">Rp {{ number_format($lateFeeAmount, 0, ',', '.') }}</span>
                 </div>
                 <p class="text-[11px] text-amber-700">Silakan transfer nominal di atas ke salah satu rekening toko di bawah ini, lalu unggah struk/bukti transfer.</p>
             </div>

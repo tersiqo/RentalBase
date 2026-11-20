@@ -216,7 +216,8 @@ class CustomerCheckoutController extends Controller
         $startDay = Carbon::parse($request->start_date)->startOfDay();
         if ($startDay->isToday() && $request->filled('rental_time')) {
             $selectedDateTime = Carbon::parse($request->start_date . ' ' . $request->rental_time);
-            if ($selectedDateTime->isPast()) {
+            // Beri toleransi 15 menit agar saat customer memilih jam sekarang atau proses isi form beberapa menit tidak memicu false-positive error
+            if ($selectedDateTime->lt(now()->subMinutes(15))) {
                 return back()->withErrors([
                     'rental_time' => 'Jam mulai sewa tidak boleh menggunakan waktu yang sudah lewat untuk penyewaan hari ini.',
                 ])->withInput();

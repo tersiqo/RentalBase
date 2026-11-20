@@ -296,7 +296,7 @@ class ProductCatalog extends Component
             ) as booked_units_count', [$end, $start]);
 
         if ($this->availableOnly) {
-            $productsQuery->havingRaw('(
+            $productsQuery->whereRaw('(
                 (SELECT COUNT(*) FROM equipment_units eu WHERE eu.product_id = products.id AND eu.status NOT IN (\'rusak\', \'maintenance\'))
                 -
                 (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_id = products.id AND o.client_id = products.client_id AND o.status NOT IN (\'batal\', \'dibatalkan\', \'ditolak\', \'selesai\') AND o.rental_start_date <= ? AND o.rental_end_date >= ?)

@@ -160,8 +160,8 @@
                         PERIODE LAPORAN
                     </label>
                     <template x-if="isDirty">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                             Perubahan belum diterapkan - Klik "Terapkan Filter"
                         </span>
                     </template>
@@ -477,12 +477,12 @@
                             {{-- Metode Pembayaran --}}
                             <td class="px-5 py-3.5 whitespace-nowrap text-center">
                                 @if(stripos($metode, 'qris') !== false)
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
                                         {{ $metode }}
                                     </span>
                                 @elseif($metode !== '-')
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                                         {{ $metode }}
                                     </span>
@@ -498,13 +498,13 @@
 
                             {{-- Status Transaksi --}}
                             <td class="px-5 py-3.5 whitespace-nowrap text-center">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
-                                    @if($order->status === 'selesai') bg-emerald-50 text-emerald-700 border border-emerald-200
-                                    @elseif($order->status === 'sedang_disewa') bg-sky-50 text-sky-700 border border-sky-200
-                                    @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-50 text-indigo-700 border border-indigo-200
-                                    @elseif($order->status === 'dikirim') bg-purple-50 text-purple-700 border border-purple-200
-                                    @elseif($order->status === 'dikembalikan') bg-cyan-50 text-cyan-700 border border-cyan-200
-                                    @else bg-slate-50 text-slate-700 border border-slate-200 @endif">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold
+                                    @if($order->status === 'selesai') bg-emerald-50 text-emerald-700
+                                    @elseif($order->status === 'sedang_disewa') bg-sky-50 text-sky-700
+                                    @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-50 text-indigo-700
+                                    @elseif($order->status === 'dikirim') bg-purple-50 text-purple-700
+                                    @elseif($order->status === 'dikembalikan') bg-cyan-50 text-cyan-700
+                                    @else bg-slate-100 text-slate-700 @endif">
                                     <span class="w-1.5 h-1.5 rounded-full
                                         @if($order->status === 'selesai') bg-emerald-500
                                         @elseif($order->status === 'sedang_disewa') bg-sky-500

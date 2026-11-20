@@ -42,7 +42,7 @@ class AdminDashboardController extends Controller
 
             $menungguVerifikasi = Payment::whereHas('order', function ($q) use ($clientId) {
                 $q->where('client_id', $clientId);
-            })->where('status', 'menunggu_konfirmasi')->count();
+            })->whereIn('status', ['menunggu_konfirmasi', 'menunggu_verifikasi'])->count();
 
             $totalDisewa = Order::where('client_id', $clientId)
                 ->where('status', 'sedang_disewa')

@@ -53,6 +53,46 @@
         </div>
     @endif
 
+    {{-- Web Push OS Device Notification Card (Customer) --}}
+    <div x-data="rbWebPush()" x-init="init()" class="mb-6 p-4 rounded-2xl bg-white border border-gray-200/80 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                     :class="isSubscribed ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-600'">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <h4 class="text-xs font-bold text-gray-900 truncate" x-text="isSubscribed ? 'Notifikasi Perangkat OS: Aktif' : 'Terima Notifikasi Saat Web Ditutup'"></h4>
+                    <p class="text-[11px] text-gray-500 mt-0.5 truncate" x-text="isSubscribed ? 'Status pesanan & balasan chat toko akan muncul di layar perangkat Anda.' : 'Aktifkan agar Anda tidak ketinggalan konfirmasi sewa dan balasan toko.'"></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <button type="button"
+                        x-show="isSubscribed"
+                        @click="sendTestNotification()"
+                        :disabled="isLoading"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 transition cursor-pointer"
+                        title="Kirim notifikasi uji coba ke layar Anda">
+                    Uji Coba
+                </button>
+                <button type="button"
+                        @click="toggleSubscription()"
+                        :disabled="isLoading"
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        :class="isSubscribed 
+                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' 
+                            : 'bg-primary-500 text-white hover:opacity-90'"
+                        :style="!isSubscribed ? 'background-color: var(--tenant-theme, #f97316);' : ''">
+                    <span x-show="!isLoading" x-text="isSubscribed ? 'Aktif ✓' : 'Aktifkan'"></span>
+                    <span x-show="isLoading" class="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full"></span>
+                </button>
+            </div>
+        </div>
+        <p x-show="feedbackMessage" x-text="feedbackMessage" class="text-xs text-orange-600 mt-2 font-medium"></p>
+    </div>
+
     {{-- Tab Filter Kategori --}}
     @php
         $activeSubdomain = $client->subdomain ?? session('active_client_subdomain', null);
@@ -62,19 +102,23 @@
     @endphp
     <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-gray-100">
         <a href="{{ $tabUrl('all') }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 {{ $filter === 'all' ? 'bg-gray-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 {{ $filter === 'all' ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+           @if($filter === 'all') style="background-color: var(--tenant-theme, #f97316);" @endif>
             Semua ({{ $totalAll }})
         </a>
         <a href="{{ $tabUrl('unread') }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 {{ $filter === 'unread' ? 'bg-gray-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 {{ $filter === 'unread' ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+           @if($filter === 'unread') style="background-color: var(--tenant-theme, #f97316);" @endif>
             Belum Dibaca ({{ $totalUnread }})
         </a>
         <a href="{{ $tabUrl('orders') }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 {{ $filter === 'orders' ? 'bg-gray-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 {{ $filter === 'orders' ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+           @if($filter === 'orders') style="background-color: var(--tenant-theme, #f97316);" @endif>
             Pesanan &amp; Verifikasi
         </a>
         <a href="{{ $tabUrl('logistics') }}"
-           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition shrink-0 {{ $filter === 'logistics' ? 'bg-gray-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+           class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 {{ $filter === 'logistics' ? 'bg-primary-500 text-white shadow-xs shadow-primary-500/25' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' }}"
+           @if($filter === 'logistics') style="background-color: var(--tenant-theme, #f97316);" @endif>
             Pengiriman &amp; Pengembalian
         </a>
     </div>
@@ -103,7 +147,7 @@
                         <div>
                             {{-- Badge Tipe & Waktu --}}
                             <div class="flex items-center gap-2 mb-1">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border {{ $badge['bg'] }}">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold {{ $badge['bg'] }}">
                                     {{ $badge['label'] }}
                                 </span>
                                 <span class="text-[11px] text-gray-400">

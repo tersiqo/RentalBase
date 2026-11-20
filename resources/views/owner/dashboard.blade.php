@@ -57,11 +57,11 @@
             </p>
         </div>
         <div class="flex items-center gap-3">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 Sistem Normal
             </span>
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                 <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
@@ -210,7 +210,7 @@
                                 <td class="py-4 px-6 align-middle">
                                     <div class="flex items-center gap-3">
                                         @if($logoUrl)
-                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}"
+                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}" loading="lazy"
                                                  class="w-10 h-10 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
                                         @else
                                             <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200/70 text-orange-600 font-extrabold text-xs flex items-center justify-center shrink-0">
@@ -361,7 +361,7 @@
                                        class="flex items-center gap-3 group-hover:text-orange-600 transition-colors"
                                        title="Buka detail di halaman Client/Tenant">
                                         @if($logoUrl)
-                                            <img src="{{ $logoUrl }}" alt="{{ $tenant->business_name }}"
+                                            <img src="{{ $logoUrl }}" alt="{{ $tenant->business_name }}" loading="lazy"
                                                  class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
                                         @else
                                             <div class="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-xs shrink-0 border border-orange-100">
@@ -412,22 +412,22 @@
                                 {{-- Kolom 4: Status --}}
                                 <td class="py-4 px-6">
                                     @if($tenant->status === 'aktif')
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 shadow-2xs">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             Aktif
                                         </span>
                                     @elseif($tenant->status === 'suspended')
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-600/20 shadow-2xs">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700">
                                             <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                                             Suspended
                                         </span>
                                     @elseif($tenant->status === 'nonaktif')
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 shadow-2xs">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                                             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                             Nonaktif
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                                             {{ ucfirst($tenant->status ?: 'Draft') }}
                                         </span>
                                     @endif
@@ -488,7 +488,7 @@
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
                 <div class="flex items-center gap-3">
                     <template x-if="activeTenant?.logo_url">
-                        <img :src="activeTenant?.logo_url" :alt="activeTenant?.business_name"
+                        <img :src="activeTenant?.logo_url" :alt="activeTenant?.business_name" loading="lazy"
                              class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
                     </template>
                     <template x-if="!activeTenant?.logo_url">
@@ -570,6 +570,7 @@
                                     <div class="relative rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs flex items-center justify-center">
                                         <img :src="activeTenant.payment_proof"
                                              :alt="'Bukti Bayar ' + activeTenant.business_name"
+                                             loading="lazy"
                                              class="w-full h-56 sm:h-64 object-contain bg-slate-900/5">
                                     </div>
                                     <div class="flex items-center justify-between text-xs px-0.5">

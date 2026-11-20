@@ -258,7 +258,7 @@ class EquipmentUnitTest extends TestCase
         ]);
     }
 
-    public function test_admin_cannot_store_unit_exceeding_plan_quota(): void
+    public function test_it_05_008_admin_cannot_store_unit_exceeding_plan_quota(): void
     {
         // Paket Starter: maks 50 unit. Buat 50 unit dummy
         for ($i = 1; $i <= 50; $i++) {
@@ -286,7 +286,7 @@ class EquipmentUnitTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_update_unit(): void
+    public function test_it_05_013_admin_can_update_unit(): void
     {
         $unit = EquipmentUnit::create([
             'client_id' => $this->client->id,

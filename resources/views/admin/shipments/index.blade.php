@@ -172,15 +172,15 @@
                             {{-- 5. Status Unit --}}
                             <td class="px-6 py-4 align-top text-center whitespace-nowrap">
                                 @if($isReadyToShip)
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-50 text-emerald-700">
                                         Unit Siap ({{ $totalAlloc }}/{{ $totalReq }})
                                     </span>
                                 @elseif($totalAlloc > 0)
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-50 text-amber-700">
                                         Sebagian Siap ({{ $totalAlloc }}/{{ $totalReq }})
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700">
                                         Siap Disiapkan (0/{{ $totalReq }})
                                     </span>
                                 @endif
@@ -312,13 +312,10 @@
                                         Pilih Ekspedisi <span class="text-red-500">*</span>
                                     </label>
                                     <select name="courier_name" required class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-orange-500 focus:border-orange-500 px-3 py-2 border">
-                                        <option value="" disabled selected>-- Pilih Kurir --</option>
-                                        <option value="JNE">JNE</option>
-                                        <option value="J&T Express">J&T Express</option>
-                                        <option value="SiCepat">SiCepat</option>
-                                        <option value="GoSend">GoSend</option>
-                                        <option value="GrabExpress">GrabExpress</option>
-                                        <option value="Kurir Toko">Kurir Toko</option>
+                                        <option value="" disabled {{ !old('courier_name') ? 'selected' : '' }}>-- Pilih Kurir --</option>
+                                        @foreach(['JNE', 'J&T Express', 'SiCepat', 'GoSend', 'GrabExpress', 'Kurir Toko'] as $cName)
+                                            <option value="{{ $cName }}" {{ old('courier_name') === $cName ? 'selected' : '' }}>{{ $cName }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 

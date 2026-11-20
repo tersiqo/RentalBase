@@ -43,12 +43,12 @@
 
         <div class="flex items-center gap-2.5 flex-wrap">
             {{-- Status Kasus Badge --}}
-            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-extrabold border {{ $damageCase->status_color }}">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $damageCase->status_color }}">
                 Status Kasus: {{ $damageCase->status_label }}
             </span>
 
             {{-- Status Bayar Badge --}}
-            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-extrabold border {{ $damageCase->payment_status_color }}">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $damageCase->payment_status_color }}">
                 Bayar: {{ $damageCase->payment_status_label }}
             </span>
 
@@ -170,11 +170,11 @@
                             @foreach($images as $idx => $imgUrl)
                                 <div class="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer shadow-xs"
                                      @click="openLightbox('{{ $imgUrl }}', 'Foto Kerusakan #{{ $idx + 1 }}')">
-                                    <img src="{{ $imgUrl }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                    <img src="{{ $imgUrl }}" alt="Foto Kerusakan #{{ $idx + 1 }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
                                     <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
                                     </div>
-                                    <span class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] bg-black/60 text-white font-mono">
+                                    <span class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[10px] bg-black/60 text-white font-semibold">
                                         Foto {{ $idx + 1 }}
                                     </span>
                                 </div>
@@ -194,7 +194,7 @@
                             <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                             <span>Pembayaran Kompensasi Penyewa</span>
                         </h3>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $damageCase->payment_status_color }}">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $damageCase->payment_status_color }}">
                             {{ $damageCase->payment_status_label }}
                         </span>
                     </div>
@@ -210,16 +210,12 @@
 
                             @if(!$isPaid)
                                 <div class="pt-2">
-                                    <form action="{{ route('admin.damage-cases.verify-payment', $damageCase->id) }}"
-                                          method="POST"
-                                          onsubmit="return confirm('Apakah Anda yakin telah menerima pembayaran kompensasi sebesar {{ $damageCase->formatted_total }} secara sah?');">
-                                        @csrf
-                                        <button type="submit"
-                                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all shadow-sm">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                            <span>Verifikasi & Tandai Lunas</span>
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                            @click="showVerifyModal = true"
+                                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all shadow-sm cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span>Verifikasi & Tandai Lunas</span>
+                                    </button>
                                 </div>
                             @endif
                         </div>
@@ -230,7 +226,7 @@
                                 <span class="block text-[11px] font-bold text-slate-500 mb-1">Bukti Transfer Penyewa</span>
                                 <div class="relative group aspect-video max-h-36 rounded-lg overflow-hidden border border-slate-200 bg-white cursor-pointer mx-auto"
                                      @click="openLightbox('{{ storage_url($compensationPayment->payment_proof) }}', 'Bukti Transfer Kompensasi')">
-                                    <img src="{{ storage_url($compensationPayment->payment_proof) }}" class="w-full h-full object-cover">
+                                    <img src="{{ storage_url($compensationPayment->payment_proof) }}" alt="Bukti Transfer Kompensasi" loading="lazy" class="w-full h-full object-cover">
                                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                         <span>Perbesar</span>
@@ -297,17 +293,27 @@
                                       placeholder="Tuliskan penjelasan, rincian ganti rugi baru, atau klarifikasi toko untuk customer..."
                                       class="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"></textarea>
 
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs text-slate-500 font-medium">Ubah Status Kasus:</span>
-                                    <select name="case_status" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none">
-                                        <option value="menunggu_respons">Menunggu Tanggapan Penyewa</option>
-                                        <option value="dalam_tinjauan">Dalam Tinjauan Toko</option>
-                                        <option value="menunggu_pembayaran">Menunggu Pembayaran Kompensasi</option>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2.5 w-full sm:w-auto min-w-0">
+                                    <label for="case_status_select" class="text-xs text-slate-600 font-semibold shrink-0">
+                                        Ubah Status Kasus:
+                                    </label>
+                                    @php
+                                        $currentCaseStatus = old('case_status', strtolower(trim(str_replace(['-', ' '], '_', $damageCase->case_status ?? 'terbuka'))));
+                                    @endphp
+                                    <select id="case_status_select"
+                                            name="case_status" 
+                                            class="w-full sm:w-auto min-w-0 max-w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors">
+                                        <option value="menunggu_respons" {{ in_array($currentCaseStatus, ['menunggu_respons', 'terbuka', 'menunggu_tanggapan']) ? 'selected' : '' }}>Menunggu Tanggapan Penyewa</option>
+                                        <option value="dalam_tinjauan" {{ in_array($currentCaseStatus, ['dalam_tinjauan', 'negosiasi']) ? 'selected' : '' }}>Dalam Tinjauan Toko</option>
+                                        <option value="menunggu_pembayaran" {{ in_array($currentCaseStatus, ['menunggu_pembayaran', 'menunggu_pembayaran_kompensasi']) ? 'selected' : '' }}>Menunggu Pembayaran Kompensasi</option>
+                                        @if(in_array($currentCaseStatus, ['kompensasi_dibayar', 'menunggu_verifikasi']))
+                                            <option value="kompensasi_dibayar" selected>Kompensasi Dibayar (Verifikasi)</option>
+                                        @endif
                                     </select>
                                 </div>
                                 <button type="submit"
-                                        class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-sm">
+                                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white transition-all shadow-sm shrink-0 cursor-pointer">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                                     <span>Kirim Tanggapan</span>
                                 </button>
@@ -347,7 +353,7 @@
                 {{-- Status Finansial Pill --}}
                 <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 text-center">
                     <span class="text-[11px] text-slate-400 block mb-1">Status Pembayaran Ganti Rugi</span>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold border {{ $damageCase->payment_status_color }}">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $damageCase->payment_status_color }}">
                         {{ $damageCase->payment_status_label }}
                     </span>
                 </div>
@@ -362,16 +368,12 @@
                 <div class="space-y-3">
                     {{-- Tombol Verifikasi Pembayaran jika belum lunas --}}
                     @if(!$isPaid)
-                        <form action="{{ route('admin.damage-cases.verify-payment', $damageCase->id) }}"
-                              method="POST"
-                              onsubmit="return confirm('Verifikasi pembayaran kompensasi ini menjadi LUNAS?');">
-                            @csrf
-                            <button type="submit"
-                                    class="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span>Verifikasi Pembayaran Lunas</span>
-                            </button>
-                        </form>
+                        <button type="button"
+                                @click="showVerifyModal = true"
+                                class="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Verifikasi Pembayaran Lunas</span>
+                        </button>
                     @endif
 
                     {{-- Tombol Tutup Kasus --}}
@@ -398,7 +400,7 @@
                 <p class="text-xs text-slate-500">
                     Penyewa melihat rekening bank / QRIS toko aktif di menu <span class="font-bold text-slate-700">Laporan Kerusakan Customer</span> untuk melakukan transfer ganti rugi.
                 </p>
-                <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs font-mono text-slate-700 space-y-1">
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 space-y-1">
                     <p class="font-bold text-slate-900">{{ $client->business_name ?? 'RentalBase' }}</p>
                     <p class="text-[11px] text-slate-400">Pastikan rekening toko aktif di menu Pengaturan Pembayaran Admin.</p>
                 </div>
@@ -419,7 +421,7 @@
                 <span>Tutup</span>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
-            <img :src="lightboxImg" class="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl border border-white/20">
+            <img :src="lightboxImg" :alt="lightboxCaption" class="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl border border-white/20">
             <p class="text-white text-xs mt-3 font-medium text-center" x-text="lightboxCaption"></p>
         </div>
     </div>
@@ -450,9 +452,9 @@
                         Status Unit Fisik [{{ $unit->unit_code ?? '-' }}] Selanjutnya:
                     </label>
                     <select name="unit_status_after" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-rose-500">
-                        <option value="tersedia">Tersedia (Sudah Diperbaiki & Siap Disewa Kembali)</option>
-                        <option value="maintenance">Perawatan (Maintenance / Dalam Proses Servis)</option>
-                        <option value="rusak">Tetap Rusak (Damaged / Belum Bisa Dipakai)</option>
+                        <option value="tersedia" {{ old('unit_status_after', 'tersedia') === 'tersedia' ? 'selected' : '' }}>Tersedia (Sudah Diperbaiki & Siap Disewa Kembali)</option>
+                        <option value="maintenance" {{ old('unit_status_after') === 'maintenance' ? 'selected' : '' }}>Perawatan (Maintenance / Dalam Proses Servis)</option>
+                        <option value="rusak" {{ old('unit_status_after') === 'rusak' ? 'selected' : '' }}>Tetap Rusak (Damaged / Belum Bisa Dipakai)</option>
                     </select>
                 </div>
 
@@ -476,6 +478,38 @@
         </div>
     </div>
 
+    {{-- MODAL VERIFIKASI PEMBAYARAN LUNAS (CUSTOM BRANDED) --}}
+    <div x-show="showVerifyModal"
+         x-cloak
+         @keydown.escape.window="showVerifyModal = false"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+         x-transition.opacity>
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 text-center space-y-4"
+             @click.away="showVerifyModal = false"
+             x-transition.scale.95>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div>
+                <h3 class="text-base font-extrabold text-slate-900">Verifikasi Pembayaran Lunas</h3>
+                <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                    Pastikan dana kompensasi sebesar <strong class="text-slate-900 font-bold">{{ $damageCase->formatted_total }}</strong> sudah benar-benar masuk ke rekening toko Anda.
+                </p>
+            </div>
+            <form action="{{ route('admin.damage-cases.verify-payment', $damageCase->id) }}" method="POST">
+                @csrf
+                <div class="grid grid-cols-2 gap-2.5 pt-2">
+                    <button type="button" @click="showVerifyModal = false" class="py-2.5 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit" class="py-2.5 px-3 rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm transition cursor-pointer">
+                        Ya, Verifikasi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -485,6 +519,7 @@ function damageCaseShow() {
         lightboxImg: '',
         lightboxCaption: '',
         showCloseModal: false,
+        showVerifyModal: false,
 
         openLightbox(url, caption) {
             this.lightboxImg = url;

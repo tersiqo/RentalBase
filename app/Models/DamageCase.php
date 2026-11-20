@@ -69,13 +69,13 @@ class DamageCase extends Model
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->case_status ?? 'terbuka')));
 
         return match ($status) {
-            'terbuka', 'menunggu_respons', 'menunggu_tanggapan' => 'bg-amber-100 text-amber-800 border-amber-200',
-            'negosiasi', 'dalam_tinjauan' => 'bg-blue-100 text-blue-800 border-blue-200',
-            'menunggu_pembayaran', 'menunggu_pembayaran_kompensasi' => 'bg-rose-100 text-rose-800 border-rose-200',
-            'kompensasi_dibayar', 'menunggu_verifikasi' => 'bg-purple-100 text-purple-800 border-purple-200',
-            'lunas', 'selesai' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
-            'dibatalkan' => 'bg-gray-100 text-gray-800 border-gray-200',
-            default => 'bg-gray-100 text-gray-800 border-gray-200',
+            'terbuka', 'menunggu_respons', 'menunggu_tanggapan' => 'bg-amber-50 text-amber-700',
+            'negosiasi', 'dalam_tinjauan' => 'bg-blue-50 text-blue-700',
+            'menunggu_pembayaran', 'menunggu_pembayaran_kompensasi' => 'bg-rose-50 text-rose-700',
+            'kompensasi_dibayar', 'menunggu_verifikasi' => 'bg-purple-50 text-purple-700',
+            'lunas', 'selesai' => 'bg-emerald-50 text-emerald-700',
+            'dibatalkan' => 'bg-slate-100 text-slate-700',
+            default => 'bg-slate-100 text-slate-700',
         };
     }
 
@@ -96,10 +96,10 @@ class DamageCase extends Model
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->payment_status ?? 'belum_dibayar')));
 
         return match ($status) {
-            'lunas', 'paid' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
-            'menunggu_verifikasi', 'verifikasi' => 'bg-purple-100 text-purple-800 border-purple-200',
-            'menunggu_pembayaran', 'belum_dibayar', 'unpaid' => 'bg-rose-100 text-rose-800 border-rose-200',
-            default => 'bg-gray-100 text-gray-800 border-gray-200',
+            'lunas', 'paid' => 'bg-emerald-50 text-emerald-700',
+            'menunggu_verifikasi', 'verifikasi' => 'bg-purple-50 text-purple-700',
+            'menunggu_pembayaran', 'belum_dibayar', 'unpaid' => 'bg-rose-50 text-rose-700',
+            default => 'bg-slate-100 text-slate-700',
         };
     }
 
@@ -112,7 +112,7 @@ class DamageCase extends Model
         if (in_array($caseStatus, ['selesai', 'lunas']) || $paymentStatus === 'lunas') {
             return [
                 'label' => 'Selesai & Lunas',
-                'color' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                'color' => 'bg-emerald-50 text-emerald-700',
                 'key'   => 'selesai',
             ];
         }
@@ -121,7 +121,7 @@ class DamageCase extends Model
         if ($caseStatus === 'dibatalkan') {
             return [
                 'label' => 'Dibatalkan',
-                'color' => 'bg-gray-100 text-gray-800 border-gray-200',
+                'color' => 'bg-slate-100 text-slate-700',
                 'key'   => 'dibatalkan',
             ];
         }
@@ -130,7 +130,7 @@ class DamageCase extends Model
         if (in_array($caseStatus, ['kompensasi_dibayar', 'menunggu_verifikasi']) || in_array($paymentStatus, ['menunggu_verifikasi', 'verifikasi'])) {
             return [
                 'label' => 'Verifikasi Pembayaran',
-                'color' => 'bg-purple-100 text-purple-800 border-purple-200',
+                'color' => 'bg-purple-50 text-purple-700',
                 'key'   => 'kompensasi_dibayar',
             ];
         }
@@ -139,7 +139,7 @@ class DamageCase extends Model
         if (in_array($caseStatus, ['menunggu_pembayaran', 'menunggu_pembayaran_kompensasi'])) {
             return [
                 'label' => 'Menunggu Pembayaran',
-                'color' => 'bg-rose-100 text-rose-800 border-rose-200',
+                'color' => 'bg-rose-50 text-rose-700',
                 'key'   => 'menunggu_pembayaran',
             ];
         }
@@ -148,7 +148,7 @@ class DamageCase extends Model
         if (in_array($caseStatus, ['dalam_tinjauan', 'negosiasi'])) {
             return [
                 'label' => 'Dalam Tinjauan',
-                'color' => 'bg-blue-100 text-blue-800 border-blue-200',
+                'color' => 'bg-blue-50 text-blue-700',
                 'key'   => 'dalam_tinjauan',
             ];
         }
@@ -156,7 +156,7 @@ class DamageCase extends Model
         // 6. Default: Menunggu Tanggapan
         return [
             'label' => 'Menunggu Tanggapan',
-            'color' => 'bg-amber-100 text-amber-800 border-amber-200',
+            'color' => 'bg-amber-50 text-amber-700',
             'key'   => 'terbuka',
         ];
     }

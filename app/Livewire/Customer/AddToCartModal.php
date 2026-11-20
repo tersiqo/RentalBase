@@ -98,6 +98,11 @@ class AddToCartModal extends Component
             // Beri tahu Alpine.js untuk menutup modal tanpa me-refresh halaman
             $this->dispatch('close-cart-modal');
             
+            $this->dispatch('show-cart-toast', [
+                'title' => 'Berhasil Masuk Keranjang!',
+                'message' => "{$this->product->name} ({$durationDays} hari, {$quantity} unit) telah ditambahkan.",
+            ]);
+
             session()->flash('success', 'Barang berhasil ditambahkan ke keranjang!');
 
         } catch (\Exception $e) {

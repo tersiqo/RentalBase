@@ -131,8 +131,8 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                 {{ $counts['menunggu'] }} Menunggu Verifikasi
             </span>
         </div>
@@ -394,7 +394,7 @@
                                 <td class="py-4 px-6 align-middle">
                                     <div class="flex items-center gap-3">
                                         @if($logoUrl)
-                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}"
+                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}" loading="lazy"
                                                  class="w-10 h-10 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
                                         @else
                                             <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200/70 text-orange-600 font-extrabold text-xs flex items-center justify-center shrink-0">
@@ -434,19 +434,19 @@
                                 {{-- Status --}}
                                 <td class="py-4 px-6 align-middle whitespace-nowrap">
                                     @if($reg->status === 'menunggu_verifikasi')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF3C7] text-[#92400E]">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
                                             Menunggu Verifikasi
                                         </span>
                                     @elseif($reg->status === 'disetujui')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
                                             Disetujui
                                         </span>
                                     @elseif($reg->status === 'ditolak')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-600/20">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700">
                                             Ditolak
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                                             {{ ucfirst($reg->status) }}
                                         </span>
                                     @endif
@@ -614,6 +614,7 @@
                                     <div class="relative rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs flex items-center justify-center">
                                         <img :src="activeTenant.payment_proof"
                                              :alt="'Bukti Bayar ' + activeTenant.business_name"
+                                             loading="lazy"
                                              class="w-full h-56 sm:h-64 object-contain bg-slate-900/5">
                                     </div>
                                     <div class="flex items-center justify-between text-xs px-0.5">

@@ -363,19 +363,19 @@
                             </td>
                             <td class="py-4 px-6">
                                 @if($item->payment_status === 'diverifikasi')
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700">
                                         Diverifikasi
                                     </span>
                                 @elseif($item->payment_status === 'menunggu')
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-50 text-amber-700 border border-amber-200">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700">
                                         Menunggu Cek
                                     </span>
                                 @elseif($item->payment_status === 'ditolak')
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-red-50 text-red-700 border border-red-200">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700">
                                         Ditolak
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-slate-100 text-slate-700">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
                                         {{ $item->payment_status }}
                                     </span>
                                 @endif

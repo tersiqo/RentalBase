@@ -1,0 +1,30 @@
+{
+  "name": "RentalBase",
+  "short_name": "RentalBase",
+  "description": "Multi-Tenant Equipment Rental SaaS Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F97316",
+  "theme_color": "#F97316",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/rentalbase-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/rentalbase-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

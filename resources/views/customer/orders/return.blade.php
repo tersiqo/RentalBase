@@ -10,7 +10,7 @@
 
 <div class="max-w-[1260px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full font-sans text-gray-700"
      x-data="{
-        returnMethod: '{{ old('return_method', 'kurir') }}',
+        returnMethod: '{{ old('return_method', $order->isPickup() ? 'ambil_toko' : 'kurir') }}',
         selectedCourier: '{{ old('courier_name', '') }}',
         ptab: 'bank',
         previewUrl: null,
@@ -81,7 +81,7 @@
             <div>
                 <div class="flex items-center gap-3 flex-wrap">
                     <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Form Pengembalian Barang</h1>
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {{ $order->status_color }}">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $order->status_color }}">
                         {{ $order->status_label }}
                     </span>
                 </div>
@@ -176,12 +176,13 @@
                                 <div class="flex items-center gap-3.5 min-w-0">
                                     <img src="{{ $img }}"
                                          alt="{{ $product?->name ?? 'Produk' }}"
+                                         loading="lazy"
                                          class="w-14 h-14 rounded-xl object-cover bg-white border border-gray-200 shrink-0">
                                     <div class="min-w-0">
                                         <h4 class="font-bold text-gray-900 text-sm truncate">{{ $product?->name ?? 'Peralatan Sewa' }}</h4>
                                         <p class="text-xs text-gray-500 mt-0.5">
                                             Jumlah: <b class="text-gray-800">{{ $item->quantity ?? 1 }} unit</b>
-                                            &bull; Tarif Denda: <span class="font-mono text-gray-700">Rp {{ number_format($effectiveLateFee, 0, ',', '.') }}/jam</span>
+                                            &bull; Tarif Denda: <span class="font-semibold text-gray-800 tabular-nums">Rp {{ number_format($effectiveLateFee, 0, ',', '.') }}/jam</span>
                                         </p>
                                     </div>
                                 </div>
@@ -398,7 +399,7 @@
                         <div class="p-3.5 bg-red-50 rounded-xl border border-red-100 text-xs space-y-2 mb-4">
                             <div class="flex justify-between">
                                 <span class="text-red-800">Tenggat Akhir Sewa:</span>
-                                <b class="text-red-950 font-mono">{{ $order->rental_end_date?->translatedFormat('d M Y, H:i') }} WIB</b>
+                                <b class="text-red-950 font-bold">{{ $order->rental_end_date?->translatedFormat('d M Y, H:i') }} WIB</b>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-red-800">Durasi Keterlambatan:</span>
@@ -415,14 +416,14 @@
                                 @foreach($lateFeeData['items'] as $feeItem)
                                     <div class="flex justify-between text-[11px] text-red-900">
                                         <span>{{ $feeItem['product_name'] }} ({{ $feeItem['quantity'] }}x &bull; Rp {{ number_format($feeItem['hourly_rate'], 0, ',', '.') }}/jam &times; {{ $feeItem['late_hours'] }} jam)</span>
-                                        <b class="font-mono">Rp {{ number_format($feeItem['subtotal_fee'], 0, ',', '.') }}</b>
+                                        <b class="font-bold tabular-nums">Rp {{ number_format($feeItem['subtotal_fee'], 0, ',', '.') }}</b>
                                     </div>
                                 @endforeach
                             </div>
 
                             <div class="border-t border-red-200 pt-2.5 flex justify-between items-baseline">
                                 <span class="font-bold text-red-950 text-xs">Total Nominal Denda:</span>
-                                <span class="text-lg font-extrabold font-mono text-red-700">
+                                <span class="text-lg font-extrabold text-red-700 tracking-tight tabular-nums">
                                     Rp {{ number_format($totalLateFee, 0, ',', '.') }}
                                 </span>
                             </div>
@@ -479,7 +480,7 @@
                                     $qrisNmid = $qrisMethod?->account_number;
                                 @endphp
                                 @if($qrisImg)
-                                    <img src="{{ $qrisImg }}" alt="QRIS Toko" class="w-40 h-40 mx-auto object-contain mb-2 rounded-lg bg-white p-1 border border-gray-200">
+                                    <img src="{{ $qrisImg }}" alt="QRIS Toko" loading="lazy" class="w-40 h-40 mx-auto object-contain mb-2 rounded-lg bg-white p-1 border border-gray-200">
                                     @if($qrisNmid && !str_starts_with($qrisNmid, 'QRIS-'))
                                         <div class="inline-flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-xl text-xs mb-2">
                                             <span class="text-gray-500 font-semibold">NMID:</span>

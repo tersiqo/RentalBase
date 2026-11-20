@@ -292,6 +292,7 @@
                                             @if($unit->product?->main_image)
                                                 <img src="{{ storage_url($unit->product->main_image) }}"
                                                      alt="{{ $unit->product->name }}"
+                                                     loading="lazy"
                                                      class="w-full h-full object-cover"
                                                      onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=100&auto=format&fit=crop&q=60';">
                                             @else
@@ -323,19 +324,19 @@
                                 {{-- Kondisi Fisik --}}
                                 <td class="py-3.5 px-4 whitespace-nowrap align-middle">
                                     @if($cond === 'baik')
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 whitespace-nowrap">
                                             Baik
                                         </span>
                                     @elseif($cond === 'rusak_ringan')
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/70 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 whitespace-nowrap">
                                             Rusak Ringan
                                         </span>
                                     @elseif($cond === 'rusak_berat')
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/70 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 whitespace-nowrap">
                                             Rusak Berat
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 whitespace-nowrap">
                                             {{ ucfirst($unit->condition) }}
                                         </span>
                                     @endif
@@ -344,19 +345,19 @@
                                 {{-- Status Operasional --}}
                                 <td class="py-3.5 px-4 whitespace-nowrap align-middle">
                                     @if(in_array($st, ['tersedia', 'available']))
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 whitespace-nowrap">
                                             Tersedia
                                         </span>
                                     @elseif(in_array($st, ['disewa', 'rented']))
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/70 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 whitespace-nowrap">
                                             Sedang Disewa
                                         </span>
                                     @elseif($st === 'maintenance')
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/70 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 whitespace-nowrap">
                                             Perawatan
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 whitespace-nowrap">
                                             Tidak Tersedia
                                         </span>
                                     @endif
@@ -444,6 +445,13 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- PAGINATION --}}
+            @if($units instanceof \Illuminate\Pagination\LengthAwarePaginator && $units->hasPages())
+                <div x-show="!hasActiveFilters" class="p-4 border-t border-slate-100 bg-slate-50/40">
+                    {{ $units->links() }}
+                </div>
+            @endif
         @else
             <div class="py-12 px-4 text-center">
                 <div class="max-w-sm mx-auto text-center">
@@ -855,7 +863,7 @@
                 <div class="mt-5">
                     <button type="button"
                             @click="showQuotaAlert = false"
-                            class="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-900 text-white hover:bg-slate-800 transition">
+                            class="w-full py-2.5 rounded-xl font-bold text-xs bg-orange-600 text-white hover:bg-orange-700 transition shadow-sm">
                         Mengerti
                     </button>
                 </div>

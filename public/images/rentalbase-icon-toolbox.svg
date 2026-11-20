@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Squircle Badge (#F97316) -->
+  <rect x="0" y="0" width="100" height="100" rx="26" fill="#F97316"/>
+  
+  <!-- Toolbox Handle (#FFFFFF) -->
+  <path d="M36 30V24C36 20.6863 38.6863 18 42 18H58C61.3137 18 64 20.6863 64 24V30H57V25H43V30H36Z" fill="#FFFFFF"/>
+  
+  <!-- Toolbox Top Lid (#FFFFFF) -->
+  <rect x="16" y="32" width="68" height="16" rx="5" fill="#FFFFFF"/>
+  
+  <!-- Toolbox Lower Body (#FFFFFF) -->
+  <path d="M18 52H43V59C43 61.2091 44.7909 63 47 63H53C55.2091 63 57 61.2091 57 59V52H82V74C82 78.4183 78.4183 82 74 82H26C21.5817 82 18 78.4183 18 74V52Z" fill="#FFFFFF"/>
+  
+  <!-- Center Latch (#F97316) -->
+  <rect x="45" y="44" width="10" height="16" rx="3" fill="#F97316"/>
+</svg>

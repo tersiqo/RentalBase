@@ -296,7 +296,7 @@
 
             {{-- Filter Paket --}}
             <select name="plan" onchange="this.form.submit()"
-                    class="bg-white border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
+                    class="w-full sm:w-auto min-w-0 max-w-full bg-white border border-slate-200 text-xs font-semibold rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
                 <option value="">Semua Paket</option>
                 <option value="starter" {{ request('plan') === 'starter' ? 'selected' : '' }}>Starter</option>
                 <option value="business" {{ request('plan') === 'business' ? 'selected' : '' }}>Business</option>
@@ -453,7 +453,7 @@
                                 <td class="py-4 px-6 align-middle">
                                     <div class="flex items-center gap-3">
                                         @if($logoUrl)
-                                            <img src="{{ $logoUrl }}" alt="{{ $tenant->business_name }}"
+                                            <img src="{{ $logoUrl }}" alt="{{ $tenant->business_name }}" loading="lazy"
                                                  class="w-10 h-10 rounded-xl object-cover border border-slate-200/80 shadow-xs shrink-0">
                                         @else
                                             <div class="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs shadow-xs shrink-0"
@@ -564,22 +564,22 @@
                                 {{-- Kolom 5: Status Akun --}}
                                 <td class="py-4 px-6 align-middle whitespace-nowrap">
                                     @if($tenant->status === 'aktif')
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 shadow-2xs">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             Aktif
                                         </span>
                                     @elseif($tenant->status === 'suspended')
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-600/20 shadow-2xs">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700">
                                             <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                                             Suspended
                                         </span>
                                     @elseif($tenant->status === 'menunggu_verifikasi')
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-600/20 shadow-2xs">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
                                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                             Menunggu Verifikasi
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 shadow-2xs">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                                             <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                             {{ ucfirst($tenant->status ?: 'Nonaktif') }}
                                         </span>
@@ -645,7 +645,7 @@
             <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-gradient-to-r from-orange-50/60 to-white">
                 <div class="flex items-center gap-3.5">
                     <template x-if="activeTenant?.logo_url">
-                        <img :src="activeTenant?.logo_url" class="w-12 h-12 rounded-2xl object-cover border border-slate-200/80 shadow-xs">
+                        <img :src="activeTenant?.logo_url" :alt="activeTenant?.business_name || 'Logo Toko'" loading="lazy" class="w-12 h-12 rounded-2xl object-cover border border-slate-200/80 shadow-xs">
                     </template>
                     <template x-if="!activeTenant?.logo_url">
                         <div class="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200/70 text-orange-600 font-black text-sm flex items-center justify-center shadow-xs"
@@ -1115,7 +1115,7 @@
                         {{-- Pilihan Paket --}}
                         <div>
                             <label class="font-bold text-slate-700 block mb-1.5">Pilih Paket Langganan</label>
-                            <div class="grid grid-cols-3 gap-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <label class="border rounded-xl p-3 text-center cursor-pointer transition-all"
                                        :class="subTenant.plan_name === 'starter' ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-500 text-orange-700 font-bold' : 'border-slate-200 text-slate-700 hover:bg-slate-50'">
                                     <input type="radio" name="plan_name" value="starter" x-model="subTenant.plan_name" class="sr-only">

@@ -5,8 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Masuk ke Akun — RentalBase</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="RentalBase">
+    <meta name="application-name" content="RentalBase">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,11 +51,9 @@
             <!-- Brand Logo & Header -->
             <div class="text-center mb-6">
                 <a href="{{ route('landing.home') }}" class="inline-flex items-center gap-2.5 group">
-                    <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white font-black text-xl shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform duration-200">
-                        R
-                    </div>
+                    <img src="{{ asset('images/rentalbase-icon.svg') }}" alt="RentalBase" class="w-10 h-10 drop-shadow-sm group-hover:scale-105 transition-transform duration-200">
                     <span class="text-2xl font-extrabold tracking-tight text-slate-900 group-hover:text-orange-600 transition-colors">
-                        RentalBase
+                        Rental<span class="text-orange-500">Base</span>
                     </span>
                 </a>
                 
@@ -351,6 +360,7 @@
                                    name="name" 
                                    type="text" 
                                    x-model="registerName"
+                                   autocomplete="name"
                                    value="{{ old('name') }}"
                                    required 
                                    placeholder="Contoh: Budi Santoso"
@@ -387,6 +397,7 @@
                                    name="email" 
                                    type="email" 
                                    x-model="registerEmail"
+                                   autocomplete="email"
                                    value="{{ old('email') }}"
                                    required 
                                    placeholder="nama@email.com"
@@ -422,6 +433,8 @@
                             <input id="register-phone" 
                                    name="phone" 
                                    type="tel" 
+                                   inputmode="tel"
+                                   autocomplete="tel"
                                    x-model="registerPhone"
                                    value="{{ old('phone') }}"
                                    required 
@@ -459,6 +472,7 @@
                                    name="password" 
                                    :type="showRegisterPassword ? 'text' : 'password'"
                                    x-model="registerPassword"
+                                   autocomplete="new-password"
                                    required 
                                    placeholder="Minimal 8 karakter"
                                    :class="registerErrors.password ? 'border-red-500 text-red-900 bg-red-50/20 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 text-slate-900 focus:border-orange-500 focus:ring-orange-500/20'"
@@ -506,6 +520,7 @@
                                    name="password_confirmation" 
                                    :type="showRegisterConfirmPassword ? 'text' : 'password'"
                                    x-model="registerPasswordConfirm"
+                                   autocomplete="new-password"
                                    required 
                                    placeholder="Ulangi password Anda"
                                    :class="registerErrors.password_confirmation ? 'border-red-500 text-red-900 bg-red-50/20 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 text-slate-900 focus:border-orange-500 focus:ring-orange-500/20'"

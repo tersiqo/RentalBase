@@ -274,7 +274,7 @@
 
                             {{-- Status Terpadu --}}
                             <td class="py-4 px-4 align-middle whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap {{ $case->unified_status['color'] }}">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap {{ $case->unified_status['color'] }}">
                                     {{ $case->unified_status['label'] }}
                                 </span>
                             </td>

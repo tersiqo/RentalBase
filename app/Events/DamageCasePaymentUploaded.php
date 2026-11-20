@@ -21,8 +21,11 @@ class DamageCasePaymentUploaded implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
+        $order = $this->damageCase->damageReport?->order ?? $this->damageCase->order;
+        $clientId = $order?->client_id ?? 0;
+
         return [
-            new PrivateChannel('tenant.' . $this->damageCase->client_id . '.orders'),
+            new PrivateChannel('tenant.' . $clientId . '.orders'),
         ];
     }
 
@@ -39,8 +42,8 @@ class DamageCasePaymentUploaded implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
-        $order = $this->damageCase->damageReport?->order;
-        $orderNumber = $order?->order_number ?? $this->damageCase->id;
+        $order = $this->damageCase->damageReport?->order ?? $this->damageCase->order;
+        $orderNumber = $order?->order_number ?? ('#' . $this->damageCase->id);
 
         return [
             'case_id' => $this->damageCase->id,

@@ -66,4 +66,80 @@ class CheckoutBookingUnitTest extends TestCase
         $this->assertNotNull($guarantee->selfie_photo_url);
         $this->assertStringContainsString('selfie/face_user.jpg', $guarantee->selfie_photo_url);
     }
+
+    /**
+     * [7.2-I2] Memastikan accessor status_label mengembalikan label bahasa Indonesia resmi.
+     */
+    public function test_ut_07_009_order_status_label_accessor(): void
+    {
+        $order = new Order(['status' => 'menunggu_pembayaran']);
+
+        $this->assertEquals('Menunggu Pembayaran', $order->status_label);
+    }
+
+    /**
+     * [7.2-I2] Memastikan pesanan berstatus menunggu pembayaran mengizinkan pembatalan (can_cancel = true).
+     */
+    public function test_ut_07_010_order_can_cancel_when_awaiting_payment(): void
+    {
+        $order = new Order(['status' => 'menunggu_pembayaran']);
+
+        $this->assertTrue($order->can_cancel);
+    }
+
+    /**
+     * [7.2-I2] Memastikan accessor foto KTP mengembalikan null saat dokumen identitas kosong.
+     */
+    public function test_ut_07_011_identity_guarantee_id_card_photo_url_returns_null_when_empty(): void
+    {
+        $guarantee = new IdentityGuarantee([
+            'identity_document_image' => null,
+            'ktp_photo' => null,
+            'id_card_photo' => null,
+        ]);
+
+        $this->assertNull($guarantee->id_card_photo_url);
+    }
+
+    /**
+     * [7.2-I2] Memastikan flag aksi pesanan (can_receive, can_reupload_identity) mengembalikan nilai boolean sesuai state pesanan.
+     */
+    public function test_ut_07_012_order_action_flags_accessors(): void
+    {
+        $orderShipped = new Order(['status' => 'dikirim']);
+        $this->assertTrue($orderShipped->can_receive);
+
+        $orderProcessing = new Order(['status' => 'diproses']);
+        $this->assertFalse($orderProcessing->can_receive);
+
+        // Reupload KTP ditolak
+        $orderRejectedKtp = new Order(['status' => 'menunggu_konfirmasi']);
+        $guaranteeRejected = new IdentityGuarantee(['status' => 'ditolak']);
+        $orderRejectedKtp->setRelation('identityGuarantee', $guaranteeRejected);
+        $this->assertTrue($orderRejectedKtp->can_reupload_identity);
+    }
+
+    /**
+     * [7.2-I2] Memastikan sinkronisasi jam serah terima pesanan menolak pembaruan jika jadwal sewa belum tercatat.
+     */
+    public function test_ut_07_013_order_sync_rental_hours_on_handover_guard(): void
+    {
+        $orderWithoutDates = new Order(['rental_start_date' => null, 'rental_end_date' => null]);
+        $this->assertFalse($orderWithoutDates->syncRentalHoursOnHandover());
+    }
+
+    /**
+     * [7.2-I2] Memastikan relasi model OrderItem dan OrderItemUnit terkonfigurasi ke Order, Product, dan EquipmentUnit.
+     */
+    public function test_ut_07_014_order_item_and_order_item_unit_relations(): void
+    {
+        $orderItem = new \App\Models\OrderItem();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $orderItem->order());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $orderItem->product());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class, $orderItem->orderItemUnits());
+
+        $orderItemUnit = new \App\Models\OrderItemUnit();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $orderItemUnit->orderItem());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $orderItemUnit->equipmentUnit());
+    }
 }

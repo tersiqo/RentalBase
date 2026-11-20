@@ -6,10 +6,22 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard Owner') — RentalBase Platform</title>
     <meta name="description" content="Panel Owner Pusat RentalBase — Pantau dan kelola semua tenant rental di platform.">
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="RentalBase Owner">
+    <meta name="application-name" content="RentalBase Owner">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="{{ asset('js/rentalbase-webpush.js') }}"></script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -96,13 +108,7 @@
 
     {{-- Logo / Brand --}}
     <div class="flex items-center gap-3 px-5 border-b border-orange-200/70" style="height: 64px; min-height: 64px;">
-        <div class="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center shadow-md"
-             style="background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); box-shadow: 0 4px 12px rgba(249,115,22,0.25);">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-            </svg>
-        </div>
+        <img src="{{ asset('images/rentalbase-icon.svg') }}" alt="RentalBase" class="shrink-0 w-9 h-9 drop-shadow-xs">
         <div x-show="!collapsed || mobileOpen"
              x-transition:enter="transition-opacity duration-150"
              x-transition:enter-start="opacity-0"
@@ -265,16 +271,16 @@
     </button>
 
     {{-- Breadcrumb --}}
-    <div class="flex items-center gap-2 text-xs font-medium">
-        <span class="font-bold text-gray-900">RentalBase</span>
-        <span class="text-gray-300">/</span>
-        <span class="text-gray-500">@yield('page-title', 'Dashboard Owner')</span>
+    <div class="flex items-center gap-2 text-xs font-medium min-w-0">
+        <span class="font-bold text-gray-900 shrink-0">RentalBase</span>
+        <span class="text-gray-300 shrink-0">/</span>
+        <span class="text-gray-500 truncate max-w-[150px] sm:max-w-[260px] md:max-w-none">@yield('page-title', 'Dashboard Owner')</span>
     </div>
 
     <div class="flex-1"></div>
 
     {{-- Date --}}
-    <div class="hidden lg:flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+    <div class="hidden lg:flex items-center gap-1.5 text-xs text-gray-500 font-medium shrink-0">
         <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -283,7 +289,7 @@
     </div>
 
     {{-- Owner Badge --}}
-    <div class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border"
+    <div class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border shrink-0"
          style="background: #FFF7ED; border-color: rgba(249,115,22,0.3);">
         <span class="w-2 h-2 rounded-full" style="background: #F97316;"></span>
         <span class="text-xs font-bold" style="color: #C2410C;">Owner Pusat</span>
@@ -292,7 +298,7 @@
     {{-- Bell --}}
     <a href="{{ route('owner.notifications.index') }}"
        title="Pusat Notifikasi Platform"
-       class="relative w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors">
+       class="relative w-9 h-9 shrink-0 aspect-square rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
         </svg>
@@ -304,7 +310,7 @@
     </a>
 
     {{-- Avatar --}}
-    <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm"
+    <div class="w-9 h-9 shrink-0 aspect-square rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm"
          style="background: linear-gradient(135deg, #0F172A, #1E293B);">
         {{ strtoupper(substr(Auth::user()->name ?? 'O', 0, 1)) }}
     </div>

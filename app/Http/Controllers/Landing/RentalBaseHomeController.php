@@ -11,6 +11,7 @@ class RentalBaseHomeController extends Controller
     {
         session()->forget('registration_completed');
         session()->forget('tenant_registration');
+        session()->forget('active_client_subdomain');
 
         $packages = [
             [

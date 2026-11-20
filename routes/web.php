@@ -62,6 +62,12 @@ Route::middleware('auth')->group(function () {
 
     // Customer Profile Global Alias
     Route::get('/profile', [ProfileController::class, 'showGlobal'])->name('customer.profile.global');
+
+    // Customer Real-time Live Chat
+    Route::get('/chat/conversation', [\App\Http\Controllers\Customer\CustomerChatController::class, 'getActiveConversation'])->name('customer.chat.active');
+    Route::get('/chat/messages/{conversation}', [\App\Http\Controllers\Customer\CustomerChatController::class, 'getMessages'])->name('customer.chat.messages');
+    Route::post('/chat/send', [\App\Http\Controllers\Customer\CustomerChatController::class, 'sendMessage'])->name('customer.chat.send');
+    Route::post('/chat/read/{conversation}', [\App\Http\Controllers\Customer\CustomerChatController::class, 'markAsRead'])->name('customer.chat.read');
 });
 
 Route::get('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showRegister'])->name('tenant.register');
@@ -70,6 +76,25 @@ Route::post('/register-tenant', [\App\Http\Controllers\Auth\TenantRegistrationCo
 Route::get('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'showLogin'])->name('login');
 Route::post('/login', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'login']);
 Route::post('/logout', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'logout'])->name('logout');
+
+// Safe GET fallbacks for direct address bar / autocomplete access to logout
+Route::get('/logout', function (\Illuminate\Http\Request $request) {
+    if (auth()->check()) {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+    }
+    return redirect()->route('login');
+})->name('logout.get');
+
+Route::get('/admin/logout', function (\Illuminate\Http\Request $request) {
+    if (auth()->check()) {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+    }
+    return redirect()->route('login');
+})->name('admin.logout.get');
 
 Route::get('/register', fn (\Illuminate\Http\Request $request) => redirect()->route('login', array_merge(['tab' => 'register'], $request->query())))->name('register');
 Route::post('/register', [\App\Http\Controllers\Auth\TenantRegistrationController::class, 'registerCustomer'])->name('register.submit');
@@ -182,6 +207,13 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     // Jejak Audit Aktivitas Toko / Tenant (Minggu 9.2-A1)
     Route::get('/activity-logs', [AdminActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::get('/activity-logs/{activityLog}', [AdminActivityLogController::class, 'show'])->name('activity-logs.show');
+
+    // Pusat Obrolan Toko (Live Chat Admin <-> Customer)
+    Route::get('/chat', [\App\Http\Controllers\Admin\AdminChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/conversations', [\App\Http\Controllers\Admin\AdminChatController::class, 'getConversationsJson'])->name('chat.conversations');
+    Route::get('/chat/conversations/{conversation}/messages', [\App\Http\Controllers\Admin\AdminChatController::class, 'getMessages'])->name('chat.messages');
+    Route::post('/chat/conversations/{conversation}/send', [\App\Http\Controllers\Admin\AdminChatController::class, 'sendMessage'])->name('chat.send');
+    Route::post('/chat/conversations/{conversation}/read', [\App\Http\Controllers\Admin\AdminChatController::class, 'markAsRead'])->name('chat.read');
 });
 
 Route::prefix('owner')->name('owner.')->group(function () {
@@ -224,3 +256,12 @@ Route::get('/client/{subdomain}/cart', CartPage::class)
 Route::get('/auth/google', [GoogleController::class, 'redirect'])
     ->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
+
+// Web Push Notifications API (Background OS Push)
+Route::get('/webpush/vapid-public-key', [\App\Http\Controllers\WebPushController::class, 'getPublicKey'])->name('webpush.public-key');
+Route::middleware(['auth'])->group(function () {
+    Route::post('/webpush/subscribe', [\App\Http\Controllers\WebPushController::class, 'subscribe'])->name('webpush.subscribe');
+    Route::post('/webpush/unsubscribe', [\App\Http\Controllers\WebPushController::class, 'unsubscribe'])->name('webpush.unsubscribe');
+    Route::post('/webpush/test', [\App\Http\Controllers\WebPushController::class, 'testPush'])->name('webpush.test');
+});
+

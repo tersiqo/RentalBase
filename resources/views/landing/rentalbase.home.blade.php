@@ -3,9 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RentalBase - Kelola Bisnis Rental Peralatan dalam Satu Sistem</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    <title>RentalBase</title>
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="RentalBase">
+    <meta name="application-name" content="RentalBase">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     
     <!-- CDN Links -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -72,9 +83,7 @@
                        @click="handleLogoClick($event)"
                        class="flex-shrink-0 flex items-center gap-2 group cursor-pointer select-none"
                        title="RentalBase">
-                        <div class="w-10 h-10 bg-brand text-white rounded-lg flex items-center justify-center text-xl font-bold group-hover:bg-brand-hover transition">
-                            <i class="fa-solid fa-box-open"></i>
-                        </div>
+                        <img src="{{ asset('images/rentalbase-icon.svg') }}" alt="RentalBase" class="w-10 h-10 drop-shadow-xs group-hover:scale-105 transition-transform duration-200">
                         <span class="font-extrabold text-2xl text-gray-900 tracking-tight">Rental<span class="text-brand">Base</span></span>
                     </a>
                 </div>
@@ -86,8 +95,44 @@
                     <a href="#harga" class="text-gray-600 hover:text-brand font-medium transition">Harga</a>
                     <a href="#kontak" class="text-gray-600 hover:text-brand font-medium transition">Kontak</a>
                     <div class="h-6 w-px bg-gray-200"></div>
-                    <a href="/login" class="text-gray-700 hover:text-brand font-medium transition">Login</a>
-                    <button type="button" @click="showRoleModal = true" class="bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-full font-semibold transition shadow-lg shadow-orange-200/50 transform hover:-translate-y-0.5 cursor-pointer">Daftar Sekarang</button>
+                    @guest
+                        <a href="/login" class="text-gray-700 hover:text-brand font-medium transition">Login</a>
+                        <button type="button" @click="showRoleModal = true" class="bg-brand hover:bg-brand-hover text-white px-6 py-2.5 rounded-full font-semibold transition shadow-lg shadow-orange-200/50 transform hover:-translate-y-0.5 cursor-pointer">Daftar Sekarang</button>
+                    @else
+                        @if(auth()->user()->role === 'owner')
+                            <a href="{{ route('owner.dashboard') }}" class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-full font-semibold text-sm transition shadow-sm">
+                                <i class="fa-solid fa-crown text-amber-400"></i>
+                                <span>Portal Owner</span>
+                            </a>
+                        @elseif(auth()->user()->role === 'admin_rental')
+                            <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center gap-2 bg-brand hover:bg-brand-hover text-white px-5 py-2.5 rounded-full font-semibold text-sm transition shadow-sm">
+                                <i class="fa-solid fa-gauge"></i>
+                                <span>Dashboard Admin</span>
+                            </a>
+                        @else
+                            <div class="relative" x-data="{ userMenuOpen: false }" @click.outside="userMenuOpen = false">
+                                <button type="button" @click="userMenuOpen = !userMenuOpen" class="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-gray-300 bg-white transition shadow-sm cursor-pointer">
+                                    <span class="w-8 h-8 rounded-full bg-brand-light text-brand flex items-center justify-center font-bold text-sm">
+                                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                    </span>
+                                    <span class="text-sm font-semibold text-gray-800 max-w-[120px] truncate">{{ auth()->user()->name }}</span>
+                                    <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
+                                </button>
+                                <div x-show="userMenuOpen" x-cloak class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50">
+                                    <a href="{{ route('customer.orders') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-medium">
+                                        <i class="fa-solid fa-receipt text-gray-400"></i> Pesanan Saya
+                                    </a>
+                                    <div class="border-t border-gray-100 my-1"></div>
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium cursor-pointer">
+                                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endif
+                    @endguest
                 </div>
                 
                 <!-- Mobile Menu Button -->
@@ -108,8 +153,23 @@
                 <a href="#harga" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Harga</a>
                 <a href="#kontak" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Kontak</a>
                 <div class="border-t border-gray-100 my-2"></div>
-                <a href="/login" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Login</a>
-                <button type="button" @click="open = false; showRoleModal = true" class="block w-full px-3 py-3 rounded-md text-base font-bold text-center text-white bg-brand hover:bg-brand-hover mt-4 cursor-pointer">Daftar Sekarang</button>
+                @guest
+                    <a href="/login" class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Login</a>
+                    <button type="button" @click="open = false; showRoleModal = true" class="block w-full px-3 py-3 rounded-md text-base font-bold text-center text-white bg-brand hover:bg-brand-hover mt-4 cursor-pointer">Daftar Sekarang</button>
+                @else
+                    @if(auth()->user()->role === 'owner')
+                        <a href="{{ route('owner.dashboard') }}" class="block px-3 py-3 rounded-md text-base font-semibold text-slate-900 hover:bg-gray-100">Portal Owner</a>
+                    @elseif(auth()->user()->role === 'admin_rental')
+                        <a href="{{ route('admin.dashboard') }}" class="block px-3 py-3 rounded-md text-base font-semibold text-brand hover:bg-brand-light">Dashboard Admin</a>
+                    @else
+                        <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase">Akun: {{ auth()->user()->name }}</div>
+                        <a href="{{ route('customer.orders') }}" class="block px-3 py-2.5 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Pesanan Saya</a>
+                    @endif
+                    <form method="POST" action="{{ route('logout') }}" class="mt-2">
+                        @csrf
+                        <button type="submit" class="w-full text-left block px-3 py-2.5 rounded-md text-base font-medium text-red-600 hover:bg-red-50 cursor-pointer">Keluar</button>
+                    </form>
+                @endguest
             </div>
         </div>
     </nav>
@@ -120,7 +180,7 @@
         <!-- Background Decoration -->
         <div class="absolute top-0 right-0 w-1/2 h-full bg-brand-light/30 rounded-bl-[100px] -z-10 hidden lg:block"></div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
             <div class="lg:grid lg:grid-cols-12 lg:gap-12 items-center">
 
                 <!-- ===== LEFT COLUMN: staggered fade-in-up via Alpine x-data/x-init ===== -->
@@ -144,7 +204,7 @@
                         x-transition:enter-start="opacity-0 -translate-y-4"
                         x-transition:enter-end="opacity-100 translate-y-0"
                         style="display:none"
-                        class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold text-brand bg-brand-light mb-6 border border-orange-200"
+                        class="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold text-brand bg-brand-light mb-4 border border-orange-200"
                     >
                         <span class="flex h-2 w-2 rounded-full bg-brand mr-2 animate-pulse"></span>
                         Platform Manajemen Rental #1
@@ -173,7 +233,7 @@
                         x-transition:enter-start="opacity-0 translate-y-6"
                         x-transition:enter-end="opacity-100 translate-y-0"
                         style="display:none"
-                        class="mt-6 text-base text-gray-600 sm:text-lg lg:text-xl leading-relaxed"
+                        class="mt-4 text-base text-gray-600 sm:text-lg lg:text-xl leading-relaxed"
                     >
                         Tinggalkan pencatatan manual. Pantau ketersediaan barang, jadwal booking, transaksi, hingga laporan kerusakan unit secara real-time.
                     </p>
@@ -185,7 +245,7 @@
                         x-transition:enter-start="opacity-0 translate-y-6"
                         x-transition:enter-end="opacity-100 translate-y-0"
                         style="display:none"
-                        class="mt-10 flex flex-col sm:flex-row gap-4 sm:justify-center lg:justify-start"
+                        class="mt-7 flex flex-col sm:flex-row gap-4 sm:justify-center lg:justify-start"
                     >
                         <button type="button" @click="showRoleModal = true" class="inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-bold rounded-full shadow-lg shadow-orange-200/50 text-white bg-brand hover:bg-brand-hover hover:-translate-y-1 transition duration-300 cursor-pointer">
                             Daftar Sekarang
@@ -200,12 +260,12 @@
                         x-transition:enter-start="opacity-0 translate-y-6"
                         x-transition:enter-end="opacity-100 translate-y-0"
                         style="display:none"
-                        class="mt-6 flex items-center gap-4 text-sm text-gray-500 sm:justify-center lg:justify-start"
+                        class="mt-7 flex items-center gap-4 text-sm text-gray-500 sm:justify-center lg:justify-start"
                     >
                         <div class="flex -space-x-2">
-                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=1" alt="User">
-                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=2" alt="User">
-                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=3" alt="User">
+                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=1" alt="User" loading="lazy">
+                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=2" alt="User" loading="lazy">
+                            <img class="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=3" alt="User" loading="lazy">
                         </div>
                         <p>Dipercaya oleh 500+ pemilik rental</p>
                     </div>
@@ -215,7 +275,7 @@
                 <div
                     x-data="{ showCard: false }"
                     x-init="setTimeout(() => showCard = true, 900)"
-                    class="mt-16 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6"
+                    class="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6"
                 >
                     <div
                         x-show="showCard"
@@ -234,77 +294,77 @@
     <!-- HERO SECTION END -->
 
     <!-- FEATURES SECTION START -->
-    <section id="fitur" class="py-24 bg-gray-50">
+    <section id="fitur" class="py-20 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Section Heading --}}
             <div 
                 x-data="{ shown: false }" x-intersect.once="shown = true"
-                class="text-center max-w-3xl mx-auto mb-16 transition-all duration-1000 ease-out"
+                class="text-center max-w-3xl mx-auto mb-12 transition-all duration-1000 ease-out"
                 :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'"
             >
-                <h2 class="text-brand font-bold tracking-widest uppercase text-sm mb-3">Fitur Unggulan</h2>
+                <h2 class="text-brand font-bold tracking-widest uppercase text-sm mb-2">Fitur Unggulan</h2>
                 <p class="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                     Didesain Khusus untuk Rental Fisik
                 </p>
-                <p class="mt-4 max-w-2xl text-lg text-gray-600 mx-auto">
+                <p class="mt-3 max-w-2xl text-base sm:text-lg text-gray-600 mx-auto">
                     Bukan sekadar sistem kasir, RentalBase memahami alur kerja penyewaan barang dari awal pemesanan hingga pengembalian.
                 </p>
             </div>
 
             {{-- Feature Cards with Staggered Scroll Animation --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                 <!-- Feature 1 -->
                 <div 
                     x-data="{ shown: false }" x-intersect.once="shown = true"
-                    class="group bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-2xl hover:-translate-y-2 hover:border-orange-100 transition-all duration-1000 ease-out delay-100 cursor-default"
+                    class="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-2xl hover:-translate-y-2 hover:border-orange-100 transition-all duration-1000 ease-out delay-100 cursor-default"
                     :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-24'"
                 >
-                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all duration-300">
+                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all duration-300">
                         <i class="fa-solid fa-calendar-check"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-brand transition-colors duration-300">Kalender Booking</h3>
-                    <p class="text-gray-600 leading-relaxed">Atur jadwal ketersediaan unit secara visual. Bebas dari risiko bentrok penyewaan (double booking).</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-brand transition-colors duration-300">Kalender Booking</h3>
+                    <p class="text-gray-600 leading-relaxed text-sm">Atur jadwal ketersediaan unit secara visual. Bebas dari risiko bentrok penyewaan (double booking).</p>
                 </div>
 
                 <!-- Feature 2 -->
                 <div 
                     x-data="{ shown: false }" x-intersect.once="shown = true"
-                    class="group bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-2xl hover:-translate-y-2 hover:border-orange-100 transition-all duration-1000 ease-out delay-300 cursor-default"
+                    class="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-2xl hover:-translate-y-2 hover:border-orange-100 transition-all duration-1000 ease-out delay-300 cursor-default"
                     :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-24'"
                 >
-                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all duration-300">
+                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all duration-300">
                         <i class="fa-solid fa-boxes-stacked"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-brand transition-colors duration-300">Inventaris Cerdas</h3>
-                    <p class="text-gray-600 leading-relaxed">Lacak status barang (tersedia, disewa, rusak). Catat riwayat perbaikan tiap unit dengan detail.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-brand transition-colors duration-300">Inventaris Cerdas</h3>
+                    <p class="text-gray-600 leading-relaxed text-sm">Lacak status barang (tersedia, disewa, rusak). Catat riwayat perbaikan tiap unit dengan detail.</p>
                 </div>
 
                 <!-- Feature 3 -->
                 <div 
                     x-data="{ shown: false }" x-intersect.once="shown = true"
-                    class="group bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-2xl hover:-translate-y-2 hover:border-orange-100 transition-all duration-1000 ease-out delay-500 cursor-default"
+                    class="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-2xl hover:-translate-y-2 hover:border-orange-100 transition-all duration-1000 ease-out delay-500 cursor-default"
                     :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-24'"
                 >
-                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all duration-300">
+                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all duration-300">
                         <i class="fa-solid fa-file-invoice-dollar"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-brand transition-colors duration-300">Faktur &amp; Denda</h3>
-                    <p class="text-gray-600 leading-relaxed">Buat invoice otomatis, catat deposit, dan kalkulasi denda keterlambatan secara instan.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-brand transition-colors duration-300">Faktur &amp; Denda</h3>
+                    <p class="text-gray-600 leading-relaxed text-sm">Buat invoice otomatis, catat deposit, dan kalkulasi denda keterlambatan secara instan.</p>
                 </div>
 
                 <!-- Feature 4 -->
                 <div 
                     x-data="{ shown: false }" x-intersect.once="shown = true"
-                    class="group bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-2xl hover:-translate-y-2 hover:border-orange-100 transition-all duration-1000 ease-out delay-700 cursor-default"
+                    class="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-2xl hover:-translate-y-2 hover:border-orange-100 transition-all duration-1000 ease-out delay-700 cursor-default"
                     :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-24'"
                 >
-                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all duration-300">
+                    <div class="w-14 h-14 bg-brand-light text-brand rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-brand group-hover:text-white transition-all duration-300">
                         <i class="fa-solid fa-chart-line"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-brand transition-colors duration-300">Laporan Analitik</h3>
-                    <p class="text-gray-600 leading-relaxed">Analisis omzet, unit paling laris, dan performa bisnis Anda melalui dashboard interaktif.</p>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-brand transition-colors duration-300">Laporan Analitik</h3>
+                    <p class="text-gray-600 leading-relaxed text-sm">Analisis omzet, unit paling laris, dan performa bisnis Anda melalui dashboard interaktif.</p>
                 </div>
 
             </div>
@@ -326,7 +386,7 @@
     @endphp
 
     <!-- TENANT SHOWCASE SECTION START -->
-    <section id="mitra-rental" class="py-24 bg-white relative border-b border-gray-100" 
+    <section id="mitra-rental" class="py-20 bg-white relative border-b border-gray-100" 
         x-data="{ 
             shown: false,
             search: '',
@@ -354,14 +414,14 @@
 
             {{-- Section Heading --}}
             <div
-                class="text-center max-w-3xl mx-auto mb-10 transition-all duration-700 ease-out"
+                class="text-center max-w-3xl mx-auto mb-8 transition-all duration-700 ease-out"
                 :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
             >
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-brand border border-orange-200/80 mb-3 shadow-2xs">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-50 text-brand border border-orange-200/80 mb-2.5 shadow-2xs">
                     <span class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span>
                     Ekosistem RentalBase
                 </div>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-2.5">
                     Jelajahi Toko Mitra yang Telah Bergabung
                 </h2>
                 <p class="text-gray-600 text-base max-w-2xl mx-auto leading-relaxed">
@@ -428,7 +488,7 @@
                 </div>
 
                 {{-- Tenant Grid --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach($tenants as $tenant)
                         @php
                             $profile = $tenant->tenantProfile;
@@ -453,6 +513,7 @@
                                         @if($logoUrl)
                                             <img src="{{ $logoUrl }}" 
                                                  alt="{{ $tenantName }}"
+                                                 loading="lazy"
                                                  class="w-full h-full object-contain p-1 bg-white"
                                                  onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';">
                                             <span class="hidden font-black text-xl w-full h-full items-center justify-center">{{ $initial }}</span>
@@ -544,22 +605,25 @@
     <!-- TENANT SHOWCASE SECTION END -->
 
     <!-- PRICING SECTION START -->
-    <section id="harga" class="py-24 bg-white relative" x-data="{ shown: false }" x-intersect.once="shown = true">
+    <section id="harga" class="py-20 bg-gray-50/70 relative border-b border-gray-100" x-data="{ shown: false }" x-intersect.once="shown = true">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Section Heading --}}
             <div
-                class="text-center max-w-3xl mx-auto mb-20 transition-all duration-700 ease-out"
+                class="text-center max-w-3xl mx-auto mb-12 transition-all duration-700 ease-out"
                 :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
             >
-                <h2 class="text-brand font-bold tracking-widest uppercase text-sm mb-3">Harga Langganan</h2>
+                <h2 class="text-brand font-bold tracking-widest uppercase text-sm mb-2">Harga Langganan</h2>
                 <p class="text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                     Investasi Tepat untuk Usaha Anda
+                </p>
+                <p class="mt-3 max-w-2xl text-base text-gray-600 mx-auto">
+                    Pilih paket sesuai skala unit inventaris dan kebutuhan operasional toko rental Anda.
                 </p>
             </div>
 
             {{-- Pricing Cards with stagger --}}
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
                 @if(isset($packages))
                     @foreach($packages as $index => $pkg)
                         @php
@@ -568,7 +632,7 @@
                             $delay = $delays[$index] ?? 'delay-[100ms]';
                         @endphp
                         <div
-                            class="bg-white border-2 {{ $isPopular ? 'border-brand rounded-3xl p-8 shadow-xl relative transform lg:-translate-y-4' : 'border-gray-200 rounded-3xl p-8 shadow-sm' }} flex flex-col transition-all duration-700 ease-out {{ $delay }}"
+                            class="bg-white border-2 {{ $isPopular ? 'border-brand rounded-3xl p-7 shadow-xl relative transform lg:-translate-y-3' : 'border-gray-200 rounded-3xl p-7 shadow-sm' }} flex flex-col transition-all duration-700 ease-out {{ $delay }}"
                             :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'"
                         >
                             @if($isPopular)
@@ -605,7 +669,7 @@
     <!-- PRICING SECTION END -->
 
     <!-- CTA SECTION START -->
-    <section class="py-20 bg-white" x-data="{ shown: false }" x-intersect.once="shown = true">
+    <section class="py-16 bg-white" x-data="{ shown: false }" x-intersect.once="shown = true">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div
                 class="bg-brand rounded-3xl shadow-xl overflow-hidden relative transition-all duration-700 ease-out"
@@ -614,7 +678,7 @@
                 <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                 <div class="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-white opacity-20 rounded-full blur-3xl"></div>
 
-                <div class="relative px-8 py-16 sm:px-16 sm:py-20 text-center">
+                <div class="relative px-8 py-14 sm:px-14 sm:py-16 text-center">
                     <h2
                         class="text-3xl font-extrabold text-white sm:text-4xl mb-4 transition-all duration-700 ease-out delay-[150ms]"
                         :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
@@ -622,7 +686,7 @@
                         Siap Membawa Bisnis Rental Anda ke Level Berikutnya?
                     </h2>
                     <p
-                        class="text-orange-100 text-lg mb-10 max-w-2xl mx-auto transition-all duration-700 ease-out delay-[300ms]"
+                        class="text-orange-100 text-base sm:text-lg mb-8 max-w-2xl mx-auto transition-all duration-700 ease-out delay-[300ms]"
                         :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'"
                     >
                         Ribuan pemilik rental telah menghemat waktu dan meningkatkan profit mereka. Mulai kelola dengan profesional sekarang.
@@ -642,9 +706,9 @@
     <!-- CTA SECTION END -->
 
     <!-- FOOTER START -->
-    <footer id="kontak" class="bg-white border-t border-gray-200 pt-16 pb-8">
+    <footer id="kontak" class="bg-white border-t border-gray-200 pt-14 pb-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8 mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8 mb-10">
                 <div class="md:col-span-2">
                     <a href="/" 
                        x-data="{
@@ -671,9 +735,7 @@
                        @click="handleLogoClick($event)"
                        class="flex-shrink-0 flex items-center gap-2 mb-4 cursor-pointer select-none"
                        title="RentalBase">
-                        <div class="w-8 h-8 bg-brand text-white rounded-lg flex items-center justify-center font-bold">
-                            <i class="fa-solid fa-box-open"></i>
-                        </div>
+                        <img src="{{ asset('images/rentalbase-icon.svg') }}" alt="RentalBase" class="w-8 h-8 drop-shadow-xs">
                         <span class="font-extrabold text-xl text-gray-900 tracking-tight">Rental<span class="text-brand">Base</span></span>
                     </a>
                     <p class="text-gray-500 max-w-sm mb-6 leading-relaxed">Platform SaaS andalan pengusaha rental. Mendukung manajemen penyewaan alat fotografi, kendaraan, perlengkapan bayi, dan masih banyak lagi.</p>

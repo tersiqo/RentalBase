@@ -62,12 +62,12 @@ class IdentityGuarantee extends Model
         $status = strtolower(trim($this->status ?? self::STATUS_MENUNGGU));
 
         return match ($status) {
-            self::STATUS_MENUNGGU => 'bg-amber-50 text-amber-800 border border-amber-200',
+            self::STATUS_MENUNGGU => 'bg-amber-50 text-amber-700',
             self::STATUS_DIVERIFIKASI,
             self::STATUS_DITITIPKAN,
-            self::STATUS_DIKEMBALIKAN => 'bg-emerald-50 text-emerald-800 border border-emerald-200',
-            self::STATUS_DITOLAK => 'bg-red-50 text-red-800 border border-red-200',
-            default => 'bg-gray-50 text-gray-700 border border-gray-200',
+            self::STATUS_DIKEMBALIKAN => 'bg-emerald-50 text-emerald-700',
+            self::STATUS_DITOLAK => 'bg-red-50 text-red-700',
+            default => 'bg-slate-100 text-slate-700',
         };
     }
 

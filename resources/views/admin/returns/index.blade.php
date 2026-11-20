@@ -219,11 +219,11 @@
                             <td class="px-6 py-4 align-top text-center whitespace-nowrap space-y-1.5">
                                 <div>
                                     @if($isLate)
-                                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
+                                        <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-rose-50 text-rose-700">
                                             Telat
                                         </span>
                                     @else
-                                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-50 text-emerald-700">
                                             Tepat Waktu
                                         </span>
                                     @endif
@@ -231,13 +231,13 @@
 
                                 @if($order->status === 'menunggu_pembayaran_denda')
                                     <div>
-                                        <span class="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                        <span class="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-amber-50 text-amber-700">
                                             Menunggu Bayar Denda
                                         </span>
                                     </div>
                                 @elseif($order->status === 'dikembalikan')
                                     <div>
-                                        <span class="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                        <span class="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-blue-50 text-blue-700">
                                             Diajukan Customer
                                         </span>
                                     </div>
@@ -247,11 +247,11 @@
                             {{-- 5. Status Fisik --}}
                             <td class="px-6 py-4 align-top text-center whitespace-nowrap">
                                 @if($checkedReturnCount > 0)
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-50 text-emerald-700">
                                         Sudah Dicek ({{ $checkedReturnCount }}/{{ max($totalUnitsCount, $checkedReturnCount) }})
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-50 text-amber-700">
                                         Belum Cek Fisik
                                     </span>
                                 @endif
@@ -260,7 +260,7 @@
                             {{-- 6. Aksi --}}
                             <td class="px-6 py-4 align-middle text-center whitespace-nowrap">
                                 <div class="inline-flex items-center justify-center gap-2">
-                                    <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id]) }}"
+                                    <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id, 'return_to' => 'returns']) }}"
                                        title="Klik untuk mencatat pemeriksaan kondisi fisik barang"
                                        class="inline-flex items-center justify-center px-3 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md transition">
                                         Cek Fisik
@@ -386,6 +386,7 @@
                                         <a :href="activeOrder.late_fee_proof_url" target="_blank" rel="noopener noreferrer" class="block">
                                             <img :src="activeOrder.late_fee_proof_url"
                                                  alt="Bukti Pembayaran Denda"
+                                                 loading="lazy"
                                                  class="max-h-40 w-auto rounded-md border border-blue-200 bg-white p-1 object-contain shadow-xs">
                                         </a>
                                         <a :href="activeOrder.late_fee_proof_url" target="_blank" rel="noopener noreferrer"
@@ -405,7 +406,7 @@
                                    x-text="activeOrder.checked_return_count > 0 ? 'Unit sudah diperiksa (' + activeOrder.checked_return_count + ' unit).' : 'Pastikan kondisi fisik barang telah diperiksa.'"></p>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
-                                <a :href="'/admin/condition-checks?order_id=' + activeOrder.id"
+                                <a :href="'/admin/condition-checks?order_id=' + activeOrder.id + '&return_to=returns'"
                                    class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold rounded-md transition">
                                     Cek Fisik
                                 </a>
@@ -486,7 +487,7 @@
                                         <svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                         <span>Bukti Pembayaran Denda Customer</span>
                                     </span>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700">
                                         Perlu Verifikasi
                                     </span>
                                 </div>

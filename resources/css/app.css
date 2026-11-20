@@ -85,3 +85,8 @@
 .hide-scroll-bar::-webkit-scrollbar {
     display: none; 
 }
+
+/* Defensive constraint agar elemen form tidak pernah meluap/overflow dari kartu pembungkusnya */
+select, input, textarea {
+    max-width: 100%;
+}
