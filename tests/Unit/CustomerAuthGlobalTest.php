@@ -2,10 +2,15 @@
 
 namespace Tests\Unit;
 
+use App\Http\Controllers\Auth\GoogleController;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialiteUser;
+use Mockery;
 use Tests\TestCase;
 
 class CustomerAuthGlobalTest extends TestCase
@@ -161,6 +166,60 @@ class CustomerAuthGlobalTest extends TestCase
 
         $response->assertSessionHasErrors('email');
         $this->assertGuest();
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
+
+    public function test_ut_01_013_google_oauth_redirect_instance(): void
+    {
+        $provider = Mockery::mock('Laravel\Socialite\Two\GoogleProvider');
+        $provider->shouldReceive('redirect')
+            ->once()
+            ->andReturn(redirect('https://accounts.google.com/o/oauth2/auth'));
+
+        Socialite::shouldReceive('driver')
+            ->with('google')
+            ->once()
+            ->andReturn($provider);
+
+        $controller = new GoogleController();
+        $response = $controller->redirect();
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertSame('https://accounts.google.com/o/oauth2/auth', $response->getTargetUrl());
+    }
+
+    public function test_ut_01_014_google_oauth_callback_user_provisioning(): void
+    {
+        $socialiteUser = new SocialiteUser();
+        $socialiteUser->id = 'google-uid-789';
+        $socialiteUser->name = 'Fiza Tester';
+        $socialiteUser->email = 'fiza.tester@rentalbase.com';
+
+        $provider = Mockery::mock('Laravel\Socialite\Two\GoogleProvider');
+        $provider->shouldReceive('user')
+            ->once()
+            ->andReturn($socialiteUser);
+
+        Socialite::shouldReceive('driver')
+            ->with('google')
+            ->once()
+            ->andReturn($provider);
+
+        $controller = new GoogleController();
+        $response = $controller->callback();
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertDatabaseHas('users', [
+            'email' => 'fiza.tester@rentalbase.com',
+            'role' => 'admin_rental',
+            'status' => 'pending_setup',
+        ]);
+        $this->assertAuthenticated();
     }
 }
 
