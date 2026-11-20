@@ -11,7 +11,9 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ChatBackendLogicTest extends TestCase
@@ -318,6 +320,62 @@ class ChatBackendLogicTest extends TestCase
             ->assertJsonPath('message.context_data.order_number', 'ORD-TEST-999');
 
         $this->assertStringContainsString('/my-orders/' . $order->id, $sendResp->json('message.context_data.url'));
+    }
+
+    public function test_it_04_036_admin_can_access_chat_inbox_page(): void
+    {
+        $this->test_admin_can_access_chat_inbox_page();
+    }
+
+    public function test_it_04_037_admin_can_reply_to_customer_and_dispatches_event(): void
+    {
+        $this->test_admin_can_reply_to_customer_and_dispatches_event();
+    }
+
+    public function test_it_04_038_admin_can_send_message_with_image_attachment(): void
+    {
+        Storage::fake('public');
+
+        $conv = ChatConversation::create([
+            'client_id'   => $this->clientA->id,
+            'customer_id' => $this->customerA->id,
+        ]);
+
+        $file = UploadedFile::fake()->image('unit-condition.png', 600, 600);
+
+        $response = $this->actingAs($this->adminA)
+            ->postJson(route('admin.chat.send', $conv->id), [
+                'message'    => 'Berikut foto kondisi fisik unit sebelum dikirim.',
+                'attachment' => $file,
+            ]);
+
+        $response->assertStatus(201);
+        $response->assertJsonPath('success', true);
+        $this->assertNotNull($response->json('message.attachment_url'));
+
+        $this->assertDatabaseHas('chat_messages', [
+            'conversation_id' => $conv->id,
+            'sender_role'     => 'admin',
+            'message'         => 'Berikut foto kondisi fisik unit sebelum dikirim.',
+        ]);
+
+        $savedMsg = ChatMessage::where('conversation_id', $conv->id)->where('sender_role', 'admin')->first();
+        Storage::disk('public')->assertExists($savedMsg->attachment_path);
+    }
+
+    public function test_it_04_039_marking_chat_as_read_dispatches_chat_messages_read_event(): void
+    {
+        $this->test_marking_chat_as_read_dispatches_chat_messages_read_event();
+    }
+
+    public function test_it_04_040_order_context_messaging_and_detail_linking(): void
+    {
+        $this->test_order_context_messaging_and_detail_linking();
+    }
+
+    public function test_it_04_041_multi_tenant_isolation_admin_cannot_access_other_store_conversation(): void
+    {
+        $this->test_multi_tenant_isolation_admin_cannot_access_other_store_conversation();
     }
 }
 
