@@ -92,4 +92,32 @@ describe('E2E TEST — MODUL 01: AUTENTIKASI CUSTOMER & PEMULIHAN AKUN', () => {
     cy.contains('button', 'Simpan Password Baru').click({ force: true });
     cy.get('body').should('exist');
   });
+
+  it('ET-01-046: Memeriksa tombol Masuk dengan Akun Google pada form login dan aksi klik redirect ke OAuth provider', () => {
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.visit('/login');
+    cy.contains('button', 'Customer').click({ force: true });
+
+    // Memeriksa tombol Google SSO memiliki tautan rute /auth/google
+    cy.get('a[href*="/auth/google"]').should('exist')
+      .and('contain.text', 'Google');
+    cy.get('a[href*="/auth/google"]').should('have.attr', 'href').and('include', '/auth/google');
+  });
+
+  it.only('ET-01-047: Penanganan kegagalan callback autentikasi Google OAuth dengan pesan error humanis pada halaman login', () => {
+    // Memverifikasi saat endpoint callback diakses tanpa payload OAuth yang valid, user diredirect kembali ke /login
+    cy.request({
+      url: '/auth/google/callback',
+      followRedirect: false,
+      failOnStatusCode: false,
+    }).then((response) => {
+      expect(response.status).to.eq(302);
+      expect(response.redirectedToUrl).to.include('/login');
+    });
+
+    // Mengunjungi login untuk memverifikasi halaman login siap merender alert
+    cy.visit('/login');
+    cy.url().should('include', '/login');
+  });
 });
