@@ -17,7 +17,7 @@ Cypress.Commands.add('loginCustomer', (email = 'rizky@gmail.com', password = 'pa
 });
 
 Cypress.Commands.add('loginAdmin', (email = 'budi@babyrental.com', password = 'password123') => {
-  cy.session(['admin', email], () => {
+  cy.session(['admin', email, password], () => {
     cy.visit('/login');
     cy.contains('button', 'Admin Toko').click({ force: true });
     cy.get('#email').clear().type(email);
