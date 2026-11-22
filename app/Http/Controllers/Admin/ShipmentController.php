@@ -35,17 +35,18 @@ class ShipmentController extends Controller
         $from   = $request->input('from');
         $to     = $request->input('to');
 
-        // Eager load relasi user, produk, dan unit yang dialokasikan
-        $query = Order::with(['user', 'orderItems.product', 'orderItems.orderItemUnits.equipmentUnit'])
+        // Eager load relasi user, produk, pengiriman, dan unit yang dialokasikan
+        $query = Order::with(['user', 'shipment', 'orderItems.product', 'orderItems.orderItemUnits.equipmentUnit'])
             ->where('client_id', $client->id)
-            ->whereIn('status', ['siap_kirim', 'diproses']);
+            ->whereIn('status', ['siap_kirim', 'diproses', 'dikirim']);
 
         // Filter pencarian
         if (! empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('order_number', 'ILIKE', "%{$search}%")
-                  ->orWhereHas('user', function ($u) use ($search) {
-                      $u->where('name', 'ILIKE', "%{$search}%");
+            $likeOp = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $query->where(function ($q) use ($search, $likeOp) {
+                $q->where('order_number', $likeOp, "%{$search}%")
+                  ->orWhereHas('user', function ($u) use ($search, $likeOp) {
+                      $u->where('name', $likeOp, "%{$search}%");
                   });
             });
         }
@@ -188,5 +189,68 @@ class ShipmentController extends Controller
             : "Pesanan {$orderLabel} berhasil diproses dan dikirim via {$request->courier_name} (Resi: {$request->tracking_number})!";
 
         return redirect()->route('admin.shipments.index')->with('success', $successMsg);
+    }
+
+    /**
+     * Menandai pesanan kurir yang sedang dikirim telah diterima oleh pelanggan (sedang_disewa).
+     */
+    public function markDelivered(Request $request, Order $order)
+    {
+        $user = Auth::user();
+        if (! $user) {
+            $user = User::whereNotNull('client_id')->first();
+        }
+        $client = $user?->client;
+
+        if (! $client || $order->client_id !== $client->id) {
+            abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
+        }
+
+        if ($order->status !== 'dikirim') {
+            return redirect()->back()
+                ->with('error', 'Pesanan ini tidak sedang dalam status pengiriman kurir.');
+        }
+
+        DB::transaction(function () use ($order, $request, $user) {
+            $order->update(['status' => 'sedang_disewa']);
+
+            if ($order->shipment) {
+                $order->shipment->update([
+                    'status'       => 'diterima',
+                    'delivered_at' => now(),
+                ]);
+            }
+
+            foreach ($order->orderItems as $item) {
+                foreach ($item->orderItemUnits as $oiu) {
+                    $oiu->equipmentUnit?->update(['status' => 'disewa']);
+                }
+            }
+
+            $wasSynced = $order->syncRentalHoursOnHandover(now());
+            $syncNote = $wasSynced
+                ? sprintf(' Jam mulai & batas kembali sewa disinkronkan ke waktu terima (%s WIB).', now()->format('H:i'))
+                : '';
+
+            ActivityLog::create([
+                'client_id'   => $order->client_id,
+                'user_id'     => $user->id,
+                'action'      => 'order_delivered',
+                'module'      => 'shipments',
+                'description' => sprintf(
+                    'Pesanan #%s ditandai telah diterima pelanggan oleh %s (status berubah ke Sedang Disewa).%s',
+                    $order->order_number ?? $order->id,
+                    $user->name ?? 'Admin Toko',
+                    $syncNote
+                ),
+                'ip_address'  => $request->ip(),
+                'user_agent'  => $request->userAgent(),
+            ]);
+        });
+
+        $orderLabel = '#' . ($order->order_number ?? $order->id);
+
+        return redirect()->route('admin.shipments.index')
+            ->with('success', "Pesanan {$orderLabel} telah ditandai diterima pelanggan dan kini berstatus Sedang Disewa!");
     }
 }

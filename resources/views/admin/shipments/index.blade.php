@@ -166,12 +166,23 @@
                                     <div class="text-xs text-gray-600 mt-1 truncate max-w-[220px]" title="{{ $order->shipping_address ?? '-' }}">
                                         {{ $order->shipping_address ?: 'Alamat belum diatur' }}
                                     </div>
+                                    @if($order->status === 'dikirim' && $order->shipment)
+                                        <div class="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-[11px] font-semibold text-purple-700">
+                                            <span>{{ $order->shipment->courier_name ?? 'Kurir' }}</span>
+                                            <span class="text-purple-300">&bull;</span>
+                                            <span class="font-mono">{{ $order->shipment->tracking_number ?? '-' }}</span>
+                                        </div>
+                                    @endif
                                 @endif
                             </td>
 
                             {{-- 5. Status Unit --}}
                             <td class="px-6 py-4 align-top text-center whitespace-nowrap">
-                                @if($isReadyToShip)
+                                @if($order->status === 'dikirim')
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-50 text-purple-700">
+                                        Dalam Pengiriman
+                                    </span>
+                                @elseif($isReadyToShip)
                                     <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-50 text-emerald-700">
                                         Unit Siap ({{ $totalAlloc }}/{{ $totalReq }})
                                     </span>
@@ -188,7 +199,17 @@
 
                             {{-- 6. Aksi --}}
                             <td class="px-6 py-4 align-middle text-center whitespace-nowrap">
-                                @if(! $isReadyToShip)
+                                @if($order->status === 'dikirim')
+                                    <form method="POST" action="{{ route('admin.shipments.deliver', $order->id) }}" class="inline">
+                                        @csrf
+                                        <button type="submit"
+                                                title="Konfirmasi barang telah diterima oleh pelanggan agar masa sewa dimulai"
+                                                class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-sm cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                            <span>Tandai Diterima</span>
+                                        </button>
+                                    </form>
+                                @elseif(! $isReadyToShip)
                                     <a href="{{ route('admin.orders.show', $order->id) }}" 
                                        title="Klik untuk memilih unit fisik di Detail Pesanan"
                                        class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-md font-semibold text-xs transition shadow-sm">

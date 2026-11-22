@@ -352,4 +352,42 @@ class AdminShipmentTest extends TestCase
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'menunggu_pembayaran']);
         $this->assertDatabaseCount('shipments', 0);
     }
+
+    /**
+     * IT-SHP-011: Pesanan berstatus 'dikirim' tetap tampil di halaman Pengiriman dan dapat ditandai diterima oleh admin.
+     */
+    public function test_it_shp_011_admin_dapat_memantau_dan_menandai_pesanan_dikirim_sebagai_diterima(): void
+    {
+        $order = $this->createOrder(['status' => 'dikirim', 'order_number' => 'ORD-KURIR-777']);
+
+        Shipment::create([
+            'order_id'         => $order->id,
+            'shipping_method'  => 'kurir',
+            'courier_name'     => 'JNE Express',
+            'tracking_number'  => 'JNE-777888',
+            'delivery_address' => 'Jl. Sudirman No. 45, Jakarta',
+            'status'           => 'dikirim',
+            'shipped_at'       => now(),
+        ]);
+
+        // 1. Pesanan dikirim tetap terlihat di halaman Pengiriman
+        $indexRes = $this->actingAs($this->admin)->get(route('admin.shipments.index', ['search' => 'ORD-KURIR-777']));
+        $indexRes->assertOk();
+        $indexRes->assertSee('ORD-KURIR-777');
+        $indexRes->assertSee('JNE-777888');
+        $indexRes->assertSee('Tandai Diterima');
+
+        // 2. Admin menandai pesanan telah diterima pelanggan -> status menjadi sedang_disewa
+        $deliverRes = $this->actingAs($this->admin)->post(route('admin.shipments.deliver', $order));
+        $deliverRes->assertRedirect(route('admin.shipments.index'));
+
+        $this->assertDatabaseHas('orders', [
+            'id'     => $order->id,
+            'status' => 'sedang_disewa',
+        ]);
+        $this->assertDatabaseHas('shipments', [
+            'order_id' => $order->id,
+            'status'   => 'diterima',
+        ]);
+    }
 }

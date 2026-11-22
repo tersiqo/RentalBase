@@ -148,6 +148,7 @@ Route::prefix('admin')->middleware(['admin'])->name('admin.')->group(function ()
     Route::post('/orders/{order}/refund', [OrderController::class, 'processRefund'])->name('orders.refund');
     Route::get('/shipments', [ShipmentController::class, 'index'])->name('shipments.index');
     Route::post('/shipments/{order}/process', [ShipmentController::class, 'process'])->name('shipments.process');
+    Route::post('/shipments/{order}/deliver', [ShipmentController::class, 'markDelivered'])->name('shipments.deliver');
     Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
     Route::post('/returns/{order}/process', [ReturnController::class, 'process'])->name('returns.process');
     
