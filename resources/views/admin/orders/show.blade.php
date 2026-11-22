@@ -124,9 +124,20 @@
                 </a>
             </div>
         @elseif($order->status === 'dikirim')
-            <div class="flex items-center gap-2">
-                <a href="{{ route('admin.shipments.index', ['search' => $order->order_number]) }}"
-                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg transition shadow-xs">
+            <div class="flex items-center gap-2 flex-wrap">
+                {{-- Tombol Konfirmasi Diterima Pelanggan (Memecah Deadlock Alur Kurir) --}}
+                <form method="POST" action="{{ route('admin.shipments.delivered', $order->id) }}"
+                      onsubmit="return confirm('Konfirmasi bahwa paket pesanan #{{ $order->order_number ?? $order->id }} telah sampai dan diterima oleh pelanggan?\n\nStatus pesanan akan beralih menjadi \'Sedang Disewa\' dan langsung dapat diproses di menu Pengembalian.');">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-xs cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Tandai Sudah Diterima Pelanggan</span>
+                    </button>
+                </form>
+
+                <a href="{{ route('admin.shipments.index', ['search' => $order->order_number, 'status' => 'dikirim']) }}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-semibold rounded-lg transition shadow-2xs">
                     <span>Pantau di Pengiriman</span>
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </a>
@@ -184,6 +195,30 @@
         </div>
     @endif
 </div>
+
+{{-- Banner Info Pengiriman Kurir Berjalan (Jika status dikirim) --}}
+@if($order->status === 'dikirim')
+    <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-start gap-3 mb-6 shadow-2xs">
+        <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="flex-1">
+            <span class="font-bold block text-sm text-blue-950 mb-1">Pesanan Sedang Dalam Pengiriman Kurir</span>
+            <div class="text-blue-800 space-y-0.5">
+                <p>
+                    Ekspedisi: <strong class="font-semibold text-blue-900">{{ $order->shipment->courier_name ?? 'Kurir' }}</strong> &bull; 
+                    Nomor Resi: <strong class="font-mono font-bold text-blue-950">{{ $order->shipment->tracking_number ?? '-' }}</strong>
+                    @if($order->shipment?->shipped_at)
+                        &bull; Waktu Kirim: {{ $order->shipment->shipped_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') }} WIB
+                    @endif
+                </p>
+                <p class="text-blue-700">
+                    Bila paket sudah sampai atau dikonfirmasi oleh kurir/pelanggan, klik tombol <strong>"Tandai Sudah Diterima Pelanggan"</strong> di kanan atas agar status beralih menjadi <em>Sedang Disewa</em> dan langsung masuk ke menu Pengembalian.
+                </p>
+            </div>
+        </div>
+    </div>
+@endif
 
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
@@ -248,6 +283,14 @@
                             </span>
                         @endif
                     </p>
+                    @if($order->shipment && ! $order->isPickup())
+                        <div class="text-xs text-gray-500 mt-1">
+                            Kurir: <span class="font-medium text-gray-800">{{ $order->shipment->courier_name ?? 'Kurir' }}</span>
+                            @if($order->shipment->tracking_number)
+                                &bull; Resi: <span class="font-mono font-bold text-gray-800">{{ $order->shipment->tracking_number }}</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
 

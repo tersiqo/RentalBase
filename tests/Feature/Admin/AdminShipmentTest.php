@@ -6,6 +6,7 @@ use App\Events\OrderShipped;
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\EquipmentUnit;
+use App\Models\ActivityLog;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemUnit;
@@ -351,5 +352,94 @@ class AdminShipmentTest extends TestCase
         // Status pesanan seharusnya tetap 'menunggu_pembayaran' dan pengiriman tidak dibuat
         $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'menunggu_pembayaran']);
         $this->assertDatabaseCount('shipments', 0);
+    }
+
+    /**
+     * IT-SHP-011: Admin dapat menandai pesanan kirim via kurir telah sampai & diterima pelanggan (Pemutus Deadlock).
+     */
+    public function test_it_shp_011_admin_dapat_menandai_pesanan_kurir_telah_diterima_pelanggan(): void
+    {
+        $order = $this->createOrder(['status' => 'dikirim']);
+
+        Shipment::create([
+            'order_id'         => $order->id,
+            'shipping_method'  => 'kurir',
+            'courier_name'     => 'JNE Express',
+            'tracking_number'  => 'JNE-998877',
+            'delivery_address' => $order->shipping_address,
+            'status'           => 'dikirim',
+            'shipped_at'       => now()->subHours(2),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.shipments.delivered', $order));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Status pesanan berubah menjadi sedang_disewa
+        $this->assertDatabaseHas('orders', [
+            'id'     => $order->id,
+            'status' => 'sedang_disewa',
+        ]);
+
+        // Status shipment berubah menjadi diterima dan ada delivered_at
+        $this->assertDatabaseHas('shipments', [
+            'order_id' => $order->id,
+            'status'   => 'diterima',
+        ]);
+        $this->assertNotNull($order->fresh()->shipment->delivered_at);
+
+        // Unit fisik dipastikan berstatus 'disewa'
+        foreach ($order->fresh()->orderItems as $item) {
+            foreach ($item->orderItemUnits as $oiu) {
+                $this->assertSame('disewa', $oiu->equipmentUnit->status);
+            }
+        }
+
+        // Tercatat di ActivityLog
+        $this->assertDatabaseHas('activity_logs', [
+            'client_id' => $this->client->id,
+            'user_id'   => $this->admin->id,
+            'action'    => 'order_received_by_admin',
+            'module'    => 'shipments',
+        ]);
+    }
+
+    /**
+     * IT-SHP-012: Pencarian dan filter di daftar pengiriman dapat menemukan pesanan berstatus dikirim.
+     */
+    public function test_it_shp_012_pencarian_di_daftar_pengiriman_dapat_menemukan_pesanan_berstatus_dikirim(): void
+    {
+        $order = $this->createOrder([
+            'status'       => 'dikirim',
+            'order_number' => 'ORD-TRACK-8899',
+        ]);
+
+        Shipment::create([
+            'order_id'         => $order->id,
+            'shipping_method'  => 'kurir',
+            'courier_name'     => 'SiCepat',
+            'tracking_number'  => 'SC-77889900',
+            'delivery_address' => $order->shipping_address,
+            'status'           => 'dikirim',
+            'shipped_at'       => now()->subHour(),
+        ]);
+
+        // 1. Pencarian dengan search=ORD-TRACK-8899 (simulasi klik "Pantau di Pengiriman")
+        $responseSearch = $this->actingAs($this->admin)
+            ->get(route('admin.shipments.index', ['search' => 'ORD-TRACK-8899']));
+
+        $responseSearch->assertOk();
+        $responseSearch->assertSee('ORD-TRACK-8899');
+        $responseSearch->assertSee('Sedang Dikirim');
+        $responseSearch->assertSee('Tandai Diterima');
+
+        // 2. Filter dengan status=dikirim
+        $responseFilter = $this->actingAs($this->admin)
+            ->get(route('admin.shipments.index', ['status' => 'dikirim']));
+
+        $responseFilter->assertOk();
+        $responseFilter->assertSee('ORD-TRACK-8899');
     }
 }
