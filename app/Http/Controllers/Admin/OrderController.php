@@ -429,7 +429,7 @@ class OrderController extends Controller
             $lockedOrder = Order::where('client_id', $client->id)->lockForUpdate()->findOrFail($order->id);
 
             // Hanya boleh batalkan alokasi jika pesanan belum dikirim / sedang disewa
-            if (! in_array($lockedOrder->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim'])) {
+            if (! in_array($lockedOrder->status, ['menunggu_konfirmasi', 'menunggu_pembayaran', 'belum_dibayar', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim', 'diproses', 'dikonfirmasi'])) {
                 return redirect()->back()->with('error', 'Alokasi unit tidak dapat dibatalkan pada status pesanan saat ini.');
             }
 

@@ -10,10 +10,14 @@
         $storeLogoUrl = storage_url($storeLogo);
     }
 
-    // Notifikasi operasional untuk toko aktif
+    // Notifikasi operasional & langganan aktif untuk toko
     $adminNotifications = collect();
     $adminUnreadNotificationsCount = 0;
+    $activeLayoutSub = $subscription ?? null;
     if ($currentClient) {
+        if (! $activeLayoutSub) {
+            $activeLayoutSub = $currentClient->activeSubscription()->first() ?? $currentClient->latestSubscription;
+        }
         $adminNotifications = \App\Models\Notification::where('client_id', $currentClient->id)
             ->latest()
             ->take(5)
@@ -24,6 +28,8 @@
         $adminUnreadChatCount = (int) \App\Models\ChatConversation::where('client_id', $currentClient->id)
             ->sum('unread_by_admin');
     }
+    $activePlanLabel = $activeLayoutSub?->plan_name ?? 'Starter';
+    $activePlanStatus = $activeLayoutSub?->status === 'aktif' ? 'Aktif' : ucfirst(str_replace('_', ' ', $activeLayoutSub?->status ?? 'Aktif'));
 @endphp
 <!DOCTYPE html>
 <html lang="id" class="h-full">
@@ -494,7 +500,7 @@
        title="Kelola Langganan & Upgrade Paket"
        class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-50/80 hover:bg-orange-100/90 border border-orange-200/60 rounded-full transition-colors cursor-pointer group shrink-0">
         <span class="w-2 h-2 rounded-full bg-orange-500 group-hover:scale-125 transition-transform"></span>
-        <span class="text-xs font-bold text-orange-700">Paket: {{ $subscription->plan_name ?? 'Business' }} (Aktif)</span>
+        <span class="text-xs font-bold text-orange-700">Paket: {{ $activePlanLabel }} ({{ $activePlanStatus }})</span>
     </a>
 
     {{-- Bell Notification Dropdown --}}

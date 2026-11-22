@@ -38,6 +38,7 @@ class ReturnController extends Controller
                 'orderItems.product',
                 'orderItems.orderItemUnits.equipmentUnit.conditionChecks',
                 'returnModel',
+                'damageCases',
             ])
             ->where('client_id', $client->id)
             ->whereIn('status', ['sedang_disewa', 'dikembalikan', 'menunggu_pembayaran_denda']);
@@ -97,7 +98,13 @@ class ReturnController extends Controller
 
         DB::beginTransaction();
         try {
-            $order->loadMissing(['orderItems.product', 'orderItems.orderItemUnits.equipmentUnit', 'returnModel']);
+            $order->loadMissing([
+                'orderItems.product',
+                'orderItems.orderItemUnits.equipmentUnit',
+                'returnModel',
+                'damageCases',
+                'identityGuarantee',
+            ]);
 
             $now = Carbon::now();
             $dueDate = Carbon::parse($order->rental_end_date);
@@ -141,17 +148,47 @@ class ReturnController extends Controller
                 $order->status = 'menunggu_pembayaran_denda';
                 $msg = 'Tagihan denda sebesar Rp ' . number_format($lateFeeAmount, 0, ',', '.') . " untuk pesanan #{$order->order_number} berhasil diterbitkan.";
             } else {
+                // Cegah penyelesaian pesanan bila masih ada Kasus Kerusakan yang aktif/belum lunas
+                $hasUnresolvedDamageCase = $order->damageCases->contains(function ($damageCase) {
+                    $caseStatus = strtolower(trim(str_replace(['-', ' '], '_', $damageCase->case_status ?? 'terbuka')));
+                    $paymentStatus = strtolower(trim(str_replace(['-', ' '], '_', $damageCase->payment_status ?? 'belum_dibayar')));
+
+                    if ($caseStatus === 'dibatalkan') {
+                        return false;
+                    }
+
+                    if (in_array($caseStatus, ['selesai', 'lunas'], true) || $paymentStatus === 'lunas') {
+                        return false;
+                    }
+
+                    return true;
+                });
+
+                if ($hasUnresolvedDamageCase) {
+                    DB::rollBack();
+
+                    return redirect()->route('admin.returns.index')->with(
+                        'error',
+                        "Pesanan #{$order->order_number} tidak dapat diselesaikan karena masih memiliki Kasus Kerusakan yang belum diselesaikan/dilunasi. Selesaikan atau verifikasi kompensasi di menu Kasus Kerusakan terlebih dahulu."
+                    );
+                }
+
                 // Barang kembali normal ATAU denda sudah lunas (termasuk jika customer sudah unggah late_fee_proof) / dimaafkan
                 $return->late_fee_status = (! empty($return->late_fee_proof) || $lateFeeAmount > 0) ? 'lunas' : 'tidak_ada';
                 $return->return_status = 'selesai';
                 $order->status = 'selesai';
 
-                // Kembalikan status unit fisik yang disewa menjadi 'tersedia' (jika tidak sedang rusak/maintenance)
+                // Kembalikan status unit fisik yang disewa menjadi 'tersedia' (unit rusak/maintenance tetap dikunci)
+                $lockedDamagedUnits = 0;
                 foreach ($order->orderItems as $item) {
                     foreach ($item->orderItemUnits as $oiu) {
                         $unit = $oiu->equipmentUnit;
-                        if ($unit && ! in_array($unit->status, ['rusak', 'damaged', 'maintenance'])) {
-                            $unit->update(['status' => 'tersedia']);
+                        if ($unit) {
+                            if (in_array($unit->status, ['rusak', 'damaged', 'maintenance'], true)) {
+                                $lockedDamagedUnits++;
+                            } else {
+                                $unit->update(['status' => 'tersedia']);
+                            }
                         }
                     }
                 }
@@ -164,7 +201,9 @@ class ReturnController extends Controller
                     ]);
                 }
 
-                $msg = "Pengembalian pesanan #{$order->order_number} selesai diproses dan status unit telah diperbarui.";
+                $msg = $lockedDamagedUnits > 0
+                    ? "Pengembalian pesanan #{$order->order_number} selesai diproses. Catatan: {$lockedDamagedUnits} unit tetap dikunci berstatus Rusak/Maintenance."
+                    : "Pengembalian pesanan #{$order->order_number} selesai diproses dan status unit telah diperbarui.";
             }
 
             $return->save();
@@ -178,7 +217,9 @@ class ReturnController extends Controller
                 'module'      => 'returns',
                 'description' => ($actionType === 'denda' && $lateFeeAmount > 0 && empty($return->late_fee_proof))
                     ? sprintf('Tagihan denda keterlambatan sebesar Rp %s (%d jam terlambat) diterbitkan untuk pesanan #%s oleh %s.', number_format($lateFeeAmount, 0, ',', '.'), $lateHours, $order->order_number, $user->name ?? 'Admin')
-                    : sprintf('Pengembalian pesanan #%s selesai diverifikasi dan unit barang kembali berstatus tersedia.', $order->order_number),
+                    : (($lockedDamagedUnits ?? 0) > 0
+                        ? sprintf('Pengembalian pesanan #%s selesai diverifikasi (%d unit tetap berstatus Rusak/Maintenance).', $order->order_number, $lockedDamagedUnits)
+                        : sprintf('Pengembalian pesanan #%s selesai diverifikasi dan unit barang kembali berstatus tersedia.', $order->order_number)),
                 'ip_address'  => $request->ip(),
                 'user_agent'  => $request->userAgent(),
             ]);

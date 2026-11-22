@@ -69,7 +69,13 @@ class AdminDashboardController extends Controller
         });
 
         $subscription = $client->activeSubscription()->first();
+        $planKey      = strtolower(trim((string) ($subscription?->plan_name ?? 'starter')));
+        $pkgConfig    = config("packages.{$planKey}");
         $maxProduk    = $subscription ? (int) $subscription->max_products : null;
+        if ($pkgConfig && array_key_exists('products', $pkgConfig['limits'] ?? []) && $pkgConfig['limits']['products'] === null) {
+            $maxProduk = null;
+        }
+        $maxUnit      = $pkgConfig ? ($pkgConfig['limits']['units'] ?? null) : null;
 
         $recentOrders = Order::with(['user', 'orderItems.product'])
             ->where('client_id', $clientId)
@@ -82,6 +88,7 @@ class AdminDashboardController extends Controller
             'user'         => $user,
             'subscription' => $subscription,
             'maxProduk'    => $maxProduk,
+            'maxUnit'      => $maxUnit,
             'recentOrders' => $recentOrders,
         ], $dashboardCounts));
     }

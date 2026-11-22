@@ -192,6 +192,14 @@ class ConditionCheckController extends Controller
             'checked_by'        => $user->id,
         ]);
 
+        // Sinkronkan status unit fisik bila hasil inspeksi kembali mencatat kerusakan
+        if ($request->check_type === 'setelah_kembali' && in_array($request->condition, ['rusak_ringan', 'rusak_berat'], true)) {
+            $equipmentUnit->update([
+                'condition' => $request->condition,
+                'status'    => $request->condition === 'rusak_berat' ? 'rusak' : 'maintenance',
+            ]);
+        }
+
         // Catat jejak audit aktivitas inspeksi
         \App\Models\ActivityLog::create([
             'client_id'   => $client->id,
@@ -212,26 +220,35 @@ class ConditionCheckController extends Controller
 
         $returnTo = $request->input('return_to');
         $orderId = $request->input('order_id');
+        $isReturnDamage = $request->check_type === 'setelah_kembali' && in_array($request->condition, ['rusak_ringan', 'rusak_berat'], true);
+        $damageSuffix = $isReturnDamage
+            ? sprintf(
+                ' Status unit otomatis diubah menjadi %s. Buat laporan di menu Kasus Kerusakan jika perlu menagih kompensasi ke penyewa.',
+                $request->condition === 'rusak_berat' ? 'Rusak' : 'Maintenance'
+            )
+            : '';
 
         if ($returnTo === 'returns') {
             return redirect()->route('admin.returns.index')
                 ->with('success', sprintf(
-                    'Pemeriksaan fisik unit [%s] berhasil dicatat (%s). Anda dapat melanjutkan proses pengembalian pesanan.',
+                    'Pemeriksaan fisik unit [%s] berhasil dicatat (%s).%s',
                     $equipmentUnit->unit_code,
-                    ucfirst(str_replace('_', ' ', $request->condition))
+                    ucfirst(str_replace('_', ' ', $request->condition)),
+                    $isReturnDamage ? $damageSuffix : ' Anda dapat melanjutkan proses pengembalian pesanan.'
                 ));
         }
 
         if ($returnTo === 'order' && $orderId) {
             return redirect()->route('admin.orders.show', $orderId)
                 ->with('success', sprintf(
-                    'Pemeriksaan fisik unit [%s] berhasil dicatat (%s).',
+                    'Pemeriksaan fisik unit [%s] berhasil dicatat (%s).%s',
                     $equipmentUnit->unit_code,
-                    ucfirst(str_replace('_', ' ', $request->condition))
+                    ucfirst(str_replace('_', ' ', $request->condition)),
+                    $damageSuffix
                 ));
         }
 
         return redirect()->route('admin.condition-checks.index')
-            ->with('success', 'Rekaman kondisi fisik berhasil disimpan.');
+            ->with('success', 'Rekaman kondisi fisik berhasil disimpan.' . $damageSuffix);
     }
 }

@@ -385,7 +385,7 @@
                                                 <span>Cek Fisik</span>
                                             </a>
 
-                                            @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']))
+                                            @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_pembayaran', 'belum_dibayar', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim', 'diproses', 'dikonfirmasi']))
                                                 @php
                                                     $uCode = $allocation->equipmentUnit->unit_code ?? $allocation->equipmentUnit->asset_code ?? ('Unit #' . $allocation->equipment_unit_id);
                                                 @endphp
@@ -406,7 +406,7 @@
                         @endif
 
                         {{-- Form dropdown tambah alokasi unit --}}
-                        @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']) && ! $isFulfilled)
+                        @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_pembayaran', 'belum_dibayar', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim', 'diproses', 'dikonfirmasi']) && ! $isFulfilled)
                             @php
                                 $matchingUnits = $availableUnits->filter(function($unit) use ($item) {
                                     return $unit->product_id === $item->product_id;
@@ -483,42 +483,55 @@
                                 <span>Konfirmasi Langsung Lunas (Siap Kirim)</span>
                             </button>
                         @else
-                            <button type="submit"
-                                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                            <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 leading-relaxed">
+                                <span class="font-bold block mb-0.5">Menunggu Bukti Pembayaran</span>
+                                Customer belum mengunggah struk transfer. Tombol verifikasi akan aktif setelah bukti diunggah.
+                            </div>
+                            <button type="submit" name="direct_ready" value="1"
+                                    class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                                    title="Gunakan hanya jika customer membayar tunai langsung di tempat">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                <span>Verifikasi Pembayaran &amp; Siap Kirim</span>
+                                <span>Konfirmasi Lunas Tunai (Siap Kirim)</span>
                             </button>
                         @endif
                     </form>
 
                     <button @click="showRejectForm = true"
                             type="button"
-                            class="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold rounded-md transition">
-                        Tolak / Batalkan Pesanan
+                            class="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold rounded-md transition cursor-pointer">
+                        Tolak / Minta Revisi KTP
                     </button>
                 </div>
 
-                {{-- Form Penolakan Pesanan --}}
+                {{-- Form Penolakan / Minta Unggah Ulang KTP --}}
                 <div x-show="showRejectForm" x-cloak class="pt-1">
                     <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST">
                         @csrf
                         <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
-                            Alasan Penolakan <span class="text-red-500">*</span>
+                            Alasan Penolakan / Revisi <span class="text-red-500">*</span>
                         </label>
                         <textarea name="cancellation_reason"
                                   rows="3"
                                   required
                                   placeholder="Contoh: Foto KTP buram atau stok unit sedang dalam perbaikan..."
                                   class="w-full border border-gray-300 rounded-md text-xs px-3 py-2 focus:ring-red-500 focus:border-red-500 mb-3"></textarea>
-                        <div class="flex gap-2">
-                            <button type="button" @click="showRejectForm = false"
-                                    class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md">
-                                Batal
-                            </button>
-                            <button type="submit"
-                                    class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-xs">
-                                Ya, Tolak
-                            </button>
+                        <div class="space-y-2">
+                            @if($order->identityGuarantee && $order->identityGuarantee->status !== 'diverifikasi')
+                                <button type="submit" name="action_type" value="request_reupload"
+                                        class="w-full px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-md shadow-xs cursor-pointer">
+                                    Minta Unggah Ulang KTP (Tanpa Batal)
+                                </button>
+                            @endif
+                            <div class="flex gap-2">
+                                <button type="button" @click="showRejectForm = false"
+                                        class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md cursor-pointer">
+                                    Batal
+                                </button>
+                                <button type="submit"
+                                        class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-xs cursor-pointer">
+                                    Ya, Batalkan Pesanan
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

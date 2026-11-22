@@ -189,6 +189,13 @@
                                     <div class="text-xs text-gray-600 mt-1 truncate max-w-[220px]" title="{{ $order->shipping_address ?? '-' }}">
                                         {{ $order->shipping_address ?: 'Alamat belum diatur' }}
                                     </div>
+                                    @if($order->status === 'dikirim' && $order->shipment)
+                                        <div class="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-[11px] font-semibold text-purple-700">
+                                            <span>{{ $order->shipment->courier_name ?? 'Kurir' }}</span>
+                                            <span class="text-purple-300">&bull;</span>
+                                            <span class="font-mono">{{ $order->shipment->tracking_number ?? '-' }}</span>
+                                        </div>
+                                    @endif
                                 @endif
                             </td>
 
@@ -230,8 +237,8 @@
                                                 <span>Tandai Diterima</span>
                                             </button>
                                         </form>
-                                        <a href="{{ route('admin.orders.show', $order->id) }}" 
-                                           class="inline-flex items-center px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md font-semibold text-xs transition">
+                                        <a href="{{ route('admin.orders.show', $order->id) }}"
+                                            class="inline-flex items-center px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md font-semibold text-xs transition">
                                             Detail
                                         </a>
                                     </div>
