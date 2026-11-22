@@ -189,7 +189,7 @@ class OrderAllocationLogicTest extends TestCase
         // Tanpa jaminan identitas, default true jika menunggu pembayaran
         $this->assertTrue($order->can_upload_payment);
 
-        // Ada jaminan identitas tapi belum diverifikasi
+        // Ada jaminan identitas tapi belum diverifikasi (pada alur baru pembayaran tetap langsung terbuka)
         $guarantee = IdentityGuarantee::create([
             'order_id' => $order->id,
             'customer_id' => $this->customer->id,
@@ -201,7 +201,7 @@ class OrderAllocationLogicTest extends TestCase
             'status' => 'menunggu',
         ]);
         $order->load('identityGuarantee');
-        $this->assertFalse($order->can_upload_payment);
+        $this->assertTrue($order->can_upload_payment);
 
         // Jaminan identitas telah diverifikasi
         $guarantee->update(['status' => 'diverifikasi']);

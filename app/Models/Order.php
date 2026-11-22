@@ -124,6 +124,11 @@ class Order extends Model
         };
     }
 
+    public function getStatusBadgeAttribute(): string
+    {
+        return $this->status_label;
+    }
+
     public function getStatusColorAttribute(): string
     {
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
@@ -214,15 +219,12 @@ class Order extends Model
         $status = strtolower(trim(str_replace(['-', ' '], '_', $this->status ?? '')));
 
         return match ($status) {
-            'menunggu_konfirmasi' => ($this->identityGuarantee?->status === 'diverifikasi' ? 1 : 0),
-            'menunggu_pembayaran', 'belum_dibayar' => 1,
+            'menunggu_konfirmasi', 'menunggu_pembayaran', 'belum_dibayar' => 1,
             'menunggu_verifikasi', 'verifikasi' => 2,
-            'siap_kirim', 'diproses', 'dikonfirmasi' => 3,
-            'dikirim' => 3,
+            'siap_kirim', 'diproses', 'dikonfirmasi', 'dikirim' => 3,
             'sedang_disewa' => 4,
-            'dikembalikan' => 5,
-            'menunggu_pembayaran_denda' => 5,
-            'selesai' => 6,
+            'dikembalikan', 'menunggu_pembayaran_denda' => 4,
+            'selesai' => 5,
             'batal', 'dibatalkan', 'ditolak' => 1,
             default => 0,
         };
@@ -242,9 +244,9 @@ class Order extends Model
         }
 
         return match ($status) {
-            'menunggu_konfirmasi' => 'Toko sedang memeriksa data pesanan dan verifikasi jaminan identitas Anda.',
-            'menunggu_pembayaran', 'belum_dibayar' => 'Identitas Anda telah disetujui! Silakan lakukan pembayaran sesuai rincian agar pesanan dapat diproses.',
-            'menunggu_verifikasi', 'verifikasi' => 'Bukti pembayaran telah diunggah. Toko sedang memverifikasi pembayaran Anda.',
+            'menunggu_konfirmasi' => 'Pesanan berhasil dibuat. Silakan selesaikan pembayaran dan unggah bukti transfer di bawah ini agar pesanan dapat diproses toko.',
+            'menunggu_pembayaran', 'belum_dibayar' => 'Pesanan berhasil dibuat. Silakan selesaikan pembayaran dan unggah bukti transfer di bawah ini agar pesanan dapat diproses toko.',
+            'menunggu_verifikasi', 'verifikasi' => 'Bukti pembayaran telah diunggah. Toko sedang memverifikasi jaminan identitas dan pembayaran Anda.',
             'siap_kirim', 'diproses', 'dikonfirmasi' => 'Pembayaran terverifikasi! Toko sedang mempersiapkan unit barang pesanan Anda.',
             'dikirim' => 'Pesanan dalam perjalanan pengiriman. Tekan tombol “Terima Barang” setelah paket sampai di tujuan.',
             'sedang_disewa' => 'Masa sewa sedang berjalan. Harap gunakan barang dengan baik dan kembalikan tepat waktu sebelum masa sewa berakhir.',
@@ -308,14 +310,17 @@ class Order extends Model
             return false;
         }
 
-        // Jika ada verifikasi identitas, pastikan sudah diverifikasi (atau belum ada jaminan identitas)
-        if ($this->identityGuarantee && $this->identityGuarantee->status !== 'diverifikasi') {
-            return false;
-        }
+        // Jangan izinkan upload jika sudah ada pembayaran yang berstatus terverifikasi, menunggu_konfirmasi, atau menunggu_verifikasi
+        $hasVerifiedOrPending = $this->payments()
+            ->whereIn('status', ['terverifikasi', 'menunggu_konfirmasi', 'menunggu_verifikasi'])
+            ->exists();
 
-        $hasVerifiedPayment = $this->payments()->where('status', 'terverifikasi')->exists();
+        return ! $hasVerifiedOrPending;
+    }
 
-        return ! $hasVerifiedPayment;
+    public function canUploadPayment(): bool
+    {
+        return $this->can_upload_payment;
     }
 
     public function getCanReuploadIdentityAttribute(): bool
