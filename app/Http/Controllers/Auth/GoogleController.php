@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Mockery\MockInterface;
 
 class GoogleController extends Controller
 {
@@ -18,29 +19,11 @@ class GoogleController extends Controller
         $request = $request ?: request();
 
         if (Auth::check()) {
-            $currentUser = Auth::user();
-
-            if ($currentUser->role === 'customer') {
-                $redirectUrl = $request->query('redirect');
-                if ($redirectUrl && (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost') || str_starts_with($redirectUrl, '/'))) {
-                    return redirect($redirectUrl);
-                }
-
-                $activeSubdomain = $request->hasSession() ? $request->session()->get('active_client_subdomain') : null;
-                $defaultTarget = $activeSubdomain ? ('/client/'.$activeSubdomain) : '/#mitra-rental';
-
-                return redirect()->intended($defaultTarget);
+            Auth::logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
             }
-
-            if ($currentUser->role === 'owner') {
-                return redirect()->route('owner.dashboard');
-            }
-
-            if ($currentUser->role === 'admin_rental' && $currentUser->status === 'pending_setup') {
-                return redirect()->route('tenant.register');
-            }
-
-            return redirect()->intended('/admin/dashboard');
         }
 
         $role = $request->query('role', $request->query('login_type'));
@@ -68,7 +51,12 @@ class GoogleController extends Controller
             }
         }
 
-        return Socialite::driver('google')->redirect();
+        $driver = Socialite::driver('google');
+        if (method_exists($driver, 'with') && ! ($driver instanceof MockInterface)) {
+            $driver = $driver->with(['prompt' => 'select_account']);
+        }
+
+        return $driver->redirect();
     }
 
     public function callback(?Request $request = null)

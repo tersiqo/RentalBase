@@ -210,7 +210,7 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
         $response->assertSee('Enkripsi SSL 256-bit Multi-Tenant');
     }
 
-    public function test_already_logged_in_customer_clicking_google_redirect_is_not_sent_to_setup_tenant(): void
+    public function test_already_logged_in_customer_clicking_google_redirect_clears_old_session_and_initiates_oauth(): void
     {
         $customer = User::factory()->create([
             'role' => 'customer',
@@ -218,9 +218,20 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
             'email' => 'customer.logged@example.com',
         ]);
 
+        $provider = Mockery::mock('Laravel\Socialite\Two\GoogleProvider');
+        $provider->shouldReceive('redirect')
+            ->once()
+            ->andReturn(redirect('https://accounts.google.com/o/oauth2/auth'));
+
+        Socialite::shouldReceive('driver')
+            ->with('google')
+            ->once()
+            ->andReturn($provider);
+
         $response = $this->actingAs($customer)
             ->get(route('auth.google'));
 
-        $response->assertRedirect('/#mitra-rental');
+        $this->assertGuest();
+        $response->assertRedirect('https://accounts.google.com/o/oauth2/auth');
     }
 }
