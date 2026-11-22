@@ -16,6 +16,33 @@ class GoogleController extends Controller
     public function redirect(?Request $request = null)
     {
         $request = $request ?: request();
+
+        if (Auth::check()) {
+            $currentUser = Auth::user();
+
+            if ($currentUser->role === 'customer') {
+                $redirectUrl = $request->query('redirect');
+                if ($redirectUrl && (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost') || str_starts_with($redirectUrl, '/'))) {
+                    return redirect($redirectUrl);
+                }
+
+                $activeSubdomain = $request->hasSession() ? $request->session()->get('active_client_subdomain') : null;
+                $defaultTarget = $activeSubdomain ? ('/client/'.$activeSubdomain) : '/#mitra-rental';
+
+                return redirect()->intended($defaultTarget);
+            }
+
+            if ($currentUser->role === 'owner') {
+                return redirect()->route('owner.dashboard');
+            }
+
+            if ($currentUser->role === 'admin_rental' && $currentUser->status === 'pending_setup') {
+                return redirect()->route('tenant.register');
+            }
+
+            return redirect()->intended('/admin/dashboard');
+        }
+
         $role = $request->query('role', $request->query('login_type'));
 
         if (! $role) {
@@ -73,7 +100,7 @@ class GoogleController extends Controller
             } else {
                 // Default fallback ke admin_rental untuk alur admin / register-tenant / tes backward-compatibility
                 $user = User::create([
-                    'name' => Str::slug($google->getName() ?: Str::before($google->getEmail(), '@')) . rand(100, 999),
+                    'name' => Str::slug($google->getName() ?: Str::before($google->getEmail(), '@')).rand(100, 999),
                     'email' => $google->getEmail(),
                     'password' => Hash::make(Str::random(32)),
                     'role' => 'admin_rental',
@@ -101,7 +128,7 @@ class GoogleController extends Controller
             }
 
             $activeSubdomain = $request->hasSession() ? $request->session()->get('active_client_subdomain') : null;
-            $defaultTarget = $activeSubdomain ? ('/client/' . $activeSubdomain) : '/#mitra-rental';
+            $defaultTarget = $activeSubdomain ? ('/client/'.$activeSubdomain) : '/#mitra-rental';
 
             return redirect()->intended($defaultTarget)->with('success', 'Berhasil masuk dengan Akun Google!');
         }
@@ -149,4 +176,3 @@ class GoogleController extends Controller
         return redirect()->intended('/admin/dashboard');
     }
 }
-

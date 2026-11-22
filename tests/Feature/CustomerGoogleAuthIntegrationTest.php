@@ -45,7 +45,7 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
     public function test_it_01_029_google_oauth_callback_creates_user_with_pending_setup_and_active_admin(): void
     {
         // 1. Kasus Pengguna Baru (Pending Setup)
-        $socialiteUser = new SocialiteUser();
+        $socialiteUser = new SocialiteUser;
         $socialiteUser->id = 'google-id-12345';
         $socialiteUser->name = 'Budi Santoso';
         $socialiteUser->email = 'budi.santoso@example.com';
@@ -78,7 +78,7 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
             'role' => 'admin_rental',
         ]);
 
-        $activeSocialiteUser = new SocialiteUser();
+        $activeSocialiteUser = new SocialiteUser;
         $activeSocialiteUser->id = 'google-id-999';
         $activeSocialiteUser->name = 'Active Admin';
         $activeSocialiteUser->email = 'active.admin@rentalbase.com';
@@ -120,7 +120,7 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
 
     public function test_google_oauth_customer_registration_creates_active_customer_and_redirects_not_to_setup_tenant(): void
     {
-        $socialiteUser = new SocialiteUser();
+        $socialiteUser = new SocialiteUser;
         $socialiteUser->id = 'google-cust-001';
         $socialiteUser->name = 'Customer Baru';
         $socialiteUser->email = 'customer.baru@example.com';
@@ -165,7 +165,7 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
             'client_id' => null,
         ]);
 
-        $socialiteUser = new SocialiteUser();
+        $socialiteUser = new SocialiteUser;
         $socialiteUser->id = 'google-cust-002';
         $socialiteUser->name = 'Pelanggan Setia';
         $socialiteUser->email = 'pelanggan.lama@example.com';
@@ -208,5 +208,19 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Kembali ke Beranda');
         $response->assertSee('Enkripsi SSL 256-bit Multi-Tenant');
+    }
+
+    public function test_already_logged_in_customer_clicking_google_redirect_is_not_sent_to_setup_tenant(): void
+    {
+        $customer = User::factory()->create([
+            'role' => 'customer',
+            'status' => 'aktif',
+            'email' => 'customer.logged@example.com',
+        ]);
+
+        $response = $this->actingAs($customer)
+            ->get(route('auth.google'));
+
+        $response->assertRedirect('/#mitra-rental');
     }
 }
