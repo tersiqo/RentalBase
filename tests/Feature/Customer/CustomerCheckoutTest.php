@@ -1012,6 +1012,59 @@ class CustomerCheckoutTest extends TestCase
         $this->assertNotNull($payment->verified_at);
     }
 
+    /**
+     * Test checkout view renders time restriction attributes and handles past time.
+     */
+    public function test_checkout_view_renders_min_rental_time_and_disabled_time_shortcuts(): void
+    {
+        $product = $this->makeProduct('Stroller Test', 50000);
+        $this->seedCart([$product], now()->format('Y-m-d'), now()->addDays(2)->format('Y-m-d'));
+
+        $response = $this->actingAs($this->user)
+            ->get(route('customer.checkout', ['subdomain' => $this->client->subdomain]));
+
+        $response->assertStatus(200);
+        $response->assertSee(':min="minRentalTime"', false);
+        $response->assertSee('isTimeDisabled', false);
+        $response->assertSee('handleRentalTimeChange', false);
+    }
+
+    /**
+     * Test checkout rejects rental_time in the past for today's rental.
+     */
+    public function test_checkout_rejects_past_rental_time_for_today_order(): void
+    {
+        $product = $this->makeProduct('Stroller Test 2', 50000);
+        $hashes = $this->seedCart([$product], now()->format('Y-m-d'), now()->addDays(2)->format('Y-m-d'));
+
+        $pastTime = '00:01';
+
+        $postData = [
+            'selected_hashes' => $hashes,
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDays(2)->format('Y-m-d'),
+            'rental_time' => $pastTime,
+            'shipping_address' => 'Jl. Kaliurang KM 5 No. 12 Sleman',
+            'shipping_method' => Order::SHIPPING_AMBIL_TOKO,
+            'full_name' => 'John Doe',
+            'identity_number' => '3404011234567890',
+            'identity_address' => 'Jl. Kaliurang KM 5 No. 12 Sleman',
+            'identity_document_image' => UploadedFile::fake()->image('ktp.jpg'),
+            'face_image' => UploadedFile::fake()->image('selfie.jpg'),
+            'terms' => '1',
+            'items' => [
+                $hashes[0] => ['quantity' => 1],
+            ],
+        ];
+
+        $response = $this->actingAs($this->user)
+            ->post(route('customer.checkout.store', ['subdomain' => $this->client->subdomain]), $postData);
+
+        if (now()->format('H:i') > '00:20') {
+            $response->assertSessionHasErrors(['rental_time']);
+        }
+    }
+
     public function test_checkout_applies_dynamic_watermark_with_store_name_on_uploaded_ktp(): void
     {
         Storage::fake('public');
@@ -1046,10 +1099,12 @@ class CustomerCheckoutTest extends TestCase
         $this->assertNotEmpty($identity->identity_document_image);
 
         // Pastikan file KTP tersimpan pada storage disk
-        Storage::disk('public')->assertExists($identity->identity_document_image);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $storage */
+        $storage = Storage::disk('public');
+        $storage->assertExists($identity->identity_document_image);
 
         // Validasi isi file hasil watermark adalah gambar valid
-        $savedContent = Storage::disk('public')->get($identity->identity_document_image);
+        $savedContent = $storage->get($identity->identity_document_image);
         $this->assertNotEmpty($savedContent);
         if (extension_loaded('gd')) {
             $img = @imagecreatefromstring($savedContent);

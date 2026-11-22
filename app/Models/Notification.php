@@ -37,7 +37,7 @@ class Notification extends Model
 
                 // Tentukan target URL akurat berdasarkan role penerima & jenis notifikasi
                 if ($role === 'customer') {
-                    $targetUrl = url('/my-orders');
+                    $targetUrl = $notification->customer_target_url;
                 } elseif ($role === 'admin_rental' || ($notification->client_id && $role !== 'owner')) {
                     $targetUrl = $notification->admin_target_url;
                 } else {
@@ -135,6 +135,11 @@ class Notification extends Model
                 'bg' => 'bg-red-50 text-red-700',
                 'dot' => 'bg-red-500',
             ],
+            'late_fee' => [
+                'label' => 'Denda',
+                'bg' => 'bg-rose-50 text-rose-700',
+                'dot' => 'bg-rose-500',
+            ],
             'quota' => [
                 'label' => 'Kuota Toko',
                 'bg' => 'bg-amber-50 text-amber-700',
@@ -169,6 +174,38 @@ class Notification extends Model
     }
 
     /**
+     * URL tautan target aksi untuk Customer (mendukung deep-linking ke pesanan terkait & bayar denda).
+     */
+    public function getCustomerTargetUrlAttribute(): string
+    {
+        $text = $this->title . ' ' . $this->message;
+        $order = null;
+
+        if (preg_match('/#(ORD-[A-Za-z0-9\-]+|\d+)/i', $text, $matches)) {
+            $identifier = $matches[1];
+            $order = ctype_digit((string) $identifier)
+                ? Order::where('id', (int) $identifier)->orWhere('order_number', $identifier)->first()
+                : Order::where('order_number', $identifier)->first();
+        }
+
+        if ($order) {
+            $isLateFee = in_array($this->type, ['late_fee'])
+                || str_contains(strtolower($text), 'denda')
+                || str_contains(strtolower($text), 'keterlambatan');
+
+            if ($isLateFee) {
+                return route('customer.orders.show', $order->id) . '?action=pay_late_fee';
+            }
+
+            return route('customer.orders.show', $order->id);
+        }
+
+        return \Illuminate\Support\Facades\Route::has('customer.orders')
+            ? route('customer.orders')
+            : url('/my-orders');
+    }
+
+    /**
      * URL tautan target aksi untuk Owner Platform.
      */
     public function getOwnerTargetUrlAttribute(): string
@@ -193,9 +230,20 @@ class Notification extends Model
      */
     public function getAdminTargetUrlAttribute(): string
     {
-        if (in_array($this->type, ['order', 'payment', 'identity'])) {
-            if (preg_match('/#(\d+)/', $this->title . ' ' . $this->message, $matches)) {
-                return route('admin.orders.show', $matches[1]);
+        if (in_array($this->type, ['order', 'payment', 'identity', 'late_fee'])) {
+            if (preg_match('/#(ORD-[A-Za-z0-9\-]+|\d+)/i', $this->title . ' ' . $this->message, $matches)) {
+                $identifier = $matches[1];
+                $order = ctype_digit((string) $identifier)
+                    ? Order::where('id', (int) $identifier)->orWhere('order_number', $identifier)->first()
+                    : Order::where('order_number', $identifier)->first();
+
+                if ($order) {
+                    return route('admin.orders.show', $order->id);
+                }
+
+                if (ctype_digit((string) $identifier)) {
+                    return route('admin.orders.show', (int) $identifier);
+                }
             }
             return route('admin.orders.index');
         }

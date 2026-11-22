@@ -146,6 +146,44 @@ class CustomerReturnFormTest extends TestCase
     }
 
     /**
+     * Test tampilan form retur ketika pesanan terlambat: menampilkan peringatan & estimasi denda tanpa meminta bukti denda/rekening.
+     */
+    public function test_return_form_renders_late_warning_without_proof_upload_or_payment_methods(): void
+    {
+        $lateOrder = Order::create([
+            'client_id'         => $this->client->id,
+            'user_id'           => $this->customer->id,
+            'order_number'      => 'ORD-RET-VIEW-LATE',
+            'rental_start_date' => now()->subDays(3),
+            'rental_end_date'   => now()->subHours(5),
+            'duration_days'     => 2,
+            'total_amount'      => 200000,
+            'shipping_address'  => 'Jl. Ijen No. 10',
+            'shipping_method'   => 'kurir',
+            'status'            => 'sedang_disewa',
+        ]);
+
+        OrderItem::create([
+            'order_id'      => $lateOrder->id,
+            'product_id'    => $this->product->id,
+            'quantity'      => 1,
+            'price_per_day' => 100000,
+            'subtotal'      => 200000,
+        ]);
+
+        $response = $this->actingAs($this->customer)
+            ->get(route('customer.orders.return.form', $lateOrder->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Peringatan Keterlambatan Sewa');
+        $response->assertSee('Estimasi Denda Berjalan:');
+        $response->assertSee('Informasi Keterlambatan Sewa:');
+        $response->assertSee('Tagihan denda resmi akan diterbitkan oleh Admin Toko');
+        $response->assertDontSee('Unggah Bukti Transfer Denda');
+        $response->assertDontSee('Metode Pembayaran Denda Toko:');
+    }
+
+    /**
      * IT-RET-012: Isolasi Otorisasi: Customer lain dilarang mengakses atau mengirim form retur milik orang lain (HTTP 403).
      */
     public function test_it_ret_012_customer_lain_dilarang_akses_form_retur_orang_lain(): void
@@ -270,9 +308,9 @@ class CustomerReturnFormTest extends TestCase
     }
 
     /**
-     * IT-RET-015: Validasi menolak pengajuan retur terlambat jika tidak menyertakan bukti pembayaran denda.
+     * IT-RET-015: Customer yang terlambat tetap dapat mengajukan pengembalian tanpa wajib melampirkan bukti denda (late_fee_proof nullable).
      */
-    public function test_it_ret_015_validasi_menolak_retur_terlambat_tanpa_bukti_transfer_denda(): void
+    public function test_it_ret_015_retur_terlambat_bisa_diajukan_tanpa_wajib_unggah_bukti_denda(): void
     {
         $disk = config('filesystems.default', 'public');
         Storage::fake($disk);
@@ -299,23 +337,11 @@ class CustomerReturnFormTest extends TestCase
             'subtotal'      => 200000,
         ]);
 
-        // Kasus 1: Mengajukan tanpa melampirkan file late_fee_proof -> Harus gagal validasi
-        $responseFail = $this->actingAs($this->customer)
-            ->post(route('customer.orders.return', $lateOrder->id), [
-                'return_method' => 'ambil_toko',
-            ]);
-
-        $responseFail->assertSessionHasErrors(['late_fee_proof']);
-        $this->assertDatabaseMissing('returns', ['order_id' => $lateOrder->id]);
-
-        // Kasus 2: Mengajukan dengan melampirkan file foto bukti transfer denda valid
-        $proofFile = UploadedFile::fake()->image('bukti_transfer_denda.jpg', 600, 600);
-
+        // Mengajukan tanpa melampirkan file late_fee_proof -> Harus sukses diajukan (tidak terblokir)
         $responseSuccess = $this->actingAs($this->customer)
             ->post(route('customer.orders.return', $lateOrder->id), [
-                'return_method'  => 'ambil_toko',
-                'late_fee_proof' => $proofFile,
-                'notes'          => 'Denda terlambat 4 jam sudah ditransfer lunas via BCA.',
+                'return_method' => 'ambil_toko',
+                'notes'         => 'Pengembalian terlambat 4 jam diantar langsung ke toko.',
             ]);
 
         $responseSuccess->assertRedirect(route('customer.orders.show', $lateOrder->id));
@@ -325,10 +351,13 @@ class CustomerReturnFormTest extends TestCase
         $this->assertNotNull($returnRecord);
         $this->assertSame(4, (int) $returnRecord->late_hours);
         $this->assertEquals(40000, (float) $returnRecord->calculated_late_fee); // 4 jam * 10.000
+        $this->assertEquals(40000, (float) $returnRecord->late_fee_amount);
         $this->assertSame('menunggu_pembayaran', $returnRecord->late_fee_status);
-        $this->assertNotNull($returnRecord->late_fee_proof);
+        $this->assertSame('diajukan', $returnRecord->return_status);
+        $this->assertNull($returnRecord->late_fee_proof);
 
-        Storage::disk($disk)->assertExists($returnRecord->late_fee_proof);
+        $lateOrder->refresh();
+        $this->assertSame('dikembalikan', $lateOrder->status);
     }
 
     /**

@@ -117,6 +117,11 @@
                 this.periodEnd = this.minEndDate;
             }
 
+            // Jika tanggal mulai sewa adalah hari ini dan jam sewa yang tersimpan/default sudah lewat, sesuaikan ke waktu sekarang
+            if (this.isTodayStart && this.rentalTime && this.rentalTime < this.currentNowTime) {
+                this.rentalTime = this.currentNowTime;
+            }
+
             // Pantau seluruh field utama untuk auto-save ke sessionStorage secara reaktif
             const fieldsToWatch = [
                 'currentStep', 'ship', 'addressText', 'whatsapp', 
@@ -193,6 +198,45 @@
         const minEnd = this.minEndDate;
         if (!this.periodEnd || this.periodEnd <= this.periodStart) {
             this.periodEnd = minEnd;
+        }
+        if (this.isTodayStart && this.rentalTime && this.rentalTime < this.currentNowTime) {
+            this.rentalTime = this.currentNowTime;
+        }
+    },
+
+    get isTodayStart() {
+        if (!this.periodStart) return false;
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return this.periodStart === `${y}-${m}-${d}`;
+    },
+
+    get currentNowTime() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        return `${h}:${m}`;
+    },
+
+    get minRentalTime() {
+        return this.isTodayStart ? this.currentNowTime : '';
+    },
+
+    isTimeDisabled(timeStr) {
+        if (!this.isTodayStart) return false;
+        return timeStr < this.currentNowTime;
+    },
+
+    get isRentalTimeInvalid() {
+        if (!this.isTodayStart || !this.rentalTime) return false;
+        return this.rentalTime < this.currentNowTime;
+    },
+
+    handleRentalTimeChange() {
+        if (this.isTodayStart && this.rentalTime && this.rentalTime < this.currentNowTime) {
+            this.rentalTime = this.currentNowTime;
         }
     },
 
@@ -318,6 +362,9 @@
             if (!this.periodEnd) errs.push('Tanggal selesai sewa wajib dipilih.');
             if (this.periodStart && this.periodEnd && new Date(this.periodEnd) <= new Date(this.periodStart)) {
                 errs.push('Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai.');
+            }
+            if (this.isTodayStart && this.rentalTime && this.rentalTime < this.currentNowTime) {
+                errs.push('Rencana jam sewa tidak boleh menggunakan waktu yang sudah lewat (minimal pukul ' + this.currentNowTime + ' WIB untuk hari ini).');
             }
             if (!this.items || this.items.length === 0) {
                 errs.push('Keranjang sewa tidak boleh kosong.');
@@ -753,13 +800,23 @@
                         <div class="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-start">
                             <!-- Time Input & Shortcuts -->
                             <div class="space-y-2">
-                                <div class="relative">
-                                    <input type="time"
-                                           id="rental_time"
-                                           name="rental_time"
-                                           x-model="rentalTime"
-                                           required
-                                           class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base font-bold text-gray-900 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-2xs">
+                                <div class="space-y-1">
+                                    <div class="relative">
+                                        <input type="time"
+                                               id="rental_time"
+                                               name="rental_time"
+                                               x-model="rentalTime"
+                                               :min="minRentalTime"
+                                               @change="handleRentalTimeChange()"
+                                               @input="handleRentalTimeChange()"
+                                               required
+                                               class="w-full border rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base font-bold text-gray-900 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-2xs"
+                                               :class="isRentalTimeInvalid ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200'">
+                                    </div>
+                                    <p x-show="isRentalTimeInvalid" class="text-[11px] text-red-600 font-semibold flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span>Jam ini sudah lewat untuk hari ini. Minimal pukul <strong x-text="currentNowTime"></strong> WIB.</span>
+                                    </p>
                                 </div>
 
                                 <!-- Shortcut chips -->
@@ -771,21 +828,36 @@
                                         <span>Sekarang</span>
                                     </button>
                                     <button type="button"
-                                            @click="rentalTime = '09:00'"
-                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
-                                        <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                            @click="!isTimeDisabled('09:00') && (rentalTime = '09:00')"
+                                            :disabled="isTimeDisabled('09:00')"
+                                            :title="isTimeDisabled('09:00') ? 'Pukul 09:00 sudah terlewat untuk hari ini' : 'Pilih pukul 09:00'"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border transition-colors shadow-2xs"
+                                            :class="isTimeDisabled('09:00') 
+                                                ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200 line-through' 
+                                                : 'border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 cursor-pointer'">
+                                        <svg class="w-3.5 h-3.5" :class="isTimeDisabled('09:00') ? 'text-gray-400' : 'text-amber-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                                         <span>09:00</span>
                                     </button>
                                     <button type="button"
-                                            @click="rentalTime = '13:00'"
-                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
-                                        <svg class="w-3.5 h-3.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                                            @click="!isTimeDisabled('13:00') && (rentalTime = '13:00')"
+                                            :disabled="isTimeDisabled('13:00')"
+                                            :title="isTimeDisabled('13:00') ? 'Pukul 13:00 sudah terlewat untuk hari ini' : 'Pilih pukul 13:00'"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border transition-colors shadow-2xs"
+                                            :class="isTimeDisabled('13:00') 
+                                                ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200 line-through' 
+                                                : 'border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 cursor-pointer'">
+                                        <svg class="w-3.5 h-3.5" :class="isTimeDisabled('13:00') ? 'text-gray-400' : 'text-orange-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                                         <span>13:00</span>
                                     </button>
                                     <button type="button"
-                                            @click="rentalTime = '16:00'"
-                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 transition-colors shadow-2xs cursor-pointer">
-                                        <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                                            @click="!isTimeDisabled('16:00') && (rentalTime = '16:00')"
+                                            :disabled="isTimeDisabled('16:00')"
+                                            :title="isTimeDisabled('16:00') ? 'Pukul 16:00 sudah terlewat untuk hari ini' : 'Pilih pukul 16:00'"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border transition-colors shadow-2xs"
+                                            :class="isTimeDisabled('16:00') 
+                                                ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200 line-through' 
+                                                : 'border-gray-200 bg-white hover:border-primary-300 hover:text-primary-600 font-semibold text-gray-600 cursor-pointer'">
+                                        <svg class="w-3.5 h-3.5" :class="isTimeDisabled('16:00') ? 'text-gray-400' : 'text-amber-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                                         <span>16:00</span>
                                     </button>
                                 </div>
