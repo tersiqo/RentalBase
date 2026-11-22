@@ -2,18 +2,23 @@
 
 namespace Tests\Feature\Customer;
 
+use App\Livewire\Customer\AddToCartModal;
+use App\Livewire\Customer\CartPage;
 use App\Models\Category;
 use App\Models\Client;
+use App\Models\ClientPaymentMethod;
 use App\Models\EquipmentUnit;
+use App\Models\IdentityGuarantee;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
+use App\Models\TenantProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use App\Livewire\Customer\AddToCartModal;
-use App\Models\IdentityGuarantee;
-use App\Models\OrderItem;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -740,7 +745,7 @@ class CustomerCheckoutTest extends TestCase
         $product = $this->makeProduct('Tenda Dome 4P', 60000);
         $start = now()->addDays(2)->format('Y-m-d');
         $end = now()->addDays(4)->format('Y-m-d');
-        $hash = md5($product->id . $start . $end);
+        $hash = md5($product->id.$start.$end);
 
         session()->put('cart', [
             $hash => [
@@ -760,7 +765,7 @@ class CustomerCheckoutTest extends TestCase
         ]);
 
         Livewire::actingAs($this->user)
-            ->test(\App\Livewire\Customer\CartPage::class, ['subdomain' => $this->client->subdomain])
+            ->test(CartPage::class, ['subdomain' => $this->client->subdomain])
             ->assertSee('Tenda Dome 4P')
             ->call('removeItem', $hash)
             ->assertDispatched('cart-updated')
@@ -780,7 +785,7 @@ class CustomerCheckoutTest extends TestCase
             'status' => 'aktif',
         ]);
 
-        $otherCat = \App\Models\Category::forceCreate([
+        $otherCat = Category::forceCreate([
             'client_id' => $otherClient->id,
             'name' => 'Outdoor',
             'slug' => 'outdoor-gear',
@@ -799,8 +804,8 @@ class CustomerCheckoutTest extends TestCase
 
         $start = now()->addDays(2)->format('Y-m-d');
         $end = now()->addDays(4)->format('Y-m-d');
-        $hashA = md5($prodA->id . $start . $end);
-        $hashB = md5($prodB->id . $start . $end);
+        $hashA = md5($prodA->id.$start.$end);
+        $hashB = md5($prodB->id.$start.$end);
 
         session()->put('cart', [
             $hashA => [
@@ -834,7 +839,7 @@ class CustomerCheckoutTest extends TestCase
         ]);
 
         Livewire::actingAs($this->user)
-            ->test(\App\Livewire\Customer\CartPage::class, ['subdomain' => $this->client->subdomain])
+            ->test(CartPage::class, ['subdomain' => $this->client->subdomain])
             ->assertSee('Stroller Bayi')
             ->assertDontSee('Carrier Gunung')
             ->assertCount('cart', 1);
@@ -975,7 +980,7 @@ class CustomerCheckoutTest extends TestCase
             'status' => 'menunggu',
         ]);
 
-        $paymentMethod = \App\Models\ClientPaymentMethod::create([
+        $paymentMethod = ClientPaymentMethod::create([
             'client_id' => $this->client->id,
             'bank_name' => 'BCA',
             'account_number' => '1234567890',
@@ -983,7 +988,7 @@ class CustomerCheckoutTest extends TestCase
             'is_active' => true,
         ]);
 
-        $payment = \App\Models\Payment::create([
+        $payment = Payment::create([
             'order_id' => $order->id,
             'client_payment_method_id' => $paymentMethod->id,
             'amount' => 100000,
@@ -1006,5 +1011,113 @@ class CustomerCheckoutTest extends TestCase
         $this->assertSame('terverifikasi', $payment->status);
         $this->assertNotNull($payment->verified_at);
     }
-}
 
+    public function test_checkout_applies_dynamic_watermark_with_store_name_on_uploaded_ktp(): void
+    {
+        Storage::fake('public');
+
+        $product = $this->makeProduct('Stroller Bayi Premium', 50000);
+        $this->seedCart([$product], now()->format('Y-m-d'), now()->addDays(2)->format('Y-m-d'));
+
+        $ktpFile = UploadedFile::fake()->image('ktp_pribadi.jpg', 600, 400);
+
+        $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+            'subdomain' => $this->client->subdomain,
+        ]), [
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDays(2)->format('Y-m-d'),
+            'shipping_address' => 'Jl. Ijen No. 12, Klojen, Kota Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'full_name' => 'Budi Penyewa',
+            'identity_number' => '3579012345678901',
+            'identity_address' => 'Jl. Ijen No. 12, Klojen, Kota Malang',
+            'identity_document_image' => $ktpFile,
+            'face_image' => UploadedFile::fake()->image('selfie.jpg', 400, 400),
+            'terms' => '1',
+            'pdp_agreement' => '1',
+        ]);
+
+        $response->assertRedirect();
+        $order = Order::where('user_id', $this->user->id)->latest('id')->first();
+        $this->assertNotNull($order);
+
+        $identity = IdentityGuarantee::where('order_id', $order->id)->first();
+        $this->assertNotNull($identity);
+        $this->assertNotEmpty($identity->identity_document_image);
+
+        // Pastikan file KTP tersimpan pada storage disk
+        Storage::disk('public')->assertExists($identity->identity_document_image);
+
+        // Validasi isi file hasil watermark adalah gambar valid
+        $savedContent = Storage::disk('public')->get($identity->identity_document_image);
+        $this->assertNotEmpty($savedContent);
+        if (extension_loaded('gd')) {
+            $img = @imagecreatefromstring($savedContent);
+            $this->assertNotFalse($img);
+            $this->assertGreaterThan(0, imagesx($img));
+            $this->assertGreaterThan(0, imagesy($img));
+        }
+    }
+
+    public function test_checkout_validates_pdp_privacy_compliance_checkbox(): void
+    {
+        $product = $this->makeProduct('Crib Bayi', 45000);
+        $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+
+        // Kirim tanpa persetujuan PDP (nilai 0 / tidak dicentang)
+        $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+            'subdomain' => $this->client->subdomain,
+        ]), [
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDay()->format('Y-m-d'),
+            'shipping_address' => 'Jl. Soekarno Hatta No. 88, Kota Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'full_name' => $this->user->name,
+            'identity_number' => '3579012345678902',
+            'identity_address' => 'Jl. Soekarno Hatta No. 88, Kota Malang',
+            'identity_document_image' => UploadedFile::fake()->image('ktp.jpg'),
+            'face_image' => UploadedFile::fake()->image('selfie.jpg'),
+            'terms' => '1',
+            'pdp_agreement' => '0',
+        ]);
+
+        $response->assertSessionHasErrors('pdp_agreement');
+    }
+
+    public function test_checkout_page_renders_outlet_card_maps_link_and_pdp_privacy_guarantee(): void
+    {
+        TenantProfile::updateOrCreate(
+            ['client_id' => $this->client->id],
+            [
+                'name' => 'BabyRent Malang Pusat',
+                'subdomain' => $this->client->subdomain,
+                'address' => 'Jl. Galunggung No. 45, Gading Kasri, Klojen',
+                'city' => 'Kota Malang',
+                'whatsapp' => '081298765432',
+                'theme_color' => '#F97316',
+            ]
+        );
+
+        $product = $this->makeProduct('Baby Bouncer', 30000);
+        $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+
+        $response = $this->actingAs($this->user)->get(route('customer.checkout', [
+            'subdomain' => $this->client->subdomain,
+        ]));
+
+        $response->assertStatus(200);
+
+        // 1. Verifikasi Kejelasan Alamat Fisik Toko & Kartu Outlet
+        $response->assertSee('Profil &amp; Lokasi Outlet', false);
+        $response->assertSee('Jl. Galunggung No. 45, Gading Kasri, Klojen');
+        $response->assertSee('Buka di Maps');
+        $response->assertSee('https://www.google.com/maps/search/?api=1', false);
+        $response->assertSee('Hubungi WA');
+        $response->assertSee('https://wa.me/6281298765432', false);
+
+        // 2. Verifikasi Jaminan Privasi KTP & Kepatuhan UU PDP
+        $response->assertSee('Jaminan Privasi &amp; Kepatuhan UU PDP No. 27/2022', false);
+        $response->assertSee('HANYA UNTUK VERIFIKASI SEWA DI BABYRENT MALANG');
+        $response->assertSee('name="pdp_agreement"', false);
+    }
+}
