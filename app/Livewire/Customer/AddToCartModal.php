@@ -46,7 +46,8 @@ class AddToCartModal extends Component
                 return;
             }
 
-            if ($end->lt($start)) {
+            if ($end->lte($start)) {
+                $this->errorMessage = 'Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai.';
                 return;
             }
 
@@ -67,7 +68,7 @@ class AddToCartModal extends Component
                 return;
             }
 
-            $durationDays = $start->diffInDays($end) + 1;
+            $durationDays = max(1, (int) $start->diffInDays($end));
             $subtotal = $this->product->rental_price_per_day * $durationDays * $quantity;
             
             if (isset($cart[$hash])) {
@@ -126,7 +127,8 @@ class AddToCartModal extends Component
                 return;
             }
 
-            if ($end->lt($start)) {
+            if ($end->lte($start)) {
+                $this->errorMessage = 'Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai.';
                 return;
             }
 
@@ -146,7 +148,7 @@ class AddToCartModal extends Component
                 return;
             }
 
-            $durationDays = $start->diffInDays($end) + 1;
+            $durationDays = max(1, (int) $start->diffInDays($end));
             $subtotal = $this->product->rental_price_per_day * $durationDays * $quantity;
             
             $cart[$hash] = [

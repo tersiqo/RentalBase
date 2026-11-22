@@ -5,15 +5,41 @@
         quantity: 1,
         pricePerDay: {{ $product->rental_price_per_day }},
         
+        get minEndDate() {
+            if (!this.startDate) {
+                return '{{ date('Y-m-d', strtotime('+1 day')) }}';
+            }
+            const [y, m, d] = this.startDate.split('-').map(Number);
+            if (!y || !m || !d) return '{{ date('Y-m-d', strtotime('+1 day')) }}';
+            return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().split('T')[0];
+        },
+
+        handleStartDateChange() {
+            if (!this.startDate) return;
+            const minEnd = this.minEndDate;
+            if (!this.endDate || this.endDate <= this.startDate) {
+                this.endDate = minEnd;
+            }
+            if (this.startDate && this.endDate) {
+                $wire.checkAvailability(this.startDate, this.endDate);
+            }
+        },
+
+        handleEndDateChange() {
+            if (this.startDate && this.endDate) {
+                $wire.checkAvailability(this.startDate, this.endDate);
+            }
+        },
+
         get duration() {
             if (!this.startDate || !this.endDate) return 0;
-            const start = new Date(this.startDate);
-            const end = new Date(this.endDate);
-            start.setHours(0,0,0,0);
-            end.setHours(0,0,0,0);
-            if (end < start) return 0;
-            const diffTime = Math.abs(end - start);
-            return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            const [sy, sm, sd] = this.startDate.split('-').map(Number);
+            const [ey, em, ed] = this.endDate.split('-').map(Number);
+            if (!sy || !ey) return 0;
+            const startMs = Date.UTC(sy, sm - 1, sd);
+            const endMs = Date.UTC(ey, em - 1, ed);
+            if (endMs <= startMs) return 0;
+            return Math.max(1, Math.round((endMs - startMs) / 86400000));
         },
         
         get totalPrice() {
@@ -99,11 +125,11 @@
                         <div class="grid grid-cols-2 gap-2.5 sm:gap-4">
                             <div>
                                 <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
-                                <input type="date" x-model="startDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" @input="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" min="{{ date('Y-m-d') }}" class="w-full py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm">
+                                <input type="date" x-model="startDate" @change="handleStartDateChange()" @input="handleStartDateChange()" min="{{ date('Y-m-d') }}" class="w-full py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm">
                             </div>
                             <div>
                                 <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
-                                <input type="date" x-model="endDate" @change="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" @input="if (startDate && endDate) { $wire.checkAvailability(startDate, endDate); }" :min="startDate || '{{ date('Y-m-d') }}'" class="w-full py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm">
+                                <input type="date" x-model="endDate" @change="handleEndDateChange()" @input="handleEndDateChange()" :min="minEndDate" class="w-full py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm">
                             </div>
                         </div>
 

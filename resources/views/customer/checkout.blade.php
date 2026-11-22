@@ -31,10 +31,16 @@
 @endphp
 <div class="max-w-[1260px] mx-auto px-4 sm:px-6 py-5 sm:py-8" x-data="(() => {
     const storageKey = 'rentalbase_checkout_draft_{{ $client->id }}_{{ auth()->id() ?? 'guest' }}';
+    const currentSignature = {{ json_encode($period['start_date'] . '|' . $period['end_date'] . '|' . implode(',', $itemsList->pluck('hash')->all())) }};
     let savedDraft = null;
     try {
         const raw = sessionStorage.getItem(storageKey);
-        if (raw) savedDraft = JSON.parse(raw);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.signature === currentSignature) {
+                savedDraft = parsed;
+            }
+        }
     } catch (e) {}
 
     const hasServerErrors = {{ $errors->any() ? 'true' : 'false' }};
@@ -44,6 +50,7 @@
 
     return {
         storageKey: storageKey,
+        signature: currentSignature,
         currentStep: initialStep,
         periodStart: (savedDraft && savedDraft.periodStart) ? savedDraft.periodStart : {{ json_encode(old('start_date', $period['start_date'])) }},
         periodEnd: (savedDraft && savedDraft.periodEnd) ? savedDraft.periodEnd : {{ json_encode(old('end_date', $period['end_date'])) }},
@@ -84,6 +91,11 @@
                 });
             }
 
+            // Pastikan tanggal selesai minimal H+1
+            if (this.periodStart && (!this.periodEnd || this.periodEnd <= this.periodStart)) {
+                this.periodEnd = this.minEndDate;
+            }
+
             // Pantau seluruh field utama untuk auto-save ke sessionStorage secara reaktif
             const fieldsToWatch = [
                 'currentStep', 'ship', 'addressText', 'whatsapp', 
@@ -113,6 +125,7 @@
         saveDraft() {
             try {
                 const draft = {
+                    signature: this.signature,
                     currentStep: this.currentStep,
                     ship: this.ship,
                     addressText: this.addressText,
@@ -145,13 +158,32 @@
             window.location.reload();
         },
 
+    get minEndDate() {
+        if (!this.periodStart) {
+            return '{{ date('Y-m-d', strtotime('+1 day')) }}';
+        }
+        const [y, m, d] = this.periodStart.split('-').map(Number);
+        if (!y || !m || !d) return '{{ date('Y-m-d', strtotime('+1 day')) }}';
+        return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().split('T')[0];
+    },
+
+    handlePeriodStartChange() {
+        if (!this.periodStart) return;
+        const minEnd = this.minEndDate;
+        if (!this.periodEnd || this.periodEnd <= this.periodStart) {
+            this.periodEnd = minEnd;
+        }
+    },
+
     get durationDays() {
         if (!this.periodStart || !this.periodEnd) return 1;
-        const start = new Date(this.periodStart);
-        const end = new Date(this.periodEnd);
-        if (end < start) return 1;
-        const diffTime = Math.abs(end - start);
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        const [sy, sm, sd] = this.periodStart.split('-').map(Number);
+        const [ey, em, ed] = this.periodEnd.split('-').map(Number);
+        if (!sy || !ey) return 1;
+        const startMs = Date.UTC(sy, sm - 1, sd);
+        const endMs = Date.UTC(ey, em - 1, ed);
+        if (endMs <= startMs) return 1;
+        return Math.max(1, Math.round((endMs - startMs) / 86400000));
     },
 
     get shippingAddress() {
@@ -263,8 +295,8 @@
         if (step === 1) {
             if (!this.periodStart) errs.push('Tanggal mulai sewa wajib dipilih.');
             if (!this.periodEnd) errs.push('Tanggal selesai sewa wajib dipilih.');
-            if (this.periodStart && this.periodEnd && new Date(this.periodEnd) < new Date(this.periodStart)) {
-                errs.push('Tanggal selesai harus setelah tanggal mulai.');
+            if (this.periodStart && this.periodEnd && new Date(this.periodEnd) <= new Date(this.periodStart)) {
+                errs.push('Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai.');
             }
             if (!this.items || this.items.length === 0) {
                 errs.push('Keranjang sewa tidak boleh kosong.');
@@ -662,14 +694,14 @@
                         <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
                             <div>
                                 <label for="start_date" class="block text-[12px] sm:text-[12.5px] font-semibold text-gray-600 mb-1">Tanggal Mulai</label>
-                                <input type="date" id="start_date" name="start_date" x-model="periodStart" min="{{ date('Y-m-d') }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500 bg-white" required>
+                                <input type="date" id="start_date" name="start_date" x-model="periodStart" @change="handlePeriodStartChange()" @input="handlePeriodStartChange()" min="{{ date('Y-m-d') }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500 bg-white" required>
                             </div>
                             <div class="hidden sm:flex items-center justify-center text-gray-400 pb-3">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M13 6l6 6-6 6"/></svg>
                             </div>
                             <div>
                                 <label for="end_date" class="block text-[12px] sm:text-[12.5px] font-semibold text-gray-600 mb-1">Tanggal Selesai</label>
-                                <input type="date" id="end_date" name="end_date" x-model="periodEnd" :min="periodStart" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500 bg-white" required>
+                                <input type="date" id="end_date" name="end_date" x-model="periodEnd" :min="minEndDate" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500 bg-white" required>
                             </div>
                             <!-- Durbox -->
                             <div class="bg-primary-50/80 border border-primary-200/80 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-center min-w-[84px] sm:min-w-[96px]">

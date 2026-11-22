@@ -248,7 +248,7 @@
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Selesai</label>
                         <input type="date" 
                                wire:model.live="endDate" 
-                               min="{{ $startDate ?: date('Y-m-d') }}"
+                               min="{{ $startDate ? \Carbon\Carbon::parse($startDate)->addDay()->format('Y-m-d') : date('Y-m-d', strtotime('+1 day')) }}"
                                class="w-full border border-gray-200 rounded-xl px-3 py-2 text-[13px] font-semibold text-gray-800 focus:border-primary-500 focus:ring-0 transition-colors">
                     </div>
                     @if($startDate && $endDate)
@@ -602,7 +602,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
-                                    <input type="date" wire:model.live="modalEndDate" wire:change="checkModalAvailability" min="{{ $modalStartDate ?: date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                    <input type="date" wire:model.live="modalEndDate" wire:change="checkModalAvailability" min="{{ $modalStartDate ? \Carbon\Carbon::parse($modalStartDate)->addDay()->format('Y-m-d') : date('Y-m-d', strtotime('+1 day')) }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
                                 </div>
                             </div>
 
@@ -642,7 +642,7 @@
                             @php
                                 $mStart = $modalStartDate ? \Carbon\Carbon::parse($modalStartDate) : null;
                                 $mEnd = $modalEndDate ? \Carbon\Carbon::parse($modalEndDate) : null;
-                                $mDur = ($mStart && $mEnd && $mEnd->gte($mStart)) ? $mStart->diffInDays($mEnd) + 1 : 0;
+                                $mDur = ($mStart && $mEnd && $mEnd->gt($mStart)) ? max(1, (int) $mStart->diffInDays($mEnd)) : 0;
                                 $mTotal = $mDur * $modalProduct->rental_price_per_day * max(1, (int)$modalQuantity);
                             @endphp
 
