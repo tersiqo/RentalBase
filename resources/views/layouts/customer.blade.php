@@ -1,62 +1,65 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $client->nama_usaha ?? 'RentalBase Tenant' }} - Katalog Sewa</title>
-    
+
     <!-- PWA & Mobile Web App Meta -->
     <meta name="apple-mobile-web-app-title" content="{{ $client->nama_usaha ?? 'RentalBase' }}">
     <meta name="application-name" content="{{ $client->nama_usaha ?? 'RentalBase' }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#F97316">
-    
+
     <!-- Icons & Manifest -->
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <!-- Scripts/Styles (Vite) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="{{ asset('js/rentalbase-webpush.js') }}"></script>
     @livewireStyles
 
     @php
-        $tenantProfile = $client?->tenantProfile ?? $client?->profile;
-        $themeColor = $tenantProfile?->theme_color ?? $client?->theme_color ?? '#F97316';
-        $textColor = $tenantProfile?->text_color ?? (new \App\Models\TenantProfile(['theme_color' => $themeColor]))->text_color;
+    $tenantProfile = $client?->tenantProfile ?? $client?->profile;
+    $themeColor = $tenantProfile?->theme_color ?? $client?->theme_color ?? '#F97316';
+    $textColor = $tenantProfile?->text_color ?? (new \App\Models\TenantProfile(['theme_color' => $themeColor]))->text_color;
 
-        $logoPath = $tenantProfile?->logo_path ?? $client?->logo ?? null;
-        $logoUrl = null;
-        if ($logoPath) {
-            $logoUrl = storage_url($logoPath);
-        }
+    $logoPath = $tenantProfile?->logo_path ?? $client?->logo ?? null;
+    $logoUrl = null;
+    if ($logoPath) {
+    $logoUrl = storage_url($logoPath);
+    }
 
-        $shopName = $tenantProfile?->name ?? $client->nama_usaha ?? ($client->business_name ?? 'RentalBase');
-        $rawPhone = $tenantProfile?->whatsapp ?? $client->phone ?? null;
-        $waNumber = null;
-        if ($rawPhone) {
-            $digits = preg_replace('/[^0-9]/', '', $rawPhone);
-            if (str_starts_with($digits, '0')) {
-                $waNumber = '62' . substr($digits, 1);
-            } elseif (str_starts_with($digits, '62')) {
-                $waNumber = $digits;
-            } else {
-                $waNumber = '62' . $digits;
-            }
-        }
+    $shopName = $tenantProfile?->name ?? $client->nama_usaha ?? ($client->business_name ?? 'RentalBase');
+    $rawPhone = $tenantProfile?->whatsapp ?? $client->phone ?? null;
+    $waNumber = null;
+    if ($rawPhone) {
+    $digits = preg_replace('/[^0-9]/', '', $rawPhone);
+    if (str_starts_with($digits, '0')) {
+    $waNumber = '62' . substr($digits, 1);
+    } elseif (str_starts_with($digits, '62')) {
+    $waNumber = $digits;
+    } else {
+    $waNumber = '62' . $digits;
+    }
+    }
     @endphp
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        }
 
         :root {
             --tenant-theme: {{ $themeColor }};
@@ -189,16 +192,15 @@
         /* Dynamic Tenant Hero Banner & Card Theme */
         .tenant-hero-bg {
             background: radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--tenant-theme) 18%, white), transparent 45%),
-                        radial-gradient(circle at 95% 10%, color-mix(in srgb, var(--tenant-theme) 12%, white), transparent 45%),
-                        #fff !important;
+                radial-gradient(circle at 95% 10%, color-mix(in srgb, var(--tenant-theme) 12%, white), transparent 45%),
+                #fff !important;
         }
 
         .tenant-hero-card {
-            background: linear-gradient(145deg, 
-                color-mix(in srgb, var(--tenant-theme) 45%, white) 0%, 
-                color-mix(in srgb, var(--tenant-theme) 75%, white) 45%, 
-                var(--tenant-theme) 100%
-            ) !important;
+            background: linear-gradient(145deg,
+                    color-mix(in srgb, var(--tenant-theme) 45%, white) 0%,
+                    color-mix(in srgb, var(--tenant-theme) 75%, white) 45%,
+                    var(--tenant-theme) 100%) !important;
             box-shadow: 0 30px 60px -20px color-mix(in srgb, var(--tenant-theme) 45%, transparent) !important;
         }
 
@@ -225,15 +227,16 @@
         }
     </style>
 </head>
+
 <body class="bg-[#FAFAFA] text-gray-600 font-sans antialiased min-h-screen flex flex-col"
-      x-data="{ 
+    x-data="{ 
           howToRentModalOpen: false, 
           helpModalOpen: false, 
           mobileMenuOpen: false,
           cartToast: { show: false, title: '', message: '' }
       }"
-      @show-cart-toast.window="cartToast = { show: true, title: $event.detail.title || 'Berhasil', message: $event.detail.message || '' }; setTimeout(() => cartToast.show = false, 4000)"
-      @keydown.escape.window="howToRentModalOpen = false; helpModalOpen = false; mobileMenuOpen = false">
+    @show-cart-toast.window="cartToast = { show: true, title: $event.detail.title || 'Berhasil', message: $event.detail.message || '' }; setTimeout(() => cartToast.show = false, 4000)"
+    @keydown.escape.window="howToRentModalOpen = false; helpModalOpen = false; mobileMenuOpen = false">
 
     <!-- Header -->
     <header class="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
@@ -242,19 +245,27 @@
                 <!-- Logo & Name -->
                 <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="flex items-center gap-2.5 sm:gap-3 font-extrabold text-gray-900 text-[15px] sm:text-[17px] group min-w-0 shrink">
                     @if($logoUrl)
-                        <img src="{{ $logoUrl }}"
-                             alt="{{ $tenantProfile?->name ?? $client->nama_usaha ?? 'Logo Toko' }}"
-                             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';"
-                             class="w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] shrink-0 rounded-xl object-contain border border-gray-100 p-0.5 shadow-sm group-hover:scale-105 transition-transform bg-white">
-                        <div class="hidden w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] shrink-0 rounded-xl items-center justify-center font-bold shadow-sm transition-all"
-                             style="background-color: var(--tenant-theme); color: var(--tenant-text);">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M3 4h3l2 11h10M6 8h13l-2 6H8"/></svg>
-                        </div>
+                    <img src="{{ $logoUrl }}"
+                        alt="{{ $tenantProfile?->name ?? $client->nama_usaha ?? 'Logo Toko' }}"
+                        onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';"
+                        class="w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] shrink-0 rounded-xl object-contain border border-gray-100 p-0.5 shadow-sm group-hover:scale-105 transition-transform bg-white">
+                    <div class="hidden w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] shrink-0 rounded-xl items-center justify-center font-bold shadow-sm transition-all"
+                        style="background-color: var(--tenant-theme); color: var(--tenant-text);">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="7" cy="19" r="2" />
+                            <circle cx="17" cy="19" r="2" />
+                            <path d="M3 4h3l2 11h10M6 8h13l-2 6H8" />
+                        </svg>
+                    </div>
                     @else
-                        <div class="w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] shrink-0 rounded-xl flex items-center justify-center font-bold shadow-sm transition-all"
-                             style="background-color: var(--tenant-theme); color: var(--tenant-text);">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/><path d="M3 4h3l2 11h10M6 8h13l-2 6H8"/></svg>
-                        </div>
+                    <div class="w-[36px] h-[36px] sm:w-[38px] sm:h-[38px] shrink-0 rounded-xl flex items-center justify-center font-bold shadow-sm transition-all"
+                        style="background-color: var(--tenant-theme); color: var(--tenant-text);">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="7" cy="19" r="2" />
+                            <circle cx="17" cy="19" r="2" />
+                            <path d="M3 4h3l2 11h10M6 8h13l-2 6H8" />
+                        </svg>
+                    </div>
                     @endif
                     <span class="truncate max-w-[155px] sm:max-w-[220px] md:max-w-none">{{ $tenantProfile?->name ?? $client->nama_usaha ?? ($client->name ?? 'RentalBase Tenant') }}</span>
                 </a>
@@ -264,12 +275,25 @@
                     <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="{{ (request()->routeIs('customer.home*') || request()->routeIs('customer.product.*')) ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Katalog</a>
                     <button type="button" @click.prevent="howToRentModalOpen = true; mobileMenuOpen = false" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors cursor-pointer font-semibold text-[14px]">Cara sewa</button>
                     @if(request()->routeIs('customer.checkout*'))
-                        <span class="text-primary-500 border-b-2 border-primary-500 py-[22px] transition-colors font-semibold text-[14px]">Checkout</span>
+                    <span class="text-primary-500 border-b-2 border-primary-500 py-[22px] transition-colors font-semibold text-[14px]">Checkout</span>
                     @endif
                     @auth
-                        <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="{{ request()->routeIs('customer.orders*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Pesanan Saya</a>
+                    <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="{{ request()->routeIs('customer.orders*') ? 'text-primary-500 border-b-2 border-primary-500 py-[22px]' : 'text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px]' }} transition-colors">Pesanan Saya</a>
                     @endauth
                     <button type="button" @click.prevent="helpModalOpen = true; mobileMenuOpen = false" class="text-gray-600 border-b-2 border-transparent hover:text-primary-500 py-[22px] transition-colors cursor-pointer font-semibold text-[14px]">Bantuan</button>
+
+                    {{-- Pemisah vertikal --}}
+                    <span class="h-4 w-px bg-gray-200"></span>
+
+                    {{-- Link ke Platform RentalBase --}}
+                    <a href="{{ Route::has('landing.home') ? route('landing.home') : url('/') }}"
+                       class="inline-flex items-center gap-1.5 text-gray-500 hover:text-primary-500 py-[22px] transition-colors font-medium text-[13px] group"
+                       title="Kembali ke platform utama RentalBase">
+                        <span>RentalBase</span>
+                        <svg class="w-3.5 h-3.5 text-gray-400 group-hover:text-primary-500 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
                 </nav>
 
                 <!-- Right Actions -->
@@ -278,113 +302,132 @@
                     <livewire:customer.cart-icon :client="$client" />
 
                     @auth
-                        <!-- Bell Notification Icon Customer (Scoped per-Tenant) -->
-                        @php
-                            $notifQuery = \App\Models\Notification::where('user_id', auth()->id())
-                                ->where('is_read', false);
-                            if (isset($client) && $client?->id) {
-                                $notifQuery->where('client_id', $client->id);
-                            }
-                            $unreadCustomerNotifs = $notifQuery->count();
-                            $activeSub = $client->subdomain ?? session('active_client_subdomain', null);
-                            $notifRoute = $activeSub 
-                                ? route('customer.notifications.tenant', ['subdomain' => $activeSub])
-                                : route('customer.notifications.index');
-                        @endphp
-                        <a href="{{ $notifRoute }}"
-                           class="relative w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] shrink-0 aspect-square rounded-xl border border-gray-200 flex items-center justify-center bg-white text-gray-700 hover:border-primary-500 hover:text-primary-500 transition-colors"
-                           title="Pemberitahuan">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
-                            </svg>
-                            @if($unreadCustomerNotifs > 0)
-                                <span class="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[19px] h-[19px] px-1 text-[10px] font-black text-white bg-primary-500 rounded-full shadow-sm">
-                                    {{ $unreadCustomerNotifs > 99 ? '99+' : $unreadCustomerNotifs }}
-                                </span>
-                            @endif
-                        </a>
+                    <!-- Bell Notification Icon Customer (Scoped per-Tenant) -->
+                    @php
+                    $notifQuery = \App\Models\Notification::where('user_id', auth()->id())
+                    ->where('is_read', false);
+                    if (isset($client) && $client?->id) {
+                    $notifQuery->where('client_id', $client->id);
+                    }
+                    $unreadCustomerNotifs = $notifQuery->count();
+                    $activeSub = $client->subdomain ?? session('active_client_subdomain', null);
+                    $notifRoute = $activeSub
+                    ? route('customer.notifications.tenant', ['subdomain' => $activeSub])
+                    : route('customer.notifications.index');
+                    @endphp
+                    <a href="{{ $notifRoute }}"
+                        class="relative w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] shrink-0 aspect-square rounded-xl border border-gray-200 flex items-center justify-center bg-white text-gray-700 hover:border-primary-500 hover:text-primary-500 transition-colors"
+                        title="Pemberitahuan">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9" />
+                        </svg>
+                        @if($unreadCustomerNotifs > 0)
+                        <span class="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[19px] h-[19px] px-1 text-[10px] font-black text-white bg-primary-500 rounded-full shadow-sm">
+                            {{ $unreadCustomerNotifs > 99 ? '99+' : $unreadCustomerNotifs }}
+                        </span>
+                        @endif
+                    </a>
                     @endauth
 
                     @auth
-                        <!-- Login / Avatar (Alpine Dropdown) -->
-                        <div x-data="{ open: false }" class="relative flex items-center shrink-0">
-                            <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none cursor-pointer shrink-0">
-                                @php
-                                    $userAvatar = auth()->user()->avatar 
-                                        ? storage_url(auth()->user()->avatar)
-                                        : "https://ui-avatars.com/api/?name=" . urlencode(auth()->user()->name) . "&background=f97316&color=fff&bold=true&size=128";
-                                @endphp
-                                <img src="{{ $userAvatar }}" 
-                                     alt="Profile" 
-                                     onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=f97316&color=fff&bold=true&size=128'"
-                                     class="w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] shrink-0 aspect-square rounded-xl object-cover border border-gray-200 hover:border-primary-500 transition-colors">
-                            </button>
-                            
-                            <div x-show="open" 
-                                 x-transition.opacity.duration.200ms
-                                 class="absolute right-0 top-12 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50" 
-                                 style="display: none;">
-                                <div class="px-4 py-2 border-b border-gray-100 mb-1">
-                                    <p class="text-sm font-bold text-gray-900">Halo, {{ auth()->user()->name }}!</p>
-                                </div>
-                                <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-4 py-2 text-sm font-semibold {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50' }} transition">Profil Saya</a>
-                                <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition">Pesanan Saya</a>
-                                <a href="{{ $notifRoute }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition flex items-center justify-between">
-                                    <span>Pemberitahuan</span>
-                                    @if(isset($unreadCustomerNotifs) && $unreadCustomerNotifs > 0)
-                                        <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary-50 text-primary-600">{{ $unreadCustomerNotifs }}</span>
-                                    @endif
-                                </a>
-                                <div class="border-t border-gray-100 mt-1"></div>
-                                <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</a>
-                                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                                    @csrf
-                                    @if(request()->routeIs('customer.orders'))
-                                        <input type="hidden" name="redirect" value="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}">
-                                    @endif
-                                </form>
+                    <!-- Login / Avatar (Alpine Dropdown) -->
+                    <div x-data="{ open: false }" class="relative flex items-center shrink-0">
+                        <button @click="open = !open" @click.away="open = false" class="flex items-center gap-2 focus:outline-none cursor-pointer shrink-0">
+                            @php
+                            $userAvatar = auth()->user()->avatar
+                            ? storage_url(auth()->user()->avatar)
+                            : "https://ui-avatars.com/api/?name=" . urlencode(auth()->user()->name) . "&background=f97316&color=fff&bold=true&size=128";
+                            @endphp
+                            <img src="{{ $userAvatar }}"
+                                alt="Profile"
+                                onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=f97316&color=fff&bold=true&size=128'"
+                                class="w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] shrink-0 aspect-square rounded-xl object-cover border border-gray-200 hover:border-primary-500 transition-colors">
+                        </button>
+
+                        <div x-show="open"
+                            x-transition.opacity.duration.200ms
+                            class="absolute right-0 top-12 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 border border-gray-100 z-50"
+                            style="display: none;">
+                            <div class="px-4 py-2 border-b border-gray-100 mb-1">
+                                <p class="text-sm font-bold text-gray-900">Halo, {{ auth()->user()->name }}!</p>
                             </div>
+                            <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-4 py-2 text-sm font-semibold {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600 hover:bg-primary-50' }} transition">Profil Saya</a>
+                            <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition">Pesanan Saya</a>
+                            <a href="{{ $notifRoute }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition flex items-center justify-between">
+                                <span>Pemberitahuan</span>
+                                @if(isset($unreadCustomerNotifs) && $unreadCustomerNotifs > 0)
+                                <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-primary-50 text-primary-600">{{ $unreadCustomerNotifs }}</span>
+                                @endif
+                            </a>
+                            <div class="border-t border-gray-100 mt-1"></div>
+                            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Log out</a>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                @csrf
+                                @if(request()->routeIs('customer.orders'))
+                                <input type="hidden" name="redirect" value="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}">
+                                @endif
+                            </form>
                         </div>
+                    </div>
                     @else
-                        <!-- Guest Actions -->
-                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="hidden sm:inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 text-[14px] transition-colors shrink-0">Masuk</a>
-                        <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-3 sm:px-4 py-[7px] sm:py-[9px] border border-transparent bg-primary-500 text-white tenant-shadow-sm hover:bg-primary-600 active:scale-95 text-[13px] sm:text-[14px] transition-all shrink-0">Daftar</a>
+                    <!-- Guest Actions -->
+                    <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="hidden sm:inline-flex items-center justify-center gap-2 rounded-xl font-bold px-4 py-[9px] border border-gray-200 bg-white text-gray-800 hover:bg-gray-50 text-[14px] transition-colors shrink-0">Masuk</a>
+                    <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="inline-flex items-center justify-center gap-2 rounded-xl font-bold px-3 sm:px-4 py-[7px] sm:py-[9px] border border-transparent bg-primary-500 text-white tenant-shadow-sm hover:bg-primary-600 active:scale-95 text-[13px] sm:text-[14px] transition-all shrink-0">Daftar</a>
                     @endauth
-                    
+
                     <!-- Mobile menu button -->
                     <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-gray-500 hover:text-gray-900 focus:outline-none p-1.5 shrink-0">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Mobile Dropdown Menu -->
-        <div x-show="mobileMenuOpen" 
-             x-transition
-             class="md:hidden bg-white border-t border-gray-100"
-             style="display: none;">
+        <div x-show="mobileMenuOpen"
+            x-transition
+            class="md:hidden bg-white border-t border-gray-100"
+            style="display: none;">
+            <div class="px-3 py-2 space-y-0.5">
                 <a href="{{ route('customer.home', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ (request()->routeIs('customer.home*') || request()->routeIs('customer.product.*')) ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Katalog</a>
                 <button type="button" @click.prevent="howToRentModalOpen = true; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 cursor-pointer">Cara sewa</button>
                 @if(request()->routeIs('customer.checkout*'))
-                    <span class="block px-3 py-2 rounded-lg text-base font-medium text-primary-600 bg-primary-50 font-semibold">Checkout</span>
+                <span class="block px-3 py-2 rounded-lg text-base font-medium text-primary-600 bg-primary-50 font-semibold">Checkout</span>
                 @endif
                 <button type="button" @click.prevent="helpModalOpen = true; mobileMenuOpen = false" class="w-full text-left block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 cursor-pointer">Bantuan</button>
-                
+
                 @auth
-                    <div class="border-t border-gray-100 pt-2 mt-2">
-                        <div class="px-3 py-1 text-xs font-bold text-gray-400 uppercase">Akun Saya</div>
-                        <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600' }}">Profil Saya</a>
-                        <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600' }}">Pesanan Saya</a>
-                        <a href="{{ $notifRoute ?? route('customer.notifications.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.notifications*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pemberitahuan</a>
-                        <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50">Log out</a>
-                    </div>
+                <div class="border-t border-gray-100 pt-2 mt-2">
+                    <div class="px-3 py-1 text-xs font-bold text-gray-400 uppercase">Akun Saya</div>
+                    <a href="{{ route('customer.profile', ['subdomain' => $client->subdomain ?? session('active_client_subdomain', 'babyrental')]) }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('customer.profile*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600' }}">Profil Saya</a>
+                    <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('customer.orders*') ? 'text-primary-600 bg-primary-50' : 'text-gray-700 hover:text-primary-600' }}">Pesanan Saya</a>
+                    <a href="{{ $notifRoute ?? route('customer.notifications.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('customer.notifications*') ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50' }}">Pemberitahuan</a>
+                    <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="block px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50">Log out</a>
+                </div>
                 @else
-                    <div class="border-t border-gray-100 pt-3 mt-2 flex flex-col gap-2">
-                        <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="w-full text-center py-2.5 font-bold rounded-xl border border-gray-200 bg-white text-gray-800 hover:bg-gray-50">Masuk</a>
-                        <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="w-full text-center py-2.5 font-bold rounded-xl bg-primary-500 text-white hover:bg-primary-600">Daftar</a>
-                    </div>
+                <div class="border-t border-gray-100 pt-3 mt-2 flex flex-col gap-2">
+                    <a href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" class="w-full text-center py-2.5 font-bold rounded-xl border border-gray-200 bg-white text-gray-800 hover:bg-gray-50">Masuk</a>
+                    <a href="{{ route('login', ['tab' => 'register', 'redirect' => request()->fullUrl()]) }}" class="w-full text-center py-2.5 font-bold rounded-xl bg-primary-500 text-white hover:bg-primary-600">Daftar</a>
+                </div>
                 @endauth
+
+                {{-- Kembali ke RentalBase (Mobile) --}}
+                <div class="border-t border-gray-100 pt-2 mt-2">
+                    <a href="{{ Route::has('landing.home') ? route('landing.home') : url('/') }}"
+                       class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 text-sm font-semibold transition">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                            <span>Kembali ke RentalBase</span>
+                        </span>
+                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
             </div>
         </div>
     </header>
@@ -402,58 +445,68 @@
                     <b class="text-white text-sm block mb-1">{{ $tenantProfile?->name ?? $client->nama_usaha ?? 'BabyRent' }}</b>
                     {{ $tenantProfile?->address ?? $client->address ?? 'Alamat operasional toko' }}
                     @if($tenantProfile?->city ?? $client->city)
-                        , {{ $tenantProfile?->city ?? $client->city }}
+                    , {{ $tenantProfile?->city ?? $client->city }}
                     @endif
                     <br>
                     WhatsApp: {{ $tenantProfile?->whatsapp ?? $client->phone ?? '-' }}
                 </div>
-                <div class="text-right">
-                    Ditenagai <b class="text-primary-500">RentalBase</b><br>
-                    &copy; {{ date('Y') }} {{ $tenantProfile?->name ?? $client->nama_usaha ?? 'RentalBase' }}.
+                <div class="text-right flex flex-col items-end">
+                    <div>
+                        Ditenagai <a href="{{ Route::has('landing.home') ? route('landing.home') : url('/') }}" class="text-primary-500 font-bold hover:underline transition">RentalBase</a>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5">
+                        &copy; {{ date('Y') }} {{ $tenantProfile?->name ?? $client->nama_usaha ?? 'RentalBase' }}. All rights reserved.
+                    </div>
+                    <a href="{{ Route::has('landing.home') ? route('landing.home') : url('/') }}" class="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition mt-2 group">
+                        <svg class="w-3.5 h-3.5 transition group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        <span>Kembali ke Halaman Utama RentalBase</span>
+                    </a>
                 </div>
             </div>
         </div>
     </footer>
 
     <!-- Modal 1: Panduan Cara Sewa & Jaminan KTP -->
-    <div x-show="howToRentModalOpen" 
-         x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto" 
-         aria-labelledby="how-to-rent-title" 
-         role="dialog" 
-         aria-modal="true"
-         style="display: none;">
+    <div x-show="howToRentModalOpen"
+        x-cloak
+        class="fixed inset-0 z-50 overflow-y-auto"
+        aria-labelledby="how-to-rent-title"
+        role="dialog"
+        aria-modal="true"
+        style="display: none;">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <!-- Backdrop -->
             <div x-show="howToRentModalOpen"
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100"
-                 x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
-                 @click="howToRentModalOpen = false" 
-                 aria-hidden="true"></div>
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+                @click="howToRentModalOpen = false"
+                aria-hidden="true"></div>
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <!-- Modal Content -->
             <div x-show="howToRentModalOpen"
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="relative inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full border border-gray-100">
-                
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="relative inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full border border-gray-100">
+
                 {{-- Header Modal --}}
                 <div class="p-6 pb-4 border-b border-gray-100 flex items-start justify-between gap-4 bg-slate-50/60">
                     <div class="flex items-center gap-3.5">
                         <div class="w-11 h-11 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center flex-none shadow-xs border border-primary-100">
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
                         </div>
                         <div>
@@ -467,7 +520,7 @@
                     </div>
                     <button type="button" @click="howToRentModalOpen = false" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-xl hover:bg-gray-100 transition cursor-pointer">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
@@ -532,7 +585,7 @@
                     {{-- Highlight Info Box --}}
                     <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex gap-3 text-xs text-amber-900 leading-relaxed">
                         <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <div>
                             <strong class="font-bold block mb-0.5">Praktis Tanpa Deposit &amp; Tanpa Titip Fisik KTP:</strong>
@@ -546,9 +599,9 @@
                     <span class="text-[11px] text-gray-400 text-center sm:text-left">
                         Ada pertanyaan? Cek menu Bantuan atau hubungi admin toko.
                     </span>
-                    <button type="button" 
-                            @click="howToRentModalOpen = false" 
-                            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs transition shadow-sm active:scale-95 cursor-pointer">
+                    <button type="button"
+                        @click="howToRentModalOpen = false"
+                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs transition shadow-sm active:scale-95 cursor-pointer">
                         Mengerti, Tutup Panduan
                     </button>
                 </div>
@@ -557,44 +610,44 @@
     </div>
 
     <!-- Modal 2: Pusat Bantuan & Kontak Toko -->
-    <div x-show="helpModalOpen" 
-         x-cloak
-         class="fixed inset-0 z-50 overflow-y-auto" 
-         aria-labelledby="help-modal-title" 
-         role="dialog" 
-         aria-modal="true"
-         style="display: none;">
+    <div x-show="helpModalOpen"
+        x-cloak
+        class="fixed inset-0 z-50 overflow-y-auto"
+        aria-labelledby="help-modal-title"
+        role="dialog"
+        aria-modal="true"
+        style="display: none;">
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <!-- Backdrop -->
             <div x-show="helpModalOpen"
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100"
-                 x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
-                 @click="helpModalOpen = false" 
-                 aria-hidden="true"></div>
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+                @click="helpModalOpen = false"
+                aria-hidden="true"></div>
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <!-- Modal Content -->
             <div x-show="helpModalOpen"
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="relative inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl w-full border border-gray-100">
-                
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="relative inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl w-full border border-gray-100">
+
                 {{-- Header Modal --}}
                 <div class="p-6 pb-4 border-b border-gray-100 flex items-start justify-between gap-4 bg-slate-50/60">
                     <div class="flex items-center gap-3.5">
                         <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-none shadow-xs border border-emerald-100">
                             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
                             </svg>
                         </div>
                         <div>
@@ -608,7 +661,7 @@
                     </div>
                     <button type="button" @click="helpModalOpen = false" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-xl hover:bg-gray-100 transition cursor-pointer">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
@@ -652,7 +705,7 @@
                     <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-3">
                         <div class="flex items-center gap-2 text-xs font-bold text-emerald-900">
                             <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                             <span>Kontak Operasional {{ $shopName }}</span>
                         </div>
@@ -663,11 +716,11 @@
 
                         @if($waNumber)
                         <div class="pt-1">
-                            <a href="https://wa.me/{{ $waNumber }}?text={{ urlencode('Halo Admin ' . $shopName . ', saya ingin bertanya seputar sewa alat di toko Anda.') }}" 
-                               target="_blank" 
-                               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer">
+                            <a href="https://wa.me/{{ $waNumber }}?text={{ urlencode('Halo Admin ' . $shopName . ', saya ingin bertanya seputar sewa alat di toko Anda.') }}"
+                                target="_blank"
+                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z"/>
+                                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.275.072.376-.044c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
                                 </svg>
                                 <span>Chat WhatsApp Admin Toko</span>
                             </a>
@@ -678,9 +731,9 @@
 
                 {{-- Footer Modal --}}
                 <div class="p-4 sm:p-5 bg-gray-50 border-t border-gray-100 flex justify-end">
-                    <button type="button" 
-                            @click="helpModalOpen = false" 
-                            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs transition active:scale-95 cursor-pointer">
+                    <button type="button"
+                        @click="helpModalOpen = false"
+                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs transition active:scale-95 cursor-pointer">
                         Tutup Bantuan
                     </button>
                 </div>
@@ -703,14 +756,14 @@
                 if (EchoCtor && typeof Pusher !== 'undefined') {
                     window.Echo = new EchoCtor({
                         broadcaster: 'pusher',
-                        key: '{{ config('broadcasting.connections.pusher.key') }}',
-                        cluster: '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+                        key: "{{ config('broadcasting.connections.pusher.key') }}",
+                        cluster: "{{ config('broadcasting.connections.pusher.options.cluster') }}",
                         forceTLS: true,
-                        csrfToken: '{{ csrf_token() }}',
+                        csrfToken: "{{ csrf_token() }}",
                         authEndpoint: '/broadcasting/auth',
                         auth: {
                             headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'X-CSRF-TOKEN': "{{ csrf_token() }}",
                                 'Accept': 'application/json'
                             }
                         }
@@ -727,14 +780,14 @@
     <div x-data="customerRealtimeNotification({{ auth()->id() }})" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none max-w-sm w-full">
         <template x-for="toast in toasts" :key="toast.id">
             <div class="pointer-events-auto bg-white border border-emerald-200 rounded-2xl shadow-2xl p-4 flex items-start gap-3 transform transition-all duration-300 ease-out"
-                 x-transition:enter="transition ease-out duration-300"
-                 x-transition:enter-start="opacity-0 translate-y-4 scale-95"
-                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                 x-transition:leave="transition ease-in duration-200"
-                 x-transition:leave-start="opacity-100 translate-y-0"
-                 x-transition:leave-end="opacity-0 translate-y-2">
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 translate-y-2">
                 <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                     :class="toast.url === '#open-chat' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'">
+                    :class="toast.url === '#open-chat' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'">
                     <template x-if="toast.url === '#open-chat'">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -779,9 +832,9 @@
                     } catch (err) {}
 
                     const startListening = () => {
-                        const echo = (typeof window.ensureCustomerEcho === 'function')
-                            ? window.ensureCustomerEcho()
-                            : (window.Echo && typeof window.Echo.private === 'function' ? window.Echo : null);
+                        const echo = (typeof window.ensureCustomerEcho === 'function') ?
+                            window.ensureCustomerEcho() :
+                            (window.Echo && typeof window.Echo.private === 'function' ? window.Echo : null);
 
                         if (!echo) {
                             return false;
@@ -793,347 +846,360 @@
                             .error((error) => {
                                 console.error('[RentalBase Realtime Customer] Gagal autentikasi channel customer:', error);
                             })
-                        .listen('.identity.approved', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: identity.approved', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Identitas KTP Disetujui!', e.message || `KTP pesanan #${e.order_number} disetujui. Silakan selesaikan pembayaran.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.identity.rejected', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: identity.rejected', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Identitas KTP Ditolak!', e.message || `KTP pesanan #${e.order_number} perlu direvisi.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.payment.verified', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: payment.verified', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Pembayaran Diterima!', e.message || `Pembayaran pesanan #${e.order_number} telah diverifikasi admin.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.payment.rejected', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: payment.rejected', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Pembayaran Ditolak!', e.message || `Bukti bayar pesanan #${e.order_number} ditolak. Silakan unggah bukti yang benar.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.order.confirmed', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: order.confirmed', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Pesanan Dikonfirmasi!', e.message || `Pesanan #${e.order_number} telah dikonfirmasi oleh toko.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.order.shipped', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: order.shipped', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            const title = (e.status === 'sedang_disewa') ? 'Barang Telah Diserahkan!' : 'Barang Sedang Dikirim!';
-                            this.addToast(title, e.message || `Pesanan #${e.order_number} sedang dalam perjalanan.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.return.accepted', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: return.accepted', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Pengembalian Diterima!', e.message || `Pengembalian pesanan #${e.order_number} telah diverifikasi toko.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.fine.issued', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: fine.issued', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Denda Keterlambatan!', e.message || `Tagihan denda keterlambatan terbit untuk pesanan #${e.order_number}.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.damage.created', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: damage.created', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id + '/damage') : '/my-orders';
-                            this.addToast('Klaim Kerusakan!', e.message || `Laporan klaim kerusakan diterbitkan untuk pesanan #${e.order_number}.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.damage.resolved', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: damage.resolved', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
-                            this.addToast('Klaim Kerusakan Selesai!', e.message || `Klaim kerusakan pesanan #${e.order_number} telah diselesaikan.`, targetUrl);
-                            if (window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.damage.responded', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: damage.responded', e);
-                            this.playChime();
-                            const targetUrl = e.order_id ? ('/my-orders/' + e.order_id + '/damage') : '/my-orders';
-                            this.addToast('Tanggapan Baru dari Toko!', e.message || `Toko menanggapi klaim pesanan #${e.order_number}.`, targetUrl);
-                            if (window.location.pathname.includes('/damage') || window.location.pathname.includes('/my-orders')) {
-                                this.triggerReload(800);
-                            }
-                        })
-                        .listen('.chat.message', (e) => {
-                            console.log('[RentalBase Realtime Customer] Event received: chat.message', e);
-                            if (e.sender_role === 'admin') {
-                                const chatWidget = window.__rbCustomerChat;
-                                const isChatOpen = chatWidget && chatWidget.isOpen;
-                                if (!isChatOpen) {
-                                    this.playChime();
-                                    this.addToast(
-                                        'Pesan Baru dari ' + (e.sender_name || 'Toko') + '!',
-                                        e.message || 'Pesan baru diterima.',
-                                        '#open-chat'
-                                    );
+                            .listen('.identity.approved', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: identity.approved', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                                this.addToast('Identitas KTP Disetujui!', e.message || `KTP pesanan #${e.order_number} disetujui. Silakan selesaikan pembayaran.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
                                 }
-                            }
-                        });
-                    return true;
-                };
-
-                if (!startListening()) {
-                    let attempts = 0;
-                    const poll = setInterval(() => {
-                        attempts++;
-                        if (startListening() || attempts >= 30) {
-                            clearInterval(poll);
-                        }
-                    }, 150);
-                }
-            },
-            triggerReload(delay = 800, forceFull = false) {
-                if (this._reloadTimer) return;
-                this._reloadTimer = setTimeout(async () => {
-                    this._reloadTimer = null;
-                    console.log(`[RentalBase Realtime Customer] triggerReload executing (delay: ${delay}ms, forceFull: ${forceFull})`);
-
-                    if (forceFull) {
-                        try {
-                            if (this.toasts && this.toasts.length > 0) {
-                                sessionStorage.setItem('rb_pending_toast_customer', JSON.stringify(this.toasts));
-                            }
-                        } catch (err) {}
-                        window.location.reload();
-                        return;
-                    }
-
-                    // 1. Guard: Check if customer is currently typing or editing
-                    const activeEl = document.activeElement;
-                    const isEditing = activeEl && (
-                        activeEl.tagName === 'INPUT' ||
-                        activeEl.tagName === 'TEXTAREA' ||
-                        activeEl.tagName === 'SELECT' ||
-                        activeEl.isContentEditable
-                    );
-                    if (isEditing) {
-                        console.log('[RentalBase Realtime Customer] Partial reload postponed: User is currently typing in an input element');
-                        return;
-                    }
-
-                    // 2. Guard: Check if modal or dialog is open
-                    const openDialog = document.querySelector('[role="dialog"][aria-modal="true"]:not([style*="display: none"]):not([style*="display:none"])');
-                    const isDialogVisible = openDialog && (
-                        typeof openDialog.checkVisibility === 'function'
-                            ? openDialog.checkVisibility()
-                            : (openDialog.offsetParent !== null || window.getComputedStyle(openDialog).display !== 'none')
-                    );
-                    if (isDialogVisible) {
-                        console.log('[RentalBase Realtime Customer] Partial reload postponed: Active modal dialog is currently visible');
-                        return;
-                    }
-
-                    const currentMain = document.querySelector('main');
-                    if (!currentMain) {
-                        window.location.reload();
-                        return;
-                    }
-
-                    // 3. Preserve Alpine state if on my-orders view
-                    let savedState = null;
-                    const rootXData = currentMain.querySelector('[x-data]') || (currentMain.hasAttribute('x-data') ? currentMain : null);
-                    if (rootXData && window.Alpine && typeof window.Alpine.$data === 'function') {
-                        try {
-                            const alpineData = window.Alpine.$data(rootXData);
-                            if (alpineData) {
-                                if (alpineData.cancelModalOpen || alpineData.returnModalOpen || alpineData.receiveModalOpen || alpineData.lightboxOpen) {
-                                    console.log('[RentalBase Realtime Customer] Partial reload postponed: Action modal is open');
-                                    return;
+                            })
+                            .listen('.identity.rejected', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: identity.rejected', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                                this.addToast('Identitas KTP Ditolak!', e.message || `KTP pesanan #${e.order_number} perlu direvisi.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
                                 }
-                                if (alpineData.viewMode && alpineData.selectedOrderId) {
-                                    savedState = {
-                                        viewMode: alpineData.viewMode,
-                                        selectedOrderId: alpineData.selectedOrderId,
-                                        activeTab: alpineData.activeTab
-                                    };
+                            })
+                            .listen('.payment.verified', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: payment.verified', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                                this.addToast('Pembayaran Diterima!', e.message || `Pembayaran pesanan #${e.order_number} telah diverifikasi admin.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
                                 }
-                            }
-                        } catch (e) {}
-                    }
-
-                    // 4. Capture scroll position
-                    const scrollX = window.scrollX;
-                    const scrollY = window.scrollY;
-
-                    try {
-                        const response = await fetch(window.location.href, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        });
-
-                        if (!response.ok) {
-                            console.warn(`[RentalBase Realtime Customer] Partial fetch returned status ${response.status}. Triggering clean full reload fallback.`);
-                            window.location.reload();
-                            return;
-                        }
-
-                        const html = await response.text();
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-
-                        const newMain = doc.querySelector('main');
-                        if (!newMain) {
-                            window.location.reload();
-                            return;
-                        }
-
-                        // Clean up old Alpine tree
-                        if (window.Alpine && typeof window.Alpine.destroyTree === 'function') {
-                            window.Alpine.destroyTree(currentMain);
-                        }
-
-                        // Seamless partial DOM replacement
-                        currentMain.innerHTML = newMain.innerHTML;
-
-                        // Synchronize CSRF token if meta tag updated
-                        const newCsrf = doc.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                        if (newCsrf) {
-                            document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', newCsrf);
-                        }
-
-                        // Re-initialize Alpine tree on refreshed content
-                        if (window.Alpine && typeof window.Alpine.initTree === 'function') {
-                            window.Alpine.initTree(currentMain);
-                        }
-
-                        // Re-scan Livewire if active
-                        if (window.Livewire && typeof window.Livewire.rescan === 'function') {
-                            window.Livewire.rescan();
-                        }
-
-                        // Restore saved Alpine state (e.g. order detail view)
-                        if (savedState) {
-                            const newRootXData = currentMain.querySelector('[x-data]') || (currentMain.hasAttribute('x-data') ? currentMain : null);
-                            if (newRootXData && window.Alpine && typeof window.Alpine.$data === 'function') {
-                                try {
-                                    const newAlpineData = window.Alpine.$data(newRootXData);
-                                    if (newAlpineData) {
-                                        if (savedState.activeTab) newAlpineData.activeTab = savedState.activeTab;
-                                        if (savedState.viewMode === 'detail' && savedState.selectedOrderId && typeof newAlpineData.openDetail === 'function') {
-                                            newAlpineData.openDetail(savedState.selectedOrderId);
-                                        }
+                            })
+                            .listen('.payment.rejected', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: payment.rejected', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                                this.addToast('Pembayaran Ditolak!', e.message || `Bukti bayar pesanan #${e.order_number} ditolak. Silakan unggah bukti yang benar.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
+                                }
+                            })
+                            .listen('.order.confirmed', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: order.confirmed', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                                this.addToast('Pesanan Dikonfirmasi!', e.message || `Pesanan #${e.order_number} telah dikonfirmasi oleh toko.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
+                                }
+                            })
+                            .listen('.order.shipped', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: order.shipped', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                                const title = (e.status === 'sedang_disewa') ? 'Barang Telah Diserahkan!' : 'Barang Sedang Dikirim!';
+                                this.addToast(title, e.message || `Pesanan #${e.order_number} sedang dalam perjalanan.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
+                                }
+                            })
+                            .listen('.return.accepted', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: return.accepted', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                                this.addToast('Pengembalian Diterima!', e.message || `Pengembalian pesanan #${e.order_number} telah diverifikasi toko.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
+                                }
+                            })
+                            .listen('.fine.issued', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: fine.issued', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                                this.addToast('Denda Keterlambatan!', e.message || `Tagihan denda keterlambatan terbit untuk pesanan #${e.order_number}.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
+                                }
+                            })
+                            .listen('.damage.created', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: damage.created', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id + '/damage') : '/my-orders';
+                                this.addToast('Klaim Kerusakan!', e.message || `Laporan klaim kerusakan diterbitkan untuk pesanan #${e.order_number}.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
+                                }
+                            })
+                            .listen('.damage.resolved', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: damage.resolved', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id) : '/my-orders';
+                                this.addToast('Klaim Kerusakan Selesai!', e.message || `Klaim kerusakan pesanan #${e.order_number} telah diselesaikan.`, targetUrl);
+                                if (window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
+                                }
+                            })
+                            .listen('.damage.responded', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: damage.responded', e);
+                                this.playChime();
+                                const targetUrl = e.order_id ? ('/my-orders/' + e.order_id + '/damage') : '/my-orders';
+                                this.addToast('Tanggapan Baru dari Toko!', e.message || `Toko menanggapi klaim pesanan #${e.order_number}.`, targetUrl);
+                                if (window.location.pathname.includes('/damage') || window.location.pathname.includes('/my-orders')) {
+                                    this.triggerReload(800);
+                                }
+                            })
+                            .listen('.chat.message', (e) => {
+                                console.log('[RentalBase Realtime Customer] Event received: chat.message', e);
+                                if (e.sender_role === 'admin') {
+                                    const chatWidget = window.__rbCustomerChat;
+                                    const isChatOpen = chatWidget && chatWidget.isOpen;
+                                    if (!isChatOpen) {
+                                        this.playChime();
+                                        this.addToast(
+                                            'Pesan Baru dari ' + (e.sender_name || 'Toko') + '!',
+                                            e.message || 'Pesan baru diterima.',
+                                            '#open-chat'
+                                        );
                                     }
-                                } catch (e) {}
-                            }
-                        }
-
-                        // Restore exact scroll position
-                        window.scrollTo({ top: scrollY, left: scrollX, behavior: 'instant' });
-                        console.log('[RentalBase Realtime Customer] Partial DOM refresh applied successfully!');
-                    } catch (err) {
-                        console.error('[RentalBase Realtime Customer] Partial refresh error, fallback to reload:', err);
-                        try {
-                            if (this.toasts && this.toasts.length > 0) {
-                                sessionStorage.setItem('rb_pending_toast_customer', JSON.stringify(this.toasts));
-                            }
-                        } catch (e) {}
-                        window.location.reload();
-                    }
-                }, delay);
-            },
-            addToast(title, message, url = null) {
-                const id = Date.now() + Math.floor(Math.random() * 1000);
-                this.toasts.push({ id, title, message, url });
-                setTimeout(() => this.removeToast(id), 7000);
-            },
-            removeToast(id) {
-                this.toasts = this.toasts.filter(t => t.id !== id);
-            },
-            playChime() {
-                try {
-                    if (!window.__rbAudioCtx) {
-                        window.__rbAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    }
-                    const ctx = window.__rbAudioCtx;
-
-                    const executeChime = () => {
-                        const now = ctx.currentTime;
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(880, now);
-                        osc.frequency.setValueAtTime(1174.66, now + 0.08);
-                        gain.gain.setValueAtTime(0.35, now);
-                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        osc.start(now);
-                        osc.stop(now + 0.38);
+                                }
+                            });
+                        return true;
                     };
 
-                    if (ctx.state === 'suspended') {
-                        ctx.resume().then(() => executeChime()).catch(() => executeChime());
-                    } else {
-                        executeChime();
+                    if (!startListening()) {
+                        let attempts = 0;
+                        const poll = setInterval(() => {
+                            attempts++;
+                            if (startListening() || attempts >= 30) {
+                                clearInterval(poll);
+                            }
+                        }, 150);
                     }
-                } catch (err) {}
-            }
-        };
-    }
+                },
+                triggerReload(delay = 800, forceFull = false) {
+                    if (this._reloadTimer) return;
+                    this._reloadTimer = setTimeout(async () => {
+                        this._reloadTimer = null;
+                        console.log(`[RentalBase Realtime Customer] triggerReload executing (delay: ${delay}ms, forceFull: ${forceFull})`);
+
+                        if (forceFull) {
+                            try {
+                                if (this.toasts && this.toasts.length > 0) {
+                                    sessionStorage.setItem('rb_pending_toast_customer', JSON.stringify(this.toasts));
+                                }
+                            } catch (err) {}
+                            window.location.reload();
+                            return;
+                        }
+
+                        // 1. Guard: Check if customer is currently typing or editing
+                        const activeEl = document.activeElement;
+                        const isEditing = activeEl && (
+                            activeEl.tagName === 'INPUT' ||
+                            activeEl.tagName === 'TEXTAREA' ||
+                            activeEl.tagName === 'SELECT' ||
+                            activeEl.isContentEditable
+                        );
+                        if (isEditing) {
+                            console.log('[RentalBase Realtime Customer] Partial reload postponed: User is currently typing in an input element');
+                            return;
+                        }
+
+                        // 2. Guard: Check if modal or dialog is open
+                        const openDialog = document.querySelector('[role="dialog"][aria-modal="true"]:not([style*="display: none"]):not([style*="display:none"])');
+                        const isDialogVisible = openDialog && (
+                            typeof openDialog.checkVisibility === 'function' ?
+                            openDialog.checkVisibility() :
+                            (openDialog.offsetParent !== null || window.getComputedStyle(openDialog).display !== 'none')
+                        );
+                        if (isDialogVisible) {
+                            console.log('[RentalBase Realtime Customer] Partial reload postponed: Active modal dialog is currently visible');
+                            return;
+                        }
+
+                        const currentMain = document.querySelector('main');
+                        if (!currentMain) {
+                            window.location.reload();
+                            return;
+                        }
+
+                        // 3. Preserve Alpine state if on my-orders view
+                        let savedState = null;
+                        const rootXData = currentMain.querySelector('[x-data]') || (currentMain.hasAttribute('x-data') ? currentMain : null);
+                        if (rootXData && window.Alpine && typeof window.Alpine.$data === 'function') {
+                            try {
+                                const alpineData = window.Alpine.$data(rootXData);
+                                if (alpineData) {
+                                    if (alpineData.cancelModalOpen || alpineData.returnModalOpen || alpineData.receiveModalOpen || alpineData.lightboxOpen) {
+                                        console.log('[RentalBase Realtime Customer] Partial reload postponed: Action modal is open');
+                                        return;
+                                    }
+                                    if (alpineData.viewMode && alpineData.selectedOrderId) {
+                                        savedState = {
+                                            viewMode: alpineData.viewMode,
+                                            selectedOrderId: alpineData.selectedOrderId,
+                                            activeTab: alpineData.activeTab
+                                        };
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+
+                        // 4. Capture scroll position
+                        const scrollX = window.scrollX;
+                        const scrollY = window.scrollY;
+
+                        try {
+                            const response = await fetch(window.location.href, {
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+
+                            if (!response.ok) {
+                                console.warn(`[RentalBase Realtime Customer] Partial fetch returned status ${response.status}. Triggering clean full reload fallback.`);
+                                window.location.reload();
+                                return;
+                            }
+
+                            const html = await response.text();
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+
+                            const newMain = doc.querySelector('main');
+                            if (!newMain) {
+                                window.location.reload();
+                                return;
+                            }
+
+                            // Clean up old Alpine tree
+                            if (window.Alpine && typeof window.Alpine.destroyTree === 'function') {
+                                window.Alpine.destroyTree(currentMain);
+                            }
+
+                            // Seamless partial DOM replacement
+                            currentMain.innerHTML = newMain.innerHTML;
+
+                            // Synchronize CSRF token if meta tag updated
+                            const newCsrf = doc.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                            if (newCsrf) {
+                                document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', newCsrf);
+                            }
+
+                            // Re-initialize Alpine tree on refreshed content
+                            if (window.Alpine && typeof window.Alpine.initTree === 'function') {
+                                window.Alpine.initTree(currentMain);
+                            }
+
+                            // Re-scan Livewire if active
+                            if (window.Livewire && typeof window.Livewire.rescan === 'function') {
+                                window.Livewire.rescan();
+                            }
+
+                            // Restore saved Alpine state (e.g. order detail view)
+                            if (savedState) {
+                                const newRootXData = currentMain.querySelector('[x-data]') || (currentMain.hasAttribute('x-data') ? currentMain : null);
+                                if (newRootXData && window.Alpine && typeof window.Alpine.$data === 'function') {
+                                    try {
+                                        const newAlpineData = window.Alpine.$data(newRootXData);
+                                        if (newAlpineData) {
+                                            if (savedState.activeTab) newAlpineData.activeTab = savedState.activeTab;
+                                            if (savedState.viewMode === 'detail' && savedState.selectedOrderId && typeof newAlpineData.openDetail === 'function') {
+                                                newAlpineData.openDetail(savedState.selectedOrderId);
+                                            }
+                                        }
+                                    } catch (e) {}
+                                }
+                            }
+
+                            // Restore exact scroll position
+                            window.scrollTo({
+                                top: scrollY,
+                                left: scrollX,
+                                behavior: 'instant'
+                            });
+                            console.log('[RentalBase Realtime Customer] Partial DOM refresh applied successfully!');
+                        } catch (err) {
+                            console.error('[RentalBase Realtime Customer] Partial refresh error, fallback to reload:', err);
+                            try {
+                                if (this.toasts && this.toasts.length > 0) {
+                                    sessionStorage.setItem('rb_pending_toast_customer', JSON.stringify(this.toasts));
+                                }
+                            } catch (e) {}
+                            window.location.reload();
+                        }
+                    }, delay);
+                },
+                addToast(title, message, url = null) {
+                    const id = Date.now() + Math.floor(Math.random() * 1000);
+                    this.toasts.push({
+                        id,
+                        title,
+                        message,
+                        url
+                    });
+                    setTimeout(() => this.removeToast(id), 7000);
+                },
+                removeToast(id) {
+                    this.toasts = this.toasts.filter(t => t.id !== id);
+                },
+                playChime() {
+                    try {
+                        if (!window.__rbAudioCtx) {
+                            window.__rbAudioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                        }
+                        const ctx = window.__rbAudioCtx;
+
+                        const executeChime = () => {
+                            const now = ctx.currentTime;
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(880, now);
+                            osc.frequency.setValueAtTime(1174.66, now + 0.08);
+                            gain.gain.setValueAtTime(0.35, now);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start(now);
+                            osc.stop(now + 0.38);
+                        };
+
+                        if (ctx.state === 'suspended') {
+                            ctx.resume().then(() => executeChime()).catch(() => executeChime());
+                        } else {
+                            executeChime();
+                        }
+                    } catch (err) {}
+                }
+            };
+        }
     </script>
     @endif
     @endauth
 
     <!-- Global Floating Cart Toast Notification -->
-    <div x-show="cartToast.show" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-         x-cloak
-         style="display: none;"
-         class="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 flex items-start gap-3 pointer-events-auto">
+    <div x-show="cartToast.show"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-cloak
+        style="display: none;"
+        class="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 flex items-start gap-3 pointer-events-auto">
         <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-200">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
         </div>
         <div class="flex-1 min-w-0">
             <h5 class="text-sm font-bold text-gray-900" x-text="cartToast.title"></h5>
             <p class="text-xs text-gray-600 mt-0.5 line-clamp-2" x-text="cartToast.message"></p>
         </div>
         <button type="button" @click="cartToast.show = false" class="text-gray-400 hover:text-gray-600 transition p-1 cursor-pointer">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
         </button>
     </div>
 
@@ -1142,4 +1208,5 @@
 
     @livewireScriptConfig
 </body>
+
 </html>
