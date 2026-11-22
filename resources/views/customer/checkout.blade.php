@@ -13,6 +13,24 @@
     });
     $shopLabel = $client->business_name ?? 'Outlet Rental';
 
+    $tenantProfile = $client->tenantProfile;
+    $outletAddress = $tenantProfile?->address ?: ($client->business_name . ' Outlet, ' . ($tenantProfile?->city ?? 'Indonesia'));
+    $outletCity = $tenantProfile?->city;
+    $outletHours = 'Buka Setiap Hari: 08:00 - 21:00 WIB';
+
+    $rawPhone = $tenantProfile?->whatsapp ?: ($client->primaryAdmin?->phone ?? $client->users()->where('role', 'admin_rental')->first()?->phone ?? '');
+    $cleanPhone = preg_replace('/[^0-9]/', '', $rawPhone);
+    if (str_starts_with($cleanPhone, '0')) {
+        $cleanPhone = '62' . substr($cleanPhone, 1);
+    }
+    $outletPhoneDisplay = $rawPhone ?: ($cleanPhone ? '+' . $cleanPhone : '');
+    $outletWaUrl = !empty($cleanPhone) 
+        ? 'https://wa.me/' . $cleanPhone . '?text=' . urlencode('Halo ' . $shopLabel . ', saya sedang di halaman checkout dan ingin bertanya mengenai sewa alat.') 
+        : '#';
+
+    $mapsQuery = urlencode($shopLabel . ' ' . ($tenantProfile?->address ?? $outletAddress));
+    $outletMapsUrl = 'https://www.google.com/maps/search/?api=1&query=' . $mapsQuery;
+
     $profileAddress = $profileAddress ?? auth()->user()?->address;
     $lastOrderAddress = $lastOrderAddress ?? null;
     $lastIdentity = $lastIdentity ?? (auth()->check() ? \App\Models\IdentityGuarantee::where('customer_id', auth()->id())->latest('id')->first() : null);
@@ -70,6 +88,7 @@
         useExistingIdentity: {{ $hasExistingIdentity ? 'true' : 'false' }},
         isDraftRestored: Boolean(savedDraft && (savedDraft.currentStep > 1 || savedDraft.whatsapp || savedDraft.identityNumber || savedDraft.addressText || savedDraft.patokan)),
         agree: false,
+        pdpAgreed: {{ old('pdp_agreement') ? 'true' : 'false' }},
         stepErrors: [],
         isSubmitting: false,
 
@@ -341,6 +360,9 @@
                 if (!this.selfiePreview && !hasSelfieFile) {
                     errs.push('Foto swafoto (selfie memegang KTP) wajib diunggah.');
                 }
+            }
+            if (!this.pdpAgreed) {
+                errs.push('Anda wajib menyetujui pemrosesan data identitas sesuai UU Perlindungan Data Pribadi (UU PDP No. 27/2022).');
             }
         }
         return errs;
@@ -999,11 +1021,27 @@
 
                     <!-- Ambil mode -->
                     <div x-show="ship === 'ambil'" class="space-y-3 sm:space-y-4">
-                        <div class="bg-primary-50/70 border border-primary-100 rounded-xl p-3 sm:p-4 flex gap-2.5 sm:gap-3 items-start">
-                            <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5M4 9v11h16V9M9 20v-6h6v6"></path></svg>
-                            <div class="text-xs text-[#7C2D12] leading-relaxed">
-                                <b>{{ $shopLabel }}</b>
-                                <p class="mt-0.5 text-gray-500">Rincian alamat outlet akan dikonfirmasi admin via WhatsApp setelah pesanan diterima.</p>
+                        <div class="bg-primary-50/70 border border-primary-100 rounded-xl p-3.5 sm:p-4 space-y-2.5">
+                            <div class="flex gap-2.5 sm:gap-3 items-start">
+                                <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5M4 9v11h16V9M9 20v-6h6v6"></path></svg>
+                                <div class="text-xs text-[#7C2D12] leading-relaxed">
+                                    <b class="text-sm text-gray-900 block mb-0.5">{{ $shopLabel }}</b>
+                                    <p class="text-gray-700 font-medium"><strong>Alamat Fisik Outlet:</strong> {{ $outletAddress }}</p>
+                                    <p class="text-gray-500 text-[11px] mt-0.5">Jam Operasional: {{ $outletHours }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 pt-2 border-t border-primary-200/60 flex-wrap">
+                                <a href="{{ $outletMapsUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 shadow-2xs">
+                                    <svg class="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                    <span>Buka di Google Maps</span>
+                                    <svg class="w-2.5 h-2.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                </a>
+                                @if(!empty($cleanPhone))
+                                <a href="{{ $outletWaUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-50 shadow-2xs">
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                                    <span>Chat WhatsApp Toko</span>
+                                </a>
+                                @endif
                             </div>
                         </div>
                         <div>
@@ -1053,6 +1091,53 @@
                             </ul>
                         </div>
                     </template>
+
+                    <!-- Jaminan Privasi KTP & Kepatuhan UU PDP No. 27/2022 -->
+                    <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+                        <div class="flex items-start gap-3">
+                            <span class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            </span>
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h4 class="text-xs sm:text-sm font-extrabold text-emerald-950">Jaminan Privasi &amp; Kepatuhan UU PDP No. 27/2022</h4>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200 text-emerald-900">Perlindungan Data Aman</span>
+                                </div>
+                                <p class="text-xs text-emerald-900 leading-relaxed font-medium">
+                                    Kami menjamin foto e-KTP Anda <b>hanya digunakan untuk verifikasi transaksi sewa</b> di <b>{{ $shopLabel }}</b>. Sistem kami <b>secara otomatis menempelkan watermark pengaman dinamis</b> sebelum foto disimpan ke penyimpanan privat terenkripsi.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Banner Preview Watermark -->
+                        <div class="bg-white/85 border border-emerald-200/80 rounded-xl p-3 flex items-center gap-3">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            </div>
+                            <div class="text-[11px] leading-snug">
+                                <span class="text-gray-500 block">Watermark Pengaman Otomatis pada File KTP Anda:</span>
+                                <code class="font-mono font-bold text-emerald-900 text-[11px] sm:text-xs">"HANYA UNTUK VERIFIKASI SEWA DI {{ strtoupper($shopLabel) }}"</code>
+                            </div>
+                        </div>
+
+                        <!-- Checkbox Wajib Kepatuhan UU PDP -->
+                        <div class="pt-2 border-t border-emerald-200/70">
+                            <label class="flex items-start gap-2.5 sm:gap-3 cursor-pointer select-none">
+                                <input type="checkbox" 
+                                       name="pdp_agreement" 
+                                       value="1" 
+                                       x-model="pdpAgreed" 
+                                       class="w-4 h-4 mt-0.5 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+                                       required>
+                                <span class="text-xs text-emerald-950 font-semibold leading-relaxed">
+                                    Saya menyetujui pemrosesan data identitas pribadi sesuai <b>UU Perlindungan Data Pribadi (UU PDP No. 27/2022)</b> untuk keperluan verifikasi penyewaan alat di <b>{{ $shopLabel }}</b>. <span class="text-red-600">*</span>
+                                </span>
+                            </label>
+                            @error('pdp_agreement')
+                                <p class="text-xs text-red-600 mt-1.5 font-bold">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
 
                     <!-- Hidden Use Existing Identity Marker -->
                     <input type="hidden" name="use_existing_identity" :value="useExistingIdentity ? '1' : '0'">
@@ -1396,6 +1481,86 @@
                     <div class="bg-primary-50 rounded-xl p-3 text-[11px] text-[#7C2D12] leading-relaxed border border-primary-100">
                         * Pembayaran via Transfer Bank / QRIS langsung dibuka setelah pesanan dibuat. Verifikasi KTP dan pembayaran diproses sekaligus oleh admin toko.
                     </div>
+                </div>
+
+                <!-- Kartu Info Outlet / Profil Toko (Kejelasan Alamat Fisik Toko Riil) -->
+                <div class="mt-4 bg-white border border-slate-100/90 rounded-2xl p-4 sm:p-5 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] space-y-3.5">
+                    <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                        <div class="flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            </span>
+                            <div>
+                                <h4 class="text-xs sm:text-sm font-extrabold text-gray-900 leading-tight">Profil &amp; Lokasi Outlet</h4>
+                                <span class="text-[10px] text-emerald-600 font-bold inline-flex items-center gap-1">
+                                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    Toko Riil &amp; Terverifikasi
+                                </span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">Mitra Resmi</span>
+                    </div>
+
+                    <!-- Toko Name & Logo/Badge -->
+                    <div class="flex items-start gap-3">
+                        @if($client->logo_url)
+                            <img src="{{ $client->logo_url }}" alt="{{ $shopLabel }}" class="w-11 h-11 rounded-xl object-cover border border-gray-100 shadow-2xs shrink-0">
+                        @else
+                            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white font-extrabold flex items-center justify-center text-sm shadow-2xs shrink-0">
+                                {{ strtoupper(substr($shopLabel, 0, 2)) }}
+                            </div>
+                        @endif
+                        <div class="min-w-0 flex-1">
+                            <h5 class="text-xs sm:text-sm font-extrabold text-gray-900 truncate">{{ $shopLabel }}</h5>
+                            @if(!empty($outletCity))
+                                <p class="text-[11px] text-gray-500 font-medium">{{ $outletCity }}, Indonesia</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Alamat Fisik Lengkap & Jam Operasional -->
+                    <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-2 text-xs">
+                        <div class="flex items-start gap-2 text-gray-700">
+                            <svg class="w-4 h-4 text-primary-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <div class="leading-relaxed">
+                                <span class="font-bold text-gray-900 block text-[11px] uppercase tracking-wider text-slate-500">Alamat Fisik Outlet:</span>
+                                <span class="text-gray-800 font-medium">{{ $outletAddress }}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 text-gray-700 pt-1.5 border-t border-slate-200/60">
+                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <div class="text-[11px] leading-snug">
+                                <span class="text-gray-500">Jam Operasional:</span>
+                                <span class="font-bold text-gray-900">{{ $outletHours }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Action: Google Maps & WhatsApp Aktif -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <a href="{{ $outletMapsUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition shadow-2xs">
+                            <svg class="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            <span>Buka di Maps</span>
+                            <svg class="w-2.5 h-2.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        </a>
+
+                        @if(!empty($cleanPhone))
+                        <a href="{{ $outletWaUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition shadow-2xs">
+                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                            <span>Hubungi WA</span>
+                        </a>
+                        @else
+                        <span class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-400 bg-slate-50 border border-slate-200 cursor-not-allowed">
+                            <span>WA Toko Aktif</span>
+                        </span>
+                        @endif
+                    </div>
+
+                    <!-- Keterangan Keamanan Toko Riil -->
+                    <p class="text-[10px] text-slate-400 text-center leading-relaxed">
+                        Lokasi fisik terverifikasi oleh RentalBase untuk menjamin keamanan &amp; keaslian transaksi penyewaan Anda.
+                    </p>
                 </div>
             </div>
 
