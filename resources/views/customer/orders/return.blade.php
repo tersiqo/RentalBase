@@ -12,59 +12,7 @@
      x-data="{
         returnMethod: '{{ old('return_method', $order->isPickup() ? 'ambil_toko' : 'kurir') }}',
         selectedCourier: '{{ old('courier_name', '') }}',
-        ptab: 'bank',
-        previewUrl: null,
-        fileName: '',
-        fileError: '',
-        submitting: false,
-        toastMessage: '',
-        showToast: false,
-
-        handleFileChange(event) {
-            this.fileError = '';
-            const file = event.target.files[0];
-            if (!file) {
-                this.previewUrl = null;
-                this.fileName = '';
-                return;
-            }
-
-            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-            if (!allowedTypes.includes(file.type)) {
-                this.fileError = 'Format file harus berupa JPG atau PNG.';
-                event.target.value = '';
-                this.previewUrl = null;
-                this.fileName = '';
-                return;
-            }
-
-            if (file.size > 2 * 1024 * 1024) {
-                this.fileError = 'Ukuran file terlalu besar (maksimal 2 MB).';
-                event.target.value = '';
-                this.previewUrl = null;
-                this.fileName = '';
-                return;
-            }
-
-            this.fileName = file.name;
-            this.previewUrl = URL.createObjectURL(file);
-        },
-
-        clearFile(inputRef) {
-            this.previewUrl = null;
-            this.fileName = '';
-            this.fileError = '';
-            if (inputRef) inputRef.value = '';
-        },
-
-        copyToClipboard(text) {
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text);
-                this.toastMessage = 'Nomor rekening disalin: ' + text;
-                this.showToast = true;
-                setTimeout(() => { this.showToast = false; }, 3000);
-            }
-        }
+        submitting: false
      }">
 
     {{-- Breadcrumb & Header Halaman --}}
@@ -382,28 +330,28 @@
             {{-- ================= KOLOM KANAN (STICKY PANEL DENDA & SUBMIT) ================= --}}
             <aside class="space-y-6 lg:sticky lg:top-24">
 
-                {{-- D, E, F. PANEL DENDA KETERLAMBATAN & UPLOAD BUKTI --}}
+                {{-- PANEL PERINGATAN KETERLAMBATAN & ESTIMASI DENDA BERJALAN --}}
                 @if($isLate && $totalLateFee > 0)
-                    <section class="bg-white border-2 border-red-200 rounded-2xl p-5 shadow-sm">
-                        <div class="flex items-center gap-2.5 mb-3">
-                            <span class="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shadow-sm">
+                    <section class="bg-white border-2 border-amber-200 rounded-2xl p-5 shadow-sm space-y-4">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shadow-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             </span>
                             <div>
-                                <h2 class="text-base font-extrabold text-red-900 leading-tight">Tagihan Denda Keterlambatan</h2>
-                                <span class="text-[11px] text-red-600 font-semibold">Waktu sewa telah melewati batas akhir</span>
+                                <h2 class="text-base font-extrabold text-amber-950 leading-tight">Peringatan Keterlambatan Sewa</h2>
+                                <span class="text-[11px] text-amber-700 font-semibold">Waktu sewa telah melewati batas akhir</span>
                             </div>
                         </div>
 
-                        {{-- Rincian Keterlambatan --}}
-                        <div class="p-3.5 bg-red-50 rounded-xl border border-red-100 text-xs space-y-2 mb-4">
+                        {{-- Rincian Keterlambatan & Estimasi Denda Berjalan --}}
+                        <div class="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200 text-xs space-y-2">
                             <div class="flex justify-between">
-                                <span class="text-red-800">Tenggat Akhir Sewa:</span>
-                                <b class="text-red-950 font-bold">{{ $order->rental_end_date?->translatedFormat('d M Y, H:i') }} WIB</b>
+                                <span class="text-amber-800">Tenggat Akhir Sewa:</span>
+                                <b class="text-amber-950 font-bold">{{ $order->rental_end_date?->translatedFormat('d M Y, H:i') }} WIB</b>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-red-800">Durasi Keterlambatan:</span>
-                                <b class="text-red-700 font-bold">
+                                <span class="text-amber-800">Durasi Keterlambatan:</span>
+                                <b class="text-amber-900 font-bold">
                                     {{ $lateHours }} Jam
                                     @if(($lateFeeData['late_days'] ?? 0) > 0)
                                         ({{ $lateFeeData['late_days'] }} hari {{ $lateFeeData['remaining_hours'] }} jam)
@@ -411,127 +359,28 @@
                                 </b>
                             </div>
 
-                            <div class="border-t border-red-200/70 pt-2 space-y-1.5">
-                                <span class="text-[11px] font-bold text-red-900 block">Rincian Tarif per Barang:</span>
+                            <div class="border-t border-amber-200/70 pt-2 space-y-1.5">
+                                <span class="text-[11px] font-bold text-amber-900 block">Rincian Tarif per Barang:</span>
                                 @foreach($lateFeeData['items'] as $feeItem)
-                                    <div class="flex justify-between text-[11px] text-red-900">
+                                    <div class="flex justify-between text-[11px] text-amber-900">
                                         <span>{{ $feeItem['product_name'] }} ({{ $feeItem['quantity'] }}x &bull; Rp {{ number_format($feeItem['hourly_rate'], 0, ',', '.') }}/jam &times; {{ $feeItem['late_hours'] }} jam)</span>
                                         <b class="font-bold tabular-nums">Rp {{ number_format($feeItem['subtotal_fee'], 0, ',', '.') }}</b>
                                     </div>
                                 @endforeach
                             </div>
 
-                            <div class="border-t border-red-200 pt-2.5 flex justify-between items-baseline">
-                                <span class="font-bold text-red-950 text-xs">Total Nominal Denda:</span>
-                                <span class="text-lg font-extrabold text-red-700 tracking-tight tabular-nums">
+                            <div class="border-t border-amber-200 pt-2.5 flex justify-between items-baseline">
+                                <span class="font-bold text-amber-950 text-xs">Estimasi Denda Berjalan:</span>
+                                <span class="text-lg font-extrabold text-amber-700 tracking-tight tabular-nums">
                                     Rp {{ number_format($totalLateFee, 0, ',', '.') }}
                                 </span>
                             </div>
                         </div>
 
-                        {{-- E. Informasi Rekening Bank / QRIS Toko untuk Pembayaran Denda --}}
-                        <div class="mb-4">
-                            <h3 class="text-xs font-bold text-gray-800 mb-2">Metode Pembayaran Denda Toko:</h3>
-
-                            <div class="flex bg-gray-100 p-1 rounded-xl mb-3 text-xs font-bold">
-                                <button type="button" @click="ptab = 'bank'" :class="ptab === 'bank' ? 'bg-white text-primary-600 shadow-xs' : 'text-gray-500 hover:text-gray-900'" class="flex-1 py-1.5 rounded-lg transition-all text-center">
-                                    Transfer Bank
-                                </button>
-                                <button type="button" @click="ptab = 'qris'" :class="ptab === 'qris' ? 'bg-white text-primary-600 shadow-xs' : 'text-gray-500 hover:text-gray-900'" class="flex-1 py-1.5 rounded-lg transition-all text-center">
-                                    QRIS
-                                </button>
-                            </div>
-
-                            {{-- Tab Transfer Bank --}}
-                            <div x-show="ptab === 'bank'" class="space-y-2">
-                                @php
-                                    $allMethods = ($client && method_exists($client, 'clientPaymentMethods') && $client->clientPaymentMethods()->where('is_active', true)->exists())
-                                        ? $client->clientPaymentMethods()->where('is_active', true)->get()
-                                        : collect($client?->paymentMethods ?? []);
-                                    $bankMethods = $allMethods->filter(fn($m) => !empty($m->account_number) && (!isset($m->type) || $m->type !== 'qris') && strtoupper($m->bank_name ?? '') !== 'QRIS' && !str_starts_with((string)$m->account_number, 'QRIS-'));
-                                @endphp
-                                @forelse($bankMethods as $method)
-                                    <div class="p-3 border border-gray-200 rounded-xl flex items-center justify-between gap-2 bg-gray-50/70">
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-1.5">
-                                                <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold text-[10px]">{{ $method->bank_name }}</span>
-                                                <b class="font-mono text-gray-900 text-xs tracking-wider">{{ $method->account_number }}</b>
-                                            </div>
-                                            <small class="text-[11px] text-gray-500 block mt-0.5">a.n. {{ $method->account_holder ?? $method->account_name }}</small>
-                                        </div>
-                                        <button type="button"
-                                                @click="copyToClipboard('{{ str_replace(' ', '', $method->account_number) }}')"
-                                                class="px-2.5 py-1 text-[11px] font-bold text-primary-600 bg-white hover:bg-primary-50 rounded-lg border border-primary-200 transition shrink-0">
-                                            Salin
-                                        </button>
-                                    </div>
-                                @empty
-                                    <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                                        Rekening bank toko belum diatur di database. Silakan gunakan QRIS atau hubungi admin toko untuk instruksi pembayaran denda.
-                                    </div>
-                                @endforelse
-                            </div>
-
-                            {{-- Tab QRIS --}}
-                            <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-3 border border-gray-200 rounded-xl bg-gray-50/70">
-                                @php
-                                    $qrisMethod = $allMethods->first(fn($m) => ($m->type ?? '') === 'qris' || strtoupper($m->bank_name ?? '') === 'QRIS' || !empty($m->qris_image));
-                                    $qrisImg = storage_url($qrisMethod?->qris_image ?? $qrisMethod?->qris_image_path);
-                                    $qrisNmid = $qrisMethod?->account_number;
-                                @endphp
-                                @if($qrisImg)
-                                    <img src="{{ $qrisImg }}" alt="QRIS Toko" loading="lazy" class="w-40 h-40 mx-auto object-contain mb-2 rounded-lg bg-white p-1 border border-gray-200">
-                                    @if($qrisNmid && !str_starts_with($qrisNmid, 'QRIS-'))
-                                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-xl text-xs mb-2">
-                                            <span class="text-gray-500 font-semibold">NMID:</span>
-                                            <span class="font-mono font-bold text-gray-900 tracking-wider">{{ $qrisNmid }}</span>
-                                            <button type="button" @click="copyToClipboard('{{ $qrisNmid }}')" class="px-2 py-0.5 rounded text-[11px] font-bold text-primary-600 hover:bg-primary-50 transition border border-primary-200">
-                                                Salin
-                                            </button>
-                                        </div>
-                                    @endif
-                                    <span class="text-xs font-bold text-gray-900 block">{{ $client->nama_usaha ?? 'QRIS Toko' }}</span>
-                                @else
-                                    <p class="text-xs text-gray-500 py-4">Gambar QRIS toko belum tersedia. Silakan gunakan metode Transfer Bank.</p>
-                                @endif
-                            </div>
-                        </div>
-
-                        {{-- F. Upload Bukti Pembayaran Denda --}}
-                        <div class="pt-3 border-t border-gray-100">
-                            <label for="late_fee_proof" class="block text-xs font-bold text-gray-800 mb-1">
-                                Unggah Bukti Transfer Denda (JPG/PNG, Maks. 2 MB) <span class="text-red-500">*</span>
-                            </label>
-                            <input type="file"
-                                   id="late_fee_proof"
-                                   name="late_fee_proof"
-                                   x-ref="feeInput"
-                                   accept="image/jpeg,image/jpg,image/png"
-                                   required
-                                   @change="handleFileChange($event)"
-                                   class="w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-500 file:text-white hover:file:bg-primary-600 cursor-pointer">
-
-                            {{-- Pesan error validasi frontend / backend --}}
-                            <p x-show="fileError" x-text="fileError" class="text-xs text-red-600 mt-1.5 font-medium" style="display: none;"></p>
-                            @error('late_fee_proof')
-                                <p class="text-xs text-red-600 mt-1.5 font-medium">{{ $message }}</p>
-                            @enderror
-
-                            {{-- Preview Foto Sebelum Dikirim --}}
-                            <div x-show="previewUrl" style="display: none;" class="mt-3 p-2.5 bg-gray-50 rounded-xl border border-gray-200">
-                                <div class="flex items-center justify-between mb-1.5">
-                                    <span class="text-[11px] font-bold text-gray-700 truncate" x-text="fileName"></span>
-                                    <button type="button" @click="clearFile($refs.feeInput)" class="text-[11px] text-red-600 hover:underline font-bold">
-                                        Hapus
-                                    </button>
-                                </div>
-                                <img :src="previewUrl" alt="Preview Bukti Denda" class="max-h-44 w-auto mx-auto rounded-lg object-contain bg-white border border-gray-100">
-                            </div>
-
-                            <p class="text-[11px] text-gray-500 mt-2 leading-relaxed flex items-center gap-1.5">
-                                <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span>Bukti transfer yang diunggah akan berstatus <b>Menunggu Verifikasi</b> sampai diperiksa oleh Admin Toko.</span>
-                            </p>
+                        {{-- Kotak Informasi Edukatif --}}
+                        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed">
+                            <p class="font-bold mb-1">Informasi Keterlambatan Sewa:</p>
+                            <p>Silakan segera kirimkan perlengkapan sewa ke toko. Tagihan denda resmi akan diterbitkan oleh Admin Toko setelah barang fisik tiba dan diperiksa. Anda dapat melunasi denda melalui notifikasi yang akan masuk ke akun Anda.</p>
                         </div>
                     </section>
                 @else
@@ -556,7 +405,7 @@
                     <button type="submit"
                             :disabled="submitting"
                             :class="submitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-primary-600'"
-                            class="w-full py-3.5 px-4 bg-primary-500 text-white font-extrabold rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2">
+                            class="w-full py-3.5 px-4 bg-primary-500 text-white font-extrabold rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
                         <span x-show="!submitting">Konfirmasi Pengembalian Barang</span>
                         <span x-show="submitting" style="display: none;">Memproses Pengajuan...</span>
                     </button>
@@ -571,15 +420,5 @@
 
         </div>
     </form>
-
-    {{-- Toast Notification untuk Copy Rekening --}}
-    <div x-show="showToast"
-         x-transition
-         style="display: none;"
-         class="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 border-l-4 border-emerald-400">
-        <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-        <span x-text="toastMessage"></span>
-    </div>
-
 </div>
 @endsection

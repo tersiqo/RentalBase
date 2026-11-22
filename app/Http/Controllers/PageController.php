@@ -386,13 +386,8 @@ class PageController extends Controller
                 'max:100',
                 'regex:/.*\S.*/',
             ],
-            'late_fee_proof' => [
-                $hasLateFee ? 'required' : 'nullable',
-                'file',
-                'mimes:jpg,jpeg,png',
-                'max:2048',
-            ],
-            'notes' => ['nullable', 'string', 'max:1000'],
+            'late_fee_proof'  => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'notes'           => ['nullable', 'string', 'max:1000'],
         ];
 
         $messages = [
@@ -440,17 +435,17 @@ class PageController extends Controller
                 ReturnModel::updateOrCreate(
                     ['order_id' => $lockedOrder->id],
                     [
-                        'return_method' => $validated['return_method'],
-                        'courier_name' => $isCourier ? ($validated['courier_name'] ?? null) : null,
-                        'tracking_number' => $isCourier ? ($validated['tracking_number'] ?? null) : null,
-                        'return_date' => $lateFeeData['checked_at'],
-                        'late_hours' => $lateFeeData['late_hours'],
-                        'return_status' => 'diajukan',
-                        'calculated_late_fee' => $lateFeeData['total_late_fee'],
-                        'late_fee_amount' => $lateFeeData['total_late_fee'],
-                        'late_fee_status' => $hasLateFee ? 'menunggu_pembayaran' : 'tidak_ada',
-                        'late_fee_proof' => $proofPath,
-                        'notes' => $validated['notes'] ?? null,
+                        'return_method'       => $validated['return_method'],
+                        'courier_name'        => $isCourier ? ($validated['courier_name'] ?? null) : null,
+                        'tracking_number'     => $isCourier ? ($validated['tracking_number'] ?? null) : null,
+                        'return_date'         => $lateFeeData['checked_at'] ?? now(),
+                        'late_hours'          => $lateFeeData['late_hours'] ?? 0,
+                        'return_status'       => 'diajukan',
+                        'calculated_late_fee' => $lateFeeData['total_late_fee'] ?? 0,
+                        'late_fee_amount'     => $lateFeeData['total_late_fee'] ?? 0,
+                        'late_fee_status'     => $hasLateFee ? 'menunggu_pembayaran' : 'tidak_ada',
+                        'late_fee_proof'      => $proofPath,
+                        'notes'               => $validated['notes'] ?? null,
                     ]
                 );
 

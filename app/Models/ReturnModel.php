@@ -10,6 +10,14 @@ class ReturnModel extends Model
 
     protected $guarded = [];
 
+    protected $attributes = [
+        'late_hours' => 0,
+        'calculated_late_fee' => 0,
+        'late_fee_amount' => 0,
+        'late_fee_status' => 'tidak_ada',
+        'return_status' => 'diajukan',
+    ];
+
     protected $casts = [
         'return_date' => 'datetime',
         'calculated_late_fee' => 'decimal:2',
