@@ -423,19 +423,26 @@
                 <div x-show="!showRejectForm" class="space-y-2.5">
                     <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST" class="space-y-2">
                         @csrf
-                        @if($order->status === 'menunggu_konfirmasi')
+                        @if($order->latestPayment)
                             <button type="submit"
-                                    class="w-full px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5">
+                                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span>Konfirmasi Pesanan</span>
+                            </button>
+                        @elseif($order->status === 'menunggu_konfirmasi')
+                            <button type="submit"
+                                    class="w-full px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
                                 <span>Setujui Identitas &amp; Minta Bayar</span>
                             </button>
                             <button type="submit" name="direct_ready" value="1"
-                                    class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition flex items-center justify-center gap-1.5"
+                                    class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition flex items-center justify-center gap-1.5 cursor-pointer"
                                     title="Gunakan ini jika customer sudah lunas tunai di tempat">
                                 <span>Konfirmasi Langsung Lunas (Siap Kirim)</span>
                             </button>
                         @else
                             <button type="submit"
-                                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5">
+                                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                 <span>Verifikasi Pembayaran &amp; Siap Kirim</span>
                             </button>
                         @endif
