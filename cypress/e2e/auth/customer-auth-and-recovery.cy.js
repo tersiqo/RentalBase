@@ -105,7 +105,7 @@ describe('E2E TEST — MODUL 01: AUTENTIKASI CUSTOMER & PEMULIHAN AKUN', () => {
     cy.get('a[href*="/auth/google"]').should('have.attr', 'href').and('include', '/auth/google');
   });
 
-  it.only('ET-01-047: Penanganan kegagalan callback autentikasi Google OAuth dengan pesan error humanis pada halaman login', () => {
+  it('ET-01-047: Penanganan kegagalan callback autentikasi Google OAuth dengan pesan error humanis pada halaman login', () => {
     // Memverifikasi saat endpoint callback diakses tanpa payload OAuth yang valid, user diredirect kembali ke /login
     cy.request({
       url: '/auth/google/callback',
@@ -119,5 +119,14 @@ describe('E2E TEST — MODUL 01: AUTENTIKASI CUSTOMER & PEMULIHAN AKUN', () => {
     // Mengunjungi login untuk memverifikasi halaman login siap merender alert
     cy.visit('/login');
     cy.url().should('include', '/login');
+  });
+
+  it('ET-01-048: Memeriksa tombol Daftar dengan Akun Google pada form registrasi customer', () => {
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.visit('/login?tab=register');
+    cy.get('a[href*="/auth/google"]').should('exist')
+      .and('contain.text', 'Google');
+    cy.get('a[href*="/auth/google"]').should('have.attr', 'href').and('include', '/auth/google');
   });
 });
