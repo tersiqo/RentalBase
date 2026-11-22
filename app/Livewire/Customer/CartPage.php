@@ -182,6 +182,14 @@ class CartPage extends Component
         $this->showEditDateModal = true;
     }
 
+    public function updatedEditingStartDate()
+    {
+        if ($this->editingStartDate && (! $this->editingEndDate || $this->editingEndDate <= $this->editingStartDate)) {
+            $this->editingEndDate = Carbon::parse($this->editingStartDate)->addDay()->format('Y-m-d');
+        }
+        $this->checkEditingAvailability();
+    }
+
     public function checkEditingAvailability()
     {
         $this->editingErrorMessage = null;
@@ -218,8 +226,8 @@ class CartPage extends Component
         $start = Carbon::parse($this->editingStartDate);
         $end = Carbon::parse($this->editingEndDate);
 
-        if ($end->lt($start)) {
-            $this->editingErrorMessage = 'Tanggal selesai harus setelah tanggal mulai.';
+        if ($end->lte($start)) {
+            $this->editingErrorMessage = 'Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai.';
             return;
         }
 
@@ -238,7 +246,7 @@ class CartPage extends Component
             return;
         }
 
-        $newDuration = max(1, $start->diffInDays($end) + 1);
+        $newDuration = max(1, (int) $start->diffInDays($end));
         $newHash = md5($product->id . $start->format('Y-m-d') . $end->format('Y-m-d'));
 
         // If changed to dates that already exist for this product in cart

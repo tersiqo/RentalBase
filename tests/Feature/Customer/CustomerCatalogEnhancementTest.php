@@ -110,7 +110,7 @@ class CustomerCatalogEnhancementTest extends TestCase
         $this->assertNotEmpty($cart);
         $cartItem = array_values($cart)[0];
         $this->assertEquals($product->id, $cartItem['product_id']);
-        $this->assertEquals(3, $cartItem['duration_days']);
+        $this->assertEquals(2, $cartItem['duration_days']);
     }
 
     public function test_it_05_005_date_filter_checks_availability_against_overlapping_orders()
@@ -402,8 +402,8 @@ class CustomerCatalogEnhancementTest extends TestCase
         $this->assertEquals($product->id, $cartItem['product_id']);
         $this->assertEquals('2026-12-20', $cartItem['start_date']);
         $this->assertEquals('2026-12-22', $cartItem['end_date']);
-        $this->assertEquals(3, $cartItem['duration_days']);
-        $this->assertEquals(1350000, $cartItem['subtotal']);
+        $this->assertEquals(2, $cartItem['duration_days']);
+        $this->assertEquals(900000, $cartItem['subtotal']);
     }
 
     public function test_it_06_003_cart_page_can_edit_rental_dates_and_updates_period()
@@ -471,8 +471,8 @@ class CustomerCatalogEnhancementTest extends TestCase
         $cart = session()->get('cart', []);
         $this->assertArrayNotHasKey($oldHash, $cart);
         $this->assertArrayHasKey($newHash, $cart);
-        $this->assertEquals(4, $cart[$newHash]['duration_days']);
-        $this->assertEquals(1400000, $cart[$newHash]['subtotal']);
+        $this->assertEquals(3, $cart[$newHash]['duration_days']);
+        $this->assertEquals(1050000, $cart[$newHash]['subtotal']);
         $this->assertEquals($newStart, $cart[$newHash]['start_date']);
         $this->assertEquals($newEnd, $cart[$newHash]['end_date']);
     }

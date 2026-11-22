@@ -182,7 +182,7 @@ class CustomerCheckoutTest extends TestCase
     {
         $productA = $this->makeProduct('Box Bayi', 35000);
         $productB = $this->makeProduct('Stroller Lipat', 40000);
-        $hashes = $this->seedCart([$productA, $productB], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+        $hashes = $this->seedCart([$productA, $productB], now()->format('Y-m-d'), now()->addDays(2)->format('Y-m-d'));
 
         $identityNumber = '1234567890123456';
 
@@ -195,7 +195,7 @@ class CustomerCheckoutTest extends TestCase
                 $hashes[1] => ['quantity' => 1],
             ],
             'start_date' => now()->format('Y-m-d'),
-            'end_date' => now()->addDay()->format('Y-m-d'),
+            'end_date' => now()->addDays(2)->format('Y-m-d'),
             'shipping_address' => 'Jl. Merdeka No. 10, Klojen, Kota Malang, Jawa Timur 65111',
             'shipping_method' => Order::SHIPPING_KURIR,
             'full_name' => $this->user->name,
@@ -230,7 +230,7 @@ class CustomerCheckoutTest extends TestCase
         $this->assertNull(session('checkout_items'));
     }
 
-    public function test_direct_seeds_product_into_cart_then_checkout(): void
+    public function test_it_06_008_direct_seeds_product_into_cart_then_checkout(): void
     {
         $product = $this->makeProduct('Box Bayi', 35000);
 
@@ -244,6 +244,7 @@ class CustomerCheckoutTest extends TestCase
         $item = reset($cart);
         $this->assertSame($product->id, $item['product_id']);
         $this->assertSame(1, $item['quantity']);
+        $this->assertSame(1, $item['duration_days']);
     }
 
     public function test_store_resolves_cart_fallback_when_selected_hashes_missing_or_empty(): void
@@ -301,7 +302,7 @@ class CustomerCheckoutTest extends TestCase
         $this->assertDatabaseCount('orders', 0);
     }
 
-    public function test_it_07_004_direct_finds_next_available_period_when_tomorrow_is_booked(): void
+    public function test_it_06_007_direct_finds_next_available_period_when_tomorrow_is_booked(): void
     {
         $product = $this->makeProduct('Box Bayi', 35000);
 
@@ -575,7 +576,7 @@ class CustomerCheckoutTest extends TestCase
 
         $order = Order::where('user_id', $this->user->id)->latest('id')->first();
         $this->assertNotNull($order);
-        $this->assertSame(3, (int) $order->duration_days);
+        $this->assertSame(2, (int) $order->duration_days);
         $this->assertSame($startDate.' 14:30:00', $order->rental_start_date->format('Y-m-d H:i:s'));
         $this->assertSame($endDate.' 14:30:00', $order->rental_end_date->format('Y-m-d H:i:s'));
     }
@@ -613,7 +614,7 @@ class CustomerCheckoutTest extends TestCase
 
             $order = Order::where('user_id', $this->user->id)->latest('id')->first();
             $this->assertNotNull($order);
-            $this->assertSame(2, (int) $order->duration_days);
+            $this->assertSame(1, (int) $order->duration_days);
             $this->assertSame('2026-11-06 10:45:00', $order->rental_start_date->format('Y-m-d H:i:s'));
             $this->assertSame('2026-11-07 10:45:00', $order->rental_end_date->format('Y-m-d H:i:s'));
         } finally {
@@ -657,7 +658,7 @@ class CustomerCheckoutTest extends TestCase
             'order_number' => 'ORD-SYNC-M1',
             'rental_start_date' => Carbon::parse('2026-11-01 10:00:00'),
             'rental_end_date' => Carbon::parse('2026-11-03 10:00:00'),
-            'duration_days' => 3,
+            'duration_days' => 2,
             'total_amount' => 100000,
             'shipping_address' => 'Jl. Ijen No. 1 Malang',
             'shipping_method' => Order::SHIPPING_KURIR,
@@ -672,7 +673,7 @@ class CustomerCheckoutTest extends TestCase
         $order->refresh();
         $this->assertSame('2026-11-01 15:30:00', $order->rental_start_date->format('Y-m-d H:i:s'));
         $this->assertSame('2026-11-03 15:30:00', $order->rental_end_date->format('Y-m-d H:i:s'));
-        $this->assertSame(3, (int) $order->duration_days);
+        $this->assertSame(2, (int) $order->duration_days);
     }
 
     public function test_order_sync_rental_hours_on_handover_does_not_modify_future_bookings(): void
@@ -683,7 +684,7 @@ class CustomerCheckoutTest extends TestCase
             'order_number' => 'ORD-SYNC-M2',
             'rental_start_date' => Carbon::parse('2026-11-10 09:00:00'),
             'rental_end_date' => Carbon::parse('2026-11-12 09:00:00'),
-            'duration_days' => 3,
+            'duration_days' => 2,
             'total_amount' => 100000,
             'shipping_address' => 'Jl. Ijen No. 1 Malang',
             'shipping_method' => Order::SHIPPING_KURIR,
@@ -698,7 +699,7 @@ class CustomerCheckoutTest extends TestCase
         $order->refresh();
         $this->assertSame('2026-11-10 09:00:00', $order->rental_start_date->format('Y-m-d H:i:s'));
         $this->assertSame('2026-11-12 09:00:00', $order->rental_end_date->format('Y-m-d H:i:s'));
-        $this->assertSame(3, (int) $order->duration_days);
+        $this->assertSame(2, (int) $order->duration_days);
     }
 
     public function test_customer_receive_order_auto_syncs_rental_hours(): void
@@ -709,7 +710,7 @@ class CustomerCheckoutTest extends TestCase
             'order_number' => 'ORD-SYNC-M3',
             'rental_start_date' => now()->subHours(4)->second(0),
             'rental_end_date' => now()->subHours(4)->addDays(2)->second(0),
-            'duration_days' => 3,
+            'duration_days' => 2,
             'total_amount' => 100000,
             'shipping_address' => 'Jl. Ijen No. 1 Malang',
             'shipping_method' => Order::SHIPPING_KURIR,
@@ -728,7 +729,7 @@ class CustomerCheckoutTest extends TestCase
             $order->rental_start_date->format('H:i'),
             $order->rental_end_date->format('H:i')
         );
-        $this->assertSame(3, (int) $order->duration_days);
+        $this->assertSame(2, (int) $order->duration_days);
     }
 }
 

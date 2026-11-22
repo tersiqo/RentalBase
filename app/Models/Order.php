@@ -238,7 +238,7 @@ class Order extends Model
                 return 'Bukti pembayaran denda telah dikirim. Toko sedang memverifikasi pembayaran denda Anda.';
             }
 
-            return 'Pesanan memiliki tagihan denda keterlambatan pengembalian sebesar Rp ' . number_format($feeAmount, 0, ',', '.') . '. Silakan lakukan pembayaran dan unggah bukti transfer agar KTP jaminan fisik Anda dapat diambil kembali.';
+            return 'Pesanan memiliki tagihan denda keterlambatan pengembalian sebesar Rp ' . number_format($feeAmount, 0, ',', '.') . '. Silakan lakukan pembayaran dan unggah bukti transfer agar pesanan dapat diselesaikan.';
         }
 
         return match ($status) {
@@ -347,10 +347,9 @@ class Order extends Model
         }
 
         $durationDays = max(1, (int) ($this->duration_days ?? 1));
-        $daySpan = max(0, $durationDays - 1);
 
         $newStart = $effectiveTime->copy();
-        $newEnd = $effectiveTime->copy()->addDays($daySpan);
+        $newEnd = $effectiveTime->copy()->addDays($durationDays);
 
         $this->update([
             'rental_start_date' => $newStart,

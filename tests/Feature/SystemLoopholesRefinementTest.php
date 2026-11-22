@@ -748,7 +748,8 @@ class SystemLoopholesRefinementTest extends TestCase
             ]);
 
             $today = '2026-11-02';
-            $hash = md5($product->id . $today . $today);
+            $tomorrow = '2026-11-03';
+            $hash = md5($product->id . $today . $tomorrow);
 
             $cart = [
                 $hash => [
@@ -760,7 +761,7 @@ class SystemLoopholesRefinementTest extends TestCase
                     'deposit_fee' => 100000,
                     'main_image' => null,
                     'start_date' => $today,
-                    'end_date' => $today,
+                    'end_date' => $tomorrow,
                     'duration_days' => 1,
                     'quantity' => 1,
                     'subtotal' => 50000,
@@ -776,7 +777,7 @@ class SystemLoopholesRefinementTest extends TestCase
                 ->post(route('customer.checkout.store', $this->client->subdomain), [
                     'selected_hashes' => [$hash],
                     'start_date' => $today,
-                    'end_date' => $today,
+                    'end_date' => $tomorrow,
                     'rental_time' => '10:00',
                     'shipping_address' => 'Jl. Percobaan No 100',
                     'shipping_method' => 'kurir',

@@ -142,6 +142,8 @@ class CustomerCheckoutController extends Controller
 
         $cart = session()->get('cart', []);
 
+        $durationDays = max(1, (int) $start->diffInDays($end));
+
         $cart[$hash] = [
             'hash' => $hash,
             'client_id' => $client->id,
@@ -152,9 +154,9 @@ class CustomerCheckoutController extends Controller
             'main_image' => $product->main_image,
             'start_date' => $start->format('Y-m-d'),
             'end_date' => $end->format('Y-m-d'),
-            'duration_days' => 2,
+            'duration_days' => $durationDays,
             'quantity' => 1,
-            'subtotal' => $product->rental_price_per_day * 2,
+            'subtotal' => $product->rental_price_per_day * $durationDays,
         ];
 
         session()->put('cart', $cart);
@@ -177,7 +179,7 @@ class CustomerCheckoutController extends Controller
             'items' => 'nullable|array',
             'items.*.quantity' => 'nullable|integer|min:1',
             'start_date' => 'required|date|after_or_equal:today',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date|after:start_date',
             'rental_time' => ['nullable', 'date_format:H:i'],
             'shipping_address' => 'required|string|min:10',
             'shipping_method' => ['required', Rule::in([Order::SHIPPING_KURIR, Order::SHIPPING_AMBIL_TOKO])],
@@ -195,7 +197,7 @@ class CustomerCheckoutController extends Controller
             'items.*.quantity.min' => 'Jumlah unit sewa minimal 1.',
             'start_date.required' => 'Tanggal mulai sewa wajib diisi.',
             'end_date.required' => 'Tanggal selesai sewa wajib diisi.',
-            'end_date.after_or_equal' => 'Tanggal selesai harus setelah tanggal mulai.',
+            'end_date.after' => 'Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai sewa.',
             'rental_time.date_format' => 'Format jam sewa harus berupa jam:menit (contoh 14:00).',
             'shipping_address.required' => 'Alamat pengiriman / rincian lokasi wajib diisi.',
             'shipping_address.min' => 'Alamat pengiriman terlalu singkat.',
@@ -272,7 +274,7 @@ class CustomerCheckoutController extends Controller
             : now()->format('H:i');
 
         $endDay = Carbon::parse($request->end_date)->startOfDay();
-        $durationDays = max(1, (int) $startDay->diffInDays($endDay) + 1);
+        $durationDays = max(1, (int) $startDay->diffInDays($endDay));
 
         $startDate = Carbon::parse($request->start_date)->setTimeFromTimeString($rentalTime);
         $endDate = Carbon::parse($request->end_date)->setTimeFromTimeString($rentalTime);
@@ -463,7 +465,7 @@ class CustomerCheckoutController extends Controller
         return [
             'start_date' => $first['start_date'],
             'end_date' => $first['end_date'],
-            'days' => max(1, $start->diffInDays($end) + 1),
+            'days' => max(1, (int) $start->diffInDays($end)),
         ];
     }
 

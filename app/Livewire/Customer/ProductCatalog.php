@@ -69,16 +69,16 @@ class ProductCatalog extends Component
 
     public function updatedStartDate()
     {
-        if ($this->startDate && $this->endDate && $this->endDate < $this->startDate) {
-            $this->endDate = $this->startDate;
+        if ($this->startDate && $this->endDate && $this->endDate <= $this->startDate) {
+            $this->endDate = Carbon::parse($this->startDate)->addDay()->format('Y-m-d');
         }
         $this->resetPage();
     }
 
     public function updatedEndDate()
     {
-        if ($this->startDate && $this->endDate && $this->endDate < $this->startDate) {
-            $this->startDate = $this->endDate;
+        if ($this->startDate && $this->endDate && $this->endDate <= $this->startDate) {
+            $this->startDate = Carbon::parse($this->endDate)->subDay()->format('Y-m-d');
         }
         $this->resetPage();
     }
@@ -92,16 +92,16 @@ class ProductCatalog extends Component
 
     public function updatedModalStartDate()
     {
-        if ($this->modalStartDate && $this->modalEndDate && $this->modalEndDate < $this->modalStartDate) {
-            $this->modalEndDate = $this->modalStartDate;
+        if ($this->modalStartDate && $this->modalEndDate && $this->modalEndDate <= $this->modalStartDate) {
+            $this->modalEndDate = Carbon::parse($this->modalStartDate)->addDay()->format('Y-m-d');
         }
         $this->checkModalAvailability();
     }
 
     public function updatedModalEndDate()
     {
-        if ($this->modalStartDate && $this->modalEndDate && $this->modalEndDate < $this->modalStartDate) {
-            $this->modalStartDate = $this->modalEndDate;
+        if ($this->modalStartDate && $this->modalEndDate && $this->modalEndDate <= $this->modalStartDate) {
+            $this->modalStartDate = Carbon::parse($this->modalEndDate)->subDay()->format('Y-m-d');
         }
         $this->checkModalAvailability();
     }
@@ -119,7 +119,9 @@ class ProductCatalog extends Component
 
         $this->modalProduct = $product;
         $this->modalStartDate = $this->startDate ?: Carbon::now()->addDay()->format('Y-m-d');
-        $this->modalEndDate = $this->endDate ?: Carbon::now()->addDays(3)->format('Y-m-d');
+        $this->modalEndDate = ($this->endDate && $this->endDate > $this->modalStartDate)
+            ? $this->endDate
+            : Carbon::parse($this->modalStartDate)->addDays(2)->format('Y-m-d');
         $this->modalErrorMessage = null;
 
         $this->modalAvailableUnits = $product->getAvailableUnitsForPeriod($this->modalStartDate, $this->modalEndDate);
@@ -154,8 +156,8 @@ class ProductCatalog extends Component
         $start = Carbon::parse($this->modalStartDate);
         $end = Carbon::parse($this->modalEndDate);
 
-        if ($end->lt($start)) {
-            $this->modalErrorMessage = 'Tanggal selesai harus setelah tanggal mulai.';
+        if ($end->lte($start)) {
+            $this->modalErrorMessage = 'Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai.';
             return;
         }
 
@@ -176,7 +178,7 @@ class ProductCatalog extends Component
             return;
         }
 
-        $durationDays = $start->diffInDays($end) + 1;
+        $durationDays = max(1, (int) $start->diffInDays($end));
         $subtotal = $this->modalProduct->rental_price_per_day * $durationDays * $this->modalQuantity;
 
         if (isset($cart[$hash])) {
@@ -222,11 +224,11 @@ class ProductCatalog extends Component
         $start = $this->startDate ? Carbon::parse($this->startDate)->startOfDay() : now()->addDay()->startOfDay();
         $end = $this->endDate ? Carbon::parse($this->endDate)->startOfDay() : $start->copy()->addDays(1);
 
-        if ($end->lt($start)) {
+        if ($end->lte($start)) {
             $end = $start->copy()->addDays(1);
         }
 
-        $durationDays = max(1, $start->diffInDays($end) + 1);
+        $durationDays = max(1, (int) $start->diffInDays($end));
         $subtotal = $product->rental_price_per_day * $durationDays;
 
         $availableUnits = $product->getAvailableUnitsForPeriod($start, $end);

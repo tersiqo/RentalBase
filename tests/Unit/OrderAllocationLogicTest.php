@@ -251,7 +251,7 @@ class OrderAllocationLogicTest extends TestCase
         $order->refresh();
 
         $this->assertEquals($handoverTime->copy()->second(0)->toDateTimeString(), $order->rental_start_date->toDateTimeString());
-        $this->assertEquals($handoverTime->copy()->second(0)->addDays(2)->toDateTimeString(), $order->rental_end_date->toDateTimeString());
+        $this->assertEquals($handoverTime->copy()->second(0)->addDays(3)->toDateTimeString(), $order->rental_end_date->toDateTimeString());
     }
 
     /**
