@@ -32,20 +32,34 @@ class ShipmentController extends Controller
 
         $search = $request->input('search');
         $method = $request->input('method'); // 'kurir', 'ambil_toko'
+        $status = $request->input('status'); // 'siap_kirim', 'dikirim', 'semua'
         $from   = $request->input('from');
         $to     = $request->input('to');
 
-        // Eager load relasi user, produk, dan unit yang dialokasikan
-        $query = Order::with(['user', 'orderItems.product', 'orderItems.orderItemUnits.equipmentUnit'])
-            ->where('client_id', $client->id)
-            ->whereIn('status', ['siap_kirim', 'diproses']);
+        // Eager load relasi user, produk, unit yang dialokasikan, dan shipment
+        $query = Order::with(['user', 'orderItems.product', 'orderItems.orderItemUnits.equipmentUnit', 'shipment'])
+            ->where('client_id', $client->id);
+
+        if ($status === 'dikirim') {
+            $query->where('status', 'dikirim');
+        } elseif ($status === 'semua') {
+            $query->whereIn('status', ['siap_kirim', 'diproses', 'dikirim']);
+        } elseif (! empty($search)) {
+            // Jika admin melakukan pencarian (misal klik "Pantau di Pengiriman" ?search=ORD-...),
+            // cari di status siap_kirim, diproses, DAN dikirim agar pesanan kurir yang baru diinput resi tetap ditemukan
+            $query->whereIn('status', ['siap_kirim', 'diproses', 'dikirim']);
+        } else {
+            // Default tampilan daftar siap kirim
+            $query->whereIn('status', ['siap_kirim', 'diproses']);
+        }
 
         // Filter pencarian
         if (! empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('order_number', 'ILIKE', "%{$search}%")
-                  ->orWhereHas('user', function ($u) use ($search) {
-                      $u->where('name', 'ILIKE', "%{$search}%");
+            $likeOp = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $query->where(function ($q) use ($search, $likeOp) {
+                $q->where('order_number', $likeOp, "%{$search}%")
+                  ->orWhereHas('user', function ($u) use ($search, $likeOp) {
+                      $u->where('name', $likeOp, "%{$search}%");
                   });
             });
         }
@@ -188,5 +202,80 @@ class ShipmentController extends Controller
             : "Pesanan {$orderLabel} berhasil diproses dan dikirim via {$request->courier_name} (Resi: {$request->tracking_number})!";
 
         return redirect()->route('admin.shipments.index')->with('success', $successMsg);
+    }
+
+    /**
+     * Menandai pesanan kirim via kurir telah sampai & diterima oleh pelanggan (Konfirmasi Admin).
+     * Mengubah status dari 'dikirim' menjadi 'sedang_disewa' sehingga pesanan dapat masuk ke menu Pengembalian.
+     */
+    public function markDelivered(Request $request, Order $order)
+    {
+        $user = Auth::user();
+        if (! $user) {
+            $user = User::whereNotNull('client_id')->first();
+        }
+        $client = $user?->client;
+
+        if (! $client || $order->client_id !== $client->id) {
+            abort(403, 'Kamu tidak memiliki akses ke pesanan ini.');
+        }
+
+        if ($order->status !== 'dikirim') {
+            return redirect()->back()
+                ->with('error', 'Hanya pesanan berstatus dikirim yang dapat ditandai telah diterima.');
+        }
+
+        DB::transaction(function () use ($order, $request, $user) {
+            // 1. Ubah status pesanan menjadi sedang_disewa
+            $order->update([
+                'status' => 'sedang_disewa',
+            ]);
+
+            // 2. Perbarui data shipment menjadi diterima
+            if ($order->shipment) {
+                $order->shipment->update([
+                    'status'       => 'diterima',
+                    'delivered_at' => now(),
+                ]);
+            }
+
+            // 3. Pastikan unit fisik yang dialokasikan berstatus 'disewa'
+            foreach ($order->orderItems as $item) {
+                foreach ($item->orderItemUnits as $oiu) {
+                    $oiu->equipmentUnit?->update(['status' => 'disewa']);
+                }
+            }
+
+            // 4. Auto-sync jam sewa jika waktu serah terima melewati jadwal rencana awal
+            $wasSynced = $order->syncRentalHoursOnHandover(now());
+
+            // 5. Catat audit aktivitas pengiriman
+            $syncNote = $wasSynced
+                ? sprintf(' Jam sewa otomatis disinkronkan ke waktu konfirmasi serah terima (%s WIB).', now()->format('H:i'))
+                : '';
+
+            $activityDesc = sprintf(
+                'Pesanan #%s dikonfirmasi telah diterima oleh pelanggan via konfirmasi admin/toko.%s',
+                $order->order_number ?? $order->id,
+                $syncNote
+            );
+
+            ActivityLog::create([
+                'client_id'   => $order->client_id,
+                'user_id'     => $user->id,
+                'action'      => 'order_received_by_admin',
+                'module'      => 'shipments',
+                'description' => $activityDesc,
+                'ip_address'  => $request->ip(),
+                'user_agent'  => $request->userAgent(),
+            ]);
+        });
+
+        if (class_exists(\App\Events\OrderReceived::class)) {
+            event(new \App\Events\OrderReceived($order));
+        }
+
+        $orderLabel = '#' . ($order->order_number ?? $order->id);
+        return redirect()->back()->with('success', "Pesanan {$orderLabel} berhasil ditandai telah diterima pelanggan! Status kini Sedang Disewa.");
     }
 }
