@@ -258,12 +258,71 @@
                         <span class="text-xs text-gray-500 block mb-0.5">Toko Penyedia</span>
                         <b class="text-gray-900 font-semibold">{{ $client->nama_usaha ?? ($order->client->nama_usaha ?? 'BabyRent Malang') }}</b>
                     </div>
-                    <div class="sm:col-span-2 p-2.5 sm:p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-                        <span class="text-xs text-gray-500 block mb-0.5">{{ $isPickup ? 'Lokasi Pengambilan Sendiri di Toko' : 'Alamat Pengiriman (Kurir)' }}</span>
-                        <b class="text-gray-900 font-medium leading-relaxed">
-                            {{ $isPickup ? ($client->address ?? 'Ambil langsung di toko rental') : ($order->shipping_address ?? '-') }}
-                        </b>
-                    </div>
+                    @if($isPickup)
+                        @php
+                            $tenantProfile = $client?->tenantProfile;
+                            $storeName = $client?->nama_usaha ?? ($order->client?->nama_usaha ?? 'Toko Rental');
+                            $pickupAddress = $tenantProfile?->address ?: ($client?->address ?: ($storeName . ', ' . ($tenantProfile?->city ?? 'Indonesia')));
+                            $pickupCity = $tenantProfile?->city;
+                            $pickupHours = 'Buka Setiap Hari: 08:00 - 21:00 WIB';
+
+                            $rawPhone = $tenantProfile?->whatsapp ?: ($client?->primaryAdmin?->phone ?? $client?->users?->where('role', 'admin_rental')->first()?->phone ?? '');
+                            $cleanPhone = preg_replace('/[^0-9]/', '', $rawPhone);
+                            if (str_starts_with($cleanPhone, '0')) {
+                                $cleanPhone = '62' . substr($cleanPhone, 1);
+                            }
+                            $pickupWaUrl = !empty($cleanPhone) 
+                                ? 'https://wa.me/' . $cleanPhone . '?text=' . urlencode('Halo ' . $storeName . ', saya customer dengan nomor pesanan ' . ($order->order_number ?? ('ORD-' . $order->id)) . ' ingin konfirmasi mengenai pengambilan barang di toko.') 
+                                : '#';
+
+                            $mapsQuery = urlencode($storeName . ' ' . $pickupAddress);
+                            $pickupMapsUrl = 'https://www.google.com/maps/search/?api=1&query=' . $mapsQuery;
+                        @endphp
+                        <div class="sm:col-span-2 p-3.5 sm:p-4 bg-orange-50/50 rounded-xl border border-orange-200/90 space-y-2.5">
+                            <div class="flex items-start justify-between gap-2 flex-wrap">
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-orange-950 block mb-0.5">
+                                        <i class="fa-solid fa-store text-orange-600 mr-1"></i> Lokasi Pengambilan Sendiri di Toko:
+                                    </span>
+                                    <b class="text-gray-900 font-bold text-sm block leading-relaxed">
+                                        {{ $storeName }}
+                                    </b>
+                                    <p class="text-xs text-gray-700 font-medium mt-0.5 leading-relaxed">
+                                        {{ $pickupAddress }}
+                                    </p>
+                                    <p class="text-[11px] text-gray-500 font-medium mt-1">
+                                        <i class="fa-regular fa-clock text-gray-400 mr-1"></i> Jam Operasional: {{ $pickupHours }}
+                                    </p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200 shrink-0">
+                                    Self-Pickup
+                                </span>
+                            </div>
+
+                            <!-- Tombol Action: Buka di Google Maps & Chat WhatsApp Toko -->
+                            <div class="flex items-center gap-2 pt-2 border-t border-orange-200/60 flex-wrap">
+                                <a href="{{ $pickupMapsUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 shadow-2xs transition">
+                                    <svg class="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                    <span>Buka di Google Maps</span>
+                                    <svg class="w-2.5 h-2.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                </a>
+
+                                @if(!empty($cleanPhone))
+                                <a href="{{ $pickupWaUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-50 shadow-2xs transition">
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                                    <span>Chat WhatsApp Toko</span>
+                                </a>
+                                @endif
+                            </div>
+                        </div>
+                    @else
+                        <div class="sm:col-span-2 p-2.5 sm:p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+                            <span class="text-xs text-gray-500 block mb-0.5">Alamat Pengiriman (Kurir)</span>
+                            <b class="text-gray-900 font-medium leading-relaxed">
+                                {{ $order->shipping_address ?? '-' }}
+                            </b>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Items List -->
