@@ -12,10 +12,12 @@ use App\Models\Product;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -29,6 +31,7 @@ class CustomerCheckoutController extends Controller
         }
 
         $client = $this->resolveClient($subdomain);
+        $client->loadMissing(['tenantProfile', 'primaryAdmin']);
 
         $cart = session()->get('cart', []);
 
@@ -226,6 +229,7 @@ class CustomerCheckoutController extends Controller
             'identity_document_image' => $canReuseIdentity ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
             'face_image' => $canReuseIdentity ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
             'terms' => 'required|accepted',
+            'pdp_agreement' => $request->has('pdp_agreement') ? 'required|accepted' : 'nullable',
         ], [
             'selected_hashes.required' => 'Item yang dipilih tidak ditemukan. Silakan ulangi checkout.',
             'items.*.quantity.required' => 'Jumlah unit sewa wajib diisi.',
@@ -248,6 +252,7 @@ class CustomerCheckoutController extends Controller
             'face_image.required' => 'Foto swafoto (selfie memegang KTP) wajib diunggah.',
             'face_image.image' => 'Foto swafoto harus berupa gambar.',
             'terms.accepted' => 'Anda harus menyetujui ketentuan dan jaminan sewa.',
+            'pdp_agreement.accepted' => 'Anda harus menyetujui pemrosesan data identitas sesuai ketentuan UU Perlindungan Data Pribadi (UU PDP).',
         ]);
 
         $startDay = Carbon::parse($request->start_date)->startOfDay();
@@ -365,7 +370,11 @@ class CustomerCheckoutController extends Controller
             if ($canReuseIdentity && ! $request->hasFile('identity_document_image')) {
                 $docPath = $docFile;
             } else {
-                $docPath = $request->file('identity_document_image')->store('identity_guarantees', $disk);
+                $docPath = $this->storeWatermarkedKtp(
+                    $request->file('identity_document_image'),
+                    $client->business_name,
+                    $disk
+                );
             }
 
             if ($canReuseIdentity && ! $request->hasFile('face_image')) {
@@ -544,5 +553,102 @@ class CustomerCheckoutController extends Controller
                 'subtotal' => $item['price'] * $period['days'] * $quantity,
             ]);
         })->values();
+    }
+
+    /**
+     * Memberikan watermark dinamis pelindung identitas pada foto KTP sebelum disimpan ke storage privat.
+     * Teks watermark: "HANYA UNTUK VERIFIKASI SEWA DI [NAMA TOKO]"
+     */
+    protected function storeWatermarkedKtp(UploadedFile $file, string $storeName, string $disk): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $fileName = 'identity_guarantees/'.Str::random(40).'.'.$extension;
+
+        if (! extension_loaded('gd')) {
+            return $file->store('identity_guarantees', $disk);
+        }
+
+        try {
+            $imageContent = file_get_contents($file->getRealPath());
+            if (! $imageContent) {
+                return $file->store('identity_guarantees', $disk);
+            }
+
+            $image = @imagecreatefromstring($imageContent);
+            if (! $image) {
+                return $file->store('identity_guarantees', $disk);
+            }
+
+            $width = imagesx($image);
+            $height = imagesy($image);
+
+            $cleanStoreName = strtoupper(trim($storeName));
+            $watermarkText = 'HANYA UNTUK VERIFIKASI SEWA DI '.$cleanStoreName;
+            $subText = 'RENTALBASE • UU PDP NO. 27/2022 • '.date('d/m/Y');
+
+            imagealphablending($image, true);
+            imagesavealpha($image, true);
+
+            // Banner semi-transparan melintang di tengah KTP
+            $bannerHeight = max(45, (int) ($height * 0.18));
+            $bannerY = (int) (($height - $bannerHeight) / 2);
+
+            // Background banner gelap transparan (alpha: 45 dari 127)
+            $bannerColor = imagecolorallocatealpha($image, 15, 23, 42, 45);
+            imagefilledrectangle($image, 0, $bannerY, $width, $bannerY + $bannerHeight, $bannerColor);
+
+            // Border garis aksen tipis
+            $lineColor = imagecolorallocatealpha($image, 249, 115, 22, 20);
+            imageline($image, 0, $bannerY, $width, $bannerY, $lineColor);
+            imageline($image, 0, $bannerY + $bannerHeight, $width, $bannerY + $bannerHeight, $lineColor);
+
+            // Teks putih dengan drop shadow
+            $textColor = imagecolorallocate($image, 255, 255, 255);
+            $shadowColor = imagecolorallocatealpha($image, 0, 0, 0, 30);
+
+            // Font 5 untuk teks utama
+            $font = 5;
+            $charWidth = imagefontwidth($font);
+            $charHeight = imagefontheight($font);
+
+            $textWidth = strlen($watermarkText) * $charWidth;
+            $textX = max(8, (int) (($width - $textWidth) / 2));
+            $textY = (int) ($bannerY + ($bannerHeight / 2) - $charHeight + 2);
+
+            imagestring($image, $font, $textX + 1, $textY + 1, $watermarkText, $shadowColor);
+            imagestring($image, $font, $textX, $textY, $watermarkText, $textColor);
+
+            // Font 3 untuk sub-teks regulasi UU PDP & tanggal
+            $fontSub = 3;
+            $charWidthSub = imagefontwidth($fontSub);
+            $subWidth = strlen($subText) * $charWidthSub;
+            $subX = max(8, (int) (($width - $subWidth) / 2));
+            $subY = $textY + $charHeight + 4;
+
+            $subColor = imagecolorallocate($image, 254, 215, 170); // amber-200
+            imagestring($image, $fontSub, $subX + 1, $subY + 1, $subText, $shadowColor);
+            imagestring($image, $fontSub, $subX, $subY, $subText, $subColor);
+
+            ob_start();
+            if ($extension === 'png') {
+                imagepng($image, null, 8);
+            } elseif ($extension === 'webp') {
+                imagewebp($image, null, 85);
+            } else {
+                imagejpeg($image, null, 85);
+            }
+            $watermarkedBytes = ob_get_clean();
+            imagedestroy($image);
+
+            if (! empty($watermarkedBytes)) {
+                Storage::disk($disk)->put($fileName, $watermarkedBytes);
+
+                return $fileName;
+            }
+
+            return $file->store('identity_guarantees', $disk);
+        } catch (\Throwable $e) {
+            return $file->store('identity_guarantees', $disk);
+        }
     }
 }
