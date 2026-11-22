@@ -117,4 +117,96 @@ class CustomerGoogleAuthIntegrationTest extends TestCase
         $response->assertSessionHasErrors('email');
         $this->assertGuest();
     }
+
+    public function test_google_oauth_customer_registration_creates_active_customer_and_redirects_not_to_setup_tenant(): void
+    {
+        $socialiteUser = new SocialiteUser();
+        $socialiteUser->id = 'google-cust-001';
+        $socialiteUser->name = 'Customer Baru';
+        $socialiteUser->email = 'customer.baru@example.com';
+
+        $provider = Mockery::mock('Laravel\Socialite\Two\GoogleProvider');
+        $provider->shouldReceive('user')
+            ->once()
+            ->andReturn($socialiteUser);
+
+        Socialite::shouldReceive('driver')
+            ->with('google')
+            ->once()
+            ->andReturn($provider);
+
+        // Simulasi customer yang mengklik Daftar/Masuk dengan Google dari tab customer
+        $response = $this->withSession(['google_auth_role' => 'customer'])
+            ->get('/auth/google/callback');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'customer.baru@example.com',
+            'role' => 'customer',
+            'status' => 'aktif',
+            'client_id' => null,
+        ]);
+
+        // Customer TIDAK boleh diarahkan ke tenant.register (Setup Toko)
+        $response->assertRedirect('/#mitra-rental');
+        $this->assertAuthenticated();
+
+        $user = User::where('email', 'customer.baru@example.com')->first();
+        $this->assertEquals('customer', $user->role);
+        $this->assertEquals('aktif', $user->status);
+    }
+
+    public function test_google_oauth_existing_customer_login_redirects_to_store_or_redirect_url(): void
+    {
+        $customer = User::factory()->create([
+            'email' => 'pelanggan.lama@example.com',
+            'name' => 'Pelanggan Setia',
+            'role' => 'customer',
+            'status' => 'aktif',
+            'client_id' => null,
+        ]);
+
+        $socialiteUser = new SocialiteUser();
+        $socialiteUser->id = 'google-cust-002';
+        $socialiteUser->name = 'Pelanggan Setia';
+        $socialiteUser->email = 'pelanggan.lama@example.com';
+
+        $provider = Mockery::mock('Laravel\Socialite\Two\GoogleProvider');
+        $provider->shouldReceive('user')
+            ->once()
+            ->andReturn($socialiteUser);
+
+        Socialite::shouldReceive('driver')
+            ->with('google')
+            ->once()
+            ->andReturn($provider);
+
+        $targetUrl = 'http://localhost/client/rental-kamera/cart';
+
+        $response = $this->withSession([
+            'google_auth_role' => 'customer',
+            'google_auth_redirect' => $targetUrl,
+        ])->get('/auth/google/callback');
+
+        // Harus diarahkan ke halaman redirect / toko, BUKAN setup toko
+        $response->assertRedirect($targetUrl);
+        $this->assertAuthenticatedAs($customer);
+    }
+
+    public function test_customer_register_tab_renders_google_register_button(): void
+    {
+        $response = $this->get('/login?tab=register');
+
+        $response->assertStatus(200);
+        $response->assertSee('Daftar dengan Google');
+        $response->assertSee(route('auth.google'));
+    }
+
+    public function test_admin_register_page_renders_footer_security_badge_and_back_link(): void
+    {
+        $response = $this->get(route('tenant.register'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Kembali ke Beranda');
+        $response->assertSee('Enkripsi SSL 256-bit Multi-Tenant');
+    }
 }

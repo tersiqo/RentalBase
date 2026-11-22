@@ -467,6 +467,23 @@
         @yield('content')
     </div>
 
+    <!-- Footer Back Link & Security Badge (Konsisten dengan halaman login) -->
+    <div style="width: 100%; max-width: @hasSection('container-class') 768px @else 440px @endif; margin-top: 24px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; font-size: 12px; color: var(--slate-500); padding: 0 8px;" class="w-full @hasSection('container-class') max-w-3xl @else max-w-[440px] @endif mt-6 flex flex-row items-center justify-between text-xs text-slate-500 px-2">
+        <a href="{{ route('landing.home') }}" style="display: flex; align-items: center; gap: 6px; color: var(--slate-500); text-decoration: none; font-weight: 600; transition: color 0.2s;" class="flex items-center gap-1.5 hover:text-slate-900 font-semibold transition-colors" onmouseover="this.style.color='var(--slate-900)'" onmouseout="this.style.color='var(--slate-500)'">
+            <svg style="width: 14px; height: 14px;" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            <span>Kembali ke Beranda</span>
+        </a>
+
+        <div style="display: flex; align-items: center; gap: 6px; color: var(--slate-400);" class="flex items-center gap-1.5 text-slate-400">
+            <svg style="width: 15px; height: 15px; color: #10b981;" class="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <span>Enkripsi SSL 256-bit Multi-Tenant</span>
+        </div>
+    </div>
+
     <!-- Script for password visibility toggle -->
     <script>
         document.querySelectorAll('[data-toggle-pw]').forEach(btn => {
