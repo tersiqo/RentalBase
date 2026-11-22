@@ -192,23 +192,25 @@ class OrderController extends Controller
             }
 
             $directReady = $request->boolean('direct_ready');
+            $hasPayment = $lockedOrder->payments()->exists();
 
-            // JIKA STATUS MENUNGGU KONFIRMASI (Verifikasi KTP) dan bukan directReady:
-            if ($lockedOrder->status === 'menunggu_konfirmasi' && ! $directReady) {
-                // Setujui jaminan identitas
-                if ($lockedOrder->identityGuarantee && $lockedOrder->identityGuarantee->status !== 'diverifikasi') {
-                    $lockedOrder->identityGuarantee()->lockForUpdate()->first()?->update([
-                        'status' => 'diverifikasi',
-                        'reviewed_by' => $user?->id,
-                    ]);
-                }
-
-                // Ubah status order menjadi menunggu_pembayaran
-                $lockedOrder->update(['status' => 'menunggu_pembayaran']);
+            // 1. Verifikasi jaminan identitas KTP jika ada dan belum diverifikasi
+            if ($lockedOrder->identityGuarantee && $lockedOrder->identityGuarantee->status !== 'diverifikasi') {
+                $lockedOrder->identityGuarantee()->lockForUpdate()->first()?->update([
+                    'status' => 'diverifikasi',
+                    'reviewed_by' => $user?->id,
+                ]);
 
                 if (class_exists(\App\Events\IdentityApproved::class)) {
                     event(new \App\Events\IdentityApproved($lockedOrder));
                 }
+            }
+
+            // 2. Jika pesanan belum memiliki pembayaran dan bukan directReady, serta berstatus menunggu_konfirmasi:
+            // Alihkan status ke menunggu_pembayaran
+            if (! $hasPayment && ! $directReady && in_array($lockedOrder->status, ['menunggu_konfirmasi'])) {
+                $lockedOrder->update(['status' => 'menunggu_pembayaran']);
+
                 if (class_exists(\App\Events\OrderConfirmed::class)) {
                     event(new \App\Events\OrderConfirmed($lockedOrder));
                 }
@@ -219,38 +221,35 @@ class OrderController extends Controller
                     ->with('success', 'Identitas pesanan #' . $lockedOrder->order_number . ' disetujui! Pesanan kini berstatus Menunggu Pembayaran dari customer.');
             }
 
-            // JIKA VERIFIKASI PEMBAYARAN (menunggu_verifikasi / menunggu_pembayaran / directReady):
-            // 1. Pastikan identitas terverifikasi
-            if ($lockedOrder->identityGuarantee && $lockedOrder->identityGuarantee->status !== 'diverifikasi') {
-                $lockedOrder->identityGuarantee()->lockForUpdate()->first()?->update([
-                    'status' => 'diverifikasi',
-                    'reviewed_by' => $user?->id,
-                ]);
+            // 3. 1-CLICK INTEGRATED APPROVAL:
+            // Verifikasi bukti transfer pembayaran
+            if ($hasPayment) {
+                $lockedOrder->payments()
+                    ->whereIn('status', ['menunggu_konfirmasi', 'pending', 'menunggu_verifikasi'])
+                    ->lockForUpdate()
+                    ->get()
+                    ->each(function ($p) use ($user) {
+                        $p->update([
+                            'status' => 'terverifikasi',
+                            'verified_by' => $user?->id,
+                            'verified_at' => now(),
+                        ]);
+                    });
+
+                if (class_exists(\App\Events\PaymentVerified::class)) {
+                    event(new \App\Events\PaymentVerified($lockedOrder));
+                }
             }
 
-            // 2. Setujui bukti pembayaran
-            if ($lockedOrder->payments()->exists()) {
-                $lockedOrder->payments()->whereIn('status', ['menunggu_konfirmasi', 'pending', 'menunggu_verifikasi'])->lockForUpdate()->get()->each(function ($p) use ($user) {
-                    $p->update([
-                        'status' => 'terverifikasi',
-                        'verified_by' => $user?->id,
-                        'verified_at' => now(),
-                    ]);
-                });
-            }
-
-            // 3. Ubah status order ke siap_kirim
+            // 4. Ubah status pesanan ke siap_kirim
             $lockedOrder->update(['status' => 'siap_kirim']);
 
-            if (class_exists(\App\Events\PaymentVerified::class)) {
-                event(new \App\Events\PaymentVerified($lockedOrder));
-            }
             if (class_exists(\App\Events\OrderConfirmed::class)) {
                 event(new \App\Events\OrderConfirmed($lockedOrder));
             }
 
             return redirect()->back()
-                ->with('success', 'Pesanan #' . $lockedOrder->order_number . ' berhasil dikonfirmasi dan masuk antrian pengiriman!');
+                ->with('success', 'Pesanan #' . $lockedOrder->order_number . ' berhasil dikonfirmasi! Identitas KTP dan pembayaran telah terverifikasi, pesanan masuk ke antrian siap kirim.');
         });
     }
 

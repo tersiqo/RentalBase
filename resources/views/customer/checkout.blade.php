@@ -16,6 +16,13 @@
     $profileAddress = $profileAddress ?? auth()->user()?->address;
     $lastOrderAddress = $lastOrderAddress ?? null;
     $lastIdentity = $lastIdentity ?? (auth()->check() ? \App\Models\IdentityGuarantee::where('customer_id', auth()->id())->latest('id')->first() : null);
+    $hasExistingIdentity = $lastIdentity && (!empty($lastIdentity->identity_document_image) || !empty($lastIdentity->ktp_photo) || !empty($lastIdentity->id_card_photo)) && (!empty($lastIdentity->face_image) || !empty($lastIdentity->selfie_photo));
+    $rawNik = $lastIdentity?->identity_number ?? '';
+    $maskedNik = strlen($rawNik) >= 8 
+        ? substr($rawNik, 0, 4) . str_repeat('x', max(0, strlen($rawNik) - 8)) . substr($rawNik, -4)
+        : ($rawNik ? substr($rawNik, 0, 2) . 'xxxx' : '-');
+    $savedKtpUrl = $lastIdentity?->identity_document_url;
+    $savedFaceUrl = $lastIdentity?->face_image_url;
 
     $defaultShippingAddress = old('shipping_address', $profileAddress ?: ($lastOrderAddress ?: ''));
     $defaultIdentityNumber = old('identity_number', $lastIdentity?->identity_number ?: '');
@@ -53,6 +60,7 @@
         identityNumber: (savedDraft && savedDraft.identityNumber !== undefined && savedDraft.identityNumber !== null && savedDraft.identityNumber !== '') ? savedDraft.identityNumber : {{ json_encode($defaultIdentityNumber) }},
         identityAddress: (savedDraft && savedDraft.identityAddress !== undefined && savedDraft.identityAddress !== null && savedDraft.identityAddress !== '') ? savedDraft.identityAddress : {{ json_encode($defaultIdentityAddress) }},
         patokan: (savedDraft && savedDraft.patokan !== undefined && savedDraft.patokan !== null) ? savedDraft.patokan : '',
+        useExistingIdentity: {{ $hasExistingIdentity ? 'true' : 'false' }},
         isDraftRestored: Boolean(savedDraft && (savedDraft.currentStep > 1 || savedDraft.whatsapp || savedDraft.identityNumber || savedDraft.addressText || savedDraft.patokan)),
         agree: false,
         stepErrors: [],
@@ -281,24 +289,26 @@
                 errs.push('Nomor WhatsApp aktif penerima minimal 8 digit.');
             }
         } else if (step === 3) {
-            if (!this.fullName || this.fullName.trim().length < 3) {
-                errs.push('Nama lengkap sesuai KTP wajib diisi.');
-            }
-            if (!this.identityNumber || this.identityNumber.trim().length < 8) {
-                errs.push('Nomor KTP minimal 8 digit.');
-            }
-            if (!this.identityAddress || this.identityAddress.trim().length < 10) {
-                errs.push('Alamat sesuai KTP minimal 10 karakter.');
-            }
-            const ktpInput = document.getElementById('identity_document_image');
-            const hasKtpFile = ktpInput && ktpInput.files && ktpInput.files.length > 0;
-            if (!this.ktpPreview && !hasKtpFile) {
-                errs.push('Foto KTP wajib diunggah.');
-            }
-            const selfieInput = document.getElementById('face_image');
-            const hasSelfieFile = selfieInput && selfieInput.files && selfieInput.files.length > 0;
-            if (!this.selfiePreview && !hasSelfieFile) {
-                errs.push('Foto swafoto (selfie memegang KTP) wajib diunggah.');
+            if (!this.useExistingIdentity) {
+                if (!this.fullName || this.fullName.trim().length < 3) {
+                    errs.push('Nama lengkap sesuai KTP wajib diisi.');
+                }
+                if (!this.identityNumber || this.identityNumber.trim().length < 8) {
+                    errs.push('Nomor KTP minimal 8 digit.');
+                }
+                if (!this.identityAddress || this.identityAddress.trim().length < 10) {
+                    errs.push('Alamat sesuai KTP minimal 10 karakter.');
+                }
+                const ktpInput = document.getElementById('identity_document_image');
+                const hasKtpFile = ktpInput && ktpInput.files && ktpInput.files.length > 0;
+                if (!this.ktpPreview && !hasKtpFile) {
+                    errs.push('Foto KTP wajib diunggah.');
+                }
+                const selfieInput = document.getElementById('face_image');
+                const hasSelfieFile = selfieInput && selfieInput.files && selfieInput.files.length > 0;
+                if (!this.selfiePreview && !hasSelfieFile) {
+                    errs.push('Foto swafoto (selfie memegang KTP) wajib diunggah.');
+                }
             }
         }
         return errs;
@@ -1012,124 +1022,227 @@
                         </div>
                     </template>
 
-                    <!-- Notice Box -->
-                    <div class="bg-primary-50 border border-primary-100 rounded-xl p-3 sm:p-4 flex gap-2.5 sm:gap-3">
-                        <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        <div class="text-xs text-primary-900 leading-relaxed">
-                            <b>Ketentuan Verifikasi Identitas:</b> Unggah foto KTP &amp; swafoto (selfie) memegang KTP untuk verifikasi identitas penyewa saat booking online. <strong>Tidak perlu deposit uang tunai dan tidak perlu menitipkan fisik KTP asli</strong>.
-                        </div>
-                    </div>
+                    <!-- Hidden Use Existing Identity Marker -->
+                    <input type="hidden" name="use_existing_identity" :value="useExistingIdentity ? '1' : '0'">
 
-                    @if($lastIdentity)
-                    <div class="bg-emerald-50 border border-emerald-200/80 rounded-xl p-2.5 sm:p-3 flex items-center justify-between text-xs text-emerald-800">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <span class="text-[11px] sm:text-xs">Data NIK &amp; Alamat otomatis diisi dari riwayat verifikasi KTP Anda sebelumnya.</span>
-                        </div>
-                        <span class="font-bold bg-white text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0 text-[10px] sm:text-xs">Auto-Filled</span>
-                    </div>
-                    @endif
+                    @if($hasExistingIdentity)
+                    <!-- Kartu Identitas Terverifikasi (Ringkas & Langsung Siap) -->
+                    <div x-show="useExistingIdentity" class="bg-gradient-to-r from-emerald-50/90 to-teal-50/90 border border-emerald-200 rounded-2xl p-4 sm:p-5 shadow-xs">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <span class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                </span>
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h4 class="text-sm sm:text-base font-extrabold text-gray-900">{{ $lastIdentity->full_name }}</h4>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                            KTP Terverifikasi
+                                        </span>
+                                        <span class="font-bold bg-white text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-200 text-[10px] sm:text-xs shadow-2xs">
+                                            Auto-Filled
+                                        </span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-gray-600 flex items-center gap-2 flex-wrap">
+                                        <span>NIK: <strong class="font-mono text-gray-900">{{ $maskedNik }}</strong></span>
+                                        @if(!empty($defaultIdentityAddress))
+                                        <span class="text-gray-300">•</span>
+                                        <span class="text-gray-500 truncate max-w-[280px] sm:max-w-md" title="{{ $defaultIdentityAddress }}">{{ $defaultIdentityAddress }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        <div>
-                            <label for="full_name" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nama Lengkap (Sesuai KTP) <span class="text-red-500">*</span></label>
-                            <input type="text" id="full_name" name="full_name" x-model="fullName" autocomplete="name" value="{{ old('full_name', $lastIdentity?->full_name ?? auth()->user()->name ?? '') }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Nama sesuai identitas" required>
-                            @error('full_name')
-                                <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
-                            @enderror
+                            <button type="button" 
+                                    @click="useExistingIdentity = false"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 shadow-2xs transition shrink-0 cursor-pointer">
+                                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                <span>Ganti KTP</span>
+                            </button>
                         </div>
-                        <div>
-                            <label for="identity_number" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nomor KTP / NIK <span class="text-red-500">*</span></label>
-                            <input type="text" id="identity_number" name="identity_number" x-model="identityNumber" inputmode="numeric" pattern="[0-9]*" maxlength="16" autocomplete="off" value="{{ old('identity_number', $defaultIdentityNumber) }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="16 digit nomor NIK KTP" required>
-                            @error('identity_number')
-                                <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
 
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5 flex-wrap gap-2">
-                            <label for="identity_address" class="block text-xs font-bold text-gray-700 uppercase">Alamat Sesuai KTP <span class="text-red-500">*</span></label>
-                            
-                            <div class="flex items-center gap-1.5">
-                                <button type="button" 
-                                        @click="if (addressText && addressText.trim().length > 0) { identityAddress = addressText }"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200 transition cursor-pointer"
-                                        title="Salin alamat dari Step 2">
-                                    <svg class="w-3.5 h-3.5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                    <span>Sama dengan Alamat Pengiriman</span>
-                                </button>
-                                @if($profileAddress)
-                                <button type="button" 
-                                        @click="identityAddress = profileAddress"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
-                                        title="Gunakan alamat dari profil">
-                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                                    <span>Gunakan Alamat Utama Profil</span>
-                                </button>
+                        @if($savedKtpUrl || $savedFaceUrl)
+                        {{-- Preview Foto Dokumen Tersimpan --}}
+                        <div class="mt-3.5 pt-3 border-t border-emerald-100/90">
+                            <span class="text-[11px] font-bold text-emerald-950 block mb-2">Preview Dokumen KTP Tersimpan:</span>
+                            <div class="flex items-center gap-3 flex-wrap">
+                                @if($savedKtpUrl)
+                                <div class="relative group rounded-xl border border-emerald-200 overflow-hidden bg-white shadow-2xs hover:shadow-xs transition">
+                                    <div class="h-20 sm:h-24 w-32 sm:w-36 bg-slate-100 overflow-hidden relative">
+                                        <img src="{{ $savedKtpUrl }}" alt="Foto KTP Tersimpan" class="w-full h-full object-cover group-hover:scale-105 transition duration-200">
+                                        <a href="{{ $savedKtpUrl }}" target="_blank" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[11px] font-bold gap-1">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            Perbesar
+                                        </a>
+                                    </div>
+                                    <div class="px-2 py-1 bg-white text-center border-t border-emerald-100 flex items-center justify-between">
+                                        <span class="text-[10px] font-bold text-gray-700">Foto KTP</span>
+                                        <a href="{{ $savedKtpUrl }}" target="_blank" class="text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-0.5">
+                                            Buka
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                        </a>
+                                    </div>
+                                </div>
+                                @endif
+
+                                @if($savedFaceUrl)
+                                <div class="relative group rounded-xl border border-emerald-200 overflow-hidden bg-white shadow-2xs hover:shadow-xs transition">
+                                    <div class="h-20 sm:h-24 w-32 sm:w-36 bg-slate-100 overflow-hidden relative">
+                                        <img src="{{ $savedFaceUrl }}" alt="Foto Swafoto Tersimpan" class="w-full h-full object-cover group-hover:scale-105 transition duration-200">
+                                        <a href="{{ $savedFaceUrl }}" target="_blank" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[11px] font-bold gap-1">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            Perbesar
+                                        </a>
+                                    </div>
+                                    <div class="px-2 py-1 bg-white text-center border-t border-emerald-100 flex items-center justify-between">
+                                        <span class="text-[10px] font-bold text-gray-700">Swafoto</span>
+                                        <a href="{{ $savedFaceUrl }}" target="_blank" class="text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-0.5">
+                                            Buka
+                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                        </a>
+                                    </div>
+                                </div>
                                 @endif
                             </div>
                         </div>
-                        <textarea id="identity_address" name="identity_address" x-model="identityAddress" rows="2" class="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Alamat domisili sesuai KTP..." required>{{ old('identity_address', $defaultIdentityAddress) }}</textarea>
-                        @error('identity_address')
-                            <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
-                        @enderror
+                        @endif
+
+                        <div class="mt-3.5 pt-3 border-t border-emerald-100/90 flex items-center justify-between text-[11px] text-emerald-800">
+                            <span class="flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                Identitas tersimpan Anda otomatis digunakan. Tidak perlu mengisi ulang atau upload ulang foto KTP &amp; selfie.
+                            </span>
+                        </div>
                     </div>
+                    @endif
 
-                    <!-- Document Uploads -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
-                        <!-- Upload KTP -->
-                        <div class="border border-dashed border-gray-300 rounded-2xl p-3 sm:p-4 text-center bg-gray-50/50">
-                            <label class="block text-xs font-bold text-gray-800 mb-2 uppercase">Foto KTP / Dokumen Identitas <span class="text-red-500">*</span></label>
-
-                            <!-- Always present in DOM inside form -->
-                            <input type="file" id="identity_document_image" name="identity_document_image" accept="image/jpeg,image/png,image/jpg" @change="handleFileUpload($event, 'ktp')" class="hidden">
-
-                            <div x-show="!ktpPreview" class="space-y-2 py-2 sm:py-3">
-                                <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                <label for="identity_document_image" class="cursor-pointer bg-white border border-gray-200 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg inline-block hover:border-primary-500 shadow-2xs">Pilih File KTP</label>
-                                <p class="text-[11px] text-gray-400">JPG/PNG, Maks. 2MB</p>
+                    <!-- Form Input Identitas Manual (Hanya Tampil Jika Pelanggan Memilih Ganti KTP atau Pelanggan Baru) -->
+                    <div x-show="!useExistingIdentity" class="space-y-4 pt-1" x-cloak>
+                        @if($hasExistingIdentity)
+                        <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            <div class="text-xs text-slate-700">
+                                <strong>Menggunakan Identitas KTP Baru</strong>
+                                <p class="text-[11px] text-slate-500">Silakan isi data dan unggah foto KTP serta swafoto baru.</p>
                             </div>
+                            <button type="button" 
+                                    @click="useExistingIdentity = true"
+                                    class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-white px-3 py-1.5 rounded-lg border border-emerald-200 shadow-2xs cursor-pointer">
+                                &larr; Gunakan KTP Tersimpan
+                            </button>
+                        </div>
+                        @else
+                        <!-- Notice Box untuk Pelanggan Baru -->
+                        <div class="bg-primary-50 border border-primary-100 rounded-xl p-3 sm:p-4 flex gap-2.5 sm:gap-3">
+                            <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <div class="text-xs text-primary-900 leading-relaxed">
+                                <b>Ketentuan Verifikasi Identitas:</b> Unggah foto KTP &amp; swafoto (selfie) memegang KTP untuk verifikasi identitas penyewa saat booking online. <strong>Tidak perlu deposit uang tunai dan tidak perlu menitipkan fisik KTP asli</strong>.
+                                <p class="text-[11px] text-gray-500 mt-1 italic">Data identitas Anda disimpan secara aman dan terenkripsi hanya untuk keperluan verifikasi jaminan sewa.</p>
+                            </div>
+                        </div>
+                        @endif
 
-                            <div x-show="ktpPreview" class="relative">
-                                <img :src="ktpPreview" class="h-28 sm:h-32 w-full object-cover rounded-xl border border-gray-200 mb-2">
-                                <div class="flex items-center justify-center gap-2">
-                                    <label for="identity_document_image" class="cursor-pointer bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-900 transition">Ganti KTP</label>
-                                    <button type="button" @click="removeFile('ktp')" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-700 transition">Hapus</button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div>
+                                <label for="full_name" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nama Lengkap (Sesuai KTP) <span class="text-red-500">*</span></label>
+                                <input type="text" id="full_name" name="full_name" x-model="fullName" autocomplete="name" value="{{ old('full_name', $lastIdentity?->full_name ?? auth()->user()->name ?? '') }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Nama sesuai identitas" :required="!useExistingIdentity">
+                                @error('full_name')
+                                    <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label for="identity_number" class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Nomor KTP / NIK <span class="text-red-500">*</span></label>
+                                <input type="text" id="identity_number" name="identity_number" x-model="identityNumber" inputmode="numeric" pattern="[0-9]*" maxlength="16" autocomplete="off" value="{{ old('identity_number', $defaultIdentityNumber) }}" class="w-full border border-gray-200 rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="16 digit nomor NIK KTP" :required="!useExistingIdentity">
+                                @error('identity_number')
+                                    <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                                <label for="identity_address" class="block text-xs font-bold text-gray-700 uppercase">Alamat Sesuai KTP <span class="text-red-500">*</span></label>
+                                
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" 
+                                            @click="if (addressText && addressText.trim().length > 0) { identityAddress = addressText }"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200 transition cursor-pointer"
+                                            title="Salin alamat dari Step 2">
+                                        <svg class="w-3.5 h-3.5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        <span>Sama dengan Alamat Pengiriman</span>
+                                    </button>
+                                    @if($profileAddress)
+                                    <button type="button" 
+                                            @click="identityAddress = profileAddress"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition cursor-pointer"
+                                            title="Gunakan alamat dari profil">
+                                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                        <span>Gunakan Alamat Utama Profil</span>
+                                    </button>
+                                    @endif
                                 </div>
                             </div>
-
-                            <p x-text="ktpError" class="text-xs text-red-600 mt-1 font-semibold"></p>
-                            @error('identity_document_image')
+                            <textarea id="identity_address" name="identity_address" x-model="identityAddress" rows="2" class="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm font-medium text-gray-900 focus:ring-primary-500 focus:border-primary-500" placeholder="Alamat domisili sesuai KTP..." :required="!useExistingIdentity">{{ old('identity_address', $defaultIdentityAddress) }}</textarea>
+                            @error('identity_address')
                                 <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <!-- Upload Selfie -->
-                        <div class="border border-dashed border-gray-300 rounded-2xl p-3 sm:p-4 text-center bg-gray-50/50">
-                            <label class="block text-xs font-bold text-gray-800 mb-2 uppercase">Foto Swafoto (Selfie + KTP) <span class="text-red-500">*</span></label>
+                        <!-- Document Uploads -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
+                            <!-- Upload KTP -->
+                            <div class="border border-dashed border-gray-300 rounded-2xl p-3 sm:p-4 text-center bg-gray-50/50">
+                                <label class="block text-xs font-bold text-gray-800 mb-2 uppercase">Foto KTP / Dokumen Identitas <span class="text-red-500">*</span></label>
 
-                            <!-- Always present in DOM inside form -->
-                            <input type="file" id="face_image" name="face_image" accept="image/jpeg,image/png,image/jpg" @change="handleFileUpload($event, 'selfie')" class="hidden">
+                                <!-- Always present in DOM inside form -->
+                                <input type="file" id="identity_document_image" name="identity_document_image" accept="image/jpeg,image/png,image/jpg" @change="handleFileUpload($event, 'ktp')" class="hidden">
 
-                            <div x-show="!selfiePreview" class="space-y-2 py-2 sm:py-3">
-                                <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
-                                <label for="face_image" class="cursor-pointer bg-white border border-gray-200 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg inline-block hover:border-primary-500 shadow-2xs">Pilih File Swafoto</label>
-                                <p class="text-[11px] text-gray-400">JPG/PNG, Maks. 2MB</p>
-                            </div>
-
-                            <div x-show="selfiePreview" class="relative">
-                                <img :src="selfiePreview" class="h-28 sm:h-32 w-full object-cover rounded-xl border border-gray-200 mb-2">
-                                <div class="flex items-center justify-center gap-2">
-                                    <label for="face_image" class="cursor-pointer bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-900 transition">Ganti Swafoto</label>
-                                    <button type="button" @click="removeFile('selfie')" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-700 transition">Hapus</button>
+                                <div x-show="!ktpPreview" class="space-y-2 py-2 sm:py-3">
+                                    <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    <label for="identity_document_image" class="cursor-pointer bg-white border border-gray-200 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg inline-block hover:border-primary-500 shadow-2xs">Pilih File KTP</label>
+                                    <p class="text-[11px] text-gray-400">JPG/PNG, Maks. 2MB</p>
                                 </div>
+
+                                <div x-show="ktpPreview" class="relative">
+                                    <img :src="ktpPreview" class="h-28 sm:h-32 w-full object-cover rounded-xl border border-gray-200 mb-2">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <label for="identity_document_image" class="cursor-pointer bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-900 transition">Ganti KTP</label>
+                                        <button type="button" @click="removeFile('ktp')" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-700 transition">Hapus</button>
+                                    </div>
+                                </div>
+
+                                <p x-text="ktpError" class="text-xs text-red-600 mt-1 font-semibold"></p>
+                                @error('identity_document_image')
+                                    <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
+                                @enderror
                             </div>
 
-                            <p x-text="selfieError" class="text-xs text-red-600 mt-1 font-semibold"></p>
-                            @error('face_image')
-                                <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
-                            @enderror
+                            <!-- Upload Selfie -->
+                            <div class="border border-dashed border-gray-300 rounded-2xl p-3 sm:p-4 text-center bg-gray-50/50">
+                                <label class="block text-xs font-bold text-gray-800 mb-2 uppercase">Foto Swafoto (Selfie + KTP) <span class="text-red-500">*</span></label>
+
+                                <!-- Always present in DOM inside form -->
+                                <input type="file" id="face_image" name="face_image" accept="image/jpeg,image/png,image/jpg" @change="handleFileUpload($event, 'selfie')" class="hidden">
+
+                                <div x-show="!selfiePreview" class="space-y-2 py-2 sm:py-3">
+                                    <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+                                    <label for="face_image" class="cursor-pointer bg-white border border-gray-200 text-xs font-bold text-gray-700 px-3 py-1.5 rounded-lg inline-block hover:border-primary-500 shadow-2xs">Pilih File Swafoto</label>
+                                    <p class="text-[11px] text-gray-400">JPG/PNG, Maks. 2MB</p>
+                                </div>
+
+                                <div x-show="selfiePreview" class="relative">
+                                    <img :src="selfiePreview" class="h-28 sm:h-32 w-full object-cover rounded-xl border border-gray-200 mb-2">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <label for="face_image" class="cursor-pointer bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-900 transition">Ganti Swafoto</label>
+                                        <button type="button" @click="removeFile('selfie')" class="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-700 transition">Hapus</button>
+                                    </div>
+                                </div>
+
+                                <p x-text="selfieError" class="text-xs text-red-600 mt-1 font-semibold"></p>
+                                @error('face_image')
+                                    <p class="text-xs text-red-600 mt-1 font-semibold">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
                     </div>
 
@@ -1184,11 +1297,11 @@
                         </div>
                     </div>
 
-                    <!-- Verification notice -->
-                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 flex gap-2.5 sm:gap-3">
-                        <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        <div class="text-xs text-amber-900 font-medium leading-relaxed">
-                            Pesanan akan berstatus <b>Menunggu Konfirmasi</b>. Pembayaran dibuka setelah verifikasi KTP disetujui Admin (est. 1×24 jam kerja).
+                    <!-- Verification & Payment notice -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4 flex gap-2.5 sm:gap-3">
+                        <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <div class="text-xs text-blue-900 font-medium leading-relaxed">
+                            <b>Alur Pembayaran Cepat:</b> Setelah pesanan dibuat, Anda akan langsung diarahkan ke halaman pembayaran untuk melihat rekening/QRIS dan mengunggah bukti transfer tanpa perlu menunggu verifikasi KTP terlebih dahulu.
                         </div>
                     </div>
 
@@ -1207,7 +1320,7 @@
                             &larr; Kembali
                         </button>
                         <button type="submit" :disabled="!agree || hasOutOfStock" class="inline-flex items-center justify-center gap-2 rounded-xl font-extrabold px-5 sm:px-7 py-2.5 sm:py-3 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition text-xs sm:text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                            Buat Pesanan & Kirim Verifikasi &rarr;
+                            Buat Pesanan &amp; Lanjut Pembayaran &rarr;
                         </button>
                     </div>
                 </div>
@@ -1249,7 +1362,7 @@
                     </div>
 
                     <div class="bg-primary-50 rounded-xl p-3 text-[11px] text-[#7C2D12] leading-relaxed border border-primary-100">
-                        * Pembayaran dapat dilakukan via Transfer Bank / QRIS setelah status jaminan identitas diverifikasi oleh admin toko.
+                        * Pembayaran via Transfer Bank / QRIS langsung dibuka setelah pesanan dibuat. Verifikasi KTP dan pembayaran diproses sekaligus oleh admin toko.
                     </div>
                 </div>
             </div>

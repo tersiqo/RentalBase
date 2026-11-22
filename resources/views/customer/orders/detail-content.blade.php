@@ -23,12 +23,11 @@
 
     // Stepper configuration
     $steps = [
-        ['label' => 'Menunggu Konfirmasi', 'desc' => 'Toko memeriksa data pesanan'],
-        ['label' => 'Dikonfirmasi / Menunggu Pembayaran', 'desc' => 'Menunggu pembayaran dari penyewa'],
-        ['label' => 'Pembayaran Terverifikasi', 'desc' => 'Toko memverifikasi pembayaran'],
-        ['label' => 'Siap Kirim / Dikirim', 'desc' => 'Barang dipersiapkan atau dalam pengiriman'],
-        ['label' => 'Diterima / Sedang Disewa', 'desc' => 'Masa sewa sedang berjalan'],
-        ['label' => 'Dikembalikan', 'desc' => 'Barang dikembalikan ke toko'],
+        ['label' => 'Pesanan Dibuat', 'desc' => 'Pesanan sewa berhasil dibuat'],
+        ['label' => 'Pembayaran', 'desc' => 'Transfer & Upload Bukti Pembayaran'],
+        ['label' => 'Verifikasi Toko', 'desc' => 'Verifikasi KTP & Pembayaran Sekaligus'],
+        ['label' => 'Siap Diambil / Dikirim', 'desc' => 'Barang disiapkan atau dalam pengiriman'],
+        ['label' => 'Sedang Disewa', 'desc' => 'Masa sewa aktif berjalan'],
         ['label' => 'Selesai', 'desc' => 'Pesanan sewa selesai sepenuhnya'],
     ];
 
@@ -362,11 +361,11 @@
                             </div>
                         </div>
                     @else
-                        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 mb-4 shadow-sm">
-                            <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex items-start gap-3 mb-4 shadow-sm">
+                            <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <div>
-                                <strong class="font-bold text-amber-950 block">Sedang Diperiksa</strong>
-                                <span class="text-xs sm:text-sm text-amber-800">Dokumen foto KTP &amp; swafoto (selfie) Anda sedang dalam proses peninjauan oleh toko rental (maksimal 1×24 jam).</span>
+                                <strong class="font-bold text-blue-950 block">Verifikasi Terpadu (KTP &amp; Pembayaran)</strong>
+                                <span class="text-xs sm:text-sm text-blue-800">Dokumen identitas dan bukti transfer Anda akan ditinjau dan diverifikasi sekaligus oleh admin toko setelah Anda mengunggah bukti pembayaran di bawah.</span>
                             </div>
                         </div>
                     @endif
@@ -843,13 +842,15 @@
                             </button>
                         </form>
                     @else
-                        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                            <strong class="font-bold flex items-center gap-1.5 mb-0.5">
-                                <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                <span>Pembayaran Belum Dibuka</span>
-                            </strong>
-                            <span>Unggah bukti bayar akan tersedia setelah dokumen verifikasi identitas Anda disetujui oleh admin toko.</span>
-                        </div>
+                        @if(!$isPaidVerified && !$isPaidWaiting && !$isCancelled)
+                            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                                <strong class="font-bold flex items-center gap-1.5 mb-0.5">
+                                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    <span>Formulir Pembayaran Ditutup</span>
+                                </strong>
+                                <span>Bukti transfer pembayaran sebelumnya sudah diterima dan sedang menunggu verifikasi toko.</span>
+                            </div>
+                        @endif
                     @endif
                 @endif
             </section>

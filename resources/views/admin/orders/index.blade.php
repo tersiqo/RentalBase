@@ -212,16 +212,21 @@
 
                         {{-- Kolom Aksi --}}
                         <td class="px-6 py-4 align-middle text-center whitespace-nowrap">
-                            <div class="inline-flex items-center gap-1.5">
-                                {{-- Tombol Tindakan Cepat Verifikasi jika butuh perhatian admin --}}
-                                @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi']))
-                                    <a href="{{ route('admin.orders.show', $order->id) }}#{{ $order->status === 'menunggu_konfirmasi' ? 'review-identitas' : 'review-pembayaran' }}"
-                                       class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white {{ $order->status === 'menunggu_konfirmasi' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700' }} rounded-lg transition shadow-xs">
-                                        <span>{{ $order->status === 'menunggu_konfirmasi' ? 'Review KTP' : 'Review Bayar' }}</span>
-                                    </a>
-                                @endif
-
-                                {{-- Tombol Detail Standar --}}
+                            @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi']))
+                                {{-- Tombol Tindakan Tunggal Utama (Primary CTA dengan Pulsing Dot) --}}
+                                <a href="{{ route('admin.orders.show', $order->id) }}"
+                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg shadow-xs hover:shadow-sm transition">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                    </span>
+                                    <span>Periksa</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            @else
+                                {{-- Tombol Detail Netral --}}
                                 <a href="{{ route('admin.orders.show', $order->id) }}"
                                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900 rounded-lg transition">
                                     <span>Detail</span>
@@ -229,7 +234,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                     </svg>
                                 </a>
-                            </div>
+                            @endif
                         </td>
 
                     </tr>
