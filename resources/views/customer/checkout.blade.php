@@ -29,7 +29,9 @@
         : '#';
 
     $mapsQuery = urlencode($shopLabel . ' ' . ($tenantProfile?->address ?? $outletAddress));
-    $outletMapsUrl = 'https://www.google.com/maps/search/?api=1&query=' . $mapsQuery;
+    $outletMapsUrl = !empty($tenantProfile?->maps_url)
+        ? $tenantProfile->maps_url
+        : ('https://www.google.com/maps/search/?api=1&query=' . $mapsQuery);
 
     $profileAddress = $profileAddress ?? auth()->user()?->address;
     $lastOrderAddress = $lastOrderAddress ?? null;

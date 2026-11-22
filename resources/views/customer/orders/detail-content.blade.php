@@ -276,7 +276,9 @@
                                 : '#';
 
                             $mapsQuery = urlencode($storeName . ' ' . $pickupAddress);
-                            $pickupMapsUrl = 'https://www.google.com/maps/search/?api=1&query=' . $mapsQuery;
+                            $pickupMapsUrl = !empty($tenantProfile?->maps_url)
+                                ? $tenantProfile->maps_url
+                                : ('https://www.google.com/maps/search/?api=1&query=' . $mapsQuery);
                         @endphp
                         <div class="sm:col-span-2 p-3.5 sm:p-4 bg-orange-50/50 rounded-xl border border-orange-200/90 space-y-2.5">
                             <div class="flex items-start justify-between gap-2 flex-wrap">

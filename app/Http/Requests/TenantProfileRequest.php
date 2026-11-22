@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class TenantProfileRequest extends FormRequest
 {
@@ -18,18 +18,20 @@ class TenantProfileRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'name'        => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'address'     => ['nullable', 'string', 'max:1000'],
-            'city'        => ['nullable', 'string', 'max:100'],
-            'whatsapp'    => ['nullable', 'string', 'max:30'],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'whatsapp' => ['nullable', 'string', 'max:30'],
+            'maps_url' => ['nullable', 'string', 'max:1000', 'url'],
+            'maps_url'    => ['nullable', 'string', 'max:1000', 'url'],
             // Validasi file logo maksimal 2MB dengan mimes: jpg, jpeg, png, webp
-            'logo'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'theme_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/i'],
             'hero_showcase_mode' => ['nullable', 'string', 'in:illustration,featured'],
             'hero_featured_product_id' => ['nullable', 'integer'],
@@ -44,11 +46,13 @@ class TenantProfileRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required'       => 'Nama toko wajib diisi.',
-            'logo.image'          => 'File logo harus berupa gambar valid.',
-            'logo.mimes'          => 'Format logo harus berupa file bertipe: JPG, PNG, atau WebP.',
-            'logo.max'            => 'Ukuran file logo maksimal adalah 2MB (2048 KB).',
-            'theme_color.regex'   => 'Format warna tema harus berupa kode HEX 6 digit (contoh: #F97316).',
+            'name.required' => 'Nama toko wajib diisi.',
+            'logo.image' => 'File logo harus berupa gambar valid.',
+            'logo.mimes' => 'Format logo harus berupa file bertipe: JPG, PNG, atau WebP.',
+            'logo.max' => 'Ukuran file logo maksimal adalah 2MB (2048 KB).',
+            'theme_color.regex' => 'Format warna tema harus berupa kode HEX 6 digit (contoh: #F97316).',
+            'maps_url.url' => 'Format Link Google Maps harus berupa tautan URL yang valid (contoh: https://maps.app.goo.gl/... atau https://goo.gl/maps/...).',
+            'maps_url.url'        => 'Format Link Google Maps harus berupa tautan URL yang valid (contoh: https://maps.app.goo.gl/... atau https://goo.gl/maps/...).',
         ];
     }
 
