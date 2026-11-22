@@ -274,4 +274,39 @@ class CustomerOrderDetailTest extends TestCase
         $response->assertSee('Chat WhatsApp Toko');
         $response->assertSee('https://wa.me/6281233445566', false);
     }
+
+    public function test_order_detail_prioritizes_custom_maps_url_if_available(): void
+    {
+        $fixture = $this->createFullOrderDetailFixture();
+
+        TenantProfile::create([
+            'client_id' => $fixture['client']->id,
+            'name' => 'Rental Maju Jaya Outlet',
+            'subdomain' => $fixture['client']->subdomain,
+            'address' => 'Jl. Borobudur No. 100, Mojolangu, Lowokwaru',
+            'city' => 'Kota Malang',
+            'whatsapp' => '081233445566',
+            'maps_url' => 'https://maps.app.goo.gl/custompinpoint456',
+        ]);
+
+        $pickupOrder = Order::create([
+            'client_id' => $fixture['client']->id,
+            'user_id' => $fixture['customer']->id,
+            'order_number' => 'ORD-PICKUP-56789',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(2),
+            'duration_days' => 1,
+            'total_amount' => 250000,
+            'shipping_method' => Order::SHIPPING_AMBIL_TOKO,
+            'shipping_address' => 'Ambil langsung di toko rental',
+            'status' => 'menunggu_pembayaran',
+        ]);
+
+        $response = $this->actingAs($fixture['customer'])
+            ->withSession(['active_client_id' => $fixture['client']->id, 'active_client_subdomain' => $fixture['client']->subdomain])
+            ->get("/my-orders/{$pickupOrder->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('https://maps.app.goo.gl/custompinpoint456', false);
+    }
 }

@@ -24,6 +24,7 @@ class TenantProfile extends Model
         'address',
         'city',
         'whatsapp',
+        'maps_url',
         'subdomain',
         'logo_path',
         'theme_color',
@@ -91,7 +92,7 @@ class TenantProfile extends Model
 
         // Dukung format hex shorthand 3 karakter (#fff -> #ffffff)
         if (strlen($hex) === 3) {
-            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
         }
 
         // Validasi format hex 6 karakter
