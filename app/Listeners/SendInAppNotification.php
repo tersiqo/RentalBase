@@ -170,7 +170,7 @@ class SendInAppNotification implements ShouldQueue
             clientId: $order->client_id,
             title: 'Tagihan Denda Terbit #' . $order->order_number,
             message: "Terdapat denda keterlambatan sebesar Rp {$amountFormatted} untuk pesanan #{$order->order_number}. Silakan selesaikan pembayaran denda.",
-            type: 'damage'
+            type: 'late_fee'
         );
     }
 

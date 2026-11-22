@@ -129,6 +129,10 @@
             @php
                 $badge = $notif->type_badge;
                 $isUnread = ! $notif->is_read;
+                $targetUrl = $notif->customer_target_url;
+                $isLateFee = ($notif->type === 'late_fee')
+                    || str_contains(strtolower($notif->title . ' ' . $notif->message), 'denda')
+                    || str_contains(strtolower($notif->title . ' ' . $notif->message), 'keterlambatan');
             @endphp
             <div class="relative group p-4 sm:p-5 rounded-2xl border transition-all duration-200 {{ $isUnread ? 'bg-white shadow-xs' : 'bg-gray-50/60 border-gray-200/80 hover:bg-white hover:border-gray-300' }}"
                  @if($isUnread) style="border-color: var(--tenant-theme-200, #fed7aa);" @endif>
@@ -157,11 +161,24 @@
 
                             {{-- Judul & Pesan --}}
                             <h3 class="text-sm font-bold {{ $isUnread ? 'text-gray-900' : 'text-gray-700' }}">
-                                {{ $notif->title }}
+                                <a href="{{ $targetUrl }}" class="hover:underline">
+                                    {{ $notif->title }}
+                                </a>
                             </h3>
                             <p class="text-xs text-gray-600 mt-1 leading-relaxed">
                                 {{ $notif->message }}
                             </p>
+
+                            {{-- CTA Bayar Denda Cepat --}}
+                            @if($isLateFee && $isUnread)
+                                <div class="mt-2.5">
+                                    <a href="{{ $targetUrl }}"
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition shadow-2xs">
+                                        <span>Bayar Denda Sekarang</span>
+                                        <span aria-hidden="true">&rarr;</span>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
@@ -179,7 +196,7 @@
                             </form>
                         @endif
 
-                        <a href="{{ route('customer.orders', array_filter(['client' => $client->subdomain ?? session('active_client_subdomain', null)])) }}"
+                        <a href="{{ $targetUrl }}"
                            class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
                            title="Lihat Pesanan Saya">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
