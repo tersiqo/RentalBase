@@ -6,7 +6,7 @@
     <h1>Pendaftaran admin rental</h1>
     <p class="sub">Buat akun untuk mengelola toko Anda.</p>
 
-    <a href="{{ route('auth.google') }}" class="btn btn-google">
+    <a href="{{ route('auth.google', ['role' => 'admin']) }}" class="btn btn-google">
         <svg viewBox="0 0 24 24" aria-hidden="true">
             <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.45a5.52 5.52 0 01-2.39 3.62v3h3.87c2.27-2.09 3.57-5.17 3.57-8.81z"/>
             <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.91l-3.87-3c-1.07.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.29v3.1A12 12 0 0012 24z"/>

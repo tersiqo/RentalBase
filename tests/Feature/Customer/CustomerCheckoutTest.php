@@ -206,12 +206,11 @@ class CustomerCheckoutTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertRedirect(route('customer.orders'));
-
         $order = Order::where('user_id', $this->user->id)->first();
 
         $this->assertNotNull($order);
-        $this->assertSame('menunggu_konfirmasi', $order->status);
+        $response->assertRedirect(route('customer.orders.show', $order->id));
+        $this->assertSame('menunggu_pembayaran', $order->status);
         $this->assertSame(Order::SHIPPING_KURIR, $order->shipping_method);
         $this->assertFalse($order->isPickup());
         $this->assertSame(2, $order->duration_days);
@@ -270,10 +269,10 @@ class CustomerCheckoutTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertRedirect(route('customer.orders'));
+        $order = Order::where('user_id', $this->user->id)->first();
+        $response->assertRedirect(route('customer.orders.show', $order->id));
         $this->assertDatabaseHas('orders', ['user_id' => $this->user->id]);
 
-        $order = Order::where('user_id', $this->user->id)->first();
         $this->assertSame(Order::SHIPPING_AMBIL_TOKO, $order->shipping_method);
         $this->assertTrue($order->isPickup());
     }
@@ -466,7 +465,8 @@ class CustomerCheckoutTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertRedirect(route('customer.orders'));
+        $order = Order::where('user_id', $this->user->id)->latest('id')->first();
+        $response->assertRedirect(route('customer.orders.show', $order->id));
 
         $this->user->refresh();
         $this->assertSame('Jl. Danau Toba No. 77, Sawojajar, Kota Malang', $this->user->address);
@@ -503,7 +503,8 @@ class CustomerCheckoutTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertRedirect(route('customer.orders'));
+        $order = Order::where('user_id', $this->user->id)->latest('id')->first();
+        $response->assertRedirect(route('customer.orders.show', $order->id));
 
         $this->user->refresh();
         $this->assertSame('Jl. Alamat Baru No. 99, Klojen, Kota Malang', $this->user->address);
@@ -539,7 +540,8 @@ class CustomerCheckoutTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertRedirect(route('customer.orders'));
+        $order = Order::where('user_id', $this->user->id)->latest('id')->first();
+        $response->assertRedirect(route('customer.orders.show', $order->id));
 
         $this->user->refresh();
         $this->assertSame('Jl. Alamat Utama Tetap No. 5, Malang', $this->user->address);
@@ -572,10 +574,9 @@ class CustomerCheckoutTest extends TestCase
             'terms' => '1',
         ]);
 
-        $response->assertRedirect(route('customer.orders'));
-
         $order = Order::where('user_id', $this->user->id)->latest('id')->first();
         $this->assertNotNull($order);
+        $response->assertRedirect(route('customer.orders.show', $order->id));
         $this->assertSame(2, (int) $order->duration_days);
         $this->assertSame($startDate.' 14:30:00', $order->rental_start_date->format('Y-m-d H:i:s'));
         $this->assertSame($endDate.' 14:30:00', $order->rental_end_date->format('Y-m-d H:i:s'));
@@ -610,10 +611,9 @@ class CustomerCheckoutTest extends TestCase
                 'terms' => '1',
             ]);
 
-            $response->assertRedirect(route('customer.orders'));
-
             $order = Order::where('user_id', $this->user->id)->latest('id')->first();
             $this->assertNotNull($order);
+            $response->assertRedirect(route('customer.orders.show', $order->id));
             $this->assertSame(1, (int) $order->duration_days);
             $this->assertSame('2026-11-06 10:45:00', $order->rental_start_date->format('Y-m-d H:i:s'));
             $this->assertSame('2026-11-07 10:45:00', $order->rental_end_date->format('Y-m-d H:i:s'));
@@ -730,6 +730,281 @@ class CustomerCheckoutTest extends TestCase
             $order->rental_end_date->format('H:i')
         );
         $this->assertSame(2, (int) $order->duration_days);
+    }
+
+    /**
+     * IT-06-009: Livewire removeItem menghapus item keranjang dan memperbarui subtotal secara reaktif
+     */
+    public function test_it_06_009_cart_page_remove_item_reactive_modal_confirmation(): void
+    {
+        $product = $this->makeProduct('Tenda Dome 4P', 60000);
+        $start = now()->addDays(2)->format('Y-m-d');
+        $end = now()->addDays(4)->format('Y-m-d');
+        $hash = md5($product->id . $start . $end);
+
+        session()->put('cart', [
+            $hash => [
+                'hash' => $hash,
+                'client_id' => $this->client->id,
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'price' => 60000,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => $start,
+                'end_date' => $end,
+                'duration_days' => 3,
+                'quantity' => 1,
+                'subtotal' => 180000,
+            ],
+        ]);
+
+        Livewire::actingAs($this->user)
+            ->test(\App\Livewire\Customer\CartPage::class, ['subdomain' => $this->client->subdomain])
+            ->assertSee('Tenda Dome 4P')
+            ->call('removeItem', $hash)
+            ->assertDispatched('cart-updated')
+            ->assertSet('cart', []);
+
+        $this->assertEmpty(session('cart'));
+    }
+
+    /**
+     * IT-06-010: Isolasi keranjang multi-tenant antar-toko rental yang berbeda
+     */
+    public function test_it_06_010_cross_store_cart_isolation_and_reset_dialog(): void
+    {
+        $otherClient = Client::create([
+            'business_name' => 'CampGear Surabaya',
+            'subdomain' => 'campgear',
+            'status' => 'aktif',
+        ]);
+
+        $otherCat = \App\Models\Category::forceCreate([
+            'client_id' => $otherClient->id,
+            'name' => 'Outdoor',
+            'slug' => 'outdoor-gear',
+        ]);
+
+        $prodA = $this->makeProduct('Stroller Bayi', 50000);
+        $prodB = Product::create([
+            'client_id' => $otherClient->id,
+            'category_id' => $otherCat->id,
+            'name' => 'Carrier Gunung',
+            'slug' => 'carrier-gunung',
+            'rental_price_per_day' => 70000,
+            'deposit_fee' => 0,
+            'status' => 'aktif',
+        ]);
+
+        $start = now()->addDays(2)->format('Y-m-d');
+        $end = now()->addDays(4)->format('Y-m-d');
+        $hashA = md5($prodA->id . $start . $end);
+        $hashB = md5($prodB->id . $start . $end);
+
+        session()->put('cart', [
+            $hashA => [
+                'hash' => $hashA,
+                'client_id' => $this->client->id,
+                'product_id' => $prodA->id,
+                'name' => $prodA->name,
+                'price' => 50000,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => $start,
+                'end_date' => $end,
+                'duration_days' => 2,
+                'quantity' => 1,
+                'subtotal' => 100000,
+            ],
+            $hashB => [
+                'hash' => $hashB,
+                'client_id' => $otherClient->id,
+                'product_id' => $prodB->id,
+                'name' => $prodB->name,
+                'price' => 70000,
+                'deposit_fee' => 0,
+                'main_image' => null,
+                'start_date' => $start,
+                'end_date' => $end,
+                'duration_days' => 2,
+                'quantity' => 1,
+                'subtotal' => 140000,
+            ],
+        ]);
+
+        Livewire::actingAs($this->user)
+            ->test(\App\Livewire\Customer\CartPage::class, ['subdomain' => $this->client->subdomain])
+            ->assertSee('Stroller Bayi')
+            ->assertDontSee('Carrier Gunung')
+            ->assertCount('cart', 1);
+    }
+
+    /**
+     * Test smart reuse identity: Customer with verified identity from previous order can checkout without uploading photos.
+     */
+    public function test_customer_can_checkout_with_saved_identity_without_reuploading(): void
+    {
+        $prevOrder = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $this->user->id,
+            'order_number' => 'ORD-OLD-KYC-001',
+            'status' => 'selesai',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'shipping_address' => 'Jl. Veteran No. 1, Malang',
+            'rental_start_date' => now()->subDays(10),
+            'rental_end_date' => now()->subDays(8),
+            'duration_days' => 2,
+            'total_amount' => 100000,
+        ]);
+
+        $prevKtp = IdentityGuarantee::create([
+            'order_id' => $prevOrder->id,
+            'customer_id' => $this->user->id,
+            'full_name' => 'Budi Penyewa',
+            'identity_number' => '3579012345678901',
+            'identity_document_image' => 'identity_guarantees/saved-ktp.jpg',
+            'face_image' => 'identity_guarantees/saved-selfie.jpg',
+            'identity_address' => 'Jl. KTP Asli No. 10, Malang',
+            'status' => 'diverifikasi',
+        ]);
+
+        $product = $this->makeProduct('Baby Rocker', 30000);
+        $hashes = $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+
+        $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+            'subdomain' => $this->client->subdomain,
+        ]), [
+            'selected_hashes' => $hashes,
+            'items' => [
+                $hashes[0] => ['quantity' => 1],
+            ],
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDay()->format('Y-m-d'),
+            'shipping_address' => 'Jl. Danau Toba No. 99, Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'use_existing_identity' => '1',
+            'full_name' => 'Budi Penyewa',
+            'identity_number' => '3579012345678901',
+            'identity_address' => 'Jl. KTP Asli No. 10, Malang',
+            // Notice: NO identity_document_image or face_image uploaded!
+            'terms' => '1',
+        ]);
+
+        $order = Order::where('user_id', $this->user->id)->latest('id')->first();
+        $this->assertNotNull($order);
+        $response->assertRedirect(route('customer.orders.show', $order->id));
+        $response->assertSessionHas('success');
+
+        $newIdentity = $order->identityGuarantee;
+        $this->assertNotNull($newIdentity);
+        $this->assertSame('identity_guarantees/saved-ktp.jpg', $newIdentity->identity_document_image);
+        $this->assertSame('identity_guarantees/saved-selfie.jpg', $newIdentity->face_image);
+        $this->assertSame('diverifikasi', $newIdentity->status);
+    }
+
+    /**
+     * Test checkout immediately opens payment: order status is menunggu_pembayaran and can_upload_payment is true.
+     */
+    public function test_new_order_is_immediately_payable_without_waiting_identity_approval(): void
+    {
+        $product = $this->makeProduct('Car Seat Pro', 50000);
+        $hashes = $this->seedCart([$product], now()->format('Y-m-d'), now()->addDay()->format('Y-m-d'));
+
+        $response = $this->actingAs($this->user)->post(route('customer.checkout.store', [
+            'subdomain' => $this->client->subdomain,
+        ]), [
+            'selected_hashes' => $hashes,
+            'items' => [
+                $hashes[0] => ['quantity' => 1],
+            ],
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->addDay()->format('Y-m-d'),
+            'shipping_address' => 'Jl. Kawi No. 15, Malang',
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'full_name' => 'Customer Baru',
+            'identity_number' => '3578901234567899',
+            'identity_address' => 'Jl. Kawi No. 15, Malang',
+            'identity_document_image' => UploadedFile::fake()->image('ktp_baru.jpg'),
+            'face_image' => UploadedFile::fake()->image('face_baru.jpg'),
+            'terms' => '1',
+        ]);
+
+        $order = Order::where('user_id', $this->user->id)->latest('id')->first();
+        $this->assertNotNull($order);
+        $this->assertSame('menunggu_pembayaran', $order->status);
+        $this->assertTrue($order->can_upload_payment);
+        $response->assertRedirect(route('customer.orders.show', $order->id));
+    }
+
+    /**
+     * Test admin 1-click confirmation verifies both KTP and payment proof simultaneously.
+     */
+    public function test_admin_one_click_confirmation_approves_both_identity_and_payment(): void
+    {
+        $admin = User::create([
+            'client_id' => $this->client->id,
+            'name' => 'Admin Rental',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin_rental',
+            'status' => 'aktif',
+        ]);
+
+        $order = Order::create([
+            'client_id' => $this->client->id,
+            'user_id' => $this->user->id,
+            'order_number' => 'ORD-1CLICK-001',
+            'status' => 'menunggu_verifikasi',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(3),
+            'duration_days' => 2,
+            'total_amount' => 100000,
+            'shipping_method' => Order::SHIPPING_KURIR,
+            'shipping_address' => 'Jl. Soekarno Hatta No. 1, Malang',
+        ]);
+
+        $ktp = IdentityGuarantee::create([
+            'order_id' => $order->id,
+            'customer_id' => $this->user->id,
+            'full_name' => 'Customer Testing',
+            'identity_number' => '3578901234567899',
+            'identity_document_image' => 'identity/ktp.jpg',
+            'face_image' => 'identity/selfie.jpg',
+            'identity_address' => 'Jl. Soekarno Hatta No. 1, Malang',
+            'status' => 'menunggu',
+        ]);
+
+        $paymentMethod = \App\Models\ClientPaymentMethod::create([
+            'client_id' => $this->client->id,
+            'bank_name' => 'BCA',
+            'account_number' => '1234567890',
+            'account_holder' => 'BabyRent Malang',
+            'is_active' => true,
+        ]);
+
+        $payment = \App\Models\Payment::create([
+            'order_id' => $order->id,
+            'client_payment_method_id' => $paymentMethod->id,
+            'amount' => 100000,
+            'payment_proof' => 'payments/transfer.jpg',
+            'status' => 'menunggu_konfirmasi',
+            'paid_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.orders.confirm', $order));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $order->refresh();
+        $ktp->refresh();
+        $payment->refresh();
+
+        $this->assertSame('siap_kirim', $order->status);
+        $this->assertSame('diverifikasi', $ktp->status);
+        $this->assertSame('terverifikasi', $payment->status);
+        $this->assertNotNull($payment->verified_at);
     }
 }
 

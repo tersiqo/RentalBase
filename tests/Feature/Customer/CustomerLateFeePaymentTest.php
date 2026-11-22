@@ -177,6 +177,6 @@ class CustomerLateFeePaymentTest extends TestCase
             'late_fee_proof' => $file,
         ]);
 
-        $response->assertRedirect(route('login'));
+        $response->assertRedirect('/');
     }
 }

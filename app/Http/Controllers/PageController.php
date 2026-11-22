@@ -519,7 +519,7 @@ class PageController extends Controller
                 return back()->with('success', 'Bukti pembayaran pesanan #' . $order->order_number . ' sudah berhasil diterima dan sedang dalam antrean verifikasi toko.');
             }
 
-            return back()->with('error', 'Unggah bukti pembayaran belum diizinkan. Pastikan verifikasi identitas telah disetujui.');
+            return back()->with('error', 'Unggah bukti pembayaran belum diizinkan. Silakan periksa status pesanan Anda.');
         }
 
         $request->validate([

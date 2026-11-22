@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Events\NewOrderPlaced;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\IdentityGuarantee;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -20,7 +23,7 @@ class CustomerCheckoutController extends Controller
 {
     public function create(Request $request, string $subdomain)
     {
-        if (auth()->check() && auth()->user()->role !== 'customer') {
+        if (Auth::check() && Auth::user()?->role !== 'customer') {
             return redirect()->route('customer.home', $subdomain)
                 ->with('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
         }
@@ -36,8 +39,10 @@ class CustomerCheckoutController extends Controller
             }
             if (isset($item['product_id'])) {
                 $prod = Product::find($item['product_id']);
+
                 return $prod && (int) $prod->client_id === (int) $client->id;
             }
+
             return false;
         })->all();
 
@@ -69,7 +74,8 @@ class CustomerCheckoutController extends Controller
 
         session()->put('checkout_items', $selectedHashes);
 
-        $user = auth()->user();
+        /** @var User|null $user */
+        $user = Auth::user();
         $profileAddress = $user?->address ? trim($user->address) : null;
 
         $lastOrder = null;
@@ -104,7 +110,7 @@ class CustomerCheckoutController extends Controller
 
     public function direct(string $subdomain, Product $product)
     {
-        if (auth()->check() && auth()->user()->role !== 'customer') {
+        if (Auth::check() && Auth::user()?->role !== 'customer') {
             return redirect()->route('customer.home', $subdomain)
                 ->with('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
         }
@@ -167,12 +173,41 @@ class CustomerCheckoutController extends Controller
 
     public function store(Request $request, string $subdomain)
     {
-        if (auth()->check() && auth()->user()->role !== 'customer') {
+        if (Auth::check() && Auth::user()?->role !== 'customer') {
             return redirect()->route('customer.home', $subdomain)
                 ->with('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
         }
 
         $client = $this->resolveClient($subdomain);
+
+        $useExistingIdentity = $request->boolean('use_existing_identity');
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        $lastIdentity = $user
+            ? IdentityGuarantee::where('customer_id', $user->id)
+                ->whereNotNull('identity_document_image')
+                ->whereNotNull('face_image')
+                ->latest('id')
+                ->first()
+            : null;
+
+        $docFile = $lastIdentity?->identity_document_image;
+        $faceFile = $lastIdentity?->face_image;
+
+        $canReuseIdentity = $useExistingIdentity && $lastIdentity && ! empty($docFile) && ! empty($faceFile);
+
+        if ($canReuseIdentity) {
+            if (! $request->filled('full_name') && ! empty($lastIdentity->full_name)) {
+                $request->merge(['full_name' => $lastIdentity->full_name]);
+            }
+            if (! $request->filled('identity_number') && ! empty($lastIdentity->identity_number)) {
+                $request->merge(['identity_number' => $lastIdentity->identity_number]);
+            }
+            if (! $request->filled('identity_address') && ! empty($lastIdentity->identity_address)) {
+                $request->merge(['identity_address' => $lastIdentity->identity_address]);
+            }
+        }
 
         $request->validate([
             'selected_hashes' => 'nullable|array',
@@ -188,8 +223,8 @@ class CustomerCheckoutController extends Controller
             'full_name' => 'required|string|max:255',
             'identity_number' => 'required|string|min:8|max:30',
             'identity_address' => 'required|string|min:10',
-            'identity_document_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'face_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'identity_document_image' => $canReuseIdentity ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'face_image' => $canReuseIdentity ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
             'terms' => 'required|accepted',
         ], [
             'selected_hashes.required' => 'Item yang dipilih tidak ditemukan. Silakan ulangi checkout.',
@@ -217,7 +252,7 @@ class CustomerCheckoutController extends Controller
 
         $startDay = Carbon::parse($request->start_date)->startOfDay();
         if ($startDay->isToday() && $request->filled('rental_time')) {
-            $selectedDateTime = Carbon::parse($request->start_date . ' ' . $request->rental_time);
+            $selectedDateTime = Carbon::parse($request->start_date.' '.$request->rental_time);
             // Beri toleransi 15 menit agar saat customer memilih jam sekarang atau proses isi form beberapa menit tidak memicu false-positive error
             if ($selectedDateTime->lt(now()->subMinutes(15))) {
                 return back()->withErrors([
@@ -233,8 +268,10 @@ class CustomerCheckoutController extends Controller
             }
             if (isset($item['product_id'])) {
                 $prod = Product::find($item['product_id']);
+
                 return $prod && (int) $prod->client_id === (int) $client->id;
             }
+
             return false;
         })->all();
 
@@ -318,19 +355,32 @@ class CustomerCheckoutController extends Controller
             ];
         }
 
+        $order = null;
+        $orderNumber = '';
+
         DB::beginTransaction();
         try {
             $disk = config('filesystems.default', 'public');
-            $docPath = $request->file('identity_document_image')->store('identity_guarantees', $disk);
-            $facePath = $request->file('face_image')->store('identity_guarantees', $disk);
+
+            if ($canReuseIdentity && ! $request->hasFile('identity_document_image')) {
+                $docPath = $docFile;
+            } else {
+                $docPath = $request->file('identity_document_image')->store('identity_guarantees', $disk);
+            }
+
+            if ($canReuseIdentity && ! $request->hasFile('face_image')) {
+                $facePath = $faceFile;
+            } else {
+                $facePath = $request->file('face_image')->store('identity_guarantees', $disk);
+            }
 
             do {
-                $orderNumber = 'ORD-' . strtoupper(Str::random(6)) . '-' . date('Ymd');
+                $orderNumber = 'ORD-'.strtoupper(Str::random(6)).'-'.date('Ymd');
             } while (Order::where('order_number', $orderNumber)->exists());
 
             $order = Order::create([
                 'client_id' => $client->id,
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
                 'order_number' => $orderNumber,
                 'rental_start_date' => $startDate,
                 'rental_end_date' => $endDate,
@@ -338,7 +388,7 @@ class CustomerCheckoutController extends Controller
                 'total_amount' => $totalAmount,
                 'shipping_address' => $request->shipping_address,
                 'shipping_method' => $request->shipping_method,
-                'status' => 'menunggu_konfirmasi',
+                'status' => 'menunggu_pembayaran',
             ]);
 
             foreach ($lines as $line) {
@@ -351,19 +401,23 @@ class CustomerCheckoutController extends Controller
                 ]);
             }
 
+            $guaranteeStatus = ($canReuseIdentity && in_array($lastIdentity->status, ['diverifikasi', 'dikembalikan', 'dititipkan']))
+                ? 'diverifikasi'
+                : 'menunggu';
+
             IdentityGuarantee::create([
                 'order_id' => $order->id,
-                'customer_id' => auth()->id(),
+                'customer_id' => Auth::id(),
                 'full_name' => $request->full_name,
                 'identity_number' => $request->identity_number,
                 'identity_document_image' => $docPath,
                 'face_image' => $facePath,
                 'identity_address' => $request->identity_address,
-                'status' => 'menunggu',
+                'status' => $guaranteeStatus,
             ]);
 
-            $user = auth()->user();
-            if ($user) {
+            $user = Auth::user();
+            if ($user instanceof User) {
                 $userUpdates = [];
 
                 $isKurir = $request->shipping_method === Order::SHIPPING_KURIR;
@@ -386,11 +440,11 @@ class CustomerCheckoutController extends Controller
 
             DB::commit();
 
-            if (class_exists(\App\Events\NewOrderPlaced::class)) {
-                event(new \App\Events\NewOrderPlaced($order));
+            if (class_exists(NewOrderPlaced::class)) {
+                event(new NewOrderPlaced($order));
             }
 
-            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_counts_' . $client->id);
+            Cache::forget('admin_dashboard_counts_'.$client->id);
         } catch (\Throwable $e) {
             DB::rollBack();
 
@@ -405,8 +459,8 @@ class CustomerCheckoutController extends Controller
         session()->put('cart', $globalCart);
         session()->forget('checkout_items');
 
-        return redirect()->route('customer.orders')
-            ->with('success', 'Pesanan #'.$orderNumber.' berhasil dibuat! Jaminan identitas Anda sedang diverifikasi admin. Pembayaran dibuka setelah verifikasi disetujui.');
+        return redirect()->route('customer.orders.show', $order->id)
+            ->with('success', 'Pesanan #'.$orderNumber.' berhasil dibuat! Silakan selesaikan pembayaran di bawah ini.');
     }
 
     protected function resolveClient(string $subdomain): Client
