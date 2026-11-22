@@ -40,7 +40,8 @@
         this.deallocateAction = action;
         this.deallocateUnitCode = code;
         this.deallocateModal = true;
-    }
+    },
+    openReuploadModal: false
 }">
 <div class="mb-6">
     <div class="flex items-center gap-2 mb-3">
@@ -496,42 +497,49 @@
                         @endif
                     </form>
 
+                    {{-- Tombol Khusus Minta Unggah Ulang KTP (Ketika identitas belum diverifikasi) --}}
+                    @if($order->identityGuarantee && $order->identityGuarantee->status !== 'diverifikasi')
+                        <button type="button" @click="openReuploadModal = true"
+                                class="w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center justify-center gap-2 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>Minta Unggah Ulang KTP (Foto Buram)</span>
+                        </button>
+                    @endif
+
                     <button @click="showRejectForm = true"
                             type="button"
-                            class="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold rounded-md transition cursor-pointer">
-                        Tolak / Minta Revisi KTP
+                            class="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold rounded-md transition cursor-pointer flex items-center justify-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <span>Tolak &amp; Batalkan Pesanan Permanen</span>
                     </button>
                 </div>
 
-                {{-- Form Penolakan / Minta Unggah Ulang KTP --}}
+                {{-- Form Penolakan & Pembatalan Permanen Pesanan --}}
                 <div x-show="showRejectForm" x-cloak class="pt-1">
                     <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST">
                         @csrf
+                        <div class="p-2.5 bg-red-50 border border-red-200 rounded-lg mb-2.5 text-[11px] text-red-800 leading-relaxed">
+                            <span class="font-bold block text-xs text-red-900 mb-0.5">Peringatan Pembatalan Permanen</span>
+                            Pesanan ini akan dibatalkan secara permanen dan unit yang dialokasikan akan dikembalikan ke status tersedia.
+                        </div>
+
                         <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
-                            Alasan Penolakan / Revisi <span class="text-red-500">*</span>
+                            Alasan Pembatalan Pesanan <span class="text-red-500">*</span>
                         </label>
                         <textarea name="cancellation_reason"
                                   rows="3"
                                   required
-                                  placeholder="Contoh: Foto KTP buram atau stok unit sedang dalam perbaikan..."
+                                  placeholder="Contoh: Customer membatalkan sewa atau stok unit sedang tidak tersedia..."
                                   class="w-full border border-gray-300 rounded-md text-xs px-3 py-2 focus:ring-red-500 focus:border-red-500 mb-3"></textarea>
-                        <div class="space-y-2">
-                            @if($order->identityGuarantee && $order->identityGuarantee->status !== 'diverifikasi')
-                                <button type="submit" name="action_type" value="request_reupload"
-                                        class="w-full px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-md shadow-xs cursor-pointer">
-                                    Minta Unggah Ulang KTP (Tanpa Batal)
-                                </button>
-                            @endif
-                            <div class="flex gap-2">
-                                <button type="button" @click="showRejectForm = false"
-                                        class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md cursor-pointer">
-                                    Batal
-                                </button>
-                                <button type="submit"
-                                        class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-xs cursor-pointer">
-                                    Ya, Batalkan Pesanan
-                                </button>
-                            </div>
+                        <div class="flex gap-2">
+                            <button type="button" @click="showRejectForm = false"
+                                    class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md cursor-pointer">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                    class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-xs cursor-pointer flex items-center justify-center gap-1">
+                                <span>Ya, Batalkan Pesanan</span>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -745,6 +753,17 @@
                     @endif
                 </div>
 
+                {{-- Tombol Cepat Minta Unggah Ulang dari Review Identitas --}}
+                @if($order->identityGuarantee->status !== 'diverifikasi' && in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran']))
+                    <div class="pt-3 border-t border-gray-100">
+                        <button type="button" @click="openReuploadModal = true"
+                                class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold rounded-lg transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs">
+                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>Minta Unggah Ulang KTP (Foto Buram)</span>
+                        </button>
+                    </div>
+                @endif
+
             @else
                 <p class="text-xs text-gray-400 italic">Tidak ada data jaminan identitas untuk pesanan ini.</p>
             @endif
@@ -828,6 +847,146 @@
                 </button>
                 <button type="submit" class="py-2.5 px-3 rounded-xl bg-red-600 text-xs font-bold text-white hover:bg-red-700 shadow-sm transition cursor-pointer">
                     Ya, Batalkan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ===== MODAL MINTA UNGGAH ULANG KTP (REUPLOAD) ===== --}}
+<div x-show="openReuploadModal"
+     x-cloak
+     @keydown.escape.window="openReuploadModal = false"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden text-left"
+         @click.away="openReuploadModal = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95">
+
+        {{-- Header Modal --}}
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-amber-50/50">
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </span>
+                <div>
+                    <h3 class="font-bold text-sm text-gray-900">Minta Unggah Ulang KTP</h3>
+                    <p class="text-[11px] text-gray-500">Kirim instruksi perbaikan foto dokumen ke customer</p>
+                </div>
+            </div>
+            <button type="button" @click="openReuploadModal = false" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <form action="{{ route('admin.orders.reject', $order->id) }}" 
+              method="POST" 
+              class="p-6 space-y-4"
+              x-data="{
+                  presetReason: 'Foto KTP buram atau tidak terbaca jelas',
+                  customNotes: '',
+                  submitting: false,
+                  get finalReason() {
+                      return this.customNotes.trim() 
+                          ? this.presetReason + ' (Catatan: ' + this.customNotes.trim() + ')' 
+                          : this.presetReason;
+                  }
+              }"
+              @submit="submitting = true">
+            @csrf
+            <input type="hidden" name="action_type" value="request_reupload">
+            <input type="hidden" name="cancellation_reason" :value="finalReason">
+
+            {{-- Kotak Edukatif Info --}}
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed flex items-start gap-2.5">
+                <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <p class="font-semibold mb-0.5">Pesanan TIDAK akan dibatalkan.</p>
+                    <p class="text-[11px] text-amber-800">
+                        Customer akan menerima notifikasi untuk mengunggah ulang foto KTP yang lebih jelas. Status pesanan akan tetap berjalan.
+                    </p>
+                </div>
+            </div>
+
+            {{-- Pilihan Preset Alasan --}}
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                    Pilih Alasan Utama <span class="text-red-500">*</span>
+                </label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer transition"
+                           :class="presetReason === 'Foto KTP buram atau tidak terbaca jelas' ? 'border-amber-400 bg-amber-50/40 text-amber-950 font-medium' : 'text-gray-700'">
+                        <input type="radio" 
+                               name="preset_option" 
+                               value="Foto KTP buram atau tidak terbaca jelas" 
+                               x-model="presetReason"
+                               class="text-amber-600 focus:ring-amber-500 border-gray-300">
+                        <span class="text-xs">Foto KTP buram atau tidak terbaca jelas</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer transition"
+                           :class="presetReason === 'Foto selfie memegang KTP terpotong / wajah tertutup' ? 'border-amber-400 bg-amber-50/40 text-amber-950 font-medium' : 'text-gray-700'">
+                        <input type="radio" 
+                               name="preset_option" 
+                               value="Foto selfie memegang KTP terpotong / wajah tertutup" 
+                               x-model="presetReason"
+                               class="text-amber-600 focus:ring-amber-500 border-gray-300">
+                        <span class="text-xs">Foto selfie memegang KTP terpotong / wajah tertutup</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer transition"
+                           :class="presetReason === 'NIK / Nama tidak sesuai dengan data formulir sewa' ? 'border-amber-400 bg-amber-50/40 text-amber-950 font-medium' : 'text-gray-700'">
+                        <input type="radio" 
+                               name="preset_option" 
+                               value="NIK / Nama tidak sesuai dengan data formulir sewa" 
+                               x-model="presetReason"
+                               class="text-amber-600 focus:ring-amber-500 border-gray-300">
+                        <span class="text-xs">NIK / Nama tidak sesuai dengan data formulir sewa</span>
+                    </label>
+                </div>
+            </div>
+
+            {{-- Textarea Catatan Tambahan (Opsional) --}}
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        Catatan Tambahan untuk Customer
+                    </label>
+                    <span class="text-[10px] text-gray-400 font-normal">Opsional</span>
+                </div>
+                <textarea x-model="customNotes"
+                          rows="2"
+                          placeholder="Contoh: Pastikan pencahayaan cukup dan nomor NIK 16 digit terbaca tajam tanpa pantulan cahaya..."
+                          class="w-full border border-gray-300 rounded-xl text-xs px-3 py-2 focus:ring-amber-500 focus:border-amber-500"></textarea>
+            </div>
+
+            {{-- Tombol Aksi Modal --}}
+            <div class="flex gap-2.5 pt-2 border-t border-gray-100">
+                <button type="button" 
+                        @click="openReuploadModal = false" 
+                        :disabled="submitting"
+                        class="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer">
+                    Batal
+                </button>
+                <button type="submit" 
+                        :disabled="submitting"
+                        :class="submitting ? 'opacity-70 cursor-not-allowed' : ''"
+                        class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    <span x-text="submitting ? 'Mengirim...' : 'Kirim Permintaan'"></span>
                 </button>
             </div>
         </form>

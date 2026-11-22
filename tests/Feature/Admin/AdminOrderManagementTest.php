@@ -393,9 +393,44 @@ class AdminOrderManagementTest extends TestCase
         $response = $this->actingAs($this->adminA)->get(route('admin.orders.index'));
 
         $response->assertOk();
-        $response->assertSee('Periksa Pesanan');
+        $response->assertSee('Periksa');
         $response->assertSee('Detail');
         $response->assertDontSee('Review KTP');
         $response->assertDontSee('Review Bayar');
+    }
+
+    /**
+     * Test tampilan show admin merender tombol dan modal Minta Unggah Ulang KTP serta tombol Tolak Permanen.
+     */
+    public function test_admin_orders_show_renders_request_reupload_button_and_modal(): void
+    {
+        $order = $this->createOrder([
+            'status' => 'menunggu_konfirmasi',
+            'order_number' => 'ORD-REUPLOAD-TEST',
+        ]);
+
+        IdentityGuarantee::create([
+            'order_id' => $order->id,
+            'customer_id' => $this->customer->id,
+            'full_name' => 'Budi Santoso',
+            'identity_number' => '3578012345678901',
+            'identity_address' => 'Jl. Mawar No 1',
+            'identity_document_image' => 'ktp_buram.jpg',
+            'face_image' => 'selfie_buram.jpg',
+            'status' => 'menunggu',
+        ]);
+
+        $response = $this->actingAs($this->adminA)->get(route('admin.orders.show', $order));
+
+        $response->assertOk();
+        $response->assertSee('Minta Unggah Ulang KTP (Foto Buram)');
+        $response->assertSee('openReuploadModal = true', false);
+        $response->assertSee('value="request_reupload"', false);
+        $response->assertSee('Foto KTP buram atau tidak terbaca jelas');
+        $response->assertSee('Foto selfie memegang KTP terpotong / wajah tertutup');
+        $response->assertSee('NIK / Nama tidak sesuai dengan data formulir sewa');
+        $response->assertSee('Pesanan TIDAK akan dibatalkan.');
+        $response->assertSee('Kirim Permintaan ke Customer');
+        $response->assertSee('Tolak &amp; Batalkan Pesanan Permanen', false);
     }
 }
