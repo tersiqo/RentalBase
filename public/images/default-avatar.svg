@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <clipPath id="avatarCircle">
+      <circle cx="64" cy="64" r="64"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#avatarCircle)">
+    <!-- Soft neutral background (Shopee-style clean gray) -->
+    <rect width="128" height="128" fill="#F1F5F9"/>
+    <!-- Head -->
+    <circle cx="64" cy="50" r="23" fill="#94A3B8"/>
+    <!-- Torso / Shoulders -->
+    <path d="M64 80 C 44 80, 24 93, 20 114 C 32 124, 48 128, 64 128 C 80 128, 96 124, 108 114 C 104 93, 84 80, 64 80 Z" fill="#94A3B8"/>
+  </g>
+</svg>

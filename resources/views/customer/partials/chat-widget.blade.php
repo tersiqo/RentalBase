@@ -117,7 +117,7 @@
         @guest
         <!-- Guest State (Belum Login) -->
         <div class="flex-1 p-6 flex flex-col items-center justify-center text-center bg-gray-50/50">
-            <div class="w-16 h-16 rounded-2xl bg-orange-100 text-primary-600 flex items-center justify-center mb-4 shadow-sm">
+            <div class="w-16 h-16 rounded-2xl bg-primary-100 text-primary-600 flex items-center justify-center mb-4 shadow-sm">
                 <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
@@ -137,12 +137,12 @@
         <div class="flex-1 flex flex-col min-h-0 bg-stone-50/50">
 
             <!-- Bar Notifikasi Background Perangkat (Customer Chat) -->
-            <div x-data="rbWebPush()" x-init="init()" x-show="isSupported && !isSubscribed" x-cloak class="px-3.5 py-2 bg-orange-50/90 border-b border-orange-100 flex items-center justify-between gap-2 shrink-0">
-                <span class="text-[11px] font-medium text-orange-900 truncate">Terima notif balasan saat web ditutup?</span>
+            <div x-data="rbWebPush()" x-init="init()" x-show="isSupported && !isSubscribed" x-cloak class="px-3.5 py-2 bg-primary-50/90 border-b border-primary-100 flex items-center justify-between gap-2 shrink-0">
+                <span class="text-[11px] font-medium text-primary-900 truncate">Terima notif balasan saat web ditutup?</span>
                 <button type="button"
                         @click="subscribe()"
                         :disabled="isLoading"
-                        class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-orange-500 text-white hover:bg-orange-600 transition shrink-0 cursor-pointer">
+                        class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-primary-500 text-white hover:bg-primary-600 transition shrink-0 cursor-pointer">
                     <span x-show="!isLoading">Aktifkan</span>
                     <span x-show="isLoading">...</span>
                 </button>
@@ -183,7 +183,7 @@
                             <template x-if="m.sender_role !== 'customer'">
                                 <div class="flex items-center gap-1.5 mb-1 ml-1">
                                     <span class="text-[11px] font-bold text-gray-700 leading-none" x-text="storeName"></span>
-                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 leading-none">Admin</span>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-800 leading-none">Admin</span>
                                 </div>
                             </template>
 
@@ -279,19 +279,19 @@
                 <template x-for="(chip, cIdx) in quickChips" :key="cIdx">
                     <button type="button"
                             @click="useChip(chip)"
-                            class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-100 hover:bg-orange-50 hover:text-primary-600 text-gray-600 transition whitespace-nowrap shrink-0 border border-gray-200/60 cursor-pointer">
+                            class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-100 hover:bg-primary-50 hover:text-primary-600 text-gray-600 transition whitespace-nowrap shrink-0 border border-gray-200/60 cursor-pointer">
                         <span x-text="chip"></span>
                     </button>
                 </template>
             </div>
 
             <!-- Pending Sematan Konteks Box (Sebelum Dikirim) -->
-            <div x-show="pendingContext" x-cloak class="px-3 py-2 bg-orange-50 border-t border-orange-200 flex items-center justify-between text-xs text-orange-900 shrink-0">
+            <div x-show="pendingContext" x-cloak class="px-3 py-2 bg-primary-50 border-t border-primary-200 flex items-center justify-between text-xs text-primary-900 shrink-0">
                 <div class="flex items-center gap-2 min-w-0">
-                    <span class="font-bold text-[10px] uppercase bg-orange-200/80 text-orange-800 px-1.5 py-0.5 rounded" x-text="pendingContext?.type === 'product' ? 'Produk' : 'Pesanan'"></span>
+                    <span class="font-bold text-[10px] uppercase bg-primary-200/80 text-primary-800 px-1.5 py-0.5 rounded" x-text="pendingContext?.type === 'product' ? 'Produk' : 'Pesanan'"></span>
                     <span class="truncate font-semibold" x-text="pendingContext?.title"></span>
                 </div>
-                <button type="button" @click="pendingContext = null" class="text-orange-500 hover:text-orange-800 p-0.5">
+                <button type="button" @click="pendingContext = null" class="text-primary-600 hover:text-primary-800 p-0.5">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>

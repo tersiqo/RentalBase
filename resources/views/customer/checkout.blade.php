@@ -495,14 +495,14 @@
 
     <!-- Draft Restored Notification Banner -->
     <template x-if="isDraftRestored && currentStep > 1">
-        <div class="mb-6 bg-amber-50/90 border border-amber-200/90 rounded-2xl p-4 flex items-center justify-between text-xs text-amber-900 shadow-2xs">
+        <div class="mb-6 bg-primary-50/90 border border-primary-200/90 rounded-2xl p-4 flex items-center justify-between text-xs text-primary-900 shadow-2xs">
             <div class="flex items-center gap-2.5">
-                <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-5 h-5 text-primary-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Draf formulir Anda dipulihkan otomatis ke <b>Langkah <span x-text="currentStep"></span></b>. Seluruh data teks yang Anda ketik tetap terjaga.</span>
             </div>
-            <button type="button" @click="resetDraft()" class="text-amber-800 hover:text-amber-950 font-bold underline cursor-pointer ml-3 shrink-0 text-xs">
+            <button type="button" @click="resetDraft()" class="text-primary-700 hover:text-primary-950 font-bold underline cursor-pointer ml-3 shrink-0 text-xs">
                 Ulangi dari Awal
             </button>
         </div>
@@ -600,7 +600,7 @@
             <!-- Step 1 -->
             <button type="button" @click="goToStep(1)" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
                 <span class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm flex-none transition-all duration-200"
-                    :class="currentStep === 1 ? 'bg-primary-500 text-white shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">1</span>
+                    :class="currentStep === 1 ? 'bg-primary-500 text-white shadow-md shadow-primary-500/30 scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">1</span>
                 <div class="min-w-0">
                     <span class="text-sm font-bold block truncate transition-colors duration-200"
                         :class="currentStep === 1 ? 'text-primary-500' : 'text-slate-900'">Ringkasan Pesanan</span>
@@ -611,7 +611,7 @@
             <!-- Step 2 -->
             <button type="button" @click="goToStep(2)" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
                 <span class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm flex-none transition-all duration-200"
-                    :class="currentStep === 2 ? 'bg-primary-500 text-white shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">2</span>
+                    :class="currentStep === 2 ? 'bg-primary-500 text-white shadow-md shadow-primary-500/30 scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">2</span>
                 <div class="min-w-0">
                     <span class="text-sm font-bold block truncate transition-colors duration-200"
                         :class="currentStep === 2 ? 'text-primary-500' : 'text-slate-900'">Pengiriman &amp; Kontak</span>
@@ -622,7 +622,7 @@
             <!-- Step 3 -->
             <button type="button" @click="goToStep(3)" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
                 <span class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm flex-none transition-all duration-200"
-                    :class="currentStep === 3 ? 'bg-primary-500 text-white shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">3</span>
+                    :class="currentStep === 3 ? 'bg-primary-500 text-white shadow-md shadow-primary-500/30 scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">3</span>
                 <div class="min-w-0">
                     <span class="text-sm font-bold block truncate transition-colors duration-200"
                         :class="currentStep === 3 ? 'text-primary-500' : 'text-slate-900'">Identitas &amp; Jaminan</span>
@@ -633,7 +633,7 @@
             <!-- Step 4 -->
             <button type="button" @click="goToStep(4)" class="flex items-center gap-3.5 p-2 transition text-left cursor-pointer group">
                 <span class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-sm flex-none transition-all duration-200"
-                    :class="currentStep === 4 ? 'bg-primary-500 text-white shadow-[0_8px_20px_-4px_rgba(249,115,22,0.5)] scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">4</span>
+                    :class="currentStep === 4 ? 'bg-primary-500 text-white shadow-md shadow-primary-500/30 scale-105' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'">4</span>
                 <div class="min-w-0">
                     <span class="text-sm font-bold block truncate transition-colors duration-200"
                         :class="currentStep === 4 ? 'text-primary-500' : 'text-slate-900'">Konfirmasi Final</span>
@@ -778,7 +778,7 @@
                             <div class="bg-primary-50/80 border border-primary-200/80 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-center min-w-[84px] sm:min-w-[96px]">
                                 <small class="text-[9px] sm:text-[10px] font-bold text-primary-700 tracking-wider block uppercase">DURASI</small>
                                 <b class="text-xl sm:text-2xl font-extrabold text-primary-600 block leading-tight" x-text="durationDays"></b>
-                                <small class="text-[9px] sm:text-[10px] font-bold text-[#9A3412] tracking-wider block uppercase">HARI</small>
+                                <small class="text-[9px] sm:text-[10px] font-bold text-primary-700 tracking-wider block uppercase">HARI</small>
                             </div>
                         </div>
                         <span class="block text-[11px] sm:text-[12.5px] text-gray-400 font-medium mt-1.5 sm:mt-2">Perhitungan otomatis: (Tanggal Selesai − Tanggal Mulai) × harga/hari. Minimal 1 hari.</span>
@@ -897,8 +897,8 @@
                             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8h.01M11 12h1v4h1"/></svg>
                         </div>
                         <div class="text-xs leading-relaxed">
-                            <b class="block text-[#7C2D12] text-[13px] sm:text-[13.5px] font-bold mb-0.5">Subtotal dihitung otomatis</b>
-                            <p class="text-[#9A3412]">Subtotal = Σ (harga per hari × jumlah unit) × durasi hari. Lihat rincian pada panel kanan.</p>
+                            <b class="block text-primary-900 text-[13px] sm:text-[13.5px] font-bold mb-0.5">Subtotal dihitung otomatis</b>
+                            <p class="text-primary-800">Subtotal = Σ (harga per hari × jumlah unit) × durasi hari. Lihat rincian pada panel kanan.</p>
                         </div>
                     </div>
 
@@ -906,7 +906,7 @@
                     <div class="pt-4 border-t border-gray-100 flex justify-end">
                         <button type="button" @click="goToStep(2)" 
                                 :disabled="hasOutOfStock"
-                                :class="hasOutOfStock ? 'opacity-50 cursor-not-allowed bg-gray-400 shadow-none' : 'bg-primary-500 hover:bg-primary-600 active:scale-95 shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] cursor-pointer'"
+                                :class="hasOutOfStock ? 'opacity-50 cursor-not-allowed bg-gray-400 shadow-none' : 'bg-primary-500 hover:bg-primary-600 active:scale-95 shadow-lg shadow-primary-500/30 cursor-pointer'"
                                 class="inline-flex items-center gap-2 rounded-xl font-bold px-5 sm:px-6 py-2.5 sm:py-3 text-white transition text-xs sm:text-sm">
                             Lanjut ke Pengiriman
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -1087,7 +1087,7 @@
                         </div>
                         <div class="bg-primary-50/70 border border-primary-100 rounded-xl p-3 sm:p-4 flex gap-2.5 sm:gap-3">
                             <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
-                            <div class="text-xs text-[#7C2D12] leading-relaxed">
+                            <div class="text-xs text-primary-900 leading-relaxed">
                                 <b>Biaya kirim dibayar terpisah.</b> Ongkos kirim tidak dihitung di sini; kurir akan menghubungi Anda via WhatsApp untuk konfirmasi biaya dan jadwal.
                             </div>
                         </div>
@@ -1098,7 +1098,7 @@
                         <div class="bg-primary-50/70 border border-primary-100 rounded-xl p-3.5 sm:p-4 space-y-2.5">
                             <div class="flex gap-2.5 sm:gap-3 items-start">
                                 <svg class="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5M4 9v11h16V9M9 20v-6h6v6"></path></svg>
-                                <div class="text-xs text-[#7C2D12] leading-relaxed">
+                                <div class="text-xs text-gray-800 leading-relaxed">
                                     <b class="text-sm text-gray-900 block mb-0.5">{{ $shopLabel }}</b>
                                     <p class="text-gray-700 font-medium"><strong>Alamat Fisik Outlet:</strong> {{ $outletAddress }}</p>
                                     <p class="text-gray-500 text-[11px] mt-0.5">Jam Operasional: {{ $outletHours }}</p>
@@ -1500,7 +1500,7 @@
                     <div class="bg-primary-50/60 border border-primary-100 rounded-xl p-3 sm:p-4">
                         <label class="flex items-start gap-2.5 sm:gap-3 cursor-pointer">
                             <input type="checkbox" name="terms" value="1" x-model="agree" class="mt-1 rounded text-primary-500 focus:ring-primary-500" required>
-                            <span class="text-xs text-[#7C2D12] font-medium leading-relaxed">
+                            <span class="text-xs text-gray-700 font-medium leading-relaxed">
                                 Saya menyatakan bahwa seluruh data identitas yang diunggah adalah sah dan benar. Saya menyetujui seluruh <b>Syarat & Ketentuan Sewa RentalBase</b> serta bersedia mematuhi aturan penanganan peralatan yang berlaku.
                             </span>
                         </label>
@@ -1510,7 +1510,7 @@
                         <button type="button" @click="goToStep(3)" class="inline-flex items-center gap-2 rounded-xl font-bold px-4 sm:px-5 py-2 sm:py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 transition text-xs sm:text-sm">
                             &larr; Kembali
                         </button>
-                        <button type="submit" :disabled="!agree || hasOutOfStock" class="inline-flex items-center justify-center gap-2 rounded-xl font-extrabold px-5 sm:px-7 py-2.5 sm:py-3 bg-primary-500 text-white shadow-[0_8px_18px_-8px_rgba(249,115,22,0.7)] hover:bg-primary-600 active:scale-95 transition text-xs sm:text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button type="submit" :disabled="!agree || hasOutOfStock" class="inline-flex items-center justify-center gap-2 rounded-xl font-extrabold px-5 sm:px-7 py-2.5 sm:py-3 bg-primary-500 text-white shadow-lg shadow-primary-500/30 hover:bg-primary-600 active:scale-95 transition text-xs sm:text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                             Buat Pesanan &amp; Lanjut Pembayaran &rarr;
                         </button>
                     </div>
@@ -1552,7 +1552,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-primary-50 rounded-xl p-3 text-[11px] text-[#7C2D12] leading-relaxed border border-primary-100">
+                    <div class="bg-primary-50 rounded-xl p-3 text-[11px] text-primary-900 leading-relaxed border border-primary-100">
                         * Pembayaran via Transfer Bank / QRIS langsung dibuka setelah pesanan dibuat. Verifikasi KTP dan pembayaran diproses sekaligus oleh admin toko.
                     </div>
                 </div>

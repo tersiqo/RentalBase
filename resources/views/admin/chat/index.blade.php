@@ -137,13 +137,10 @@
                     
                     <!-- Avatar Customer -->
                     <div class="relative shrink-0">
-                        <template x-if="conv.customer_avatar">
-                            <img :src="conv.customer_avatar" class="w-10 h-10 rounded-full object-cover bg-white border border-gray-200">
-                        </template>
-                        <template x-if="!conv.customer_avatar">
-                            <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 font-bold flex items-center justify-center text-xs"
-                                 x-text="conv.customer_name.charAt(0)"></div>
-                        </template>
+                        <img :src="conv.customer_avatar || '{{ asset('images/default-avatar.svg') }}'"
+                             onerror="this.src='{{ asset('images/default-avatar.svg') }}'"
+                             class="w-10 h-10 rounded-full object-cover bg-white border border-gray-200"
+                             :alt="conv.customer_name">
                         <span x-show="conv.unread_by_admin > 0" class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-orange-500 border-2 border-white rounded-full"></span>
                     </div>
 
@@ -200,13 +197,10 @@
             <div class="px-5 sm:px-6 h-16 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="relative shrink-0">
-                        <template x-if="activeCustomer?.avatar">
-                            <img :src="activeCustomer.avatar" class="w-10 h-10 rounded-full object-cover bg-white border border-gray-200">
-                        </template>
-                        <template x-if="!activeCustomer?.avatar">
-                            <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 font-bold flex items-center justify-center text-sm"
-                                 x-text="activeCustomer?.name?.charAt(0) || 'C'"></div>
-                        </template>
+                        <img :src="activeCustomer?.avatar || '{{ asset('images/default-avatar.svg') }}'"
+                             onerror="this.src='{{ asset('images/default-avatar.svg') }}'"
+                             class="w-10 h-10 rounded-full object-cover bg-white border border-gray-200"
+                             :alt="activeCustomer?.name || 'Customer'">
                     </div>
                     <div class="min-w-0">
                         <h3 class="text-sm font-bold text-gray-900 truncate" x-text="activeCustomer?.name || 'Customer'"></h3>
@@ -263,13 +257,10 @@
                             <!-- Avatar Customer (Khusus Pesan dari Customer) -->
                             <template x-if="m.sender_role === 'customer'">
                                 <div class="shrink-0 mb-0.5">
-                                    <template x-if="activeCustomer?.avatar">
-                                        <img :src="activeCustomer.avatar" :alt="activeCustomer.name" class="w-7 h-7 rounded-full object-cover bg-white ring-1 ring-gray-200 shadow-2xs">
-                                    </template>
-                                    <template x-if="!activeCustomer?.avatar">
-                                        <div class="w-7 h-7 rounded-full bg-orange-100 text-orange-600 font-bold text-[10px] flex items-center justify-center ring-1 ring-orange-200 shadow-2xs"
-                                             x-text="activeCustomer?.name?.charAt(0) || 'C'"></div>
-                                    </template>
+                                    <img :src="activeCustomer?.avatar || '{{ asset('images/default-avatar.svg') }}'"
+                                         onerror="this.src='{{ asset('images/default-avatar.svg') }}'"
+                                         :alt="activeCustomer?.name || 'Customer'"
+                                         class="w-7 h-7 rounded-full object-cover bg-white ring-1 ring-gray-200 shadow-2xs">
                                 </div>
                             </template>
 

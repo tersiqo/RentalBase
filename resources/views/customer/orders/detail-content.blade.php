@@ -280,11 +280,11 @@
                                 ? $tenantProfile->maps_url
                                 : ('https://www.google.com/maps/search/?api=1&query=' . $mapsQuery);
                         @endphp
-                        <div class="sm:col-span-2 p-3.5 sm:p-4 bg-orange-50/50 rounded-xl border border-orange-200/90 space-y-2.5">
+                        <div class="sm:col-span-2 p-3.5 sm:p-4 bg-primary-50/60 rounded-xl border border-primary-200/90 space-y-2.5">
                             <div class="flex items-start justify-between gap-2 flex-wrap">
                                 <div>
-                                    <span class="text-xs font-bold uppercase tracking-wider text-orange-950 block mb-0.5">
-                                        <i class="fa-solid fa-store text-orange-600 mr-1"></i> Lokasi Pengambilan Sendiri di Toko:
+                                    <span class="text-xs font-bold uppercase tracking-wider text-primary-950 block mb-0.5">
+                                        <i class="fa-solid fa-store text-primary-600 mr-1"></i> Lokasi Pengambilan Sendiri di Toko:
                                     </span>
                                     <b class="text-gray-900 font-bold text-sm block leading-relaxed">
                                         {{ $storeName }}
@@ -296,13 +296,13 @@
                                         <i class="fa-regular fa-clock text-gray-400 mr-1"></i> Jam Operasional: {{ $pickupHours }}
                                     </p>
                                 </div>
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200 shrink-0">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary-100 text-primary-800 border border-primary-200 shrink-0">
                                     Self-Pickup
                                 </span>
                             </div>
 
                             <!-- Tombol Action: Buka di Google Maps & Chat WhatsApp Toko -->
-                            <div class="flex items-center gap-2 pt-2 border-t border-orange-200/60 flex-wrap">
+                            <div class="flex items-center gap-2 pt-2 border-t border-primary-200/60 flex-wrap">
                                 <a href="{{ $pickupMapsUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 shadow-2xs transition">
                                     <svg class="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                                     <span>Buka di Google Maps</span>
