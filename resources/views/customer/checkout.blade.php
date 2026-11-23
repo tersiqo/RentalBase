@@ -75,6 +75,7 @@
         periodStart: (savedDraft && savedDraft.periodStart) ? savedDraft.periodStart : {{ json_encode(old('start_date', $period['start_date'])) }},
         periodEnd: (savedDraft && savedDraft.periodEnd) ? savedDraft.periodEnd : {{ json_encode(old('end_date', $period['end_date'])) }},
         rentalTime: (savedDraft && savedDraft.rentalTime) ? savedDraft.rentalTime : ({{ json_encode(old('rental_time')) }} || (() => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; })()),
+        isNowMode: (savedDraft && savedDraft.isNowMode !== undefined) ? savedDraft.isNowMode : true,
         items: {{ json_encode($itemsList->all()) }},
         ship: (savedDraft && savedDraft.ship) ? savedDraft.ship : {{ json_encode(old('shipping_method') === \App\Models\Order::SHIPPING_AMBIL_TOKO ? 'ambil' : 'antar') }},
         shopName: {{ json_encode($shopLabel) }},
@@ -117,8 +118,8 @@
                 this.periodEnd = this.minEndDate;
             }
 
-            // Jika tanggal mulai sewa adalah hari ini dan jam sewa yang tersimpan/default sudah lewat, sesuaikan ke waktu sekarang
-            if (this.isTodayStart && this.rentalTime && this.rentalTime < this.currentNowTime) {
+            // Jika tanggal mulai sewa adalah hari ini dan jam sewa yang tersimpan/default sudah lewat lebih dari 15 menit, sesuaikan ke waktu sekarang
+            if (this.isTodayStart && this.rentalTime && this.rentalTimeMinutesPast > 15) {
                 this.rentalTime = this.currentNowTime;
             }
 
@@ -126,7 +127,7 @@
             const fieldsToWatch = [
                 'currentStep', 'ship', 'addressText', 'whatsapp', 
                 'fullName', 'identityNumber', 'identityAddress', 
-                'rentalTime', 'periodStart', 'periodEnd', 'saveToProfile', 'patokan'
+                'rentalTime', 'periodStart', 'periodEnd', 'saveToProfile', 'patokan', 'isNowMode'
             ];
             fieldsToWatch.forEach(field => {
                 this.$watch(field, () => this.saveDraft());
@@ -161,6 +162,7 @@
                     identityAddress: this.identityAddress,
                     patokan: this.patokan,
                     rentalTime: this.rentalTime,
+                    isNowMode: this.isNowMode,
                     periodStart: this.periodStart,
                     periodEnd: this.periodEnd,
                     saveToProfile: this.saveToProfile,
@@ -199,7 +201,7 @@
         if (!this.periodEnd || this.periodEnd <= this.periodStart) {
             this.periodEnd = minEnd;
         }
-        if (this.isTodayStart && this.rentalTime && this.rentalTime < this.currentNowTime) {
+        if (this.isTodayStart && this.rentalTime && this.rentalTimeMinutesPast > 15) {
             this.rentalTime = this.currentNowTime;
         }
     },
@@ -220,8 +222,30 @@
         return `${h}:${m}`;
     },
 
+    get rentalTimeMinutesPast() {
+        if (!this.isTodayStart || !this.rentalTime) return 0;
+        const parts = this.rentalTime.split(':');
+        if (parts.length < 2) return 0;
+        const rh = parseInt(parts[0], 10);
+        const rm = parseInt(parts[1], 10);
+        if (isNaN(rh) || isNaN(rm)) return 0;
+        const now = new Date();
+        const rentalMinutes = rh * 60 + rm;
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        return nowMinutes - rentalMinutes;
+    },
+
     get minRentalTime() {
-        return this.isTodayStart ? this.currentNowTime : '';
+        if (!this.isTodayStart) return '';
+        // Beri kelonggaran 15 menit ke belakang untuk native input time agar tidak langsung memblokir jika menit bergeser saat mengisi form
+        const now = new Date(Date.now() - 15 * 60 * 1000);
+        const today = new Date();
+        if (now.getDate() !== today.getDate()) {
+            return '00:00';
+        }
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        return `${h}:${m}`;
     },
 
     isTimeDisabled(timeStr) {
@@ -231,11 +255,12 @@
 
     get isRentalTimeInvalid() {
         if (!this.isTodayStart || !this.rentalTime) return false;
-        return this.rentalTime < this.currentNowTime;
+        return this.rentalTimeMinutesPast > 15;
     },
 
     handleRentalTimeChange() {
-        if (this.isTodayStart && this.rentalTime && this.rentalTime < this.currentNowTime) {
+        this.isNowMode = false;
+        if (this.isTodayStart && this.rentalTime && this.rentalTimeMinutesPast > 15) {
             this.rentalTime = this.currentNowTime;
         }
     },
@@ -272,6 +297,7 @@
         const h = String(d.getHours()).padStart(2, '0');
         const m = String(d.getMinutes()).padStart(2, '0');
         this.rentalTime = `${h}:${m}`;
+        this.isNowMode = true;
     },
 
     formatDateIndo(dateStr) {
@@ -363,7 +389,7 @@
             if (this.periodStart && this.periodEnd && new Date(this.periodEnd) <= new Date(this.periodStart)) {
                 errs.push('Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai.');
             }
-            if (this.isTodayStart && this.rentalTime && this.rentalTime < this.currentNowTime) {
+            if (this.isTodayStart && this.rentalTime && this.rentalTimeMinutesPast > 15) {
                 errs.push('Rencana jam sewa tidak boleh menggunakan waktu yang sudah lewat (minimal pukul ' + this.currentNowTime + ' WIB untuk hari ini).');
             }
             if (!this.items || this.items.length === 0) {
@@ -418,6 +444,10 @@
     },
 
     goToStep(targetStep) {
+        // Auto-snap waktu sewa jika memilih hari ini dan berada dalam toleransi 15 menit atau mode Sekarang
+        if (this.isTodayStart && this.rentalTime && (this.isNowMode || (this.rentalTimeMinutesPast > 0 && this.rentalTimeMinutesPast <= 15))) {
+            this.rentalTime = this.currentNowTime;
+        }
         this.stepErrors = [];
         if (targetStep < this.currentStep) {
             this.currentStep = targetStep;
@@ -440,6 +470,10 @@
     },
 
     handleSubmit(e) {
+        // Auto-snap waktu sewa jika memilih hari ini dan berada dalam toleransi 15 menit atau mode Sekarang
+        if (this.isTodayStart && this.rentalTime && (this.isNowMode || (this.rentalTimeMinutesPast > 0 && this.rentalTimeMinutesPast <= 15))) {
+            this.rentalTime = this.currentNowTime;
+        }
         this.stepErrors = [];
         for (let s = 1; s <= 3; s++) {
             const errs = this.validateStep(s);
@@ -828,7 +862,7 @@
                                         <span>Sekarang</span>
                                     </button>
                                     <button type="button"
-                                            @click="!isTimeDisabled('09:00') && (rentalTime = '09:00')"
+                                            @click="!isTimeDisabled('09:00') && (rentalTime = '09:00', isNowMode = false)"
                                             :disabled="isTimeDisabled('09:00')"
                                             :title="isTimeDisabled('09:00') ? 'Pukul 09:00 sudah terlewat untuk hari ini' : 'Pilih pukul 09:00'"
                                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border transition-colors shadow-2xs"
@@ -839,7 +873,7 @@
                                         <span>09:00</span>
                                     </button>
                                     <button type="button"
-                                            @click="!isTimeDisabled('13:00') && (rentalTime = '13:00')"
+                                            @click="!isTimeDisabled('13:00') && (rentalTime = '13:00', isNowMode = false)"
                                             :disabled="isTimeDisabled('13:00')"
                                             :title="isTimeDisabled('13:00') ? 'Pukul 13:00 sudah terlewat untuk hari ini' : 'Pilih pukul 13:00'"
                                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border transition-colors shadow-2xs"
@@ -850,7 +884,7 @@
                                         <span>13:00</span>
                                     </button>
                                     <button type="button"
-                                            @click="!isTimeDisabled('16:00') && (rentalTime = '16:00')"
+                                            @click="!isTimeDisabled('16:00') && (rentalTime = '16:00', isNowMode = false)"
                                             :disabled="isTimeDisabled('16:00')"
                                             :title="isTimeDisabled('16:00') ? 'Pukul 16:00 sudah terlewat untuk hari ini' : 'Pilih pukul 16:00'"
                                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border transition-colors shadow-2xs"
