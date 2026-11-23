@@ -18,6 +18,7 @@ class TenantRegistrationController extends Controller
     public function showLogin(Request $request)
     {
         if (Auth::check()) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
 
             if ($user->status === 'pending_setup') {
@@ -125,6 +126,7 @@ class TenantRegistrationController extends Controller
         ];
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
 
             // Validasi kesesuaian role yang dipilih pada UI (Customer vs Admin)
@@ -210,6 +212,7 @@ class TenantRegistrationController extends Controller
     {
         $referer = $request->headers->get('referer');
         $activeSubdomain = session('active_client_subdomain');
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
 
         if (! $activeSubdomain && $user && $user->client_id) {
@@ -266,6 +269,7 @@ class TenantRegistrationController extends Controller
         }
 
         if (Auth::check()) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
 
             if ($user->status === 'aktif') {
@@ -390,6 +394,8 @@ class TenantRegistrationController extends Controller
 
                 $user->update(['client_id' => $client->id]);
 
+                $initialPaymentStatus = $this->getPrice($request->plan_name) <= 0 ? 'gratis' : 'menunggu';
+
                 Subscription::create([
                     'client_id' => $client->id,
                     'plan_name' => $request->plan_name,
@@ -400,7 +406,7 @@ class TenantRegistrationController extends Controller
                     'start_date' => now(),
                     'end_date' => now()->addMonth(),
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                 ]);
 
                 $reg = ClientRegistration::create([
@@ -413,7 +419,7 @@ class TenantRegistrationController extends Controller
                     'admin_phone' => $request->phone,
                     'admin_password' => $user->password,
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                 ]);
 
                 DB::commit();
@@ -480,6 +486,7 @@ class TenantRegistrationController extends Controller
 
     public function setup(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         $accountData = $request->session()->get('tenant_registration.account');
 
@@ -583,6 +590,8 @@ class TenantRegistrationController extends Controller
                 'status' => 'pending_setup',
             ]);
 
+            $initialPaymentStatus = $this->getPrice($request->plan_name) <= 0 ? 'gratis' : 'menunggu';
+
             Subscription::updateOrCreate(
                 ['client_id' => $client->id],
                 [
@@ -594,7 +603,7 @@ class TenantRegistrationController extends Controller
                     'start_date' => now(),
                     'end_date' => now()->addMonth(),
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                 ]
             );
 
@@ -609,7 +618,7 @@ class TenantRegistrationController extends Controller
                     'admin_phone' => $request->phone,
                     'admin_password' => $user->password,
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                     'rejection_reason' => null,
                 ]
             );
@@ -632,21 +641,25 @@ class TenantRegistrationController extends Controller
 
     private function getMaxProducts($plan)
     {
-        return match ($plan) {
-            'starter' => 50,
-            'business' => 200,
-            'professional' => 1000,
-            default => 50,
+        $limit = config("packages.{$plan}.limits.products");
+
+        return $limit ?? match ($plan) {
+            'starter' => 10,
+            'business' => 50,
+            'professional' => 9999,
+            default => 10,
         };
     }
 
     private function getMaxUsers($plan)
     {
-        return match ($plan) {
-            'starter' => 2,
-            'business' => 5,
-            'professional' => 15,
-            default => 2,
+        $limit = config("packages.{$plan}.limits.admins");
+
+        return $limit ?? match ($plan) {
+            'starter' => 1,
+            'business' => 3,
+            'professional' => 10,
+            default => 1,
         };
     }
 
@@ -698,6 +711,7 @@ class TenantRegistrationController extends Controller
 
     public function setupTheme(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if (! $user) {
             return redirect()->route('login');
@@ -722,6 +736,7 @@ class TenantRegistrationController extends Controller
 
     public function submitPayment(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if (! $user) {
             return redirect()->route('login');
@@ -736,22 +751,39 @@ class TenantRegistrationController extends Controller
             return redirect()->route('tenant.register', ['step' => 'info']);
         }
 
-        $existingProof = Subscription::where('client_id', $client->id)->value('payment_proof')
+        $subscription = Subscription::where('client_id', $client->id)->first();
+        $planName = $subscription?->plan_name ?? $request->session()->get('registration_plan', 'starter');
+        $price = (float) $this->getPrice($planName);
+        $isFree = ($price <= 0);
+
+        $existingProof = $subscription?->payment_proof
             ?? ClientRegistration::where('admin_email', $user->email)->value('payment_proof');
 
-        $request->validate([
-            'payment_proof' => $existingProof ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
-        ], [
-            'payment_proof.required' => 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.',
-            'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
-            'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
-            'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
-        ]);
+        if ($isFree) {
+            $request->validate([
+                'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ], [
+                'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
+                'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
+                'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
+            ]);
+        } else {
+            $request->validate([
+                'payment_proof' => $existingProof ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ], [
+                'payment_proof.required' => 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.',
+                'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
+                'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
+                'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
+            ]);
+        }
 
         $disk = \App\Services\StorageHelper::disk();
         $proofPath = $request->hasFile('payment_proof')
             ? $request->file('payment_proof')->store('subscriptions/proofs', $disk)
-            : $existingProof;
+            : ($isFree ? null : $existingProof);
+
+        $paymentStatus = $isFree ? 'gratis' : 'menunggu';
 
         DB::beginTransaction();
 
@@ -759,14 +791,14 @@ class TenantRegistrationController extends Controller
             // Update subscription dengan bukti bayar
             Subscription::where('client_id', $client->id)->update([
                 'payment_proof' => $proofPath,
-                'payment_status' => 'menunggu',
+                'payment_status' => $paymentStatus,
                 'status' => 'menunggu_verifikasi',
             ]);
 
             // Update client_registrations dengan bukti bayar
             ClientRegistration::where('admin_email', $user->email)->update([
                 'payment_proof' => $proofPath,
-                'payment_status' => 'menunggu',
+                'payment_status' => $paymentStatus,
                 'status' => 'menunggu_verifikasi',
                 'rejection_reason' => null,
             ]);
@@ -813,6 +845,7 @@ class TenantRegistrationController extends Controller
             return $this->register($request);
         }
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if ($user->status === 'pending_setup') {

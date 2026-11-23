@@ -255,7 +255,7 @@ class ProductionMasterDemoSeeder extends Seeder
         );
 
         Subscription::updateOrCreate(
-            ['client_id' => $client1->id, 'plan_name' => 'Pro Enterprise'],
+            ['client_id' => $client1->id, 'plan_name' => 'Professional'],
             [
                 'max_products' => 200,
                 'max_users' => 15,
@@ -517,7 +517,7 @@ class ProductionMasterDemoSeeder extends Seeder
         );
 
         Subscription::updateOrCreate(
-            ['client_id' => $client5->id, 'plan_name' => 'Pro Enterprise'],
+            ['client_id' => $client5->id, 'plan_name' => 'Professional'],
             [
                 'max_products' => 100,
                 'max_users' => 10,
@@ -584,7 +584,7 @@ class ProductionMasterDemoSeeder extends Seeder
         );
 
         Subscription::updateOrCreate(
-            ['client_id' => $client6->id, 'plan_name' => 'Pro Enterprise'],
+            ['client_id' => $client6->id, 'plan_name' => 'Professional'],
             [
                 'max_products' => 100,
                 'max_users' => 10,
@@ -1019,7 +1019,7 @@ class ProductionMasterDemoSeeder extends Seeder
             ]
         );
         Subscription::updateOrCreate(
-            ['client_id' => $suspendedClient->id, 'plan_name' => 'Basic'],
+            ['client_id' => $suspendedClient->id, 'plan_name' => 'Business'],
             [
                 'max_products' => 30,
                 'max_users' => 2,
@@ -1059,7 +1059,7 @@ class ProductionMasterDemoSeeder extends Seeder
 
         // 5. Expiring Soon Subscription Sample (Sisa 5 hari untuk dashboard alert Superadmin)
         Subscription::updateOrCreate(
-            ['client_id' => $suspendedClient->id, 'plan_name' => 'Basic (Simulasi Expiring)'],
+            ['client_id' => $suspendedClient->id, 'plan_name' => 'Business'],
             [
                 'max_products' => 30,
                 'max_users' => 2,

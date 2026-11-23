@@ -85,17 +85,16 @@ class TenantRegistrationTest extends TestCase
             'theme_color' => '#FF9F43',
         ]);
 
-        // Visiting /register-tenant now shows payment page
+        // Visiting /register-tenant now shows payment / confirmation page for free starter plan
         $paymentPage = $this->actingAs($user)->get('/register-tenant');
         $paymentPage->assertStatus(200);
-        $paymentPage->assertSee('Konfirmasi Pembayaran');
-        $paymentPage->assertSee('Unggah Bukti Pembayaran');
+        $paymentPage->assertSee('Konfirmasi Pendaftaran');
+        $paymentPage->assertSee('Paket Starter Anda aktif bebas biaya');
+        $paymentPage->assertSee('Kirim Pengajuan Toko');
 
-        // Now submit payment proof
-        $proofFile = \Illuminate\Http\UploadedFile::fake()->create('bukti_transfer.jpg', 100, 'image/jpeg');
+        // Now submit payment for starter (no payment_proof required)
         $paymentResponse = $this->actingAs($user)->post('/register-tenant', [
             'action_step' => 'payment',
-            'payment_proof' => $proofFile,
         ]);
 
         // Must redirect to /register-tenant
@@ -106,17 +105,17 @@ class TenantRegistrationTest extends TestCase
         $user->refresh();
         $this->assertEquals('menunggu_verifikasi', $user->status);
 
-        // Subscription and ClientRegistration have payment_proof recorded
+        // Subscription and ClientRegistration have payment_status gratis and payment_proof null
         $subscription = Subscription::where('client_id', $user->client_id)->first();
         $this->assertNotNull($subscription);
-        $this->assertNotNull($subscription->payment_proof);
-        $this->assertEquals('menunggu', $subscription->payment_status);
+        $this->assertNull($subscription->payment_proof);
+        $this->assertEquals('gratis', $subscription->payment_status);
         $this->assertEquals('menunggu_verifikasi', $subscription->status);
 
         $clientReg = ClientRegistration::where('admin_email', $user->email)->first();
         $this->assertNotNull($clientReg);
-        $this->assertNotNull($clientReg->payment_proof);
-        $this->assertEquals('menunggu', $clientReg->payment_status);
+        $this->assertNull($clientReg->payment_proof);
+        $this->assertEquals('gratis', $clientReg->payment_status);
         $this->assertEquals('menunggu_verifikasi', $clientReg->status);
 
         // Visiting /register-tenant now shows waiting page
@@ -473,6 +472,72 @@ class TenantRegistrationTest extends TestCase
         $response = $this->actingAs($user)->post('/register-tenant', $payload);
 
         $response->assertSessionHasErrors(['subdomain']);
+    }
+
+    public function test_paid_package_requires_payment_proof_upload(): void
+    {
+        $this->withoutVite();
+
+        $user = User::create([
+            'name' => 'bizowner',
+            'email' => 'bizowner@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'pending_setup',
+        ]);
+
+        // Step 1: Info with business plan
+        $this->actingAs($user)->post('/register-tenant', [
+            'business_name' => 'Rental Bisnis Unggul',
+            'subdomain' => 'bisnisunggul',
+            'description' => 'Sewa perlengkapan bisnis',
+            'owner_name' => 'Owner Bisnis',
+            'phone' => '081299887766',
+            'address' => 'Surabaya',
+            'plan_name' => 'business',
+            'terms' => '1',
+        ]);
+
+        // Step 2: Theme
+        $this->actingAs($user)->post('/register-tenant', [
+            'theme_color' => '#3B82F6',
+        ]);
+
+        // Step 3: Payment page displays upload form
+        $paymentPage = $this->actingAs($user)->get('/register-tenant');
+        $paymentPage->assertStatus(200);
+        $paymentPage->assertSee('Konfirmasi Pembayaran');
+        $paymentPage->assertSee('Unggah Bukti Pembayaran');
+
+        // Submit without payment_proof fails validation
+        $failResponse = $this->actingAs($user)->post('/register-tenant', [
+            'action_step' => 'payment',
+        ]);
+        $failResponse->assertSessionHasErrors(['payment_proof']);
+
+        // Submit with payment_proof succeeds
+        $proofFile = \Illuminate\Http\UploadedFile::fake()->create('bukti_transfer.jpg', 100, 'image/jpeg');
+        $paymentResponse = $this->actingAs($user)->post('/register-tenant', [
+            'action_step' => 'payment',
+            'payment_proof' => $proofFile,
+        ]);
+
+        $paymentResponse->assertRedirect('/register-tenant');
+        $this->assertGuest();
+        $user->refresh();
+        $this->assertEquals('menunggu_verifikasi', $user->status);
+
+        $subscription = Subscription::where('client_id', $user->client_id)->first();
+        $this->assertNotNull($subscription);
+        $this->assertNotNull($subscription->payment_proof);
+        $this->assertEquals('menunggu', $subscription->payment_status);
+        $this->assertEquals('menunggu_verifikasi', $subscription->status);
+
+        $clientReg = ClientRegistration::where('admin_email', $user->email)->first();
+        $this->assertNotNull($clientReg);
+        $this->assertNotNull($clientReg->payment_proof);
+        $this->assertEquals('menunggu', $clientReg->payment_status);
+        $this->assertEquals('menunggu_verifikasi', $clientReg->status);
     }
 
     public function test_submit_payment_triggers_tenant_registration_submitted_and_notifies_owner(): void
