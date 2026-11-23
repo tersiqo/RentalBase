@@ -26,7 +26,7 @@ class ClientAndAuthSeeder extends Seeder
         DB::table('subscriptions')->insert([
             'id' => 1,
             'client_id' => 1,
-            'plan_name' => 'Pro Enterprise',
+            'plan_name' => 'Professional',
             'max_products' => 200,
             'max_users' => 15,
             'price' => 299000.00,
@@ -104,7 +104,7 @@ class ClientAndAuthSeeder extends Seeder
             'business_name' => 'Outdoor Malang Rental',
             'description' => 'Penyewaan tenda dan alat kamping gunung.',
             'subdomain' => 'outdoormalang',
-            'plan_name' => 'Basic',
+            'plan_name' => 'Business',
             'admin_name' => 'Dedi Outdoor',
             'admin_email' => 'dedi@outdoormalang.com',
             'admin_phone' => '081334455667',
