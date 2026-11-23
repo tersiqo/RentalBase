@@ -18,6 +18,7 @@ class TenantRegistrationController extends Controller
     public function showLogin(Request $request)
     {
         if (Auth::check()) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
 
             if ($user->status === 'pending_setup') {
@@ -125,6 +126,7 @@ class TenantRegistrationController extends Controller
         ];
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
 
             // Validasi kesesuaian role yang dipilih pada UI (Customer vs Admin)
@@ -210,6 +212,7 @@ class TenantRegistrationController extends Controller
     {
         $referer = $request->headers->get('referer');
         $activeSubdomain = session('active_client_subdomain');
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
 
         if (! $activeSubdomain && $user && $user->client_id) {
@@ -266,6 +269,7 @@ class TenantRegistrationController extends Controller
         }
 
         if (Auth::check()) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
 
             if ($user->status === 'aktif') {
@@ -480,6 +484,7 @@ class TenantRegistrationController extends Controller
 
     public function setup(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         $accountData = $request->session()->get('tenant_registration.account');
 
@@ -632,21 +637,25 @@ class TenantRegistrationController extends Controller
 
     private function getMaxProducts($plan)
     {
-        return match ($plan) {
-            'starter' => 50,
-            'business' => 200,
-            'professional' => 1000,
-            default => 50,
+        $limit = config("packages.{$plan}.limits.products");
+
+        return $limit ?? match ($plan) {
+            'starter' => 10,
+            'business' => 50,
+            'professional' => 9999,
+            default => 10,
         };
     }
 
     private function getMaxUsers($plan)
     {
-        return match ($plan) {
-            'starter' => 2,
-            'business' => 5,
-            'professional' => 15,
-            default => 2,
+        $limit = config("packages.{$plan}.limits.admins");
+
+        return $limit ?? match ($plan) {
+            'starter' => 1,
+            'business' => 3,
+            'professional' => 10,
+            default => 1,
         };
     }
 
@@ -698,6 +707,7 @@ class TenantRegistrationController extends Controller
 
     public function setupTheme(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if (! $user) {
             return redirect()->route('login');
@@ -722,6 +732,7 @@ class TenantRegistrationController extends Controller
 
     public function submitPayment(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if (! $user) {
             return redirect()->route('login');
@@ -813,6 +824,7 @@ class TenantRegistrationController extends Controller
             return $this->register($request);
         }
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if ($user->status === 'pending_setup') {
