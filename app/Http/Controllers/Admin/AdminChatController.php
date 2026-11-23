@@ -173,7 +173,8 @@ class AdminChatController extends Controller
 
         $attachmentPath = null;
         if ($request->hasFile('attachment') && $request->file('attachment')->isValid()) {
-            $attachmentPath = $request->file('attachment')->store('chat_attachments', 'public');
+            $disk = \App\Services\StorageHelper::disk();
+            $attachmentPath = $request->file('attachment')->store('chat_attachments', $disk);
         }
 
         $chatMessage = ChatMessage::create([

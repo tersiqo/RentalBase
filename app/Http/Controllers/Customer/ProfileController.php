@@ -111,7 +111,7 @@ class ProfileController extends Controller
         $user->address = $validated['address'] ?? null;
 
         if ($request->hasFile('avatar')) {
-            $disk = config('filesystems.default', 'public');
+            $disk = \App\Services\StorageHelper::disk();
             if ($user->avatar && ! str_starts_with($user->avatar, 'http')) {
                 Storage::disk($disk)->delete($user->avatar);
             }

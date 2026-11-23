@@ -380,8 +380,7 @@
                     <tbody class="divide-y divide-slate-100/80 text-sm">
                         @foreach($registrations as $reg)
                             @php
-                                $logo = $reg->client?->logo;
-                                $logoUrl = storage_url($logo);
+                                $logoUrl = $reg->client?->logo_url;
                                 $words = array_values(array_filter(explode(' ', trim($reg->business_name))));
                                 if (count($words) >= 2) {
                                     $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
@@ -474,6 +473,7 @@
                                                     description: '{{ addslashes($reg->description ?? '') }}',
                                                     rejection_reason: '{{ addslashes($reg->rejection_reason ?? '') }}',
                                                     payment_proof: '{{ storage_url($reg->payment_proof) ?: '' }}',
+                                                    logo_url: '{{ $logoUrl ?: '' }}',
                                                     created_at: '{{ $reg->created_at ? $reg->created_at->translatedFormat('d F Y, H:i') : '-' }}',
                                                     verify_url: '{{ route('owner.registrations.verify', $reg->id) }}',
                                                     reject_url: '{{ route('owner.registrations.reject', $reg->id) }}'
@@ -523,11 +523,17 @@
             {{-- Modal Header (Fixed top) --}}
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
-                    </div>
+                    <template x-if="activeTenant?.logo_url">
+                        <img :src="activeTenant?.logo_url" :alt="activeTenant?.business_name" loading="lazy"
+                             class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
+                    </template>
+                    <template x-if="!activeTenant?.logo_url">
+                        <div class="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                    </template>
                     <div>
                         <h3 class="text-base font-bold text-slate-900 leading-tight" x-text="activeTenant?.business_name"></h3>
                         <p class="text-xs text-slate-500 mt-0.5">

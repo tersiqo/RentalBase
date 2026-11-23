@@ -96,7 +96,7 @@ class TenantRegistrationController extends Controller
 
         if ($request->filled('redirect')) {
             $redirectUrl = $request->input('redirect');
-            if (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost')) {
+            if (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost') || str_starts_with($redirectUrl, '/') || str_starts_with($redirectUrl, url('/'))) {
                 return redirect($redirectUrl)->with('success', 'Pendaftaran akun berhasil! Anda kini dapat bertransaksi di seluruh toko RentalBase.');
             }
         }
@@ -185,7 +185,7 @@ class TenantRegistrationController extends Controller
 
             if ($user->role === 'customer') {
                 $redirectUrl = $request->input('redirect');
-                if ($redirectUrl && (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost'))) {
+                if ($redirectUrl && (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost') || str_starts_with($redirectUrl, '/') || str_starts_with($redirectUrl, url('/')))) {
                     return redirect($redirectUrl);
                 }
 
@@ -359,7 +359,7 @@ class TenantRegistrationController extends Controller
 
             $logoPath = null;
             if ($request->hasFile('logo')) {
-                $disk = config('filesystems.default', 'public');
+                $disk = \App\Services\StorageHelper::disk();
                 $logoPath = $request->file('logo')->store('clients/logos', $disk);
             }
 
@@ -532,7 +532,7 @@ class TenantRegistrationController extends Controller
 
         $logoPath = $user ? $user->avatar : null;
         if ($request->hasFile('logo')) {
-            $disk = config('filesystems.default', 'public');
+            $disk = \App\Services\StorageHelper::disk();
             $logoPath = $request->file('logo')->store('clients/logos', $disk);
         }
 
@@ -748,7 +748,7 @@ class TenantRegistrationController extends Controller
             'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
         ]);
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $proofPath = $request->hasFile('payment_proof')
             ? $request->file('payment_proof')->store('subscriptions/proofs', $disk)
             : $existingProof;
@@ -778,9 +778,9 @@ class TenantRegistrationController extends Controller
 
             DB::commit();
 
-            $sub = Subscription::where('client_id', $client->id)->first();
-            if ($sub && class_exists(\App\Events\SubscriptionRenewalUploaded::class)) {
-                event(new \App\Events\SubscriptionRenewalUploaded($sub));
+            $reg = ClientRegistration::where('admin_email', $user->email)->first();
+            if ($reg && class_exists(\App\Events\TenantRegistrationSubmitted::class)) {
+                event(new \App\Events\TenantRegistrationSubmitted($reg));
             }
 
             Auth::logout();

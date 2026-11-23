@@ -419,7 +419,7 @@ class PageController extends Controller
 
         try {
             if ($request->hasFile('late_fee_proof')) {
-                $disk = config('filesystems.default', 'public');
+                $disk = \App\Services\StorageHelper::disk();
                 $proofPath = $request->file('late_fee_proof')->store('returns', $disk);
             }
 
@@ -538,7 +538,7 @@ class PageController extends Controller
             ],
         ]);
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $path = $request->file('payment_proof')->store('payments', $disk);
 
         $paymentMethodId = $request->input('client_payment_method_id')
@@ -582,7 +582,7 @@ class PageController extends Controller
             'face_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $docPath = $request->file('identity_document_image')->store('identity_guarantees', $disk);
         $facePath = $request->file('face_image')->store('identity_guarantees', $disk);
 
@@ -629,7 +629,7 @@ class PageController extends Controller
             'late_fee_proof.max' => 'Ukuran file bukti pembayaran denda maksimal 2MB.',
         ]);
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $path = $request->file('late_fee_proof')->store('returns', $disk);
 
         $return = $order->returnModel;

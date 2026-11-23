@@ -307,4 +307,150 @@ class StorageStandardizationTest extends TestCase
         Storage::disk($diskName)->assertExists($updatedClient->logo);
         $this->assertNotEmpty($updatedClient->logo_url);
     }
+
+    public function test_storage_url_derives_supabase_public_url_when_aws_url_is_null(): void
+    {
+        config([
+            'filesystems.default' => 's3',
+            'filesystems.disks.s3.url' => null,
+            'filesystems.disks.s3.endpoint' => 'https://hfsvquwlxvtekfyzjgzo.storage.supabase.co/storage/v1/s3',
+            'filesystems.disks.s3.bucket' => 'rentalbase-storage',
+        ]);
+
+        $url = StorageHelper::url('products/sample-test.jpg', 's3');
+        $this->assertSame(
+            'https://hfsvquwlxvtekfyzjgzo.supabase.co/storage/v1/object/public/rentalbase-storage/products/sample-test.jpg',
+            $url
+        );
+    }
+
+    public function test_storage_url_handles_leading_storage_prefix(): void
+    {
+        config([
+            'filesystems.default' => 's3',
+            'filesystems.disks.s3.url' => 'https://hfsvquwlxvtekfyzjgzo.supabase.co/storage/v1/object/public/rentalbase-storage',
+        ]);
+
+        $url = StorageHelper::url('/storage/products/sample-test.jpg');
+        $this->assertSame(
+            'https://hfsvquwlxvtekfyzjgzo.supabase.co/storage/v1/object/public/rentalbase-storage/products/sample-test.jpg',
+            $url
+        );
+    }
+
+    public function test_product_images_accessor_handles_double_encoded_json(): void
+    {
+        $category = Category::create([
+            'client_id' => $this->client->id,
+            'name' => 'Kamera Test',
+            'slug' => 'kamera-test',
+        ]);
+
+        $product = Product::create([
+            'client_id' => $this->client->id,
+            'category_id' => $category->id,
+            'name' => 'Kamera Double Encoded',
+            'slug' => 'kamera-double-encoded',
+            'rental_price_per_day' => 100000,
+            'late_fee_per_hour' => 10000,
+            'status' => 'aktif',
+            'main_image' => 'products/main.jpg',
+            'images' => '["products\/extra-1.jpg","products\/extra-2.jpg"]',
+        ]);
+
+        $this->assertIsArray($product->images);
+        $this->assertEquals(['products/extra-1.jpg', 'products/extra-2.jpg'], $product->images);
+    }
+
+    public function test_tenant_profile_first_or_create_inherits_client_logo(): void
+    {
+        $this->client->update(['logo' => 'clients/logos/store_logo.png']);
+
+        $response = $this->actingAs($this->admin)->get(route('admin.settings.profile'));
+        $response->assertOk();
+
+        $profile = \App\Models\TenantProfile::where('client_id', $this->client->id)->first();
+        $this->assertNotNull($profile);
+        $this->assertSame('clients/logos/store_logo.png', $profile->logo_path);
+    }
+
+    public function test_owner_tenant_update_syncs_logo_path_to_existing_tenant_profile(): void
+    {
+        $diskName = StorageHelper::disk();
+        Storage::fake($diskName);
+        Storage::fake('public');
+
+        $profile = \App\Models\TenantProfile::create([
+            'client_id' => $this->client->id,
+            'name' => $this->client->business_name,
+            'subdomain' => $this->client->subdomain,
+            'logo_path' => 'clients/logos/old_logo.png',
+        ]);
+
+        $owner = User::create([
+            'name' => 'Super Owner Sync',
+            'email' => 'ownersync@platform.test',
+            'password' => bcrypt('password'),
+            'role' => 'owner',
+            'status' => 'aktif',
+        ]);
+
+        $newLogo = UploadedFile::fake()->image('updated-logo.png');
+
+        $response = $this->actingAs($owner)
+            ->put("/owner/tenants/{$this->client->id}", [
+                'business_name' => 'Kamera Store Synced',
+                'subdomain' => 'kamerastore',
+                'description' => 'Updated by owner',
+                'theme_color' => '#10B981',
+                'admin_name' => 'Admin Kamera',
+                'admin_email' => 'admin@kamerastore.test',
+                'admin_phone' => '081234567890',
+                'logo' => $newLogo,
+            ]);
+
+        $response->assertSessionHas('success');
+
+        $updatedClient = $this->client->fresh();
+        $updatedProfile = $profile->fresh();
+
+        $this->assertNotNull($updatedClient->logo);
+        $this->assertSame($updatedClient->logo, $updatedProfile->logo_path);
+        $this->assertSame('Kamera Store Synced', $updatedProfile->name);
+    }
+
+    public function test_owner_subscriptions_page_renders_tenant_logo_and_dynamic_subdomain_link(): void
+    {
+        $this->client->update([
+            'logo' => 'clients/logos/sub_test_logo.png',
+            'status' => 'aktif',
+        ]);
+
+        \App\Models\Subscription::create([
+            'client_id' => $this->client->id,
+            'plan_name' => 'starter',
+            'max_products' => 15,
+            'max_users' => 2,
+            'price' => 99000,
+            'billing_cycle' => 'monthly',
+            'start_date' => now()->subDays(5),
+            'end_date' => now()->addDays(25),
+            'status' => 'aktif',
+            'payment_status' => 'lunas',
+        ]);
+
+        $owner = User::create([
+            'name' => 'Super Owner Sub',
+            'email' => 'ownersub@platform.test',
+            'password' => bcrypt('password'),
+            'role' => 'owner',
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('owner.subscriptions.index'));
+        $response->assertOk();
+        $response->assertSee('clients/logos/sub_test_logo.png', false);
+        $response->assertSee(route('customer.home', ['subdomain' => $this->client->subdomain]), false);
+        $response->assertDontSee('kamerastore.localhost:8000', false);
+    }
 }

@@ -65,7 +65,7 @@ class ProductController extends Controller
             ]);
         }
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $uploadedImages = [];
 
         if ($request->hasFile('images')) {
@@ -151,7 +151,7 @@ class ProductController extends Controller
             ]);
         }
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $existingImages = is_array($product->images) ? $product->images : (json_decode($product->images, true) ?? []);
 
         // Handle penghapusan gambar tertentu jika ada
@@ -295,7 +295,7 @@ class ProductController extends Controller
 
     private function handleImageUpload(Request $request): ?string
     {
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
 
         if ($request->hasFile('images')) {
             $files = $request->file('images');

@@ -325,9 +325,14 @@
                             {{-- Nama Toko / Tenant --}}
                             <td class="px-5 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
-                                        {{ strtoupper(substr($client?->business_name ?? 'T', 0, 1)) }}
-                                    </div>
+                                    @if($client?->logo_url)
+                                        <img src="{{ $client->logo_url }}" alt="{{ $client->business_name }}" loading="lazy"
+                                             class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-xs shrink-0">
+                                    @else
+                                        <div class="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
+                                            {{ strtoupper(substr($client?->business_name ?? 'T', 0, 1)) }}
+                                        </div>
+                                    @endif
                                     <div>
                                         <a href="{{ route('owner.tenants.index', ['search' => $client?->subdomain]) }}"
                                            title="Buka profil usaha tenant di Manajemen Tenant"
@@ -346,7 +351,7 @@
 
                             {{-- Subdomain --}}
                             <td class="px-5 py-4 whitespace-nowrap">
-                                <a href="http://{{ $client?->subdomain }}.localhost:8000"
+                                <a href="{{ $client?->subdomain ? route('customer.home', ['subdomain' => $client->subdomain]) : '#' }}"
                                    target="_blank"
                                    class="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-orange-600 hover:underline">
                                     <span>{{ $client?->subdomain }}</span>

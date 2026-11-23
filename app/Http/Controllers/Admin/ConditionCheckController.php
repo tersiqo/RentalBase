@@ -166,7 +166,7 @@ class ConditionCheckController extends Controller
         }
 
         // Simpan foto (mendukung single file atau multiple files)
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $imagePath = null;
         if ($request->hasFile('images')) {
             $paths = [];

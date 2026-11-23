@@ -480,7 +480,7 @@ class OrderController extends Controller
 
             $file = $request->file('refund_proof');
             $fileName = 'refund_' . $lockedOrder->id . '_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
-            $disk = config('filesystems.default', 'public');
+            $disk = \App\Services\StorageHelper::disk();
             $path = $file->storeAs('refund-proofs/' . $client->id, $fileName, $disk);
 
             // Hapus file bukti lama jika ada
