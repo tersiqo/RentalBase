@@ -644,14 +644,12 @@
                 type="button"
                 id="btn-profile-dropdown"
                 title="Menu Profil Admin"
-                class="w-9 h-9 shrink-0 aspect-square rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-sm hover:ring-2 hover:ring-orange-500 hover:ring-offset-2 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                class="w-9 h-9 shrink-0 aspect-square rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-gray-200 shadow-sm hover:ring-2 hover:ring-orange-500 hover:ring-offset-2 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 :aria-expanded="profileOpen.toString()">
-            @if(Auth::user()?->avatar)
-                <img src="{{ storage_url(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="w-full h-full shrink-0 aspect-square rounded-full object-cover">
-            @else
-                <span class="sr-only">Buka menu profil</span>
-                <span class="uppercase font-semibold text-xs">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</span>
-            @endif
+            <img src="{{ Auth::user()?->avatar ? storage_url(Auth::user()->avatar) : asset('images/default-avatar.svg') }}"
+                 alt="{{ Auth::user()?->name ?? 'Admin' }}"
+                 onerror="this.src='{{ asset('images/default-avatar.svg') }}'"
+                 class="w-full h-full shrink-0 aspect-square rounded-full object-cover">
         </button>
 
         {{-- Dropdown Menu --}}

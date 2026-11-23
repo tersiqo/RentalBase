@@ -986,7 +986,7 @@
                         :class="submitting ? 'opacity-70 cursor-not-allowed' : ''"
                         class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                    <span x-text="submitting ? 'Mengirim...' : 'Kirim Permintaan'"></span>
+                    <span x-text="submitting ? 'Mengirim...' : 'Kirim Permintaan ke Customer'">Kirim Permintaan ke Customer</span>
                 </button>
             </div>
         </form>

@@ -64,17 +64,30 @@
         :root {
             --tenant-theme: {{ $themeColor }};
             --tenant-text: {{ $textColor }};
-            --color-primary-500: {{ $themeColor }};
-            --color-primary-600: {{ $themeColor }};
-            --tenant-theme-50: color-mix(in srgb, var(--tenant-theme) 10%, white);
-            --tenant-theme-100: color-mix(in srgb, var(--tenant-theme) 18%, white);
-            --tenant-theme-200: color-mix(in srgb, var(--tenant-theme) 30%, white);
-            --tenant-theme-300: color-mix(in srgb, var(--tenant-theme) 48%, white);
-            --tenant-theme-400: color-mix(in srgb, var(--tenant-theme) 70%, white);
-            --tenant-theme-600: color-mix(in srgb, var(--tenant-theme) 85%, black);
-            --tenant-theme-700: color-mix(in srgb, var(--tenant-theme) 72%, black);
-            --tenant-theme-800: color-mix(in srgb, var(--tenant-theme) 60%, black);
-            --tenant-theme-900: color-mix(in srgb, var(--tenant-theme) 45%, black);
+
+            /* Tailwind CSS v4 Dynamic Theme Palette */
+            --color-primary-50: color-mix(in srgb, var(--tenant-theme) 8%, white);
+            --color-primary-100: color-mix(in srgb, var(--tenant-theme) 15%, white);
+            --color-primary-200: color-mix(in srgb, var(--tenant-theme) 28%, white);
+            --color-primary-300: color-mix(in srgb, var(--tenant-theme) 45%, white);
+            --color-primary-400: color-mix(in srgb, var(--tenant-theme) 70%, white);
+            --color-primary-500: var(--tenant-theme);
+            --color-primary-600: color-mix(in srgb, var(--tenant-theme) 85%, black);
+            --color-primary-700: color-mix(in srgb, var(--tenant-theme) 70%, black);
+            --color-primary-800: color-mix(in srgb, var(--tenant-theme) 55%, black);
+            --color-primary-900: color-mix(in srgb, var(--tenant-theme) 40%, black);
+            --color-primary-950: color-mix(in srgb, var(--tenant-theme) 25%, black);
+
+            /* Legacy compatibility */
+            --tenant-theme-50: var(--color-primary-50);
+            --tenant-theme-100: var(--color-primary-100);
+            --tenant-theme-200: var(--color-primary-200);
+            --tenant-theme-300: var(--color-primary-300);
+            --tenant-theme-400: var(--color-primary-400);
+            --tenant-theme-600: var(--color-primary-600);
+            --tenant-theme-700: var(--color-primary-700);
+            --tenant-theme-800: var(--color-primary-800);
+            --tenant-theme-900: var(--color-primary-900);
         }
 
         /* Override tombol checkout & elemen utama katalog customer */
@@ -123,16 +136,6 @@
 
         .text-primary-900 {
             color: color-mix(in srgb, var(--tenant-theme) 45%, black) !important;
-        }
-
-        .from-primary-500 {
-            --tw-gradient-from: var(--tenant-theme) var(--tw-gradient-from-position) !important;
-            --tw-gradient-to: color-mix(in srgb, var(--tenant-theme) 80%, black) var(--tw-gradient-to-position) !important;
-            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-        }
-
-        .to-primary-600 {
-            --tw-gradient-to: color-mix(in srgb, var(--tenant-theme) 80%, black) var(--tw-gradient-to-position) !important;
         }
 
         .hover:bg-primary-600:hover {
@@ -336,12 +339,12 @@
                             @php
                             $userAvatar = auth()->user()->avatar
                             ? storage_url(auth()->user()->avatar)
-                            : "https://ui-avatars.com/api/?name=" . urlencode(auth()->user()->name) . "&background=f97316&color=fff&bold=true&size=128";
+                            : asset('images/default-avatar.svg');
                             @endphp
                             <img src="{{ $userAvatar }}"
                                 alt="Profile"
-                                onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=f97316&color=fff&bold=true&size=128'"
-                                class="w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] shrink-0 aspect-square rounded-xl object-cover border border-gray-200 hover:border-primary-500 transition-colors">
+                                onerror="this.src='{{ asset('images/default-avatar.svg') }}'"
+                                class="w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] shrink-0 aspect-square rounded-xl object-cover border border-gray-200 hover:border-primary-500 transition-colors bg-slate-50">
                         </button>
 
                         <div x-show="open"
@@ -787,7 +790,7 @@
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 translate-y-2">
                 <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                    :class="toast.url === '#open-chat' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'">
+                    :class="toast.url === '#open-chat' ? 'bg-primary-100 text-primary-600' : 'bg-emerald-100 text-emerald-600'">
                     <template x-if="toast.url === '#open-chat'">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -804,7 +807,7 @@
                     <p class="text-xs text-gray-600 mt-0.5" x-text="toast.message"></p>
                     <div class="mt-2 flex items-center gap-2">
                         <a x-show="toast.url && toast.url !== '#open-chat'" :href="toast.url" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Buka Pesanan &rarr;</a>
-                        <button type="button" x-show="toast.url === '#open-chat'" @click="window.dispatchEvent(new CustomEvent('toggle-customer-chat')); removeToast(toast.id)" class="text-xs font-semibold text-orange-600 hover:text-orange-700 cursor-pointer">Buka Obrolan &rarr;</button>
+                        <button type="button" x-show="toast.url === '#open-chat'" @click="window.dispatchEvent(new CustomEvent('toggle-customer-chat')); removeToast(toast.id)" class="text-xs font-semibold text-primary-600 hover:text-primary-700 cursor-pointer">Buka Obrolan &rarr;</button>
                         <button @click="removeToast(toast.id)" class="text-xs text-gray-400 hover:text-gray-600 ml-auto cursor-pointer">Tutup</button>
                     </div>
                 </div>
