@@ -394,6 +394,8 @@ class TenantRegistrationController extends Controller
 
                 $user->update(['client_id' => $client->id]);
 
+                $initialPaymentStatus = $this->getPrice($request->plan_name) <= 0 ? 'gratis' : 'menunggu';
+
                 Subscription::create([
                     'client_id' => $client->id,
                     'plan_name' => $request->plan_name,
@@ -404,7 +406,7 @@ class TenantRegistrationController extends Controller
                     'start_date' => now(),
                     'end_date' => now()->addMonth(),
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                 ]);
 
                 $reg = ClientRegistration::create([
@@ -417,7 +419,7 @@ class TenantRegistrationController extends Controller
                     'admin_phone' => $request->phone,
                     'admin_password' => $user->password,
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                 ]);
 
                 DB::commit();
@@ -588,6 +590,8 @@ class TenantRegistrationController extends Controller
                 'status' => 'pending_setup',
             ]);
 
+            $initialPaymentStatus = $this->getPrice($request->plan_name) <= 0 ? 'gratis' : 'menunggu';
+
             Subscription::updateOrCreate(
                 ['client_id' => $client->id],
                 [
@@ -599,7 +603,7 @@ class TenantRegistrationController extends Controller
                     'start_date' => now(),
                     'end_date' => now()->addMonth(),
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                 ]
             );
 
@@ -614,7 +618,7 @@ class TenantRegistrationController extends Controller
                     'admin_phone' => $request->phone,
                     'admin_password' => $user->password,
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                     'rejection_reason' => null,
                 ]
             );
@@ -747,22 +751,39 @@ class TenantRegistrationController extends Controller
             return redirect()->route('tenant.register', ['step' => 'info']);
         }
 
-        $existingProof = Subscription::where('client_id', $client->id)->value('payment_proof')
+        $subscription = Subscription::where('client_id', $client->id)->first();
+        $planName = $subscription?->plan_name ?? $request->session()->get('registration_plan', 'starter');
+        $price = (float) $this->getPrice($planName);
+        $isFree = ($price <= 0);
+
+        $existingProof = $subscription?->payment_proof
             ?? ClientRegistration::where('admin_email', $user->email)->value('payment_proof');
 
-        $request->validate([
-            'payment_proof' => $existingProof ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
-        ], [
-            'payment_proof.required' => 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.',
-            'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
-            'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
-            'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
-        ]);
+        if ($isFree) {
+            $request->validate([
+                'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ], [
+                'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
+                'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
+                'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
+            ]);
+        } else {
+            $request->validate([
+                'payment_proof' => $existingProof ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ], [
+                'payment_proof.required' => 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.',
+                'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
+                'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
+                'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
+            ]);
+        }
 
         $disk = config('filesystems.default', 'public');
         $proofPath = $request->hasFile('payment_proof')
             ? $request->file('payment_proof')->store('subscriptions/proofs', $disk)
-            : $existingProof;
+            : ($isFree ? null : $existingProof);
+
+        $paymentStatus = $isFree ? 'gratis' : 'menunggu';
 
         DB::beginTransaction();
 
@@ -770,14 +791,14 @@ class TenantRegistrationController extends Controller
             // Update subscription dengan bukti bayar
             Subscription::where('client_id', $client->id)->update([
                 'payment_proof' => $proofPath,
-                'payment_status' => 'menunggu',
+                'payment_status' => $paymentStatus,
                 'status' => 'menunggu_verifikasi',
             ]);
 
             // Update client_registrations dengan bukti bayar
             ClientRegistration::where('admin_email', $user->email)->update([
                 'payment_proof' => $proofPath,
-                'payment_status' => 'menunggu',
+                'payment_status' => $paymentStatus,
                 'status' => 'menunggu_verifikasi',
                 'rejection_reason' => null,
             ]);
