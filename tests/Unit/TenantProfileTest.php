@@ -31,6 +31,7 @@ class TenantProfileTest extends TestCase
             'theme_color',
             'hero_showcase_mode',
             'hero_featured_product_id',
+            'maps_url',
         ];
 
         $this->assertEqualsCanonicalizing($expectedFillable, $profile->getFillable());

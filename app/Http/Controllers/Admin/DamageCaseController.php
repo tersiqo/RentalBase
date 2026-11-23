@@ -233,7 +233,7 @@ class DamageCaseController extends Controller
 
         // Unggah foto-foto bukti jika ada
         $photoPaths = [];
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $photoFile) {
                 $path = $photoFile->store('damages', $disk);

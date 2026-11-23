@@ -365,7 +365,7 @@ class CustomerCheckoutController extends Controller
 
         DB::beginTransaction();
         try {
-            $disk = config('filesystems.default', 'public');
+            $disk = \App\Services\StorageHelper::disk();
 
             if ($canReuseIdentity && ! $request->hasFile('identity_document_image')) {
                 $docPath = $docFile;

@@ -740,7 +740,7 @@
                                         <div class="flex flex-wrap gap-2.5">
                                             <template x-for="(imgRel, idx) in existingGalleryImages" :key="idx">
                                                 <div class="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-xs group">
-                                                    <img :src="'/storage/' + imgRel" alt="Foto galeri" loading="lazy" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100/e2e8f0/475569?text=IMG'">
+                                                    <img :src="resolveImageUrl(imgRel)" alt="Foto galeri" loading="lazy" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100/e2e8f0/475569?text=IMG'">
                                                     <button type="button" 
                                                             @click="removeExistingGalleryImage(imgRel)"
                                                             class="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1017,6 +1017,14 @@
                 const imgs = Array.isArray(product.images) ? product.images : (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : []);
                 this.existingGalleryImages = imgs;
                 this.editModalOpen = true;
+            },
+
+            resolveImageUrl(path) {
+                if (!path) return 'https://placehold.co/100x100/e2e8f0/475569?text=IMG';
+                if (path.startsWith('http://') || path.startsWith('https://')) return path;
+                const clean = path.replace(/^\/?(storage\/)?/, '');
+                const urlTemplate = '{{ storage_url("__RB_PATH__") }}';
+                return urlTemplate.replace('__RB_PATH__', clean);
             },
 
             removeExistingGalleryImage(imgPath) {

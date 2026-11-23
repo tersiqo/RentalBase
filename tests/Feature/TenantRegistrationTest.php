@@ -539,4 +539,84 @@ class TenantRegistrationTest extends TestCase
         $this->assertEquals('menunggu', $clientReg->payment_status);
         $this->assertEquals('menunggu_verifikasi', $clientReg->status);
     }
+
+    public function test_submit_payment_triggers_tenant_registration_submitted_and_notifies_owner(): void
+    {
+        Storage::fake('public');
+
+        $owner = User::create([
+            'name' => 'Super Owner',
+            'email' => 'owner@platform.test',
+            'password' => Hash::make('password123'),
+            'role' => 'owner',
+            'status' => 'aktif',
+        ]);
+
+        $client = Client::create([
+            'business_name' => 'Rental Kamera Jogja',
+            'subdomain' => 'kamerajogja',
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $user = User::create([
+            'client_id' => $client->id,
+            'name' => 'jogjaadmin',
+            'email' => 'admin@kamerajogja.test',
+            'password' => Hash::make('password123'),
+            'role' => 'admin_rental',
+            'status' => 'pending_setup',
+        ]);
+
+        ClientRegistration::create([
+            'business_name' => 'Rental Kamera Jogja',
+            'subdomain' => 'kamerajogja',
+            'admin_name' => 'Jogja Admin',
+            'admin_email' => $user->email,
+            'admin_phone' => '081234567890',
+            'admin_password' => $user->password,
+            'plan_name' => 'starter',
+            'status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        Subscription::create([
+            'client_id' => $client->id,
+            'plan_name' => 'starter',
+            'max_products' => 10,
+            'max_users' => 1,
+            'price' => 50000,
+            'billing_cycle' => 'monthly',
+            'start_date' => now(),
+            'end_date' => now()->addMonth(),
+            'status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu',
+        ]);
+
+        $proofFile = \Illuminate\Http\UploadedFile::fake()->create('bukti_transfer.jpg', 100, 'image/jpeg');
+
+        $response = $this->actingAs($user)->post('/register-tenant', [
+            'action_step' => 'payment',
+            'payment_proof' => $proofFile,
+        ]);
+
+        $response->assertRedirect('/register-tenant');
+
+        // Notifikasi untuk Owner harus bertipe 'registration', client_id null (tidak bocor ke Admin Toko), dan mengarah ke owner.registrations.index
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $owner->id,
+            'client_id' => null,
+            'type' => 'registration',
+            'title' => 'Pendaftaran Tenant Baru: Rental Kamera Jogja',
+        ]);
+
+        // Pastikan TIDAK ADA notifikasi bertipe 'subscription' atau 'Perpanjangan'
+        $this->assertDatabaseMissing('notifications', [
+            'user_id' => $owner->id,
+            'type' => 'subscription',
+        ]);
+
+        $notification = \App\Models\Notification::where('user_id', $owner->id)->where('type', 'registration')->first();
+        $this->assertNotNull($notification);
+        $this->assertEquals(route('owner.registrations.index'), $notification->owner_target_url);
+    }
 }

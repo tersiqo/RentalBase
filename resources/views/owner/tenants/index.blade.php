@@ -408,7 +408,7 @@
                                 }
 
                                 // Logo asset URL
-                                $logoUrl = storage_url($tenant->logo);
+                                $logoUrl = $tenant->logo_url;
 
                                 // payload data tenant untuk Alpine Modal
                                 $tenantPayload = [

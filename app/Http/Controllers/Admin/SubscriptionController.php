@@ -113,7 +113,7 @@ class SubscriptionController extends Controller
         }
 
         // Upload bukti pembayaran
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $proofPath = $request->file('payment_proof')->store('subscriptions/proofs', $disk);
 
         $newSubscription = Subscription::create([
@@ -197,7 +197,7 @@ class SubscriptionController extends Controller
         }
 
         // Upload bukti pembayaran
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $proofPath = $request->file('payment_proof')->store('subscriptions/proofs', $disk);
 
         $newSubscription = Subscription::create([

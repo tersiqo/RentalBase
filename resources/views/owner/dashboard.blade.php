@@ -196,8 +196,7 @@
                     <tbody class="divide-y divide-slate-100/80 text-sm">
                         @foreach($pendingRegistrations as $reg)
                             @php
-                                $logo = $reg->client?->logo;
-                                $logoUrl = storage_url($logo);
+                                $logoUrl = $reg->client?->logo_url;
                                 $words = array_values(array_filter(explode(' ', trim($reg->business_name))));
                                 if (count($words) >= 2) {
                                     $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
@@ -351,7 +350,7 @@
                         @foreach($tenants as $tenant)
                             @php
                                 $sub = $tenant->latestSubscription ?: $tenant->activeSubscription;
-                                $logoUrl = storage_url($tenant->logo);
+                                $logoUrl = $tenant->logo_url;
                                 $initials = strtoupper(substr($tenant->business_name ?: ($tenant->nama_usaha ?: 'R'), 0, 1));
                             @endphp
                             <tr class="hover:bg-slate-50/70 transition-colors group">

@@ -153,7 +153,7 @@ class DamageReportController extends Controller
         }
 
         // Simpan bukti transfer ke storage
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $path = $request->file('payment_proof')->store('payments/damage', $disk);
 
         $paymentMethodId = $request->input('client_payment_method_id')

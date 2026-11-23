@@ -32,6 +32,7 @@ class OwnerTenantController extends Controller
 
         $query = (clone $baseQuery)->with([
             'adminUser',
+            'tenantProfile',
             'latestSubscription',
             'activeSubscription',
         ])->withCount(['products', 'equipmentUnits']);
@@ -149,11 +150,27 @@ class OwnerTenantController extends Controller
                 if ($client->logo) {
                     \App\Services\StorageHelper::delete($client->logo);
                 }
-                $disk = config('filesystems.default', 'public');
+                if ($client->tenantProfile?->logo_path && $client->tenantProfile->logo_path !== $client->logo) {
+                    \App\Services\StorageHelper::delete($client->tenantProfile->logo_path);
+                }
+                $disk = \App\Services\StorageHelper::disk();
                 $clientData['logo'] = $request->file('logo')->store('clients/logos', $disk);
             }
 
             $client->update($clientData);
+
+            if ($client->tenantProfile) {
+                $profileUpdates = [
+                    'name'        => $clientData['business_name'],
+                    'subdomain'   => $clientData['subdomain'],
+                    'description' => $clientData['description'],
+                    'theme_color' => $clientData['theme_color'],
+                ];
+                if (isset($clientData['logo'])) {
+                    $profileUpdates['logo_path'] = $clientData['logo'];
+                }
+                $client->tenantProfile->update($profileUpdates);
+            }
 
             if ($admin) {
                 $admin->update([
