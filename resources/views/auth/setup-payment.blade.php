@@ -53,9 +53,9 @@
 
 @section('content')
     <div class="auth-header" style="text-align: center; margin-bottom: 28px;">
-        <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 8px; color: var(--slate-900);">Konfirmasi Pembayaran</h1>
+        <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 8px; color: var(--slate-900);">{{ $price > 0 ? 'Konfirmasi Pembayaran' : 'Konfirmasi Pendaftaran' }}</h1>
         <p style="font-size: 14px; color: var(--slate-500); line-height: 1.5;">
-            Selesaikan pembayaran subscription untuk mengirim pengajuan pendaftaran toko Anda ke Owner.
+            {{ $price > 0 ? 'Selesaikan pembayaran subscription untuk mengirim pengajuan pendaftaran toko Anda ke Owner.' : 'Konfirmasi pendaftaran toko Anda untuk diajukan ke tim verifikasi platform.' }}
         </p>
     </div>
 
@@ -156,49 +156,64 @@
     @endif
 
     <!-- Form Upload Bukti Pembayaran & Pengiriman Pengajuan -->
-    <form method="POST" action="{{ route('tenant.register') }}" enctype="multipart/form-data" novalidate id="payment-form">
+    <form method="POST" action="{{ route('tenant.register') }}" enctype="multipart/form-data" novalidate id="payment-form" data-is-paid="{{ $price > 0 ? 'true' : 'false' }}" data-has-proof="{{ !empty($existingProof) ? 'true' : 'false' }}">
         @csrf
         <input type="hidden" name="action_step" value="payment">
 
-        <div style="background-color: white; border: 1px solid var(--slate-200); border-radius: 14px; padding: 20px; margin-bottom: 24px;">
-            <h2 style="font-size: 16px; font-weight: 800; color: var(--slate-900); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: var(--orange-500);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                Unggah Bukti Pembayaran
-                <span style="color: var(--orange-500); font-size: 14px;">*</span>
-            </h2>
-            <p style="font-size: 13px; color: var(--slate-500); margin-bottom: 16px;">
-                @if($price > 0)
+        @if($price > 0)
+            <div style="background-color: white; border: 1px solid var(--slate-200); border-radius: 14px; padding: 20px; margin-bottom: 24px;">
+                <h2 style="font-size: 16px; font-weight: 800; color: var(--slate-900); margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: var(--orange-500);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Unggah Bukti Pembayaran
+                    <span style="color: var(--orange-500); font-size: 14px;">*</span>
+                </h2>
+                <p style="font-size: 13px; color: var(--slate-500); margin-bottom: 16px;">
                     Unggah struk transfer ATM, m-banking, atau tangkapan layar pembayaran QRIS (Format: JPG, JPEG, PNG. Maks: 2MB).
-                @else
-                    Paket Starter bebas biaya berlangganan. Silakan unggah tangkapan layar persetujuan atau konfirmasi registrasi (Maks: 2MB).
-                @endif
-            </p>
+                </p>
 
-            <div class="field" style="margin-bottom: 0;">
-                @if(!empty($existingProof))
-                    <div style="margin-bottom: 12px; padding: 10px 14px; background-color: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; font-size: 12px; color: var(--slate-600); display: flex; align-items: center; justify-content: space-between;">
-                        <span>Bukti pembayaran sebelumnya telah tersimpan. Pilih file baru jika ingin menggantinya.</span>
-                        <a href="{{ storage_url($existingProof) }}" target="_blank" style="color: var(--orange-600); font-weight: 600; text-decoration: none;">Lihat Bukti &rarr;</a>
+                <div class="field" style="margin-bottom: 0;">
+                    @if(!empty($existingProof))
+                        <div style="margin-bottom: 12px; padding: 10px 14px; background-color: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; font-size: 12px; color: var(--slate-600); display: flex; align-items: center; justify-content: space-between;">
+                            <span>Bukti pembayaran sebelumnya telah tersimpan. Pilih file baru jika ingin menggantinya.</span>
+                            <a href="{{ storage_url($existingProof) }}" target="_blank" style="color: var(--orange-600); font-weight: 600; text-decoration: none;">Lihat Bukti &rarr;</a>
+                        </div>
+                    @endif
+                    <input type="file" id="payment_proof" name="payment_proof" accept="image/png,image/jpeg,image/jpg" class="input @error('payment_proof') is-invalid @enderror" style="padding: 10px;" {{ empty($existingProof) ? 'required' : '' }}>
+                    <div id="file-preview-container" style="display: none; margin-top: 12px; align-items: center; gap: 12px; background-color: var(--slate-50); border: 1px solid var(--slate-200); padding: 8px 12px; border-radius: 8px;">
+                        <img id="file-preview-img" src="" alt="Preview Bukti" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--slate-200);">
+                        <div style="flex: 1; min-width: 0;">
+                            <span id="file-preview-name" style="font-size: 13px; font-weight: 700; color: var(--slate-800); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                            <span id="file-preview-size" style="font-size: 11px; color: var(--slate-500);"></span>
+                        </div>
+                        <button type="button" onclick="clearPaymentFile()" style="background: none; border: none; color: var(--red-500); font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px;">
+                            Ganti File
+                        </button>
                     </div>
-                @endif
-                <input type="file" id="payment_proof" name="payment_proof" accept="image/png,image/jpeg,image/jpg" class="input @error('payment_proof') is-invalid @enderror" style="padding: 10px;" {{ empty($existingProof) ? 'required' : '' }}>
-                <div id="file-preview-container" style="display: none; margin-top: 12px; align-items: center; gap: 12px; background-color: var(--slate-50); border: 1px solid var(--slate-200); padding: 8px 12px; border-radius: 8px;">
-                    <img id="file-preview-img" src="" alt="Preview Bukti" style="width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--slate-200);">
-                    <div style="flex: 1; min-width: 0;">
-                        <span id="file-preview-name" style="font-size: 13px; font-weight: 700; color: var(--slate-800); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
-                        <span id="file-preview-size" style="font-size: 11px; color: var(--slate-500);"></span>
-                    </div>
-                    <button type="button" onclick="clearPaymentFile()" style="background: none; border: none; color: var(--red-500); font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px;">
-                        Ganti File
-                    </button>
+
+                    <span id="payment-proof-error" style="color: var(--red-500); font-size: 12px; margin-top: 6px; display: none; font-weight: 500;"></span>
+                    @error('payment_proof')
+                        <span style="color: var(--red-500); font-size: 12px; margin-top: 6px; display: block; font-weight: 500;">{{ $message }}</span>
+                    @enderror
                 </div>
-
-                <span id="payment-proof-error" style="color: var(--red-500); font-size: 12px; margin-top: 6px; display: none; font-weight: 500;"></span>
-                @error('payment_proof')
-                    <span style="color: var(--red-500); font-size: 12px; margin-top: 6px; display: block; font-weight: 500;">{{ $message }}</span>
-                @enderror
             </div>
-        </div>
+        @else
+            <!-- Banner Paket Starter Bebas Biaya -->
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 22px; margin-bottom: 24px;">
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div>
+                        <h2 style="font-size: 16px; font-weight: 800; color: #166534; margin: 0 0 6px;">
+                            Paket Starter Bebas Biaya (Gratis)
+                        </h2>
+                        <p style="font-size: 13.5px; color: #15803d; line-height: 1.6; margin: 0;">
+                            Paket Starter Anda aktif bebas biaya. Anda tidak perlu mengunggah bukti transfer. Silakan klik tombol di bawah untuk mengajukan toko Anda ke tim verifikasi platform.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <div style="display: flex; gap: 16px;">
             <a href="{{ route('tenant.register', ['step' => 'theme']) }}" class="btn btn-primary" style="flex: 1; margin-top: 0; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; background-color: white; color: var(--slate-700); border: 1px solid var(--slate-300);">
@@ -207,7 +222,7 @@
             </a>
             
             <button type="submit" id="submit-btn" class="btn btn-primary" style="flex: 1; margin-top: 0; display: inline-flex; align-items: center; justify-content: center;">
-                <span id="submit-btn-text">Kirim Pengajuan</span>
+                <span id="submit-btn-text">Kirim Pengajuan Toko</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 6px; width: 18px; height: 18px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
         </div>
@@ -296,28 +311,34 @@
                 });
             }
 
+            const isPaid = form ? form.dataset.isPaid === 'true' : false;
+            const hasExistingProof = form ? form.dataset.hasProof === 'true' : false;
+
             if (form) {
                 form.addEventListener('submit', function (e) {
                     const file = input ? input.files[0] : null;
 
-                    if (!file) {
-                        e.preventDefault();
-                        if (errorElem) {
-                            errorElem.textContent = 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.';
-                            errorElem.style.display = 'block';
+                    // Validasi file bukti transfer hanya jika paket berbayar dan belum ada bukti tersimpan
+                    if (isPaid && !hasExistingProof) {
+                        if (!file) {
+                            e.preventDefault();
+                            if (errorElem) {
+                                errorElem.textContent = 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.';
+                                errorElem.style.display = 'block';
+                            }
+                            if (input) input.focus();
+                            return;
                         }
-                        if (input) input.focus();
-                        return;
-                    }
 
-                    if (file.size > MAX_FILE_SIZE) {
-                        e.preventDefault();
-                        if (errorElem) {
-                            errorElem.textContent = 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.';
-                            errorElem.style.display = 'block';
+                        if (file.size > MAX_FILE_SIZE) {
+                            e.preventDefault();
+                            if (errorElem) {
+                                errorElem.textContent = 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.';
+                                errorElem.style.display = 'block';
+                            }
+                            if (input) input.focus();
+                            return;
                         }
-                        if (input) input.focus();
-                        return;
                     }
 
                     // Prevent double submit

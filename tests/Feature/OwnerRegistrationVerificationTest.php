@@ -655,7 +655,7 @@ class OwnerRegistrationVerificationTest extends TestCase
             'id' => $reg->id,
             'business_name' => 'Slamet Rent Car Official',
             'status' => 'menunggu_verifikasi',
-            'payment_status' => 'menunggu',
+            'payment_status' => 'gratis',
             'rejection_reason' => null,
         ]);
 
@@ -673,7 +673,7 @@ class OwnerRegistrationVerificationTest extends TestCase
         $this->assertDatabaseHas('subscriptions', [
             'id' => $subscription->id,
             'status' => 'menunggu_verifikasi',
-            'payment_status' => 'menunggu',
+            'payment_status' => 'gratis',
         ]);
 
         // It must reappear in owner verification queue
