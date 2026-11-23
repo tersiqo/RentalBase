@@ -265,6 +265,33 @@
         }
     },
 
+    setRentalHour(newHour) {
+        const currentMinute = (this.rentalTime && this.rentalTime.includes(':')) ? this.rentalTime.split(':')[1] : '00';
+        this.rentalTime = `${newHour}:${currentMinute}`;
+        this.handleRentalTimeChange();
+    },
+
+    setRentalMinute(newMinute) {
+        const currentHour = (this.rentalTime && this.rentalTime.includes(':')) ? this.rentalTime.split(':')[0] : '09';
+        this.rentalTime = `${currentHour}:${newMinute}`;
+        this.handleRentalTimeChange();
+    },
+
+    isHourDisabled(hh) {
+        if (!this.isTodayStart) return false;
+        const now = new Date();
+        return parseInt(hh, 10) < now.getHours();
+    },
+
+    isMinuteDisabled(mm) {
+        if (!this.isTodayStart) return false;
+        const selectedHour = parseInt((this.rentalTime || '00:00').split(':')[0], 10);
+        const now = new Date();
+        if (selectedHour < now.getHours()) return true;
+        if (selectedHour > now.getHours()) return false;
+        return parseInt(mm, 10) < Math.max(0, now.getMinutes() - 15);
+    },
+
     get durationDays() {
         if (!this.periodStart || !this.periodEnd) return 1;
         const [sy, sm, sd] = this.periodStart.split('-').map(Number);
@@ -831,21 +858,53 @@
                             </span>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-start">
+                        <div class="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 items-start">
                             <!-- Time Input & Shortcuts -->
                             <div class="space-y-2">
                                 <div class="space-y-1">
+                                    <!-- Custom 24-Hour WIB Time Picker (Konsisten 24-jam di Windows, Linux, Mac, Android, iOS) -->
                                     <div class="relative">
-                                        <input type="time"
+                                        <input type="hidden"
                                                id="rental_time"
                                                name="rental_time"
                                                x-model="rentalTime"
                                                :min="minRentalTime"
-                                               @change="handleRentalTimeChange()"
-                                               @input="handleRentalTimeChange()"
-                                               required
-                                               class="w-full border rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-sm sm:text-base font-bold text-gray-900 focus:ring-primary-500 focus:border-primary-500 bg-white shadow-2xs"
-                                               :class="isRentalTimeInvalid ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200'">
+                                               required>
+
+                                        <div class="w-full flex items-center justify-between gap-2 border rounded-xl px-3 py-2 bg-white shadow-2xs transition-colors focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500"
+                                             :class="isRentalTimeInvalid ? 'border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500' : 'border-gray-200'">
+                                            <div class="flex items-center gap-1.5">
+                                                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+
+                                                <select aria-label="Jam mulai sewa (24 jam)"
+                                                        :value="(rentalTime || '09:00').split(':')[0]"
+                                                        @change="setRentalHour($event.target.value)"
+                                                        class="bg-gray-50 hover:bg-primary-50/70 rounded-lg border-0 py-1 pl-2 pr-6 text-sm sm:text-base font-extrabold text-gray-900 focus:ring-1 focus:ring-primary-500 cursor-pointer tabular-nums">
+                                                    @for($h = 0; $h < 24; $h++)
+                                                        @php $hh = str_pad((string) $h, 2, '0', STR_PAD_LEFT); @endphp
+                                                        <option value="{{ $hh }}" :disabled="isHourDisabled('{{ $hh }}')">{{ $hh }}</option>
+                                                    @endfor
+                                                </select>
+
+                                                <span class="text-sm sm:text-base font-extrabold text-gray-400 select-none">:</span>
+
+                                                <select aria-label="Menit mulai sewa"
+                                                        :value="(rentalTime || '09:00').split(':')[1] || '00'"
+                                                        @change="setRentalMinute($event.target.value)"
+                                                        class="bg-gray-50 hover:bg-primary-50/70 rounded-lg border-0 py-1 pl-2 pr-6 text-sm sm:text-base font-extrabold text-gray-900 focus:ring-1 focus:ring-primary-500 cursor-pointer tabular-nums">
+                                                    @for($m = 0; $m < 60; $m++)
+                                                        @php $mm = str_pad((string) $m, 2, '0', STR_PAD_LEFT); @endphp
+                                                        <option value="{{ $mm }}" :disabled="isMinuteDisabled('{{ $mm }}')">{{ $mm }}</option>
+                                                    @endfor
+                                                </select>
+                                            </div>
+
+                                            <span class="text-[11px] font-bold text-primary-700 bg-primary-50 border border-primary-100 px-2 py-0.5 rounded-md shrink-0 select-none">
+                                                WIB
+                                            </span>
+                                        </div>
                                     </div>
                                     <p x-show="isRentalTimeInvalid" class="text-[11px] text-red-600 font-semibold flex items-center gap-1">
                                         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
