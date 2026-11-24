@@ -110,15 +110,25 @@
                                 <span>Dashboard Admin</span>
                             </a>
                         @else
+                            @php
+                                $landingAvatar = auth()->user()->avatar
+                                    ? storage_url(auth()->user()->avatar)
+                                    : asset('images/default-avatar.svg');
+                            @endphp
                             <div class="relative" x-data="{ userMenuOpen: false }" @click.outside="userMenuOpen = false">
                                 <button type="button" @click="userMenuOpen = !userMenuOpen" class="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-gray-200 hover:border-gray-300 bg-white transition shadow-sm cursor-pointer">
-                                    <span class="w-8 h-8 rounded-full bg-brand-light text-brand flex items-center justify-center font-bold text-sm">
-                                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                                    </span>
+                                    <img src="{{ $landingAvatar }}"
+                                         alt="{{ auth()->user()->name }}"
+                                         onerror="this.src='{{ asset('images/default-avatar.svg') }}'"
+                                         class="w-8 h-8 rounded-full object-cover border border-gray-200 bg-slate-50 shrink-0">
                                     <span class="text-sm font-semibold text-gray-800 max-w-[120px] truncate">{{ auth()->user()->name }}</span>
                                     <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
                                 </button>
                                 <div x-show="userMenuOpen" x-cloak class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50">
+                                    <div class="px-4 py-2 border-b border-gray-100 mb-1">
+                                        <p class="text-xs font-bold text-gray-900 truncate">{{ auth()->user()->name }}</p>
+                                        <p class="text-[11px] text-gray-500 truncate">{{ auth()->user()->email }}</p>
+                                    </div>
                                     <a href="{{ route('customer.orders') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-medium">
                                         <i class="fa-solid fa-receipt text-gray-400"></i> Pesanan Saya
                                     </a>
@@ -162,7 +172,21 @@
                     @elseif(auth()->user()->role === 'admin_rental')
                         <a href="{{ route('admin.dashboard') }}" class="block px-3 py-3 rounded-md text-base font-semibold text-brand hover:bg-brand-light">Dashboard Admin</a>
                     @else
-                        <div class="px-3 py-2 text-xs font-bold text-gray-400 uppercase">Akun: {{ auth()->user()->name }}</div>
+                        @php
+                            $landingMobileAvatar = auth()->user()->avatar
+                                ? storage_url(auth()->user()->avatar)
+                                : asset('images/default-avatar.svg');
+                        @endphp
+                        <div class="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-xl mb-1 border border-gray-100">
+                            <img src="{{ $landingMobileAvatar }}"
+                                 alt="{{ auth()->user()->name }}"
+                                 onerror="this.src='{{ asset('images/default-avatar.svg') }}'"
+                                 class="w-9 h-9 rounded-full object-cover border border-gray-200 bg-white shrink-0">
+                            <div class="min-w-0">
+                                <div class="text-sm font-bold text-gray-900 truncate">{{ auth()->user()->name }}</div>
+                                <div class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</div>
+                            </div>
+                        </div>
                         <a href="{{ route('customer.orders') }}" class="block px-3 py-2.5 rounded-md text-base font-medium text-gray-700 hover:text-brand hover:bg-brand-light">Pesanan Saya</a>
                     @endif
                     <form method="POST" action="{{ route('logout') }}" class="mt-2">

@@ -208,7 +208,7 @@
                             Paket Starter Bebas Biaya (Gratis)
                         </h2>
                         <p style="font-size: 13.5px; color: #15803d; line-height: 1.6; margin: 0;">
-                            Paket Starter Anda aktif bebas biaya. Anda tidak perlu mengunggah bukti transfer. Silakan klik tombol di bawah untuk mengajukan toko Anda ke tim verifikasi platform.
+                            Paket Starter Anda aktif bebas biaya. Anda tidak perlu mengunggah bukti transfer. Silakan klik tombol di bawah untuk langsung mengaktifkan toko dan masuk ke dashboard operasional.
                         </p>
                     </div>
                 </div>
@@ -222,7 +222,7 @@
             </a>
             
             <button type="submit" id="submit-btn" class="btn btn-primary" style="flex: 1; margin-top: 0; display: inline-flex; align-items: center; justify-content: center;">
-                <span id="submit-btn-text">Kirim Pengajuan Toko</span>
+                <span id="submit-btn-text">Aktifkan Toko & Masuk Dashboard</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 6px; width: 18px; height: 18px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
         </div>
