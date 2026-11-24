@@ -3,14 +3,19 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TenantApproved;
 use App\Models\Client;
 use App\Models\ClientRegistration;
 use App\Models\Subscription;
+use App\Models\TenantProfile;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class TenantRegistrationController extends Controller
@@ -783,30 +788,54 @@ class TenantRegistrationController extends Controller
             ? $request->file('payment_proof')->store('subscriptions/proofs', $disk)
             : ($isFree ? null : $existingProof);
 
-        $paymentStatus = $isFree ? 'gratis' : 'menunggu';
+        $paymentStatus = $isFree ? 'gratis' : 'lunas';
+        $now = Carbon::now();
 
         DB::beginTransaction();
 
         try {
-            // Update subscription dengan bukti bayar
+            // Mode Auto-Approve (Sementara untuk sesi pengujian responden mitra):
+            // 1. Langsung aktifkan paket subscription dengan masa aktif 1 bulan
             Subscription::where('client_id', $client->id)->update([
                 'payment_proof' => $proofPath,
                 'payment_status' => $paymentStatus,
-                'status' => 'menunggu_verifikasi',
+                'status' => 'aktif',
+                'start_date' => $now->toDateString(),
+                'end_date' => $now->copy()->addMonth()->toDateString(),
             ]);
 
-            // Update client_registrations dengan bukti bayar
+            // 2. Tandai registrasi tenant langsung disetujui
             ClientRegistration::where('admin_email', $user->email)->update([
                 'payment_proof' => $proofPath,
-                'payment_status' => $paymentStatus,
-                'status' => 'menunggu_verifikasi',
+                'payment_status' => $isFree ? 'gratis' : 'diverifikasi',
+                'status' => 'disetujui',
                 'rejection_reason' => null,
+                'reviewed_at' => $now,
             ]);
 
-            // Set user dan client ke status menunggu_verifikasi
-            $user->update([
-                'status' => 'menunggu_verifikasi',
+            // 3. Set toko (Client) dan akun Admin menjadi aktif
+            $client->update([
+                'status' => 'aktif',
             ]);
+
+            $user->update([
+                'status' => 'aktif',
+            ]);
+
+            // 4. Pastikan profil toko terisi lengkap
+            TenantProfile::firstOrCreate(
+                ['client_id' => $client->id],
+                [
+                    'name' => $client->business_name,
+                    'description' => $client->description,
+                    'address' => $user->address,
+                    'city' => 'Malang',
+                    'whatsapp' => $user->phone,
+                    'subdomain' => $client->subdomain,
+                    'logo_path' => $client->logo,
+                    'theme_color' => $client->theme_color ?? '#F97316',
+                ]
+            );
 
             DB::commit();
 
@@ -815,12 +844,24 @@ class TenantRegistrationController extends Controller
                 event(new \App\Events\TenantRegistrationSubmitted($reg));
             }
 
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            $request->session()->put('registration_completed', true);
+            // Kirim email pemberitahuan pendaftaran toko disetujui ke admin tenant
+            if ($reg) {
+                try {
+                    Mail::to($user->email)->queue(new TenantApproved($reg, $user));
+                } catch (\Throwable $e) {
+                    Log::warning("Gagal mengirim email auto-approval tenant [Email: {$user->email}]: " . $e->getMessage());
+                }
+            }
 
-            return redirect()->route('tenant.register');
+            // Bersihkan sesi setup pendaftaran tanpa melakukan logout
+            $request->session()->forget([
+                'tenant_registration',
+                'registration_plan',
+                'registration_theme_selected',
+                'registration_completed',
+            ]);
+
+            return redirect()->route('admin.dashboard')->with('success', 'Pendaftaran toko berhasil! Toko Anda telah aktif dan siap digunakan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
