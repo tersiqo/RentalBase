@@ -315,14 +315,16 @@ class OwnerTenantController extends Controller
         }
     }
 
-    private function getMaxProducts(string $plan): ?int
+    private function getMaxProducts(string $plan): int
     {
-        return config("packages.{$plan}.limits.products", match ($plan) {
+        $limit = config("packages.{$plan}.limits.products");
+
+        return $limit ?? match ($plan) {
             'starter'      => 10,
             'business'     => 50,
-            'professional' => null,
+            'professional' => 9999,
             default        => 10,
-        });
+        };
     }
 
     private function getMaxUsers(string $plan): ?int

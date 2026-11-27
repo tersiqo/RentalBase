@@ -26,5 +26,9 @@ if [ -n "$APP_KEY" ]; then
     php artisan view:cache || true
 fi
 
+# Ensure storage (including laravel.log) and bootstrap/cache are writable by www-data
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
 echo "Starting Supervisord (Nginx + PHP-FPM)..."
 exec /usr/bin/supervisord -n -c /etc/supervisord.conf
