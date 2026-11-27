@@ -136,7 +136,7 @@ class OwnerRegistrationController extends Controller
         // Tangani kegagalan pengiriman email secara terpisah agar tidak membatalkan transaksi yang telah commit
         $emailSent = true;
         try {
-            Mail::to($reg->admin_email)->send(
+            Mail::to($reg->admin_email)->queue(
                 new TenantApproved($reg, $targetUser)
             );
         } catch (\Throwable $e) {
@@ -203,7 +203,7 @@ class OwnerRegistrationController extends Controller
         // Kirim email pemberitahuan penolakan di luar transaksi database
         $emailSent = true;
         try {
-            Mail::to($reg->admin_email)->send(
+            Mail::to($reg->admin_email)->queue(
                 new TenantRejected($reg, $reason)
             );
         } catch (\Throwable $e) {

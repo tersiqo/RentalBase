@@ -42,7 +42,7 @@ class TenantRegistrationSubmitted implements ShouldBroadcastNow
         return [
             'registration_id' => $this->registration->id,
             'business_name' => $this->registration->business_name,
-            'owner_name' => $this->registration->name,
+            'owner_name' => $this->registration->admin_name ?? $this->registration->name ?? 'Admin',
             'subdomain' => $this->registration->subdomain,
             'message' => 'Pendaftaran toko rental baru: "' . $this->registration->business_name . '" menunggu peninjauan!',
         ];

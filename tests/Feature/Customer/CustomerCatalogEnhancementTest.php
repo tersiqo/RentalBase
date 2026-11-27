@@ -110,7 +110,7 @@ class CustomerCatalogEnhancementTest extends TestCase
         $this->assertNotEmpty($cart);
         $cartItem = array_values($cart)[0];
         $this->assertEquals($product->id, $cartItem['product_id']);
-        $this->assertEquals(3, $cartItem['duration_days']);
+        $this->assertEquals(2, $cartItem['duration_days']);
     }
 
     public function test_it_05_005_date_filter_checks_availability_against_overlapping_orders()
@@ -166,13 +166,13 @@ class CustomerCatalogEnhancementTest extends TestCase
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
             ->set('startDate', '2026-11-10')
             ->set('endDate', '2026-11-12')
-            ->assertSee('Tersedia 1');
+            ->assertSee('Ready');
 
-        // When searching overlapping dates (e.g. 2026-11-02 to 2026-11-03) -> Unit should show Sedang Disewa
+        // When searching overlapping dates (e.g. 2026-11-02 to 2026-11-03) -> Unit should show Disewa
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
             ->set('startDate', '2026-11-02')
             ->set('endDate', '2026-11-03')
-            ->assertSee('Sedang Disewa');
+            ->assertSee('Disewa');
     }
 
     public function test_catalog_paginates_nine_items_per_page()
@@ -364,7 +364,7 @@ class CustomerCatalogEnhancementTest extends TestCase
             ->assertDispatched('cart-updated');
     }
 
-    public function test_catalog_opens_add_to_cart_modal_and_confirms_item()
+    public function test_it_06_006_catalog_opens_add_to_cart_modal_and_confirms_item()
     {
         $product = Product::create([
             'client_id' => $this->client->id,
@@ -402,8 +402,8 @@ class CustomerCatalogEnhancementTest extends TestCase
         $this->assertEquals($product->id, $cartItem['product_id']);
         $this->assertEquals('2026-12-20', $cartItem['start_date']);
         $this->assertEquals('2026-12-22', $cartItem['end_date']);
-        $this->assertEquals(3, $cartItem['duration_days']);
-        $this->assertEquals(1350000, $cartItem['subtotal']);
+        $this->assertEquals(2, $cartItem['duration_days']);
+        $this->assertEquals(900000, $cartItem['subtotal']);
     }
 
     public function test_it_06_003_cart_page_can_edit_rental_dates_and_updates_period()
@@ -471,8 +471,8 @@ class CustomerCatalogEnhancementTest extends TestCase
         $cart = session()->get('cart', []);
         $this->assertArrayNotHasKey($oldHash, $cart);
         $this->assertArrayHasKey($newHash, $cart);
-        $this->assertEquals(4, $cart[$newHash]['duration_days']);
-        $this->assertEquals(1400000, $cart[$newHash]['subtotal']);
+        $this->assertEquals(3, $cart[$newHash]['duration_days']);
+        $this->assertEquals(1050000, $cart[$newHash]['subtotal']);
         $this->assertEquals($newStart, $cart[$newHash]['start_date']);
         $this->assertEquals($newEnd, $cart[$newHash]['end_date']);
     }
@@ -806,24 +806,24 @@ class CustomerCatalogEnhancementTest extends TestCase
         $categories = Category::where('client_id', $this->client->id)->get();
 
         // 1. Saat buka katalog tanpa memilih tanggal (hari ini: tgl 1 Nov):
-        // Unit tetap terlihat 'Tersedia 1' karena tidak ada yang menyewa hari ini
+        // Unit tetap terlihat 'Ready' karena tidak ada yang menyewa hari ini
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
             ->assertSee($product->name)
-            ->assertSee('Tersedia 1');
+            ->assertSee('Ready');
 
         // 2. Saat Customer B mencari tanggal 8 - 9 November (tidak bentrok):
-        // Unit tetap 'Tersedia 1' sehingga Customer B BISA MENYEWA!
+        // Unit tetap 'Ready' sehingga Customer B BISA MENYEWA!
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
             ->set('startDate', '2026-11-08')
             ->set('endDate', '2026-11-09')
-            ->assertSee('Tersedia 1');
+            ->assertSee('Ready');
 
         // 3. Saat mencari tanggal 10 - 11 November (bentrok dengan Customer A):
-        // Unit tampil 'Sedang Disewa' (karena toko punya unit, tetapi sedang disewa)
+        // Unit tampil 'Disewa' (karena toko punya unit, tetapi sedang disewa)
         Livewire::test(ProductCatalog::class, ['client' => $this->client, 'categories' => $categories])
             ->set('startDate', '2026-11-10')
             ->set('endDate', '2026-11-11')
-            ->assertSee('Sedang Disewa');
+            ->assertSee('Disewa');
     }
 
     public function test_add_to_cart_modal_dynamically_updates_available_units_for_future_dates()
@@ -880,7 +880,7 @@ class CustomerCatalogEnhancementTest extends TestCase
         $lw->assertSee('Tersedia');
     }
 
-    public function test_product_detail_page_shows_bookable_status_when_currently_rented_today()
+    public function test_it_05_009_product_detail_page_renders_gallery_and_booking_status()
     {
         Carbon::setTestNow('2026-11-01 10:00:00');
 

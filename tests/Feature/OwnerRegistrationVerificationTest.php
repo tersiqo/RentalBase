@@ -130,8 +130,8 @@ class OwnerRegistrationVerificationTest extends TestCase
             'payment_status' => 'lunas',
         ]);
 
-        // Email assertions: Mail sent to admin_email
-        Mail::assertSent(TenantApproved::class, function (TenantApproved $mail) use ($registration) {
+        // Email assertions: Mail queued to admin_email
+        Mail::assertQueued(TenantApproved::class, function (TenantApproved $mail) use ($registration) {
             return $mail->hasTo('budi@outdoorgear.id')
                 && str_contains($mail->envelope()->subject, 'Outdoor Gear Malang')
                 && $mail->businessName === 'Outdoor Gear Malang';
@@ -406,8 +406,8 @@ class OwnerRegistrationVerificationTest extends TestCase
             'payment_status' => 'ditolak',
         ]);
 
-        // Assert rejection email was sent to tenant's admin email
-        Mail::assertSent(TenantRejected::class, function (TenantRejected $mail) use ($reg, $rejectionReason) {
+        // Assert rejection email was queued to tenant's admin email
+        Mail::assertQueued(TenantRejected::class, function (TenantRejected $mail) use ($reg, $rejectionReason) {
             return $mail->hasTo('wayan@kamerabali.id')
                 && str_contains($mail->envelope()->subject, 'Kamera Bali Rental')
                 && $mail->businessName === 'Kamera Bali Rental'
@@ -655,7 +655,7 @@ class OwnerRegistrationVerificationTest extends TestCase
             'id' => $reg->id,
             'business_name' => 'Slamet Rent Car Official',
             'status' => 'menunggu_verifikasi',
-            'payment_status' => 'menunggu',
+            'payment_status' => 'gratis',
             'rejection_reason' => null,
         ]);
 
@@ -673,7 +673,7 @@ class OwnerRegistrationVerificationTest extends TestCase
         $this->assertDatabaseHas('subscriptions', [
             'id' => $subscription->id,
             'status' => 'menunggu_verifikasi',
-            'payment_status' => 'menunggu',
+            'payment_status' => 'gratis',
         ]);
 
         // It must reappear in owner verification queue
@@ -870,7 +870,7 @@ class OwnerRegistrationVerificationTest extends TestCase
             'status' => 'aktif',
         ]);
 
-        Mail::assertSent(TenantApproved::class, function ($mail) use ($user) {
+        Mail::assertQueued(TenantApproved::class, function ($mail) use ($user) {
             return $mail->hasTo($user->email);
         });
     }
@@ -906,7 +906,7 @@ class OwnerRegistrationVerificationTest extends TestCase
             'rejection_reason' => 'Data identitas tidak valid dan nomor kontak tidak aktif.',
         ]);
 
-        Mail::assertSent(TenantRejected::class, function ($mail) use ($reg) {
+        Mail::assertQueued(TenantRejected::class, function ($mail) use ($reg) {
             return $mail->hasTo($reg->admin_email);
         });
     }

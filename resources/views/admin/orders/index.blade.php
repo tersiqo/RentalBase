@@ -184,16 +184,16 @@
 
                         {{-- Badge Status Modern --}}
                         <td class="px-6 py-4 align-top text-center whitespace-nowrap">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
-                                @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-50 text-amber-700 border border-amber-200
-                                @elseif(in_array($order->status, ['menunggu_pembayaran', 'belum_dibayar'])) bg-yellow-50 text-yellow-700 border border-yellow-200
-                                @elseif(in_array($order->status, ['menunggu_verifikasi', 'verifikasi'])) bg-blue-50 text-blue-700 border border-blue-200
-                                @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-50 text-indigo-700 border border-indigo-200
-                                @elseif($order->status === 'dikirim') bg-purple-50 text-purple-700 border border-purple-200
-                                @elseif($order->status === 'sedang_disewa') bg-sky-50 text-sky-700 border border-sky-200
-                                @elseif($order->status === 'selesai') bg-emerald-50 text-emerald-700 border border-emerald-200
-                                @elseif(in_array($order->status, ['batal', 'dibatalkan', 'ditolak'])) bg-red-50 text-red-700 border border-red-200
-                                @else bg-gray-50 text-gray-700 border border-gray-200 @endif">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold
+                                @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-50 text-amber-700
+                                @elseif(in_array($order->status, ['menunggu_pembayaran', 'belum_dibayar'])) bg-yellow-50 text-yellow-800
+                                @elseif(in_array($order->status, ['menunggu_verifikasi', 'verifikasi'])) bg-blue-50 text-blue-700
+                                @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-50 text-indigo-700
+                                @elseif($order->status === 'dikirim') bg-purple-50 text-purple-700
+                                @elseif($order->status === 'sedang_disewa') bg-sky-50 text-sky-700
+                                @elseif($order->status === 'selesai') bg-emerald-50 text-emerald-700
+                                @elseif(in_array($order->status, ['batal', 'dibatalkan', 'ditolak'])) bg-rose-50 text-rose-700
+                                @else bg-slate-100 text-slate-700 @endif">
                                 
                                 <span class="w-1.5 h-1.5 rounded-full
                                     @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-500
@@ -212,16 +212,21 @@
 
                         {{-- Kolom Aksi --}}
                         <td class="px-6 py-4 align-middle text-center whitespace-nowrap">
-                            <div class="inline-flex items-center gap-1.5">
-                                {{-- Tombol Tindakan Cepat Verifikasi jika butuh perhatian admin --}}
-                                @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi']))
-                                    <a href="{{ route('admin.orders.show', $order->id) }}#{{ $order->status === 'menunggu_konfirmasi' ? 'review-identitas' : 'review-pembayaran' }}"
-                                       class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white {{ $order->status === 'menunggu_konfirmasi' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700' }} rounded-lg transition shadow-xs">
-                                        <span>{{ $order->status === 'menunggu_konfirmasi' ? 'Review KTP' : 'Review Bayar' }}</span>
-                                    </a>
-                                @endif
-
-                                {{-- Tombol Detail Standar --}}
+                            @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi']))
+                                {{-- Tombol Tindakan Tunggal Utama (Primary CTA dengan Pulsing Dot) --}}
+                                <a href="{{ route('admin.orders.show', $order->id) }}"
+                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg shadow-xs hover:shadow-sm transition">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                    </span>
+                                    <span>Periksa</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </a>
+                            @else
+                                {{-- Tombol Detail Netral --}}
                                 <a href="{{ route('admin.orders.show', $order->id) }}"
                                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900 rounded-lg transition">
                                     <span>Detail</span>
@@ -229,7 +234,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                     </svg>
                                 </a>
-                            </div>
+                            @endif
                         </td>
 
                     </tr>

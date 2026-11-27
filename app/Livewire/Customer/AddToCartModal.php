@@ -46,7 +46,8 @@ class AddToCartModal extends Component
                 return;
             }
 
-            if ($end->lt($start)) {
+            if ($end->lte($start)) {
+                $this->errorMessage = 'Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai.';
                 return;
             }
 
@@ -67,7 +68,7 @@ class AddToCartModal extends Component
                 return;
             }
 
-            $durationDays = $start->diffInDays($end) + 1;
+            $durationDays = max(1, (int) $start->diffInDays($end));
             $subtotal = $this->product->rental_price_per_day * $durationDays * $quantity;
             
             if (isset($cart[$hash])) {
@@ -98,6 +99,11 @@ class AddToCartModal extends Component
             // Beri tahu Alpine.js untuk menutup modal tanpa me-refresh halaman
             $this->dispatch('close-cart-modal');
             
+            $this->dispatch('show-cart-toast', [
+                'title' => 'Berhasil Masuk Keranjang!',
+                'message' => "{$this->product->name} ({$durationDays} hari, {$quantity} unit) telah ditambahkan.",
+            ]);
+
             session()->flash('success', 'Barang berhasil ditambahkan ke keranjang!');
 
         } catch (\Exception $e) {
@@ -121,7 +127,8 @@ class AddToCartModal extends Component
                 return;
             }
 
-            if ($end->lt($start)) {
+            if ($end->lte($start)) {
+                $this->errorMessage = 'Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai.';
                 return;
             }
 
@@ -141,7 +148,7 @@ class AddToCartModal extends Component
                 return;
             }
 
-            $durationDays = $start->diffInDays($end) + 1;
+            $durationDays = max(1, (int) $start->diffInDays($end));
             $subtotal = $this->product->rental_price_per_day * $durationDays * $quantity;
             
             $cart[$hash] = [

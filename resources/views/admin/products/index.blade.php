@@ -208,6 +208,7 @@
                                         <div class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 relative group">
                                             <img src="{{ $product->cover_image_url }}" 
                                                  alt="{{ $product->name }}" 
+                                                 loading="lazy"
                                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                                                  onerror="this.src='https://placehold.co/100x100/f8fafc/64748b?text=IMG'">
                                         </div>
@@ -239,12 +240,12 @@
                                 {{-- Unit Fisik --}}
                                 <td class="py-3.5 px-4 text-center">
                                     @if($product->units_count > 0)
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             <span>{{ $product->available_units_count }} / {{ $product->units_count }} Tersedia</span>
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/60" title="Belum memiliki unit fisik. Kelola di menu Unit Fisik.">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700" title="Belum memiliki unit fisik. Kelola di menu Unit Fisik.">
                                             <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                             <span>0 Unit Fisik</span>
                                         </span>
@@ -268,8 +269,8 @@
                                         @csrf
                                         <button type="submit" 
                                                 title="Klik untuk {{ $product->status === 'aktif' ? 'nonaktifkan' : 'aktifkan' }} produk"
-                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer {{ $product->status === 'aktif' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                                            <span class="w-1.5 h-1.5 rounded-full {{ $product->status === 'aktif' ? 'bg-emerald-600' : 'bg-slate-400' }}"></span>
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold transition-all cursor-pointer {{ $product->status === 'aktif' ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                                            <span class="w-1.5 h-1.5 rounded-full {{ $product->status === 'aktif' ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
                                             <span>{{ ucfirst($product->status) }}</span>
                                         </button>
                                     </form>
@@ -425,7 +426,7 @@
                             <select name="category_id" required class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition text-slate-700">
                                 <option value="">-- Pilih Kategori --</option>
                                 @foreach($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    <option value="{{ $category->id }}" {{ (string) old('category_id') === (string) $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -436,8 +437,8 @@
                                 Status Tayang <span class="text-orange-500">*</span>
                             </label>
                             <select name="status" required class="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition text-slate-700">
-                                <option value="aktif" selected>Aktif (Tampil di Katalog)</option>
-                                <option value="nonaktif">Nonaktif (Disembunyikan)</option>
+                                <option value="aktif" {{ old('status', 'aktif') === 'aktif' ? 'selected' : '' }}>Aktif (Tampil di Katalog)</option>
+                                <option value="nonaktif" {{ old('status') === 'nonaktif' ? 'selected' : '' }}>Nonaktif (Disembunyikan)</option>
                             </select>
                         </div>
 
@@ -739,7 +740,7 @@
                                         <div class="flex flex-wrap gap-2.5">
                                             <template x-for="(imgRel, idx) in existingGalleryImages" :key="idx">
                                                 <div class="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-xs group">
-                                                    <img :src="'/storage/' + imgRel" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100/e2e8f0/475569?text=IMG'">
+                                                    <img :src="resolveImageUrl(imgRel)" alt="Foto galeri" loading="lazy" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100/e2e8f0/475569?text=IMG'">
                                                     <button type="button" 
                                                             @click="removeExistingGalleryImage(imgRel)"
                                                             class="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1016,6 +1017,14 @@
                 const imgs = Array.isArray(product.images) ? product.images : (typeof product.images === 'string' ? JSON.parse(product.images || '[]') : []);
                 this.existingGalleryImages = imgs;
                 this.editModalOpen = true;
+            },
+
+            resolveImageUrl(path) {
+                if (!path) return 'https://placehold.co/100x100/e2e8f0/475569?text=IMG';
+                if (path.startsWith('http://') || path.startsWith('https://')) return path;
+                const clean = path.replace(/^\/?(storage\/)?/, '');
+                const urlTemplate = '{{ storage_url("__RB_PATH__") }}';
+                return urlTemplate.replace('__RB_PATH__', clean);
             },
 
             removeExistingGalleryImage(imgPath) {

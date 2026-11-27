@@ -35,8 +35,8 @@ class SubscriptionController extends Controller
         $statusFilter = strtolower((string) $request->query('status', 'all'));
         $search = trim((string) $request->query('search', ''));
 
-        // Query dasar Subscription dengan relasi Client dan Admin User
-        $query = Subscription::with(['client.adminUser'])
+        // Query dasar Subscription dengan relasi Client, TenantProfile, dan Admin User
+        $query = Subscription::with(['client.adminUser', 'client.tenantProfile'])
             ->whereHas('client', function ($q) {
                 // Jangan tampilkan tenant yang masih menunggu verifikasi pendaftaran
                 $q->where('status', '!=', 'menunggu_verifikasi');
@@ -215,7 +215,7 @@ class SubscriptionController extends Controller
         // Simpan file bukti pembayaran ke storage
         $file = $request->file('payment_proof');
         $fileName = 'proof_' . $subscription->id . '_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $storedPath = $file->storeAs('subscriptions/proofs', $fileName, $disk);
 
         // Jalankan transaksi database
@@ -237,7 +237,7 @@ class SubscriptionController extends Controller
                 'payment_status' => 'lunas',
                 'payment_proof'  => $storedPath,
                 'price'          => $price,
-                'max_products'   => $packageConfig['limits']['products'] ?? $subscription->max_products,
+                'max_products'   => $packageConfig['limits']['products'] ?? (strtolower($subscription->plan_name) === 'professional' ? 9999 : $subscription->max_products),
                 'max_users'      => $packageConfig['limits']['admins'] ?? $subscription->max_users,
             ]);
 
@@ -362,7 +362,7 @@ class SubscriptionController extends Controller
                 'status' => 'aktif',
                 'payment_status' => 'diverifikasi',
                 'rejection_reason' => null,
-                'max_products' => $packageConfig['limits']['products'] ?? $subscription->max_products,
+                'max_products' => $packageConfig['limits']['products'] ?? (strtolower($subscription->plan_name) === 'professional' ? 9999 : $subscription->max_products),
                 'max_users' => $packageConfig['limits']['admins'] ?? $subscription->max_users,
             ]);
 

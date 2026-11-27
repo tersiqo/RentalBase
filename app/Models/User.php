@@ -88,4 +88,19 @@ class User extends Authenticatable
     {
         return $this->avatar ? storage_url($this->avatar) : null;
     }
+
+    public function chatConversations()
+    {
+        return $this->hasMany(ChatConversation::class, 'customer_id');
+    }
+
+    public function chatMessages()
+    {
+        return $this->hasMany(ChatMessage::class, 'sender_id');
+    }
+
+    public function pushSubscriptions()
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
 }

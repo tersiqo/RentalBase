@@ -185,7 +185,10 @@
 
                                         <!-- Image -->
                                         <div class="w-full sm:w-28 h-28 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-200">
-                                            <img src="{{ $item['main_image'] ? storage_url($item['main_image']) : 'https://placehold.co/400x300/e2e8f0/475569?text=Image' }}" alt="{{ $item['name'] }}" class="w-full h-full object-cover">
+                                            <img src="{{ $item['main_image'] ? storage_url($item['main_image']) : 'https://placehold.co/400x300/e2e8f0/475569?text=Image' }}" 
+                                                 alt="{{ $item['name'] }}" 
+                                                 loading="lazy" 
+                                                 class="w-full h-full object-cover">
                                         </div>
 
                                         <!-- Details -->
@@ -312,7 +315,10 @@
                         <!-- Product Summary -->
                         <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
                             <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden shrink-0">
-                                <img src="{{ $editingItem['main_image'] ? storage_url($editingItem['main_image']) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" class="w-full h-full object-cover">
+                                <img src="{{ $editingItem['main_image'] ? storage_url($editingItem['main_image']) : 'https://placehold.co/100x100/e2e8f0/475569?text=IMG' }}" 
+                                     alt="{{ $editingItem['name'] }}" 
+                                     loading="lazy" 
+                                     class="w-full h-full object-cover">
                             </div>
                             <div>
                                 <h4 class="font-bold text-gray-900 line-clamp-1">{{ $editingItem['name'] }}</h4>
@@ -329,7 +335,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
-                                    <input type="date" wire:model.live="editingEndDate" wire:change="checkEditingAvailability" min="{{ $editingStartDate ?: date('Y-m-d') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
+                                    <input type="date" wire:model.live="editingEndDate" wire:change="checkEditingAvailability" min="{{ $editingStartDate ? \Carbon\Carbon::parse($editingStartDate)->addDay()->format('Y-m-d') : date('Y-m-d', strtotime('+1 day')) }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm">
                                 </div>
                             </div>
 
@@ -357,7 +363,7 @@
                             @php
                                 $eStart = $editingStartDate ? \Carbon\Carbon::parse($editingStartDate) : null;
                                 $eEnd = $editingEndDate ? \Carbon\Carbon::parse($editingEndDate) : null;
-                                $eDur = ($eStart && $eEnd && $eEnd->gte($eStart)) ? $eStart->diffInDays($eEnd) + 1 : 0;
+                                $eDur = ($eStart && $eEnd && $eEnd->gt($eStart)) ? max(1, (int) $eStart->diffInDays($eEnd)) : 0;
                                 $eSubtotal = $eDur * $editingItem['price'] * $editingItem['quantity'];
                             @endphp
 

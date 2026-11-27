@@ -17,7 +17,7 @@ class ConditionCheckController extends Controller
     /**
      * Menampilkan halaman daftar rekaman kondisi + form tambah baru.
      */
-    public function index()
+    public function index(Request $request)
     {
         // === POLA BAKU PROJECT: Ambil user dan client ===
         $user = Auth::user();
@@ -30,27 +30,67 @@ class ConditionCheckController extends Controller
             abort(403, 'Akses ditolak: Akun tidak terhubung ke toko.');
         }
 
+        // Ambil parameter konteks navigasi jika diarahkan dari tabel pengembalian atau order show
+        $selectedOrderId = $request->query('order_id');
+        $selectedUnitId  = $request->query('unit_id');
+        $selectedType    = $request->query('type');
+        $returnTo        = $request->query('return_to');
+
         // Ambil daftar rekaman kondisi milik toko ini
         // Eager load: order & customernya, equipmentUnit & produknya, dan checker (petugas)
-            $conditionChecks = ConditionCheck::with([
-                'equipmentUnit.product',
-                'equipmentUnit.orderItemUnits.orderItem.order.user',
-                'checker',
-            ])
-            ->whereHas('equipmentUnit', function ($query) use ($client) {
-                $query->where('client_id', $client->id);
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $conditionChecks = ConditionCheck::with([
+            'equipmentUnit.product',
+            'equipmentUnit.orderItemUnits.orderItem.order.user',
+            'checker',
+        ])
+        ->whereHas('equipmentUnit', function ($query) use ($client) {
+            $query->where('client_id', $client->id);
+        })
+        ->orderBy('created_at', 'desc')
+        ->get();
 
-        // Ambil daftar order untuk dropdown — hanya yang sudah konfirmasi, sedang disewa, atau dikembalikan
-        $orders = Order::with(['orderItems.product', 'user'])
+        // Ambil daftar order untuk dropdown — hanya yang relevan untuk pemeriksaan fisik
+        $orders = Order::with(['orderItems.product', 'user', 'orderItems.orderItemUnits.equipmentUnit.product'])
             ->where('client_id', $client->id)
-            ->whereIn('status', ['siap_kirim', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan', 'menunggu_pembayaran_denda'])
+            ->whereIn('status', ['siap_kirim', 'dikonfirmasi', 'dikirim', 'sedang_disewa', 'dikembalikan', 'menunggu_pembayaran_denda', 'selesai'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('admin.condition-checks.index', compact('conditionChecks', 'orders', 'user'));
+        $selectedOrder = null;
+        $defaultCheckType = 'setelah_kembali';
+
+        if ($selectedOrderId) {
+            $selectedOrder = Order::with(['orderItems.product', 'user', 'orderItems.orderItemUnits.equipmentUnit.product'])
+                ->where('client_id', $client->id)
+                ->find($selectedOrderId);
+
+            if ($selectedOrder) {
+                // Pastikan order terpilih selalu ada di daftar dropdown
+                if (! $orders->contains('id', $selectedOrder->id)) {
+                    $orders->prepend($selectedOrder);
+                }
+
+                // Tentukan fase pemeriksaan otomatis
+                if (in_array($selectedType, ['sebelum_serah', 'setelah_kembali'])) {
+                    $defaultCheckType = $selectedType;
+                } elseif (in_array($selectedOrder->status, ['siap_kirim', 'dikonfirmasi'])) {
+                    $defaultCheckType = 'sebelum_serah';
+                } else {
+                    $defaultCheckType = 'setelah_kembali';
+                }
+            }
+        }
+
+        return view('admin.condition-checks.index', compact(
+            'conditionChecks',
+            'orders',
+            'user',
+            'selectedOrderId',
+            'selectedUnitId',
+            'selectedOrder',
+            'defaultCheckType',
+            'returnTo'
+        ));
     }
 
     /**
@@ -126,7 +166,7 @@ class ConditionCheckController extends Controller
         }
 
         // Simpan foto (mendukung single file atau multiple files)
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $imagePath = null;
         if ($request->hasFile('images')) {
             $paths = [];
@@ -152,6 +192,14 @@ class ConditionCheckController extends Controller
             'checked_by'        => $user->id,
         ]);
 
+        // Sinkronkan status unit fisik bila hasil inspeksi kembali mencatat kerusakan
+        if ($request->check_type === 'setelah_kembali' && in_array($request->condition, ['rusak_ringan', 'rusak_berat'], true)) {
+            $equipmentUnit->update([
+                'condition' => $request->condition,
+                'status'    => $request->condition === 'rusak_berat' ? 'rusak' : 'maintenance',
+            ]);
+        }
+
         // Catat jejak audit aktivitas inspeksi
         \App\Models\ActivityLog::create([
             'client_id'   => $client->id,
@@ -170,7 +218,37 @@ class ConditionCheckController extends Controller
             'user_agent'  => $request->userAgent(),
         ]);
 
+        $returnTo = $request->input('return_to');
+        $orderId = $request->input('order_id');
+        $isReturnDamage = $request->check_type === 'setelah_kembali' && in_array($request->condition, ['rusak_ringan', 'rusak_berat'], true);
+        $damageSuffix = $isReturnDamage
+            ? sprintf(
+                ' Status unit otomatis diubah menjadi %s. Buat laporan di menu Kasus Kerusakan jika perlu menagih kompensasi ke penyewa.',
+                $request->condition === 'rusak_berat' ? 'Rusak' : 'Maintenance'
+            )
+            : '';
+
+        if ($returnTo === 'returns') {
+            return redirect()->route('admin.returns.index')
+                ->with('success', sprintf(
+                    'Pemeriksaan fisik unit [%s] berhasil dicatat (%s).%s',
+                    $equipmentUnit->unit_code,
+                    ucfirst(str_replace('_', ' ', $request->condition)),
+                    $isReturnDamage ? $damageSuffix : ' Anda dapat melanjutkan proses pengembalian pesanan.'
+                ));
+        }
+
+        if ($returnTo === 'order' && $orderId) {
+            return redirect()->route('admin.orders.show', $orderId)
+                ->with('success', sprintf(
+                    'Pemeriksaan fisik unit [%s] berhasil dicatat (%s).%s',
+                    $equipmentUnit->unit_code,
+                    ucfirst(str_replace('_', ' ', $request->condition)),
+                    $damageSuffix
+                ));
+        }
+
         return redirect()->route('admin.condition-checks.index')
-            ->with('success', 'Rekaman kondisi fisik berhasil disimpan.');
+            ->with('success', 'Rekaman kondisi fisik berhasil disimpan.' . $damageSuffix);
     }
 }

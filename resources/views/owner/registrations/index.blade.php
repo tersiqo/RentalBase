@@ -131,8 +131,8 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                 {{ $counts['menunggu'] }} Menunggu Verifikasi
             </span>
         </div>
@@ -380,8 +380,7 @@
                     <tbody class="divide-y divide-slate-100/80 text-sm">
                         @foreach($registrations as $reg)
                             @php
-                                $logo = $reg->client?->logo;
-                                $logoUrl = storage_url($logo);
+                                $logoUrl = $reg->client?->logo_url;
                                 $words = array_values(array_filter(explode(' ', trim($reg->business_name))));
                                 if (count($words) >= 2) {
                                     $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
@@ -394,7 +393,7 @@
                                 <td class="py-4 px-6 align-middle">
                                     <div class="flex items-center gap-3">
                                         @if($logoUrl)
-                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}"
+                                            <img src="{{ $logoUrl }}" alt="{{ $reg->business_name }}" loading="lazy"
                                                  class="w-10 h-10 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
                                         @else
                                             <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200/70 text-orange-600 font-extrabold text-xs flex items-center justify-center shrink-0">
@@ -434,19 +433,19 @@
                                 {{-- Status --}}
                                 <td class="py-4 px-6 align-middle whitespace-nowrap">
                                     @if($reg->status === 'menunggu_verifikasi')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF3C7] text-[#92400E]">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
                                             Menunggu Verifikasi
                                         </span>
                                     @elseif($reg->status === 'disetujui')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
                                             Disetujui
                                         </span>
                                     @elseif($reg->status === 'ditolak')
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-600/20">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700">
                                             Ditolak
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                                             {{ ucfirst($reg->status) }}
                                         </span>
                                     @endif
@@ -474,6 +473,7 @@
                                                     description: '{{ addslashes($reg->description ?? '') }}',
                                                     rejection_reason: '{{ addslashes($reg->rejection_reason ?? '') }}',
                                                     payment_proof: '{{ storage_url($reg->payment_proof) ?: '' }}',
+                                                    logo_url: '{{ $logoUrl ?: '' }}',
                                                     created_at: '{{ $reg->created_at ? $reg->created_at->translatedFormat('d F Y, H:i') : '-' }}',
                                                     verify_url: '{{ route('owner.registrations.verify', $reg->id) }}',
                                                     reject_url: '{{ route('owner.registrations.reject', $reg->id) }}'
@@ -523,11 +523,17 @@
             {{-- Modal Header (Fixed top) --}}
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
-                    </div>
+                    <template x-if="activeTenant?.logo_url">
+                        <img :src="activeTenant?.logo_url" :alt="activeTenant?.business_name" loading="lazy"
+                             class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-2xs shrink-0">
+                    </template>
+                    <template x-if="!activeTenant?.logo_url">
+                        <div class="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                    </template>
                     <div>
                         <h3 class="text-base font-bold text-slate-900 leading-tight" x-text="activeTenant?.business_name"></h3>
                         <p class="text-xs text-slate-500 mt-0.5">
@@ -614,6 +620,7 @@
                                     <div class="relative rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs flex items-center justify-center">
                                         <img :src="activeTenant.payment_proof"
                                              :alt="'Bukti Bayar ' + activeTenant.business_name"
+                                             loading="lazy"
                                              class="w-full h-56 sm:h-64 object-contain bg-slate-900/5">
                                     </div>
                                     <div class="flex items-center justify-between text-xs px-0.5">
@@ -633,15 +640,34 @@
 
                             <template x-if="!activeTenant?.payment_proof">
                                 <div class="py-12 px-4 text-center">
-                                    <div class="w-12 h-12 mx-auto rounded-xl bg-slate-200/80 flex items-center justify-center text-slate-400 mb-3">
-                                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                    </div>
-                                    <h5 class="text-xs font-bold text-slate-700">Tidak Ada Bukti Pembayaran</h5>
-                                    <p class="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
-                                        Pendaftar belum mengunggah gambar bukti transfer untuk pengajuan ini.
-                                    </p>
+                                    <template x-if="activeTenant?.plan_name?.toLowerCase() === 'starter'">
+                                        <div>
+                                            <div class="w-12 h-12 mx-auto rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2">
+                                                Paket Starter (Bebas Biaya / Tidak Memerlukan Bukti Transfer)
+                                            </span>
+                                            <p class="text-[11px] text-slate-500 mt-1 max-w-xs mx-auto">
+                                                Pendaftar memilih paket gratis (Rp 0), sehingga verifikasi dapat langsung disetujui tanpa memerlukan bukti transfer.
+                                            </p>
+                                        </div>
+                                    </template>
+                                    <template x-if="activeTenant?.plan_name?.toLowerCase() !== 'starter'">
+                                        <div>
+                                            <div class="w-12 h-12 mx-auto rounded-xl bg-slate-200/80 flex items-center justify-center text-slate-400 mb-3">
+                                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <h5 class="text-xs font-bold text-slate-700">Tidak Ada Bukti Pembayaran</h5>
+                                            <p class="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
+                                                Pendaftar belum mengunggah gambar bukti transfer untuk pengajuan ini.
+                                            </p>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
                         </div>

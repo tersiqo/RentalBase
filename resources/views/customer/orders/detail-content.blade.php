@@ -23,12 +23,11 @@
 
     // Stepper configuration
     $steps = [
-        ['label' => 'Menunggu Konfirmasi', 'desc' => 'Toko memeriksa data pesanan'],
-        ['label' => 'Dikonfirmasi / Menunggu Pembayaran', 'desc' => 'Menunggu pembayaran dari penyewa'],
-        ['label' => 'Pembayaran Terverifikasi', 'desc' => 'Toko memverifikasi pembayaran'],
-        ['label' => 'Siap Kirim / Dikirim', 'desc' => 'Barang dipersiapkan atau dalam pengiriman'],
-        ['label' => 'Diterima / Sedang Disewa', 'desc' => 'Masa sewa sedang berjalan'],
-        ['label' => 'Dikembalikan', 'desc' => 'Barang dikembalikan ke toko'],
+        ['label' => 'Pesanan Dibuat', 'desc' => 'Pesanan sewa berhasil dibuat'],
+        ['label' => 'Pembayaran', 'desc' => 'Transfer & Upload Bukti Pembayaran'],
+        ['label' => 'Verifikasi Toko', 'desc' => 'Verifikasi KTP & Pembayaran Sekaligus'],
+        ['label' => 'Siap Diambil / Dikirim', 'desc' => 'Barang disiapkan atau dalam pengiriman'],
+        ['label' => 'Sedang Disewa', 'desc' => 'Masa sewa aktif berjalan'],
         ['label' => 'Selesai', 'desc' => 'Pesanan sewa selesai sepenuhnya'],
     ];
 
@@ -48,77 +47,117 @@
             <span class="font-mono text-gray-700 font-semibold">{{ $order->order_number ?? ('ORD-' . $order->id) }}</span>
         </nav>
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-100">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pb-3.5 sm:pb-4 border-b border-gray-100">
             <div>
-                <div class="flex items-center gap-3">
-                    <h3 class="text-2xl font-extrabold text-gray-900 tracking-tight">Detail Pesanan</h3>
-                    <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {{ $order->status_color }}">
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <h3 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">Detail Pesanan</h3>
+                    <span class="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 px-3 py-0.5 rounded-full text-xs font-semibold {{ $order->status_color }}">
                         {{ $order->status_label }}
                     </span>
                 </div>
-                <p class="text-xs sm:text-sm text-gray-500 mt-1 font-mono">
-                    {{ $order->order_number ?? ('ORD-' . $order->id) }} &bull; Dipesan pada {{ $order->created_at ? $order->created_at->translatedFormat('d M Y, H:i') : '-' }} WIB
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">
+                    <span class="font-mono font-semibold text-gray-700">{{ $order->order_number ?? ('ORD-' . $order->id) }}</span> &bull; Dipesan pada {{ $order->created_at ? $order->created_at->translatedFormat('d M Y, H:i') : '-' }} WIB
                 </p>
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
-                <span class="sm:hidden inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {{ $order->status_color }}">
+                <span class="sm:hidden inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-semibold {{ $order->status_color }}">
                     {{ $order->status_label }}
                 </span>
 
                 @if(isset($backRoute))
                     <a href="{{ $backRoute }}" 
-                       class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition shadow-sm">
+                       class="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition shadow-sm">
                         <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                         <span>Kembali</span>
                     </a>
                 @else
                     <button type="button" 
                             @click="closeDetail()" 
-                            class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition shadow-sm">
+                            class="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition shadow-sm">
                         <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                         <span>Kembali ke Pesanan Saya</span>
                     </button>
                 @endif
+
+                <!-- Tombol Chat Toko Contextual Order -->
+                <button type="button"
+                        @click="window.dispatchEvent(new CustomEvent('open-chat', { detail: { type: 'order', id: {{ $order->id }}, order_number: '{{ $order->order_number ?? ('ORD-' . $order->id) }}' } }))"
+                        class="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-primary-700 bg-primary-50 border border-primary-200 rounded-xl hover:bg-primary-100 transition shadow-2xs cursor-pointer">
+                    <svg class="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    <span>Chat Toko</span>
+                </button>
             </div>
         </div>
     </div>
 
     {{-- Alert Kasus Kerusakan jika ada --}}
-    @if($order->damageReports()->exists())
-        @php
-            $latestDamage = $order->damageReports()->with('damageCase')->latest()->first();
-            $dCase = $latestDamage?->damageCase;
-        @endphp
-        <div class="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-            <div class="flex items-center gap-3">
-                <svg class="w-6 h-6 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                <div>
-                    <h4 class="text-sm font-bold text-rose-900">Ada Laporan Kerusakan untuk Pesanan Ini</h4>
-                    <p class="text-xs text-rose-700 mt-0.5">
-                        Toko telah mengajukan klaim kerusakan fisik alat sewa. Status: <strong class="font-bold">{{ $dCase?->status_label ?? 'Menunggu Tanggapan' }}</strong>
-                        @if($dCase && $dCase->total_amount > 0)
-                            &bull; Total Kompensasi: <strong class="font-bold">{{ $dCase->formatted_total }}</strong>
-                        @endif
-                    </p>
+    @php
+        $reports = $order->relationLoaded('damageReports') ? $order->damageReports : $order->damageReports()->with('damageCase')->get();
+        $latestDamage = $reports->sortByDesc('id')->first();
+        $dCase = $latestDamage?->damageCase;
+        $isCaseClosed = $dCase && in_array(strtolower(trim($dCase->case_status ?? '')), ['selesai', 'lunas', 'dibatalkan']);
+    @endphp
+
+    @if($reports->isNotEmpty())
+        @if($isCaseClosed)
+            {{-- Banner Hijau: Kasus Kerusakan Telah Selesai & Lunas --}}
+            <div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <span class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 shadow-2xs">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    </span>
+                    <div>
+                        <h4 class="text-sm font-bold text-emerald-900">Klaim Kerusakan Selesai & Lunas</h4>
+                        <p class="text-xs text-emerald-700 mt-0.5">
+                            Kasus klaim kerusakan telah diselesaikan secara damai dan resmi ditutup oleh toko.
+                            @if($dCase && $dCase->total_amount > 0)
+                                &bull; Total Kompensasi: <strong class="font-bold text-emerald-800">{{ $dCase->formatted_total }}</strong> (Lunas)
+                            @endif
+                        </p>
+                    </div>
                 </div>
+                <a href="{{ route('customer.orders.damage', $order->id) }}"
+                   class="px-4 py-2 bg-white hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs font-bold rounded-xl transition shadow-xs whitespace-nowrap">
+                    Lihat Riwayat Klaim &rarr;
+                </a>
             </div>
-            <a href="{{ route('customer.orders.damage', $order->id) }}"
-               class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-sm whitespace-nowrap">
-                Lihat & Tanggapi Klaim &rarr;
-            </a>
-        </div>
+        @else
+            {{-- Banner Merah Peringatan: Kasus Kerusakan Masih Aktif / Perlu Tindakan --}}
+            <div class="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <span class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 shadow-2xs">
+                        <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </span>
+                    <div>
+                        <h4 class="text-sm font-bold text-rose-900">Ada Laporan Kerusakan untuk Pesanan Ini</h4>
+                        <p class="text-xs text-rose-700 mt-0.5">
+                            Toko telah mengajukan klaim kerusakan fisik alat sewa. Status: <strong class="font-bold">{{ $dCase?->status_label ?? 'Menunggu Tanggapan' }}</strong>
+                            @if($dCase && $dCase->total_amount > 0)
+                                &bull; Total Kompensasi: <strong class="font-bold">{{ $dCase->formatted_total }}</strong>
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ route('customer.orders.damage', $order->id) }}"
+                   class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-sm whitespace-nowrap">
+                    Lihat & Tanggapi Klaim &rarr;
+                </a>
+            </div>
+        @endif
     @endif
 
     <!-- Main Grid: 2 Columns on desktop, 1 on mobile -->
-    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-4 sm:gap-6 items-start">
         
         <!-- Left Column: Main Progress & Information Stack -->
-        <div class="space-y-6">
+        <div class="space-y-4 sm:space-y-6">
 
             <!-- Panel 1: Stepper Progres Pesanan -->
-            <section class="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-5">
+            <section class="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-3.5 sm:mb-5">
                     <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </span>
@@ -186,8 +225,8 @@
             </section>
 
             <!-- Panel 2: Detail Pesanan (Facts, Items, Summary) -->
-            <section class="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-5">
+            <section class="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-3.5 sm:mb-5">
                     <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </span>
@@ -195,16 +234,16 @@
                 </h2>
 
                 <!-- Grid Facts -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm pb-5 border-b border-gray-100">
-                    <div class="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4 text-xs sm:text-sm pb-3.5 sm:pb-5 border-b border-gray-100">
+                    <div class="p-2.5 sm:p-3 bg-gray-50/80 rounded-xl border border-gray-100">
                         <span class="text-xs text-gray-500 block mb-0.5">Nomor Pesanan</span>
                         <b class="text-gray-900 font-mono font-bold">{{ $order->order_number ?? ('ORD-' . $order->id) }}</b>
                     </div>
-                    <div class="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+                    <div class="p-2.5 sm:p-3 bg-gray-50/80 rounded-xl border border-gray-100">
                         <span class="text-xs text-gray-500 block mb-0.5">Tanggal Checkout</span>
                         <b class="text-gray-900 font-semibold">{{ $order->created_at ? $order->created_at->translatedFormat('d M Y, H:i') : '-' }} WIB</b>
                     </div>
-                    <div class="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+                    <div class="p-2.5 sm:p-3 bg-gray-50/80 rounded-xl border border-gray-100">
                         <span class="text-xs text-gray-500 block mb-0.5">Periode Sewa</span>
                         <b class="text-gray-900 font-bold text-primary-600">{{ $order->date_range }}</b>
                         @php
@@ -215,20 +254,81 @@
                             Durasi sewa: {{ $order->duration_days ?? 1 }} hari &bull; {{ $timeLabel }}: Pukul {{ $order->rental_start_date?->format('H:i') ?? '00:00' }} WIB
                         </small>
                     </div>
-                    <div class="p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+                    <div class="p-2.5 sm:p-3 bg-gray-50/80 rounded-xl border border-gray-100">
                         <span class="text-xs text-gray-500 block mb-0.5">Toko Penyedia</span>
                         <b class="text-gray-900 font-semibold">{{ $client->nama_usaha ?? ($order->client->nama_usaha ?? 'BabyRent Malang') }}</b>
                     </div>
-                    <div class="sm:col-span-2 p-3 bg-gray-50/80 rounded-xl border border-gray-100">
-                        <span class="text-xs text-gray-500 block mb-0.5">{{ $isPickup ? 'Lokasi Pengambilan Sendiri di Toko' : 'Alamat Pengiriman (Kurir)' }}</span>
-                        <b class="text-gray-900 font-medium leading-relaxed">
-                            {{ $isPickup ? ($client->address ?? 'Ambil langsung di toko rental') : ($order->shipping_address ?? '-') }}
-                        </b>
-                    </div>
+                    @if($isPickup)
+                        @php
+                            $tenantProfile = $client?->tenantProfile;
+                            $storeName = $client?->nama_usaha ?? ($order->client?->nama_usaha ?? 'Toko Rental');
+                            $pickupAddress = $tenantProfile?->address ?: ($client?->address ?: ($storeName . ', ' . ($tenantProfile?->city ?? 'Indonesia')));
+                            $pickupCity = $tenantProfile?->city;
+                            $pickupHours = 'Buka Setiap Hari: 08:00 - 21:00 WIB';
+
+                            $rawPhone = $tenantProfile?->whatsapp ?: ($client?->primaryAdmin?->phone ?? $client?->users?->where('role', 'admin_rental')->first()?->phone ?? '');
+                            $cleanPhone = preg_replace('/[^0-9]/', '', $rawPhone);
+                            if (str_starts_with($cleanPhone, '0')) {
+                                $cleanPhone = '62' . substr($cleanPhone, 1);
+                            }
+                            $pickupWaUrl = !empty($cleanPhone) 
+                                ? 'https://wa.me/' . $cleanPhone . '?text=' . urlencode('Halo ' . $storeName . ', saya customer dengan nomor pesanan ' . ($order->order_number ?? ('ORD-' . $order->id)) . ' ingin konfirmasi mengenai pengambilan barang di toko.') 
+                                : '#';
+
+                            $mapsQuery = urlencode($storeName . ' ' . $pickupAddress);
+                            $pickupMapsUrl = !empty($tenantProfile?->maps_url)
+                                ? $tenantProfile->maps_url
+                                : ('https://www.google.com/maps/search/?api=1&query=' . $mapsQuery);
+                        @endphp
+                        <div class="sm:col-span-2 p-3.5 sm:p-4 bg-primary-50/60 rounded-xl border border-primary-200/90 space-y-2.5">
+                            <div class="flex items-start justify-between gap-2 flex-wrap">
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-primary-950 block mb-0.5">
+                                        <i class="fa-solid fa-store text-primary-600 mr-1"></i> Lokasi Pengambilan Sendiri di Toko:
+                                    </span>
+                                    <b class="text-gray-900 font-bold text-sm block leading-relaxed">
+                                        {{ $storeName }}
+                                    </b>
+                                    <p class="text-xs text-gray-700 font-medium mt-0.5 leading-relaxed">
+                                        {{ $pickupAddress }}
+                                    </p>
+                                    <p class="text-[11px] text-gray-500 font-medium mt-1">
+                                        <i class="fa-regular fa-clock text-gray-400 mr-1"></i> Jam Operasional: {{ $pickupHours }}
+                                    </p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary-100 text-primary-800 border border-primary-200 shrink-0">
+                                    Self-Pickup
+                                </span>
+                            </div>
+
+                            <!-- Tombol Action: Buka di Google Maps & Chat WhatsApp Toko -->
+                            <div class="flex items-center gap-2 pt-2 border-t border-primary-200/60 flex-wrap">
+                                <a href="{{ $pickupMapsUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 shadow-2xs transition">
+                                    <svg class="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                    <span>Buka di Google Maps</span>
+                                    <svg class="w-2.5 h-2.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                </a>
+
+                                @if(!empty($cleanPhone))
+                                <a href="{{ $pickupWaUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-50 shadow-2xs transition">
+                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                                    <span>Chat WhatsApp Toko</span>
+                                </a>
+                                @endif
+                            </div>
+                        </div>
+                    @else
+                        <div class="sm:col-span-2 p-2.5 sm:p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+                            <span class="text-xs text-gray-500 block mb-0.5">Alamat Pengiriman (Kurir)</span>
+                            <b class="text-gray-900 font-medium leading-relaxed">
+                                {{ $order->shipping_address ?? '-' }}
+                            </b>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Items List -->
-                <div class="py-4 space-y-3">
+                <div class="py-3 sm:py-4 space-y-2.5 sm:space-y-3">
                     <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Item Yang Disewa</h4>
                     @foreach($order->orderItems as $item)
                         @php
@@ -237,18 +337,18 @@
                                 ? storage_url($product->main_image)
                                 : 'https://placehold.co/100x100/f3f4f6/9ca3af?text=Produk';
                         @endphp
-                        <div class="flex items-center justify-between p-3.5 bg-gray-50/50 hover:bg-gray-50 border border-gray-100 rounded-xl gap-4 transition-colors">
-                            <div class="flex items-center gap-3.5 min-w-0">
-                                <img src="{{ $img }}" alt="{{ $product?->name ?? 'Produk' }}" class="w-14 h-14 rounded-xl object-cover bg-white border border-gray-200 shrink-0 shadow-2xs">
+                        <div class="flex items-center justify-between p-2.5 sm:p-3.5 bg-gray-50/50 hover:bg-gray-50 border border-gray-100 rounded-xl gap-3 sm:gap-4 transition-colors">
+                            <div class="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                                <img src="{{ $img }}" alt="{{ $product?->name ?? 'Produk' }}" loading="lazy" class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover bg-white border border-gray-200 shrink-0 shadow-2xs">
                                 <div class="min-w-0">
-                                    <h5 class="font-bold text-gray-900 text-sm truncate">{{ $product?->name ?? 'Produk Sewa' }}</h5>
-                                    <p class="text-xs text-gray-500 mt-0.5 font-medium">
+                                    <h5 class="font-bold text-gray-900 text-xs sm:text-sm truncate">{{ $product?->name ?? 'Produk Sewa' }}</h5>
+                                    <p class="text-[11px] sm:text-xs text-gray-500 mt-0.5 font-medium">
                                         {{ $item->quantity ?? 1 }} unit &bull; Rp {{ number_format((float) ($item->price_per_day ?? 0), 0, ',', '.') }}/hari &bull; {{ $order->duration_days ?? 1 }} hari
                                     </p>
                                 </div>
                             </div>
                             <div class="text-right shrink-0">
-                                <span class="font-bold text-sm text-gray-900 font-mono">
+                                <span class="font-bold text-xs sm:text-sm text-gray-900 tabular-nums">
                                     Rp {{ number_format((float) ($item->subtotal ?? (($item->price_per_day ?? 0) * ($item->quantity ?? 1) * ($order->duration_days ?? 1))), 0, ',', '.') }}
                                 </span>
                             </div>
@@ -257,25 +357,25 @@
                 </div>
 
                 <!-- Cost Summary -->
-                <div class="pt-4 border-t border-gray-100 space-y-2 text-sm">
+                <div class="pt-3.5 sm:pt-4 border-t border-gray-100 space-y-2 text-xs sm:text-sm">
                     <div class="flex justify-between text-gray-600">
                         <span>Subtotal Sewa</span>
-                        <span class="font-mono font-medium">Rp {{ number_format((float) ($order->orderItems->sum('subtotal') ?: $order->total_amount), 0, ',', '.') }}</span>
+                        <span class="font-semibold text-gray-900 tabular-nums">Rp {{ number_format((float) ($order->orderItems->sum('subtotal') ?: $order->total_amount), 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between text-gray-600">
                         <span>Ongkos Kirim</span>
-                        <span class="font-mono font-medium">{{ $isPickup ? 'Gratis (Ambil Sendiri)' : 'Gratis' }}</span>
+                        <span class="font-medium text-emerald-600">{{ $isPickup ? 'Gratis (Ambil Sendiri)' : 'Gratis' }}</span>
                     </div>
-                    <div class="pt-3 border-t border-dashed border-gray-200 flex justify-between items-baseline text-base sm:text-lg font-extrabold text-gray-900">
+                    <div class="pt-2.5 sm:pt-3 border-t border-dashed border-gray-200 flex justify-between items-baseline text-sm sm:text-lg font-extrabold text-gray-900">
                         <span>Total Tagihan:</span>
-                        <span class="text-xl sm:text-2xl text-primary-600 font-mono font-extrabold">{{ $order->formatted_total }}</span>
+                        <span class="text-lg sm:text-2xl text-primary-600 font-extrabold tracking-tight tabular-nums">{{ $order->formatted_total }}</span>
                     </div>
                 </div>
             </section>
 
             <!-- Panel 3: Verifikasi Identitas (Identity Guarantee from DB) -->
-            <section class="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-4">
+            <section class="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-3.5 sm:mb-4">
                     <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
                     </span>
@@ -322,11 +422,11 @@
                             </div>
                         </div>
                     @else
-                        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 mb-4 shadow-sm">
-                            <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 flex items-start gap-3 mb-4 shadow-sm">
+                            <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <div>
-                                <strong class="font-bold text-amber-950 block">Sedang Diperiksa</strong>
-                                <span class="text-xs sm:text-sm text-amber-800">Dokumen foto KTP &amp; swafoto (selfie) Anda sedang dalam proses peninjauan oleh toko rental (maksimal 1×24 jam).</span>
+                                <strong class="font-bold text-blue-950 block">Verifikasi Terpadu (KTP &amp; Pembayaran)</strong>
+                                <span class="text-xs sm:text-sm text-blue-800">Dokumen identitas dan bukti transfer Anda akan ditinjau dan diverifikasi sekaligus oleh admin toko setelah Anda mengunggah bukti pembayaran di bawah.</span>
                             </div>
                         </div>
                     @endif
@@ -353,7 +453,7 @@
                                 @if($docImg)
                                     <div class="flex flex-col items-start gap-1">
                                         <button type="button" @click="openLightbox('{{ $docImg }}', 'Foto KTP')" class="group relative rounded-lg overflow-hidden border border-gray-200 bg-white hover:opacity-95 transition shadow-2xs">
-                                            <img src="{{ $docImg }}" alt="KTP" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\'/></svg><span>Foto KTP</span></div>';">
+                                            <img src="{{ $docImg }}" alt="KTP" loading="lazy" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z\'/></svg><span>Foto KTP</span></div>';">
                                             <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold gap-1">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                 <span>Lihat</span>
@@ -366,7 +466,7 @@
                                 @if($faceImg)
                                     <div class="flex flex-col items-start gap-1">
                                         <button type="button" @click="openLightbox('{{ $faceImg }}', 'Foto Selfie memegang KTP')" class="group relative rounded-lg overflow-hidden border border-gray-200 bg-white hover:opacity-95 transition shadow-2xs">
-                                            <img src="{{ $faceImg }}" alt="Selfie" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\'/></svg><span>Selfie KTP</span></div>';">
+                                            <img src="{{ $faceImg }}" alt="Selfie" loading="lazy" class="w-28 h-20 object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'w-28 h-20 bg-slate-100 flex flex-col items-center justify-center text-slate-400 gap-1 text-[11px]\'><svg class=\'w-5 h-5 text-slate-400\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\'/></svg><span>Selfie KTP</span></div>';">
                                             <span class="absolute inset-0 bg-black/30 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition text-xs font-bold gap-1">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                 <span>Lihat</span>
@@ -411,8 +511,8 @@
             </section>
 
             <!-- Panel 4: Pengiriman & Logistik -->
-            <section class="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-4">
+            <section class="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-3.5 sm:mb-4">
                     <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
                     </span>
@@ -490,8 +590,8 @@
 
             <!-- Panel 5: Status Pembatalan & Refund (Tampil hanya jika pesanan Batal) -->
             @if($isCancelled)
-                <section class="bg-white border border-red-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-4">
+                <section class="bg-white border border-red-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-3.5 sm:mb-4">
                         <span class="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 shadow-2xs border border-red-100">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                         </span>
@@ -508,18 +608,18 @@
                             <span class="text-gray-500">Status Refund</span>
                             <div>
                                 @if($refundStatus === 'refund_selesai')
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Refund Selesai</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">Refund Selesai</span>
                                 @elseif($refundStatus === 'menunggu_refund')
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">Menunggu Refund Admin</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">Menunggu Refund Admin</span>
                                 @else
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">Tidak Ada Refund</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Tidak Ada Refund</span>
                                 @endif
                             </div>
                         </div>
 
                         <div class="flex justify-between items-center py-2 border-b border-gray-100">
                             <span class="text-gray-500">Nominal Pengembalian</span>
-                            <span class="font-mono font-bold text-gray-900 text-base">
+                            <span class="font-bold text-gray-900 text-base tabular-nums">
                                 {{ $refundStatus !== 'tidak_ada' ? $order->formatted_total : 'Rp 0' }}
                             </span>
                         </div>
@@ -535,7 +635,7 @@
                             <div class="pt-2">
                                 <span class="text-xs font-bold text-gray-600 block mb-1.5">Bukti Transfer Refund dari Toko:</span>
                                 <figure @click="openLightbox('{{ $refundProof }}', 'Bukti Transfer Pengembalian Dana')" class="border border-gray-200 rounded-xl overflow-hidden cursor-zoom-in bg-gray-50 group hover:border-primary-500 transition max-w-sm">
-                                    <img src="{{ $refundProof }}" alt="Bukti Refund" class="w-full max-h-48 object-contain bg-white">
+                                    <img src="{{ $refundProof }}" alt="Bukti Refund" loading="lazy" class="w-full max-h-48 object-contain bg-white">
                                     <figcaption class="p-2 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100 group-hover:text-primary-600 font-medium flex items-center justify-center gap-1.5">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         <span>Klik untuk melihat bukti transfer refund</span>
@@ -554,7 +654,7 @@
         </div>
 
         <!-- Right Column: Sticky Payment & Actions Panel -->
-        <aside class="space-y-6 lg:sticky lg:top-24">
+        <aside class="space-y-4 sm:space-y-6 lg:sticky lg:top-24">
             
             @php
                 $payStatus = strtolower($payment?->status ?? 'belum');
@@ -600,7 +700,7 @@
             @endphp
 
             <!-- Panel Pembayaran -->
-            <section class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm"
+            <section class="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm"
                      x-data="{
                          ptab: 'bank',
                          bankMethodId: '{{ $firstBankId }}',
@@ -609,7 +709,7 @@
                              return this.ptab === 'qris' ? this.qrisMethodId : this.bankMethodId;
                          }
                      }">
-                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-4">
+                <h2 class="text-base font-bold text-gray-900 flex items-center gap-2.5 mb-3.5 sm:mb-4">
                     <span class="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 shadow-2xs border border-primary-100">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                     </span>
@@ -658,7 +758,7 @@
                     <!-- Belum dibayar: Tampilkan Metode Pembayaran & Upload Form -->
                     <div class="p-3.5 bg-primary-50 border border-dashed border-primary-300 rounded-xl mb-4 flex justify-between items-center">
                         <span class="text-xs text-primary-800 font-medium">Total Yang Harus Dibayar:</span>
-                        <b class="text-lg font-bold font-mono text-primary-700">{{ $order->formatted_total }}</b>
+                        <b class="text-lg font-extrabold text-primary-700 tracking-tight tabular-nums">{{ $order->formatted_total }}</b>
                     </div>
 
                     <!-- Payment Tabs -->
@@ -737,7 +837,7 @@
                     <!-- Tab QRIS -->
                     <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-4 border border-gray-200 rounded-xl mb-4 bg-white">
                         @if($qrisImg)
-                            <img src="{{ $qrisImg }}" alt="Kode QRIS" class="w-48 h-48 mx-auto object-contain mb-2 rounded-lg border border-gray-100 p-1 shadow-xs">
+                            <img src="{{ $qrisImg }}" alt="Kode QRIS" loading="lazy" class="w-48 h-48 mx-auto object-contain mb-2 rounded-lg border border-gray-100 p-1 shadow-xs">
                         @else
                             <!-- Dynamic QRIS Placeholder SVG from reference -->
                             <div class="w-44 h-44 mx-auto mb-2 bg-gray-50 p-2 rounded-xl border border-gray-200 flex items-center justify-center">
@@ -803,13 +903,15 @@
                             </button>
                         </form>
                     @else
-                        <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                            <strong class="font-bold flex items-center gap-1.5 mb-0.5">
-                                <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                <span>Pembayaran Belum Dibuka</span>
-                            </strong>
-                            <span>Unggah bukti bayar akan tersedia setelah dokumen verifikasi identitas Anda disetujui oleh admin toko.</span>
-                        </div>
+                        @if(!$isPaidVerified && !$isPaidWaiting && !$isCancelled)
+                            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                                <strong class="font-bold flex items-center gap-1.5 mb-0.5">
+                                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    <span>Formulir Pembayaran Ditutup</span>
+                                </strong>
+                                <span>Bukti transfer pembayaran sebelumnya sudah diterima dan sedang menunggu verifikasi toko.</span>
+                            </div>
+                        @endif
                     @endif
                 @endif
             </section>
@@ -839,7 +941,7 @@
                             @if((float) ($return->late_fee_amount ?? 0) > 0)
                                 <p class="text-blue-800">
                                     Denda Keterlambatan ({{ $return->late_hours ?? 0 }} jam):
-                                    <b class="font-mono">Rp {{ number_format((float) $return->late_fee_amount, 0, ',', '.') }}</b>
+                                    <b class="font-bold tabular-nums">Rp {{ number_format((float) $return->late_fee_amount, 0, ',', '.') }}</b>
                                     ({{ ucfirst(str_replace('_', ' ', $return->late_fee_status ?? 'menunggu_pembayaran')) }})
                                 </p>
                             @endif

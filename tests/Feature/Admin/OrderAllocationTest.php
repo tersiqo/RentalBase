@@ -306,4 +306,38 @@ class OrderAllocationTest extends TestCase
         ]);
         $this->assertEquals('disewa', $this->unit->fresh()->status);
     }
+
+    public function test_admin_can_view_allocate_and_deallocate_unit_on_menunggu_pembayaran_status(): void
+    {
+        $this->withoutVite();
+        $this->order->update(['status' => 'menunggu_pembayaran']);
+
+        // Dropdown alokasi harus muncul di halaman detail order saat status menunggu_pembayaran
+        $showBefore = $this->actingAs($this->admin)->get(route('admin.orders.show', $this->order->id));
+        $showBefore->assertOk();
+        $showBefore->assertSee('+ Pasangkan Unit');
+        $showBefore->assertSee($this->unit->unit_code);
+
+        // Alokasikan unit
+        $allocateResponse = $this->actingAs($this->admin)->post(route('admin.orders.allocate', $this->order->id), [
+            'order_item_id' => $this->orderItem->id,
+            'equipment_unit_id' => $this->unit->id,
+        ]);
+        $allocateResponse->assertSessionHas('success');
+
+        $allocation = OrderItemUnit::where('order_item_id', $this->orderItem->id)
+            ->where('equipment_unit_id', $this->unit->id)
+            ->firstOrFail();
+
+        // Tombol lepas/ganti unit harus muncul & deallocate harus berhasil
+        $showAfter = $this->actingAs($this->admin)->get(route('admin.orders.show', $this->order->id));
+        $showAfter->assertOk();
+        $showAfter->assertSee('Ganti Unit');
+
+        $deallocateResponse = $this->actingAs($this->admin)->delete(
+            route('admin.orders.deallocate', [$this->order->id, $allocation->id])
+        );
+        $deallocateResponse->assertSessionHas('success');
+        $this->assertDatabaseMissing('order_item_units', ['id' => $allocation->id]);
+    }
 }

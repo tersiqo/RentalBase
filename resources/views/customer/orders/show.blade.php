@@ -15,9 +15,16 @@
         receiveModalOpen: false,
         receiveActionUrl: '',
         receiveOrderNumber: '',
-        lateFeeModalOpen: false,
+        lateFeeModalOpen: {{ (request('action') === 'pay_late_fee' && $order->can_pay_late_fee) ? 'true' : 'false' }},
         toastMessage: '',
         showToast: false,
+
+        init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'pay_late_fee') {
+                this.lateFeeModalOpen = true;
+            }
+        },
 
         openLightbox(img, caption) {
             this.lightboxImg = img;
@@ -132,11 +139,14 @@
                     Pesanan <b class="font-mono text-gray-900" x-text="returnOrderNumber"></b>. Silakan pilih rencana pengembalian dan berikan keterangan kondisi barang saat selesai sewa.
                 </p>
                 <div class="space-y-4">
+                    @php
+                        $defaultReturnMethod = old('return_method', $order->isPickup() ? 'ambil_toko' : 'kurir');
+                    @endphp
                     <div>
                         <label class="block text-xs font-bold text-gray-700 mb-1">Metode Pengembalian</label>
                         <select name="return_method" class="w-full text-xs sm:text-sm p-2.5 rounded-xl border border-gray-300 focus:ring-primary-500 focus:border-primary-500 font-medium">
-                            <option value="ambil_toko">Diantar langsung ke toko rental</option>
-                            <option value="kurir">Dijemput kurir / dikirim via ekspedisi</option>
+                            <option value="ambil_toko" {{ $defaultReturnMethod === 'ambil_toko' ? 'selected' : '' }}>Diantar langsung ke toko rental</option>
+                            <option value="kurir" {{ $defaultReturnMethod === 'kurir' ? 'selected' : '' }}>Dijemput kurir / dikirim via ekspedisi</option>
                         </select>
                     </div>
                     <div>
@@ -195,38 +205,108 @@
 
             @php
                 $lateFeeAmount = (float) ($order->returnModel?->late_fee_amount ?? 0);
-                $clientPaymentMethods = ($client?->clientPaymentMethods()->where('is_active', true)->exists())
+                $activePaymentMethods = ($client?->clientPaymentMethods()->where('is_active', true)->exists())
                     ? $client->clientPaymentMethods()->where('is_active', true)->get()
                     : ($client?->paymentMethods()->where('is_active', true)->get() ?? collect());
+
+                $bankMethods = $activePaymentMethods->filter(function($m) {
+                    $bankName = strtoupper($m->bank_name ?? '');
+                    $type = strtolower($m->type ?? '');
+                    $accNum = (string)($m->account_number ?? '');
+
+                    if (empty($accNum)) return false;
+                    if ($type === 'qris' || $bankName === 'QRIS') return false;
+                    if (str_starts_with($accNum, 'QRIS-')) return false;
+                    if (!empty($m->qris_image) && empty($m->bank_name)) return false;
+
+                    return true;
+                });
+
+                $qrisMethod = $activePaymentMethods->first(function($m) {
+                    return ($m->type ?? '') === 'qris'
+                        || strtoupper($m->bank_name ?? '') === 'QRIS'
+                        || !empty($m->qris_image)
+                        || !empty($m->qris_image_path);
+                });
+
+                $qrisImg = storage_url($qrisMethod?->qris_image ?? $qrisMethod?->qris_image_path);
+                $qrisMerchantName = $qrisMethod?->qris_merchant_name ?? $qrisMethod?->account_holder ?? $qrisMethod?->account_name ?? $client?->nama_usaha ?? $client?->business_name ?? 'QRIS Toko';
+                $qrisNmid = $qrisMethod?->account_number;
+                $initialPtab = $bankMethods->isNotEmpty() ? 'bank' : ($qrisMethod ? 'qris' : 'bank');
             @endphp
 
-            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4 text-xs space-y-1">
+            <div class="p-3.5 bg-red-50 border border-red-200 rounded-xl mb-4 text-xs space-y-1">
                 <div class="flex justify-between items-center">
-                    <span class="text-amber-800 font-medium">Tagihan Denda Keterlambatan:</span>
-                    <span class="font-bold text-amber-900 font-mono text-sm">Rp {{ number_format($lateFeeAmount, 0, ',', '.') }}</span>
+                    <span class="text-red-800 font-bold flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        Tagihan Denda Keterlambatan:
+                    </span>
+                    <span class="font-extrabold text-red-700 text-sm tabular-nums">Rp {{ number_format($lateFeeAmount, 0, ',', '.') }}</span>
                 </div>
-                <p class="text-[11px] text-amber-700">Silakan transfer nominal di atas ke salah satu rekening toko di bawah ini, lalu unggah struk/bukti transfer.</p>
+                <p class="text-[11px] text-red-700 leading-relaxed">
+                    Silakan lakukan transfer pelunasan denda ke salah satu metode pembayaran di bawah ini, lalu unggah struk bukti transfer.
+                </p>
             </div>
 
-            @if($clientPaymentMethods->isNotEmpty())
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-gray-700 mb-2">Rekening Pembayaran Toko:</label>
-                    <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
-                        @foreach($clientPaymentMethods as $pm)
-                            <div class="p-2.5 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-between text-xs">
-                                <div>
-                                    <span class="font-bold text-gray-800 uppercase">{{ $pm->bank_name ?? $pm->provider_name ?? 'Bank' }}</span>
-                                    <span class="block font-mono text-gray-900 font-bold">{{ $pm->account_number }}</span>
-                                    <span class="text-[10px] text-gray-500">a.n. {{ $pm->account_holder_name ?? $pm->account_name }}</span>
-                                </div>
-                                <button type="button" @click="copyToClipboard('{{ $pm->account_number }}')" class="px-2 py-1 bg-white border border-gray-300 rounded text-[11px] font-semibold text-gray-700 hover:bg-gray-100">
+            <div x-data="{ ptab: '{{ $initialPtab }}' }" class="mb-4">
+                <label class="block text-xs font-bold text-gray-700 mb-2">Metode Pembayaran Toko:</label>
+
+                @if($bankMethods->isNotEmpty() && $qrisMethod)
+                    <div class="flex bg-gray-100 p-1 rounded-xl mb-3 text-xs font-bold">
+                        <button type="button" 
+                                @click="ptab = 'bank'" 
+                                :class="ptab === 'bank' ? 'bg-white text-primary-600 shadow-2xs' : 'text-gray-500 hover:text-gray-900'" 
+                                class="flex-1 py-1 rounded-lg transition-all text-center cursor-pointer">
+                            Transfer Bank
+                        </button>
+                        <button type="button" 
+                                @click="ptab = 'qris'" 
+                                :class="ptab === 'qris' ? 'bg-white text-primary-600 shadow-2xs' : 'text-gray-500 hover:text-gray-900'" 
+                                class="flex-1 py-1 rounded-lg transition-all text-center cursor-pointer">
+                            QRIS
+                        </button>
+                    </div>
+                @endif
+
+                {{-- Tab Transfer Bank --}}
+                <div x-show="ptab === 'bank'" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    @forelse($bankMethods as $pm)
+                        <div class="p-2.5 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-between text-xs">
+                            <div>
+                                <span class="font-bold text-gray-800 uppercase">{{ $pm->bank_name ?? $pm->provider_name ?? 'Bank' }}</span>
+                                <span class="block font-mono text-gray-900 font-bold">{{ $pm->account_number }}</span>
+                                <span class="text-[10px] text-gray-500">a.n. {{ $pm->account_holder ?? $pm->account_name ?? 'Toko' }}</span>
+                            </div>
+                            <button type="button" @click="copyToClipboard('{{ str_replace(' ', '', $pm->account_number) }}')" class="px-2 py-1 bg-white border border-gray-300 rounded text-[11px] font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer">
+                                Salin
+                            </button>
+                        </div>
+                    @empty
+                        <div class="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs text-gray-500 text-center">
+                            Rekening bank toko belum tersedia.
+                        </div>
+                    @endforelse
+                </div>
+
+                {{-- Tab QRIS --}}
+                <div x-show="ptab === 'qris'" style="display: none;" class="text-center p-3 border border-gray-200 rounded-xl bg-gray-50">
+                    @if($qrisImg)
+                        <img src="{{ $qrisImg }}" alt="QRIS Toko" loading="lazy" class="w-40 h-40 object-contain mx-auto bg-white p-1 rounded-lg border border-gray-200 mb-2 shadow-2xs">
+                        @if($qrisNmid && !str_starts_with($qrisNmid, 'QRIS-'))
+                            <div class="inline-flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-xl text-xs mb-1.5 shadow-2xs">
+                                <span class="text-gray-500 font-semibold">NMID:</span>
+                                <span class="font-mono font-bold text-gray-900 tracking-wider">{{ $qrisNmid }}</span>
+                                <button type="button" @click="copyToClipboard('{{ $qrisNmid }}')" class="px-2 py-0.5 rounded text-[11px] font-bold text-primary-600 hover:bg-primary-50 transition border border-primary-200 cursor-pointer">
                                     Salin
                                 </button>
                             </div>
-                        @endforeach
-                    </div>
+                        @endif
+                        <span class="text-xs font-bold text-gray-900 block">{{ $qrisMerchantName }}</span>
+                    @else
+                        <p class="text-xs text-gray-500 py-3">Gambar QRIS toko belum tersedia. Silakan gunakan metode Transfer Bank.</p>
+                    @endif
                 </div>
-            @endif
+            </div>
 
             <form action="{{ route('customer.orders.pay-late-fee', $order->id) }}" 
                   method="POST" 

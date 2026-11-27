@@ -136,7 +136,7 @@ class ComprehensiveTestScenarioSeeder extends Seeder
                 [
                     'business_name' => '[DATA CONTOH] Drone Rent Surabaya (Ditolak)',
                     'description' => '[CONTOH PENGUJIAN]: Rental drone komersial.',
-                    'plan_name' => 'Basic',
+                    'plan_name' => 'Business',
                     'admin_name' => '[CONTOH] Budi Pilot',
                     'admin_email' => 'contoh.budi@drone.test',
                     'admin_phone' => '081234567892',
@@ -154,7 +154,7 @@ class ComprehensiveTestScenarioSeeder extends Seeder
                 [
                     'business_name' => '[DATA CONTOH] Camping Gear Batu (Disetujui)',
                     'description' => '[CONTOH PENGUJIAN]: Rental alat outdoor dan mendaki gunung.',
-                    'plan_name' => 'Pro Enterprise',
+                    'plan_name' => 'Professional',
                     'admin_name' => '[CONTOH] Citra Outdoor',
                     'admin_email' => 'contoh.citra@camping.test',
                     'admin_phone' => '081234567893',
@@ -175,7 +175,7 @@ class ComprehensiveTestScenarioSeeder extends Seeder
                 ]
             );
             Subscription::updateOrCreate(
-                ['client_id' => $tenantSoon->id, 'plan_name' => 'Basic (Simulasi Expiring)'],
+                ['client_id' => $tenantSoon->id, 'plan_name' => 'Business'],
                 [
                     'max_products' => 30,
                     'max_users' => 2,
@@ -198,7 +198,7 @@ class ComprehensiveTestScenarioSeeder extends Seeder
                 ]
             );
             Subscription::updateOrCreate(
-                ['client_id' => $tenantExp->id, 'plan_name' => 'Starter (Simulasi Expired)'],
+                ['client_id' => $tenantExp->id, 'plan_name' => 'Starter'],
                 [
                     'max_products' => 15,
                     'max_users' => 1,

@@ -78,31 +78,35 @@ class ActivityLog extends Model
         return match (strtolower($this->module ?? '')) {
             'orders' => [
                 'label' => 'Pesanan',
-                'bg'    => 'bg-blue-50 text-blue-700 border-blue-200',
+                'bg'    => 'bg-blue-50 text-blue-700',
             ],
             'shipments' => [
                 'label' => 'Logistik & Pengiriman',
-                'bg'    => 'bg-purple-50 text-purple-700 border-purple-200',
+                'bg'    => 'bg-purple-50 text-purple-700',
             ],
             'returns' => [
                 'label' => 'Pengembalian & Denda',
-                'bg'    => 'bg-amber-50 text-amber-700 border-amber-200',
+                'bg'    => 'bg-amber-50 text-amber-700',
             ],
             'inspections', 'condition_checks' => [
                 'label' => 'Inspeksi Fisik',
-                'bg'    => 'bg-teal-50 text-teal-700 border-teal-200',
+                'bg'    => 'bg-teal-50 text-teal-700',
             ],
             'subscriptions' => [
                 'label' => 'Subscription Tenant',
-                'bg'    => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                'bg'    => 'bg-emerald-50 text-emerald-700',
             ],
             'tenants', 'auth' => [
                 'label' => 'Akun & Tenant',
-                'bg'    => 'bg-orange-50 text-orange-700 border-orange-200',
+                'bg'    => 'bg-orange-50 text-orange-700',
+            ],
+            'settings' => [
+                'label' => 'Pengaturan Toko',
+                'bg'    => 'bg-stone-50 text-stone-700',
             ],
             default => [
-                'label' => ucfirst($this->module ?? 'Sistem'),
-                'bg'    => 'bg-slate-50 text-slate-700 border-slate-200',
+                'label' => 'Umum',
+                'bg'    => 'bg-slate-50 text-slate-700',
             ],
         };
     }

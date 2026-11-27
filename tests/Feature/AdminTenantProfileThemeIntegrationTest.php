@@ -24,7 +24,7 @@ class AdminTenantProfileThemeIntegrationTest extends TestCase
     private function createTenantWithPrimaryAdmin(string $subdomain = 'tokoprofil', string $plan = 'starter'): array
     {
         $client = Client::create([
-            'business_name' => 'Toko Rental ' . $subdomain,
+            'business_name' => 'Toko Rental '.$subdomain,
             'subdomain' => $subdomain,
             'status' => 'aktif',
         ]);
@@ -82,6 +82,36 @@ class AdminTenantProfileThemeIntegrationTest extends TestCase
             'city' => 'Malang',
             'whatsapp' => '081234567890',
         ]);
+    }
+
+    public function test_primary_admin_can_update_maps_url(): void
+    {
+        [$client, $admin] = $this->createTenantWithPrimaryAdmin('mapsurltoko', 'starter');
+
+        $response = $this->actingAs($admin)->post('/admin/settings/profile', [
+            'name' => 'Rental Kamera Malang Juara',
+            'city' => 'Malang',
+            'maps_url' => 'https://maps.app.goo.gl/accuratePinLocation123',
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('tenant_profiles', [
+            'client_id' => $client->id,
+            'maps_url' => 'https://maps.app.goo.gl/accuratePinLocation123',
+        ]);
+    }
+
+    public function test_maps_url_must_be_a_valid_url_format(): void
+    {
+        [$client, $admin] = $this->createTenantWithPrimaryAdmin('mapsinvalid', 'starter');
+
+        $response = $this->actingAs($admin)->post('/admin/settings/profile', [
+            'name' => 'Rental Kamera Malang Juara',
+            'maps_url' => 'bukan-url-valid',
+        ]);
+
+        $response->assertSessionHasErrors('maps_url');
     }
 
     public function test_logo_upload_validates_file_extension_and_max_2mb_size(): void
@@ -161,4 +191,3 @@ class AdminTenantProfileThemeIntegrationTest extends TestCase
         $response->assertStatus(403);
     }
 }
-

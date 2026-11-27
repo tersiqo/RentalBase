@@ -29,7 +29,20 @@
 @endif
 
 {{-- Navigasi Kembali & Header Utama --}}
-<div x-data="{ modalImage: null, openImageModal(url) { this.modalImage = url; }, closeImageModal() { this.modalImage = null; } }">
+<div x-data="{ 
+    modalImage: null, 
+    openImageModal(url) { this.modalImage = url; }, 
+    closeImageModal() { this.modalImage = null; },
+    deallocateModal: false,
+    deallocateAction: '',
+    deallocateUnitCode: '',
+    openDeallocateModal(action, code) {
+        this.deallocateAction = action;
+        this.deallocateUnitCode = code;
+        this.deallocateModal = true;
+    },
+    openReuploadModal: false
+}">
 <div class="mb-6">
     <div class="flex items-center gap-2 mb-3">
         <a href="{{ route('admin.orders.index') }}"
@@ -47,16 +60,16 @@
                 <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">
                     Pesanan #{{ $order->order_number ?? $order->id }}
                 </h1>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
-                    @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-50 text-amber-700 border border-amber-200
-                    @elseif(in_array($order->status, ['menunggu_pembayaran', 'belum_dibayar'])) bg-yellow-50 text-yellow-700 border border-yellow-200
-                    @elseif(in_array($order->status, ['menunggu_verifikasi', 'verifikasi'])) bg-blue-50 text-blue-700 border border-blue-200
-                    @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-50 text-indigo-700 border border-indigo-200
-                    @elseif($order->status === 'dikirim') bg-purple-50 text-purple-700 border border-purple-200
-                    @elseif($order->status === 'sedang_disewa') bg-sky-50 text-sky-700 border border-sky-200
-                    @elseif($order->status === 'selesai') bg-emerald-50 text-emerald-700 border border-emerald-200
-                    @elseif(in_array($order->status, ['batal', 'dibatalkan', 'ditolak'])) bg-red-50 text-red-700 border border-red-200
-                    @else bg-gray-50 text-gray-700 border border-gray-200 @endif">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold
+                    @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-50 text-amber-700
+                    @elseif(in_array($order->status, ['menunggu_pembayaran', 'belum_dibayar'])) bg-yellow-50 text-yellow-800
+                    @elseif(in_array($order->status, ['menunggu_verifikasi', 'verifikasi'])) bg-blue-50 text-blue-700
+                    @elseif(in_array($order->status, ['siap_kirim', 'diproses', 'dikonfirmasi'])) bg-indigo-50 text-indigo-700
+                    @elseif($order->status === 'dikirim') bg-purple-50 text-purple-700
+                    @elseif($order->status === 'sedang_disewa') bg-sky-50 text-sky-700
+                    @elseif($order->status === 'selesai') bg-emerald-50 text-emerald-700
+                    @elseif(in_array($order->status, ['batal', 'dibatalkan', 'ditolak'])) bg-rose-50 text-rose-700
+                    @else bg-slate-100 text-slate-700 @endif">
                     
                     <span class="w-1.5 h-1.5 rounded-full
                         @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi_identitas'])) bg-amber-500
@@ -77,9 +90,15 @@
             </p>
         </div>
 
-        {{-- Tombol Tindakan Cepat ke Pengiriman jika sudah siap kirim --}}
+        {{-- Tombol Tindakan Cepat sesuai status alur pesanan --}}
         @if(in_array($order->status, ['siap_kirim', 'diproses']))
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id, 'type' => 'sebelum_serah', 'return_to' => 'order']) }}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition shadow-2xs"
+                   title="Catat pemeriksaan fisik unit sebelum diserahkan">
+                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <span>Cek Fisik Awal</span>
+                </a>
                 @if(! $order->canProcessHandover())
                     <span class="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5" title="{{ $order->handover_blocked_reason }}">
                         <svg class="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
@@ -88,7 +107,39 @@
                 @endif
                 <a href="{{ route('admin.shipments.index', ['search' => $order->order_number]) }}"
                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition shadow-xs">
-                    <span>Buka di Daftar Pengiriman</span>
+                    <span>Buka di Pengiriman</span>
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+        @elseif(in_array($order->status, ['sedang_disewa', 'dikembalikan', 'menunggu_pembayaran_denda']))
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id, 'type' => 'setelah_kembali', 'return_to' => 'order']) }}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg transition shadow-2xs">
+                    <svg class="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <span>Cek Fisik Unit</span>
+                </a>
+                <a href="{{ route('admin.returns.index', ['search' => $order->order_number]) }}"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg transition shadow-xs">
+                    <span>Buka di Pengembalian</span>
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            </div>
+        @elseif($order->status === 'dikirim')
+            <div class="flex items-center gap-2 flex-wrap">
+                {{-- Tombol Konfirmasi Diterima Pelanggan (Memecah Deadlock Alur Kurir) --}}
+                <form method="POST" action="{{ route('admin.shipments.delivered', $order->id) }}"
+                      onsubmit="return confirm('Konfirmasi bahwa paket pesanan #{{ $order->order_number ?? $order->id }} telah sampai dan diterima oleh pelanggan?\n\nStatus pesanan akan beralih menjadi \'Sedang Disewa\' dan langsung dapat diproses di menu Pengembalian.');">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-xs cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Tandai Sudah Diterima Pelanggan</span>
+                    </button>
+                </form>
+
+                <a href="{{ route('admin.shipments.index', ['search' => $order->order_number, 'status' => 'dikirim']) }}"
+                   class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-semibold rounded-lg transition shadow-2xs">
+                    <span>Pantau di Pengiriman</span>
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </a>
             </div>
@@ -145,6 +196,30 @@
         </div>
     @endif
 </div>
+
+{{-- Banner Info Pengiriman Kurir Berjalan (Jika status dikirim) --}}
+@if($order->status === 'dikirim')
+    <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-start gap-3 mb-6 shadow-2xs">
+        <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="flex-1">
+            <span class="font-bold block text-sm text-blue-950 mb-1">Pesanan Sedang Dalam Pengiriman Kurir</span>
+            <div class="text-blue-800 space-y-0.5">
+                <p>
+                    Ekspedisi: <strong class="font-semibold text-blue-900">{{ $order->shipment->courier_name ?? 'Kurir' }}</strong> &bull; 
+                    Nomor Resi: <strong class="font-mono font-bold text-blue-950">{{ $order->shipment->tracking_number ?? '-' }}</strong>
+                    @if($order->shipment?->shipped_at)
+                        &bull; Waktu Kirim: {{ $order->shipment->shipped_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') }} WIB
+                    @endif
+                </p>
+                <p class="text-blue-700">
+                    Bila paket sudah sampai atau dikonfirmasi oleh kurir/pelanggan, klik tombol <strong>"Tandai Sudah Diterima Pelanggan"</strong> di kanan atas agar status beralih menjadi <em>Sedang Disewa</em> dan langsung masuk ke menu Pengembalian.
+                </p>
+            </div>
+        </div>
+    </div>
+@endif
 
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
@@ -209,6 +284,14 @@
                             </span>
                         @endif
                     </p>
+                    @if($order->shipment && ! $order->isPickup())
+                        <div class="text-xs text-gray-500 mt-1">
+                            Kurir: <span class="font-medium text-gray-800">{{ $order->shipment->courier_name ?? 'Kurir' }}</span>
+                            @if($order->shipment->tracking_number)
+                                &bull; Resi: <span class="font-mono font-bold text-gray-800">{{ $order->shipment->tracking_number }}</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -225,6 +308,7 @@
                             @if($imgUrl)
                                 <img src="{{ $imgUrl }}"
                                      alt="{{ $item->product->name ?? 'Produk' }}"
+                                     loading="lazy"
                                      class="w-12 h-12 rounded-lg object-cover border border-gray-200 shrink-0">
                             @else
                                 <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-gray-400">
@@ -272,11 +356,11 @@
                         $isFulfilled = ($allocatedCount >= $neededCount);
                     @endphp
                     <div class="p-4 rounded-lg border {{ $isFulfilled ? 'bg-emerald-50/30 border-emerald-200' : 'bg-gray-50/50 border-gray-200' }}">
-                        <div class="flex items-center justify-between mb-2.5">
-                            <p class="text-sm font-bold text-gray-900">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-2.5">
+                            <p class="text-sm font-bold text-gray-900 min-w-0">
                                 {{ $item->product->name ?? 'Produk' }}
                             </p>
-                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full {{ $isFulfilled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
+                            <span class="self-start sm:self-auto shrink-0 whitespace-nowrap text-xs font-semibold px-2.5 py-0.5 rounded-full {{ $isFulfilled ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                                 {{ $allocatedCount }}/{{ $neededCount }} Unit Dialokasikan
                             </span>
                         </div>
@@ -293,16 +377,28 @@
                                             </span>
                                             <span class="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-medium">Siap Sewa</span>
                                         </div>
-                                        @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']))
-                                            <form action="{{ route('admin.orders.deallocate', [$order->id, $allocation->id]) }}" method="POST" onsubmit="return confirm('Batalkan alokasi unit ini untuk memilih unit lain?');" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-semibold hover:underline flex items-center gap-1 transition cursor-pointer" title="Batalkan alokasi unit ini">
+                                        <div class="flex items-center gap-3">
+                                            {{-- Pintasan Cek Fisik Unit --}}
+                                            <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id, 'unit_id' => $allocation->equipment_unit_id, 'return_to' => 'order']) }}"
+                                               class="text-xs text-orange-600 hover:text-orange-800 font-semibold hover:underline flex items-center gap-1 transition"
+                                               title="Catat atau lihat kondisi fisik unit ini">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                                <span>Cek Fisik</span>
+                                            </a>
+
+                                            @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_pembayaran', 'belum_dibayar', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim', 'diproses', 'dikonfirmasi']))
+                                                @php
+                                                    $uCode = $allocation->equipmentUnit->unit_code ?? $allocation->equipmentUnit->asset_code ?? ('Unit #' . $allocation->equipment_unit_id);
+                                                @endphp
+                                                <button type="button" 
+                                                        @click="openDeallocateModal('{{ route('admin.orders.deallocate', [$order->id, $allocation->id]) }}', '{{ $uCode }}')"
+                                                        class="text-xs text-red-600 hover:text-red-800 font-semibold hover:underline flex items-center gap-1 transition cursor-pointer" 
+                                                        title="Batalkan alokasi unit ini">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                     <span>Ganti Unit</span>
                                                 </button>
-                                            </form>
-                                        @endif
+                                            @endif
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -311,18 +407,18 @@
                         @endif
 
                         {{-- Form dropdown tambah alokasi unit --}}
-                        @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim']) && ! $isFulfilled)
+                        @if(in_array($order->status, ['menunggu_konfirmasi', 'menunggu_pembayaran', 'belum_dibayar', 'menunggu_verifikasi', 'verifikasi', 'siap_kirim', 'diproses', 'dikonfirmasi']) && ! $isFulfilled)
                             @php
                                 $matchingUnits = $availableUnits->filter(function($unit) use ($item) {
                                     return $unit->product_id === $item->product_id;
                                 });
                             @endphp
                             @if($matchingUnits->isNotEmpty())
-                                <form action="{{ route('admin.orders.allocate', $order->id) }}" method="POST" class="flex gap-2 mt-2">
+                                <form action="{{ route('admin.orders.allocate', $order->id) }}" method="POST" class="flex flex-col sm:flex-row gap-2 mt-2">
                                     @csrf
                                     <input type="hidden" name="order_item_id" value="{{ $item->id }}">
                                     <select name="equipment_unit_id"
-                                            class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                                            class="w-full sm:flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                                             required>
                                         <option value="">-- Pilih Nomor Seri Unit Tersedia --</option>
                                         @foreach($matchingUnits as $unit)
@@ -333,7 +429,7 @@
                                         @endforeach
                                     </select>
                                     <button type="submit"
-                                            class="px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-md transition shrink-0 shadow-xs">
+                                            class="w-full sm:w-auto px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-md transition shrink-0 shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
                                         + Pasangkan Unit
                                     </button>
                                 </form>
@@ -371,51 +467,78 @@
                 <div x-show="!showRejectForm" class="space-y-2.5">
                     <form action="{{ route('admin.orders.confirm', $order->id) }}" method="POST" class="space-y-2">
                         @csrf
-                        @if($order->status === 'menunggu_konfirmasi')
+                        @if($order->latestPayment)
                             <button type="submit"
-                                    class="w-full px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5">
+                                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span>Konfirmasi Pesanan</span>
+                            </button>
+                        @elseif($order->status === 'menunggu_konfirmasi')
+                            <button type="submit"
+                                    class="w-full px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
                                 <span>Setujui Identitas &amp; Minta Bayar</span>
                             </button>
                             <button type="submit" name="direct_ready" value="1"
-                                    class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition flex items-center justify-center gap-1.5"
+                                    class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition flex items-center justify-center gap-1.5 cursor-pointer"
                                     title="Gunakan ini jika customer sudah lunas tunai di tempat">
                                 <span>Konfirmasi Langsung Lunas (Siap Kirim)</span>
                             </button>
                         @else
-                            <button type="submit"
-                                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5">
-                                <span>Verifikasi Pembayaran &amp; Siap Kirim</span>
+                            <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 leading-relaxed">
+                                <span class="font-bold block mb-0.5">Menunggu Bukti Pembayaran</span>
+                                Customer belum mengunggah struk transfer. Tombol verifikasi akan aktif setelah bukti diunggah.
+                            </div>
+                            <button type="submit" name="direct_ready" value="1"
+                                    class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                                    title="Gunakan hanya jika customer membayar tunai langsung di tempat">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                <span>Konfirmasi Lunas Tunai (Siap Kirim)</span>
                             </button>
                         @endif
                     </form>
 
+                    {{-- Tombol Khusus Minta Unggah Ulang KTP (Ketika identitas belum diverifikasi) --}}
+                    @if($order->identityGuarantee && $order->identityGuarantee->status !== 'diverifikasi')
+                        <button type="button" @click="openReuploadModal = true"
+                                class="w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center justify-center gap-2 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>Minta Unggah Ulang KTP (Foto Buram)</span>
+                        </button>
+                    @endif
+
                     <button @click="showRejectForm = true"
                             type="button"
-                            class="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold rounded-md transition">
-                        Tolak / Batalkan Pesanan
+                            class="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold rounded-md transition cursor-pointer flex items-center justify-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <span>Tolak &amp; Batalkan Pesanan Permanen</span>
                     </button>
                 </div>
 
-                {{-- Form Penolakan Pesanan --}}
+                {{-- Form Penolakan & Pembatalan Permanen Pesanan --}}
                 <div x-show="showRejectForm" x-cloak class="pt-1">
                     <form action="{{ route('admin.orders.reject', $order->id) }}" method="POST">
                         @csrf
+                        <div class="p-2.5 bg-red-50 border border-red-200 rounded-lg mb-2.5 text-[11px] text-red-800 leading-relaxed">
+                            <span class="font-bold block text-xs text-red-900 mb-0.5">Peringatan Pembatalan Permanen</span>
+                            Pesanan ini akan dibatalkan secara permanen dan unit yang dialokasikan akan dikembalikan ke status tersedia.
+                        </div>
+
                         <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
-                            Alasan Penolakan <span class="text-red-500">*</span>
+                            Alasan Pembatalan Pesanan <span class="text-red-500">*</span>
                         </label>
                         <textarea name="cancellation_reason"
                                   rows="3"
                                   required
-                                  placeholder="Contoh: Foto KTP buram atau stok unit sedang dalam perbaikan..."
+                                  placeholder="Contoh: Customer membatalkan sewa atau stok unit sedang tidak tersedia..."
                                   class="w-full border border-gray-300 rounded-md text-xs px-3 py-2 focus:ring-red-500 focus:border-red-500 mb-3"></textarea>
                         <div class="flex gap-2">
                             <button type="button" @click="showRejectForm = false"
-                                    class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md">
+                                    class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md cursor-pointer">
                                 Batal
                             </button>
                             <button type="submit"
-                                    class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-xs">
-                                Ya, Tolak
+                                    class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-md shadow-xs cursor-pointer flex items-center justify-center gap-1">
+                                <span>Ya, Batalkan Pesanan</span>
                             </button>
                         </div>
                     </form>
@@ -496,6 +619,7 @@
                              @click="openImageModal('{{ $paymentProofUrl }}')">
                             <img src="{{ $paymentProofUrl }}"
                                  alt="Bukti Pembayaran"
+                                 loading="lazy"
                                  class="w-full h-44 object-contain bg-white group-hover:scale-102 transition duration-200">
                             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                                 <span class="px-3 py-1.5 bg-white text-gray-900 rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
@@ -528,7 +652,7 @@
                     <h2 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Review Jaminan Identitas</h2>
                 </div>
                 @if($order->identityGuarantee)
-                    <span class="px-2 py-0.5 rounded text-[11px] font-semibold {{ $order->identityGuarantee->status_color }}">
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold {{ $order->identityGuarantee->status_color }}">
                         {{ $order->identityGuarantee->status_label }}
                     </span>
                 @endif
@@ -574,6 +698,7 @@
                              @click="openImageModal('{{ $ktpUrl }}')">
                             <img src="{{ $ktpUrl }}"
                                  alt="Foto KTP"
+                                 loading="lazy"
                                  class="w-full h-40 object-contain bg-white group-hover:scale-102 transition duration-200">
                             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                                 <span class="px-3 py-1.5 bg-white text-gray-900 rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
@@ -609,6 +734,7 @@
                              @click="openImageModal('{{ $selfieUrl }}')">
                             <img src="{{ $selfieUrl }}"
                                  alt="Foto Selfie"
+                                 loading="lazy"
                                  class="w-full h-40 object-contain bg-white group-hover:scale-102 transition duration-200">
                             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                                 <span class="px-3 py-1.5 bg-white text-gray-900 rounded-md text-xs font-semibold shadow flex items-center gap-1.5">
@@ -626,6 +752,17 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Tombol Cepat Minta Unggah Ulang dari Review Identitas --}}
+                @if($order->identityGuarantee->status !== 'diverifikasi' && in_array($order->status, ['menunggu_konfirmasi', 'menunggu_verifikasi', 'verifikasi', 'menunggu_pembayaran']))
+                    <div class="pt-3 border-t border-gray-100">
+                        <button type="button" @click="openReuploadModal = true"
+                                class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-xs font-bold rounded-lg transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs">
+                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>Minta Unggah Ulang KTP (Foto Buram)</span>
+                        </button>
+                    </div>
+                @endif
 
             @else
                 <p class="text-xs text-gray-400 italic">Tidak ada data jaminan identitas untuk pesanan ini.</p>
@@ -680,6 +817,179 @@
             alt="Preview Dokumen" 
             class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-sm"
         >
+    </div>
+</div>
+
+{{-- MODAL KONFIRMASI GANTI / BATAL ALOKASI UNIT --}}
+<div x-show="deallocateModal"
+     x-cloak
+     @keydown.escape.window="deallocateModal = false"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+     x-transition.opacity>
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-sm w-full p-6 text-center space-y-4"
+         @click.away="deallocateModal = false"
+         x-transition.scale.95>
+        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div>
+            <h3 class="text-base font-extrabold text-slate-900">Batalkan Alokasi Unit?</h3>
+            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                Unit <strong class="font-mono font-bold text-slate-900" x-text="deallocateUnitCode"></strong> akan dilepaskan dari pesanan ini dan statusnya dikembalikan ke <strong>Siap Sewa</strong>.
+            </p>
+        </div>
+        <form :action="deallocateAction" method="POST">
+            @csrf
+            @method('DELETE')
+            <div class="grid grid-cols-2 gap-2.5 pt-2">
+                <button type="button" @click="deallocateModal = false" class="py-2.5 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                    Batal
+                </button>
+                <button type="submit" class="py-2.5 px-3 rounded-xl bg-red-600 text-xs font-bold text-white hover:bg-red-700 shadow-sm transition cursor-pointer">
+                    Ya, Batalkan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ===== MODAL MINTA UNGGAH ULANG KTP (REUPLOAD) ===== --}}
+<div x-show="openReuploadModal"
+     x-cloak
+     @keydown.escape.window="openReuploadModal = false"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden text-left"
+         @click.away="openReuploadModal = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95">
+
+        {{-- Header Modal --}}
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-amber-50/50">
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </span>
+                <div>
+                    <h3 class="font-bold text-sm text-gray-900">Minta Unggah Ulang KTP</h3>
+                    <p class="text-[11px] text-gray-500">Kirim instruksi perbaikan foto dokumen ke customer</p>
+                </div>
+            </div>
+            <button type="button" @click="openReuploadModal = false" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <form action="{{ route('admin.orders.reject', $order->id) }}" 
+              method="POST" 
+              class="p-6 space-y-4"
+              x-data="{
+                  presetReason: 'Foto KTP buram atau tidak terbaca jelas',
+                  customNotes: '',
+                  submitting: false,
+                  get finalReason() {
+                      return this.customNotes.trim() 
+                          ? this.presetReason + ' (Catatan: ' + this.customNotes.trim() + ')' 
+                          : this.presetReason;
+                  }
+              }"
+              @submit="submitting = true">
+            @csrf
+            <input type="hidden" name="action_type" value="request_reupload">
+            <input type="hidden" name="cancellation_reason" :value="finalReason">
+
+            {{-- Kotak Edukatif Info --}}
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed flex items-start gap-2.5">
+                <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <p class="font-semibold mb-0.5">Pesanan TIDAK akan dibatalkan.</p>
+                    <p class="text-[11px] text-amber-800">
+                        Customer akan menerima notifikasi untuk mengunggah ulang foto KTP yang lebih jelas. Status pesanan akan tetap berjalan.
+                    </p>
+                </div>
+            </div>
+
+            {{-- Pilihan Preset Alasan --}}
+            <div>
+                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                    Pilih Alasan Utama <span class="text-red-500">*</span>
+                </label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer transition"
+                           :class="presetReason === 'Foto KTP buram atau tidak terbaca jelas' ? 'border-amber-400 bg-amber-50/40 text-amber-950 font-medium' : 'text-gray-700'">
+                        <input type="radio" 
+                               name="preset_option" 
+                               value="Foto KTP buram atau tidak terbaca jelas" 
+                               x-model="presetReason"
+                               class="text-amber-600 focus:ring-amber-500 border-gray-300">
+                        <span class="text-xs">Foto KTP buram atau tidak terbaca jelas</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer transition"
+                           :class="presetReason === 'Foto selfie memegang KTP terpotong / wajah tertutup' ? 'border-amber-400 bg-amber-50/40 text-amber-950 font-medium' : 'text-gray-700'">
+                        <input type="radio" 
+                               name="preset_option" 
+                               value="Foto selfie memegang KTP terpotong / wajah tertutup" 
+                               x-model="presetReason"
+                               class="text-amber-600 focus:ring-amber-500 border-gray-300">
+                        <span class="text-xs">Foto selfie memegang KTP terpotong / wajah tertutup</span>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 cursor-pointer transition"
+                           :class="presetReason === 'NIK / Nama tidak sesuai dengan data formulir sewa' ? 'border-amber-400 bg-amber-50/40 text-amber-950 font-medium' : 'text-gray-700'">
+                        <input type="radio" 
+                               name="preset_option" 
+                               value="NIK / Nama tidak sesuai dengan data formulir sewa" 
+                               x-model="presetReason"
+                               class="text-amber-600 focus:ring-amber-500 border-gray-300">
+                        <span class="text-xs">NIK / Nama tidak sesuai dengan data formulir sewa</span>
+                    </label>
+                </div>
+            </div>
+
+            {{-- Textarea Catatan Tambahan (Opsional) --}}
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        Catatan Tambahan untuk Customer
+                    </label>
+                    <span class="text-[10px] text-gray-400 font-normal">Opsional</span>
+                </div>
+                <textarea x-model="customNotes"
+                          rows="2"
+                          placeholder="Contoh: Pastikan pencahayaan cukup dan nomor NIK 16 digit terbaca tajam tanpa pantulan cahaya..."
+                          class="w-full border border-gray-300 rounded-xl text-xs px-3 py-2 focus:ring-amber-500 focus:border-amber-500"></textarea>
+            </div>
+
+            {{-- Tombol Aksi Modal --}}
+            <div class="flex gap-2.5 pt-2 border-t border-gray-100">
+                <button type="button" 
+                        @click="openReuploadModal = false" 
+                        :disabled="submitting"
+                        class="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition cursor-pointer">
+                    Batal
+                </button>
+                <button type="submit" 
+                        :disabled="submitting"
+                        :class="submitting ? 'opacity-70 cursor-not-allowed' : ''"
+                        class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    <span x-text="submitting ? 'Mengirim...' : 'Kirim Permintaan ke Customer'">Kirim Permintaan ke Customer</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

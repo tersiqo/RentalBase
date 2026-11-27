@@ -102,6 +102,13 @@ class DamageReportController extends Controller
             'case_status' => 'dalam_tinjauan',
         ]);
 
+        // Siarkan pembaruan pesan secara real-time via Pusher WebSocket ke admin toko
+        try {
+            event(new \App\Events\DamageCaseResponded($damageCase->fresh(['damageReport.order']), 'customer', trim($request->notes)));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[Realtime] Gagal broadcast DamageCaseResponded (Customer): ' . $e->getMessage());
+        }
+
         return back()->with('success', 'Tanggapan Anda berhasil dikirim ke pihak toko. Kasus saat ini dalam peninjauan.');
     }
 
@@ -146,7 +153,7 @@ class DamageReportController extends Controller
         }
 
         // Simpan bukti transfer ke storage
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $path = $request->file('payment_proof')->store('payments/damage', $disk);
 
         $paymentMethodId = $request->input('client_payment_method_id')
@@ -180,7 +187,11 @@ class DamageReportController extends Controller
         ]);
 
         if (class_exists(\App\Events\DamageCasePaymentUploaded::class)) {
-            event(new \App\Events\DamageCasePaymentUploaded($damageCase));
+            try {
+                event(new \App\Events\DamageCasePaymentUploaded($damageCase->fresh(['damageReport.order'])));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('[Realtime] Gagal broadcast DamageCasePaymentUploaded: ' . $e->getMessage());
+            }
         }
 
         return back()->with('success', 'Bukti pembayaran kompensasi sebesar ' . $damageCase->formatted_total . ' berhasil dikirim. Toko akan segera memverifikasinya.');

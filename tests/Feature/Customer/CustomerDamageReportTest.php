@@ -159,7 +159,7 @@ class CustomerDamageReportTest extends TestCase
         $response->assertSee('8920192831');
     }
 
-    public function test_customer_cannot_view_damage_report_of_another_customer(): void
+    public function test_it_10_027_customer_cannot_view_damage_report_of_another_customer(): void
     {
         $otherCustomer = User::create([
             'name' => 'Siti Nurhaliza',
@@ -192,6 +192,21 @@ class CustomerDamageReportTest extends TestCase
         $this->assertStringContainsString($this->customer->name, $this->damageCase->resolution_notes);
     }
 
+    public function test_it_broadcasts_damage_case_responded_event_when_customer_submits_response(): void
+    {
+        \Illuminate\Support\Facades\Event::fake([\App\Events\DamageCaseResponded::class]);
+
+        $this->actingAs($this->customer)
+            ->post(route('customer.orders.damage.respond', $this->order->id), [
+                'damage_case_id' => $this->damageCase->id,
+                'notes' => 'Tanggapan uji coba realtime websocket customer.',
+            ]);
+
+        \Illuminate\Support\Facades\Event::assertDispatched(\App\Events\DamageCaseResponded::class, function ($event) {
+            return $event->sender === 'customer' && $event->damageCase->id === $this->damageCase->id;
+        });
+    }
+
     public function test_response_validation_requires_minimum_length(): void
     {
         $response = $this->actingAs($this->customer)
@@ -218,6 +233,8 @@ class CustomerDamageReportTest extends TestCase
 
     public function test_it_10_004_customer_can_upload_compensation_payment_proof(): void
     {
+        \Illuminate\Support\Facades\Event::fake([\App\Events\DamageCasePaymentUploaded::class]);
+
         $file = UploadedFile::fake()->image('bukti_transfer_kompensasi.jpg', 600, 800);
 
         $response = $this->actingAs($this->customer)
@@ -242,6 +259,11 @@ class CustomerDamageReportTest extends TestCase
 
         $payment = Payment::where('order_id', $this->order->id)->latest()->first();
         Storage::disk('public')->assertExists($payment->payment_proof);
+
+        \Illuminate\Support\Facades\Event::assertDispatched(\App\Events\DamageCasePaymentUploaded::class, function ($event) {
+            $channels = $event->broadcastOn();
+            return count($channels) > 0 && $channels[0]->name === 'private-tenant.' . $this->client->id . '.orders';
+        });
     }
 
     public function test_payment_proof_rejects_invalid_file_types(): void

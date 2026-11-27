@@ -5,8 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Masuk ke Akun — RentalBase</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="RentalBase">
+    <meta name="application-name" content="RentalBase">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +34,7 @@
         body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
     </style>
 </head>
-<body class="h-full text-slate-800 antialiased selection:bg-orange-500 selection:text-white bg-[#fffaf5] relative">
+<body class="min-h-screen text-slate-800 antialiased selection:bg-orange-500 selection:text-white bg-[#fffaf5] relative flex flex-col justify-between">
     
     <!-- Background Decorator Gradients -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -32,26 +43,27 @@
         <div class="absolute -bottom-32 left-1/3 w-96 h-96 rounded-full bg-slate-100 blur-3xl"></div>
     </div>
 
-    <div x-data="authApp()" x-cloak class="relative z-10 min-h-screen flex flex-col justify-center items-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+    <!-- Top Navbar with Brand Logo in top-left corner (Konsisten dengan halaman Admin Rental) -->
+    <nav class="w-full px-6 py-6 sm:px-12 flex items-center justify-between relative z-20">
+        <a href="{{ route('landing.home') }}" class="inline-flex items-center gap-2.5 group">
+            <img src="{{ asset('images/rentalbase-icon.svg') }}" alt="RentalBase" class="w-7 h-7 drop-shadow-xs group-hover:scale-105 transition-transform duration-200">
+            <span class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 group-hover:text-orange-600 transition-colors">
+                RentalBase
+            </span>
+        </a>
+    </nav>
+
+    <div x-data="authApp()" x-cloak class="relative z-10 flex-1 flex flex-col justify-center items-center py-4 sm:py-8 px-4 sm:px-6 lg:px-8">
 
         <!-- Main Auth Card Container -->
         <div class="w-full max-w-lg bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6 sm:p-9 transition-all duration-200">
             
-            <!-- Brand Logo & Header -->
+            <!-- Card Header (Tanpa logo ganda di tengah, persis seperti admin) -->
             <div class="text-center mb-6">
-                <a href="{{ route('landing.home') }}" class="inline-flex items-center gap-2.5 group">
-                    <div class="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white font-black text-xl shadow-md shadow-orange-500/25 group-hover:scale-105 transition-transform duration-200">
-                        R
-                    </div>
-                    <span class="text-2xl font-extrabold tracking-tight text-slate-900 group-hover:text-orange-600 transition-colors">
-                        RentalBase
-                    </span>
-                </a>
-                
-                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mt-3" x-text="isRegister ? 'Daftar Akun Baru' : 'Masuk ke Akun Anda'">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight" x-text="isRegister ? 'Daftar Akun Baru' : 'Masuk ke Akun Anda'">
                     Masuk ke Akun Anda
                 </h1>
-                <p class="text-xs sm:text-sm text-slate-500 mt-1" x-text="isRegister ? 'Buat akun universal untuk bertransaksi di semua toko' : 'Platform Rental Multi-Tenant Terpadu'">
+                <p class="text-xs sm:text-sm text-slate-500 mt-1.5" x-text="isRegister ? 'Buat akun universal untuk bertransaksi di semua toko' : 'Platform Rental Multi-Tenant Terpadu'">
                     Platform Rental Multi-Tenant Terpadu
                 </p>
             </div>
@@ -151,6 +163,33 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block"></span>
                         <span x-text="selectedRole === 'customer' ? 'Masuk sebagai pelanggan untuk menyewa produk di semua toko rental.' : 'Masuk sebagai Pengelola / Admin Toko Rental.'"></span>
                     </p>
+                </div>
+
+                <!-- Tombol Google di Atas (Konsisten dengan Pendaftaran Admin) -->
+                <div class="mb-5">
+                    <a :href="'{{ route('auth.google') }}?role=' + selectedRole + (redirectUrl ? '&redirect=' + encodeURIComponent(redirectUrl) : '')" 
+                       href="{{ route('auth.google', array_filter(['role' => old('login_type', 'customer'), 'redirect' => request('redirect')])) }}" 
+                       class="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm shadow-xs transition duration-150">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.45a5.52 5.52 0 01-2.39 3.62v3h3.87c2.27-2.09 3.57-5.17 3.57-8.81z"/>
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.91l-3.87-3c-1.07.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.29v3.1A12 12 0 0012 24z"/>
+                            <path fill="#FBBC05" d="M5.29 14.29a7.2 7.2 0 010-4.58v-3.1H1.29a12 12 0 000 10.78l4-3.1z"/>
+                            <path fill="#EA4335" d="M12 4.76c1.76 0 3.34.61 4.58 1.8l3.43-3.43C17.95 1.19 15.24 0 12 0A12 12 0 001.29 6.61l4 3.1C6.23 6.87 8.88 4.76 12 4.76z"/>
+                        </svg>
+                        <span>Masuk dengan Google</span>
+                    </a>
+
+                    <!-- Divider -->
+                    <div class="relative my-5 text-center">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-slate-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-xs">
+                            <span class="bg-white px-3 text-slate-400 font-medium">
+                                atau masuk dengan email dan password
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Form Login -->
@@ -289,28 +328,6 @@
                     </div>
                 </form>
 
-                <!-- Divider & Google Button -->
-                <div class="relative my-6 text-center">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-slate-200"></div>
-                    </div>
-                    <div class="relative flex justify-center text-xs uppercase">
-                        <span class="bg-white px-3 text-slate-400 font-semibold tracking-wider">
-                            atau masuk dengan
-                        </span>
-                    </div>
-                </div>
-
-                <a href="{{ route('auth.google') }}" class="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm shadow-xs transition duration-150">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.45a5.52 5.52 0 01-2.39 3.62v3h3.87c2.27-2.09 3.57-5.17 3.57-8.81z"/>
-                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.91l-3.87-3c-1.07.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.29v3.1A12 12 0 0012 24z"/>
-                        <path fill="#FBBC05" d="M5.29 14.29a7.2 7.2 0 010-4.58v-3.1H1.29a12 12 0 000 10.78l4-3.1z"/>
-                        <path fill="#EA4335" d="M12 4.76c1.76 0 3.34.61 4.58 1.8l3.43-3.43C17.95 1.19 15.24 0 12 0A12 12 0 001.29 6.61l4 3.1C6.23 6.87 8.88 4.76 12 4.76z"/>
-                    </svg>
-                    <span>Masuk dengan Akun Google</span>
-                </a>
-
                 <!-- Tautan Daftar Baru di Bawah Tombol Masuk -->
                 <div class="mt-6 pt-5 border-t border-slate-100 text-center">
                     <p class="text-xs sm:text-sm text-slate-600 font-medium">
@@ -328,6 +345,34 @@
             <!-- 2. FORM DAFTAR BARU (REGISTER)                           -->
             <!-- ======================================================== -->
             <div x-show="isRegister" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                
+                <!-- Tombol Google di Atas Form (Konsisten dengan Pendaftaran Admin) -->
+                <div class="mb-5">
+                    <a :href="'{{ route('auth.google') }}?role=customer' + (redirectUrl ? '&redirect=' + encodeURIComponent(redirectUrl) : '')" 
+                       href="{{ route('auth.google', array_filter(['role' => 'customer', 'redirect' => request('redirect')])) }}" 
+                       class="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs sm:text-sm shadow-xs transition duration-150">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.45a5.52 5.52 0 01-2.39 3.62v3h3.87c2.27-2.09 3.57-5.17 3.57-8.81z"/>
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.91l-3.87-3c-1.07.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.29v3.1A12 12 0 0012 24z"/>
+                            <path fill="#FBBC05" d="M5.29 14.29a7.2 7.2 0 010-4.58v-3.1H1.29a12 12 0 000 10.78l4-3.1z"/>
+                            <path fill="#EA4335" d="M12 4.76c1.76 0 3.34.61 4.58 1.8l3.43-3.43C17.95 1.19 15.24 0 12 0A12 12 0 001.29 6.61l4 3.1C6.23 6.87 8.88 4.76 12 4.76z"/>
+                        </svg>
+                        <span>Daftar dengan Google</span>
+                    </a>
+
+                    <!-- Divider -->
+                    <div class="relative my-5 text-center">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-slate-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-xs">
+                            <span class="bg-white px-3 text-slate-400 font-medium">
+                                atau daftar dengan data diri
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
                 <form method="POST" action="{{ route('register.submit') }}" @submit="handleSubmitRegister($event)" novalidate class="space-y-4">
                     @csrf
                     @if(request()->filled('redirect'))
@@ -351,6 +396,7 @@
                                    name="name" 
                                    type="text" 
                                    x-model="registerName"
+                                   autocomplete="name"
                                    value="{{ old('name') }}"
                                    required 
                                    placeholder="Contoh: Budi Santoso"
@@ -387,6 +433,7 @@
                                    name="email" 
                                    type="email" 
                                    x-model="registerEmail"
+                                   autocomplete="email"
                                    value="{{ old('email') }}"
                                    required 
                                    placeholder="nama@email.com"
@@ -422,6 +469,8 @@
                             <input id="register-phone" 
                                    name="phone" 
                                    type="tel" 
+                                   inputmode="tel"
+                                   autocomplete="tel"
                                    x-model="registerPhone"
                                    value="{{ old('phone') }}"
                                    required 
@@ -459,6 +508,7 @@
                                    name="password" 
                                    :type="showRegisterPassword ? 'text' : 'password'"
                                    x-model="registerPassword"
+                                   autocomplete="new-password"
                                    required 
                                    placeholder="Minimal 8 karakter"
                                    :class="registerErrors.password ? 'border-red-500 text-red-900 bg-red-50/20 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 text-slate-900 focus:border-orange-500 focus:ring-orange-500/20'"
@@ -506,6 +556,7 @@
                                    name="password_confirmation" 
                                    :type="showRegisterConfirmPassword ? 'text' : 'password'"
                                    x-model="registerPasswordConfirm"
+                                   autocomplete="new-password"
                                    required 
                                    placeholder="Ulangi password Anda"
                                    :class="registerErrors.password_confirmation ? 'border-red-500 text-red-900 bg-red-50/20 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 text-slate-900 focus:border-orange-500 focus:ring-orange-500/20'"
@@ -628,6 +679,9 @@
                 
                 // Login Role Selector: 'customer' or 'admin'
                 selectedRole: '{{ old("login_type", "customer") }}',
+                
+                // Intended redirect URL (if any)
+                redirectUrl: '{{ request("redirect", "") }}',
                 
                 // Password visibility toggles
                 showPassword: false,

@@ -244,7 +244,7 @@ class CategoryManagementTest extends TestCase
         $this->assertSame('Car Seat', $target->refresh()->name);
     }
 
-    public function test_update_forbidden_for_other_clients_category(): void
+    public function test_it_05_006_update_forbidden_for_other_clients_category(): void
     {
         $foreign = $this->makeCategory($this->otherClient, 'Stroller');
 

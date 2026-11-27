@@ -3,14 +3,19 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TenantApproved;
 use App\Models\Client;
 use App\Models\ClientRegistration;
 use App\Models\Subscription;
+use App\Models\TenantProfile;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class TenantRegistrationController extends Controller
@@ -18,6 +23,7 @@ class TenantRegistrationController extends Controller
     public function showLogin(Request $request)
     {
         if (Auth::check()) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
 
             if ($user->status === 'pending_setup') {
@@ -39,11 +45,15 @@ class TenantRegistrationController extends Controller
             }
 
             if ($user->role === 'customer') {
+                $activeSubdomain = session('active_client_subdomain');
                 if ($request->query('tab') === 'register') {
-                    return redirect()->route('customer.home', ['subdomain' => session('active_client_subdomain', 'babyrental')]);
+                    return $activeSubdomain 
+                        ? redirect()->route('customer.home', ['subdomain' => $activeSubdomain])
+                        : redirect('/#mitra-rental');
                 }
 
-                return redirect()->intended('/client/babyrental');
+                $defaultTarget = $activeSubdomain ? ('/client/' . $activeSubdomain) : '/#mitra-rental';
+                return redirect()->intended($defaultTarget);
             }
 
             return redirect('/');
@@ -92,12 +102,15 @@ class TenantRegistrationController extends Controller
 
         if ($request->filled('redirect')) {
             $redirectUrl = $request->input('redirect');
-            if (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost')) {
+            if (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost') || str_starts_with($redirectUrl, '/') || str_starts_with($redirectUrl, url('/'))) {
                 return redirect($redirectUrl)->with('success', 'Pendaftaran akun berhasil! Anda kini dapat bertransaksi di seluruh toko RentalBase.');
             }
         }
 
-        return redirect()->intended('/client/babyrental')->with('success', 'Pendaftaran akun berhasil! Anda kini dapat bertransaksi di seluruh toko RentalBase.');
+        $activeSubdomain = session('active_client_subdomain');
+        $defaultTarget = $activeSubdomain ? ('/client/' . $activeSubdomain) : '/#mitra-rental';
+
+        return redirect()->intended($defaultTarget)->with('success', 'Pendaftaran akun berhasil! Anda kini dapat bertransaksi di seluruh toko RentalBase.');
     }
 
     public function login(Request $request)
@@ -118,6 +131,7 @@ class TenantRegistrationController extends Controller
         ];
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
 
             // Validasi kesesuaian role yang dipilih pada UI (Customer vs Admin)
@@ -178,7 +192,7 @@ class TenantRegistrationController extends Controller
 
             if ($user->role === 'customer') {
                 $redirectUrl = $request->input('redirect');
-                if ($redirectUrl && (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost'))) {
+                if ($redirectUrl && (str_contains($redirectUrl, '/client/') || str_contains($redirectUrl, '127.0.0.1') || str_contains($redirectUrl, 'localhost') || str_starts_with($redirectUrl, '/') || str_starts_with($redirectUrl, url('/')))) {
                     return redirect($redirectUrl);
                 }
 
@@ -187,7 +201,10 @@ class TenantRegistrationController extends Controller
                     return redirect($referer);
                 }
 
-                return redirect()->intended('/client/babyrental');
+                $activeSubdomain = session('active_client_subdomain');
+                $defaultTarget = $activeSubdomain ? ('/client/' . $activeSubdomain) : '/#mitra-rental';
+
+                return redirect()->intended($defaultTarget);
             }
 
             return redirect('/');
@@ -200,6 +217,7 @@ class TenantRegistrationController extends Controller
     {
         $referer = $request->headers->get('referer');
         $activeSubdomain = session('active_client_subdomain');
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
 
         if (! $activeSubdomain && $user && $user->client_id) {
@@ -256,6 +274,7 @@ class TenantRegistrationController extends Controller
         }
 
         if (Auth::check()) {
+            /** @var \App\Models\User $user */
             $user = Auth::user();
 
             if ($user->status === 'aktif') {
@@ -349,7 +368,7 @@ class TenantRegistrationController extends Controller
 
             $logoPath = null;
             if ($request->hasFile('logo')) {
-                $disk = config('filesystems.default', 'public');
+                $disk = \App\Services\StorageHelper::disk();
                 $logoPath = $request->file('logo')->store('clients/logos', $disk);
             }
 
@@ -380,6 +399,8 @@ class TenantRegistrationController extends Controller
 
                 $user->update(['client_id' => $client->id]);
 
+                $initialPaymentStatus = $this->getPrice($request->plan_name) <= 0 ? 'gratis' : 'menunggu';
+
                 Subscription::create([
                     'client_id' => $client->id,
                     'plan_name' => $request->plan_name,
@@ -390,7 +411,7 @@ class TenantRegistrationController extends Controller
                     'start_date' => now(),
                     'end_date' => now()->addMonth(),
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                 ]);
 
                 $reg = ClientRegistration::create([
@@ -403,7 +424,7 @@ class TenantRegistrationController extends Controller
                     'admin_phone' => $request->phone,
                     'admin_password' => $user->password,
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                 ]);
 
                 DB::commit();
@@ -470,6 +491,7 @@ class TenantRegistrationController extends Controller
 
     public function setup(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         $accountData = $request->session()->get('tenant_registration.account');
 
@@ -522,7 +544,7 @@ class TenantRegistrationController extends Controller
 
         $logoPath = $user ? $user->avatar : null;
         if ($request->hasFile('logo')) {
-            $disk = config('filesystems.default', 'public');
+            $disk = \App\Services\StorageHelper::disk();
             $logoPath = $request->file('logo')->store('clients/logos', $disk);
         }
 
@@ -573,6 +595,8 @@ class TenantRegistrationController extends Controller
                 'status' => 'pending_setup',
             ]);
 
+            $initialPaymentStatus = $this->getPrice($request->plan_name) <= 0 ? 'gratis' : 'menunggu';
+
             Subscription::updateOrCreate(
                 ['client_id' => $client->id],
                 [
@@ -584,7 +608,7 @@ class TenantRegistrationController extends Controller
                     'start_date' => now(),
                     'end_date' => now()->addMonth(),
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                 ]
             );
 
@@ -599,7 +623,7 @@ class TenantRegistrationController extends Controller
                     'admin_phone' => $request->phone,
                     'admin_password' => $user->password,
                     'status' => 'menunggu_verifikasi',
-                    'payment_status' => 'menunggu',
+                    'payment_status' => $initialPaymentStatus,
                     'rejection_reason' => null,
                 ]
             );
@@ -622,21 +646,25 @@ class TenantRegistrationController extends Controller
 
     private function getMaxProducts($plan)
     {
-        return match ($plan) {
-            'starter' => 50,
-            'business' => 200,
-            'professional' => 1000,
-            default => 50,
+        $limit = config("packages.{$plan}.limits.products");
+
+        return $limit ?? match ($plan) {
+            'starter' => 10,
+            'business' => 50,
+            'professional' => 9999,
+            default => 10,
         };
     }
 
     private function getMaxUsers($plan)
     {
-        return match ($plan) {
-            'starter' => 2,
-            'business' => 5,
-            'professional' => 15,
-            default => 2,
+        $limit = config("packages.{$plan}.limits.admins");
+
+        return $limit ?? match ($plan) {
+            'starter' => 1,
+            'business' => 3,
+            'professional' => 10,
+            default => 1,
         };
     }
 
@@ -688,6 +716,7 @@ class TenantRegistrationController extends Controller
 
     public function setupTheme(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if (! $user) {
             return redirect()->route('login');
@@ -712,6 +741,7 @@ class TenantRegistrationController extends Controller
 
     public function submitPayment(Request $request)
     {
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if (! $user) {
             return redirect()->route('login');
@@ -726,59 +756,112 @@ class TenantRegistrationController extends Controller
             return redirect()->route('tenant.register', ['step' => 'info']);
         }
 
-        $existingProof = Subscription::where('client_id', $client->id)->value('payment_proof')
+        $subscription = Subscription::where('client_id', $client->id)->first();
+        $planName = $subscription?->plan_name ?? $request->session()->get('registration_plan', 'starter');
+        $price = (float) $this->getPrice($planName);
+        $isFree = ($price <= 0);
+
+        $existingProof = $subscription?->payment_proof
             ?? ClientRegistration::where('admin_email', $user->email)->value('payment_proof');
 
-        $request->validate([
-            'payment_proof' => $existingProof ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
-        ], [
-            'payment_proof.required' => 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.',
-            'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
-            'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
-            'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
-        ]);
+        if ($isFree) {
+            $request->validate([
+                'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ], [
+                'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
+                'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
+                'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
+            ]);
+        } else {
+            $request->validate([
+                'payment_proof' => $existingProof ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ], [
+                'payment_proof.required' => 'Bukti pembayaran wajib diunggah sebelum mengirim pengajuan.',
+                'payment_proof.image' => 'File bukti pembayaran harus berupa gambar.',
+                'payment_proof.mimes' => 'Format file bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
+                'payment_proof.max' => 'Ukuran file bukti pembayaran tidak boleh lebih dari 2MB.',
+            ]);
+        }
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $proofPath = $request->hasFile('payment_proof')
             ? $request->file('payment_proof')->store('subscriptions/proofs', $disk)
-            : $existingProof;
+            : ($isFree ? null : $existingProof);
+
+        $paymentStatus = $isFree ? 'gratis' : 'lunas';
+        $now = Carbon::now();
 
         DB::beginTransaction();
 
         try {
-            // Update subscription dengan bukti bayar
+            // Mode Auto-Approve (Sementara untuk sesi pengujian responden mitra):
+            // 1. Langsung aktifkan paket subscription dengan masa aktif 1 bulan
             Subscription::where('client_id', $client->id)->update([
                 'payment_proof' => $proofPath,
-                'payment_status' => 'menunggu',
-                'status' => 'menunggu_verifikasi',
+                'payment_status' => $paymentStatus,
+                'status' => 'aktif',
+                'start_date' => $now->toDateString(),
+                'end_date' => $now->copy()->addMonth()->toDateString(),
             ]);
 
-            // Update client_registrations dengan bukti bayar
+            // 2. Tandai registrasi tenant langsung disetujui
             ClientRegistration::where('admin_email', $user->email)->update([
                 'payment_proof' => $proofPath,
-                'payment_status' => 'menunggu',
-                'status' => 'menunggu_verifikasi',
+                'payment_status' => $isFree ? 'gratis' : 'diverifikasi',
+                'status' => 'disetujui',
                 'rejection_reason' => null,
+                'reviewed_at' => $now,
             ]);
 
-            // Set user dan client ke status menunggu_verifikasi
-            $user->update([
-                'status' => 'menunggu_verifikasi',
+            // 3. Set toko (Client) dan akun Admin menjadi aktif
+            $client->update([
+                'status' => 'aktif',
             ]);
+
+            $user->update([
+                'status' => 'aktif',
+            ]);
+
+            // 4. Pastikan profil toko terisi lengkap
+            TenantProfile::firstOrCreate(
+                ['client_id' => $client->id],
+                [
+                    'name' => $client->business_name,
+                    'description' => $client->description,
+                    'address' => $user->address,
+                    'city' => 'Malang',
+                    'whatsapp' => $user->phone,
+                    'subdomain' => $client->subdomain,
+                    'logo_path' => $client->logo,
+                    'theme_color' => $client->theme_color ?? '#F97316',
+                ]
+            );
 
             DB::commit();
 
-            $sub = Subscription::where('client_id', $client->id)->first();
-            if ($sub && class_exists(\App\Events\SubscriptionRenewalUploaded::class)) {
-                event(new \App\Events\SubscriptionRenewalUploaded($sub));
+            $reg = ClientRegistration::where('admin_email', $user->email)->first();
+            if ($reg && class_exists(\App\Events\TenantRegistrationSubmitted::class)) {
+                event(new \App\Events\TenantRegistrationSubmitted($reg));
             }
 
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            $request->session()->put('registration_completed', true);
+            // Kirim email pemberitahuan pendaftaran toko disetujui ke admin tenant
+            if ($reg) {
+                try {
+                    Mail::to($user->email)->queue(new TenantApproved($reg, $user));
+                } catch (\Throwable $e) {
+                    Log::warning("Gagal mengirim email auto-approval tenant [Email: {$user->email}]: " . $e->getMessage());
+                }
+            }
 
-            return redirect()->route('tenant.register');
+            // Bersihkan sesi setup pendaftaran tanpa melakukan logout
+            $request->session()->forget([
+                'tenant_registration',
+                'registration_plan',
+                'registration_theme_selected',
+                'registration_completed',
+            ]);
+
+            return redirect()->route('admin.dashboard')->with('success', 'Pendaftaran toko berhasil! Toko Anda telah aktif dan siap digunakan.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -803,6 +886,7 @@ class TenantRegistrationController extends Controller
             return $this->register($request);
         }
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if ($user->status === 'pending_setup') {

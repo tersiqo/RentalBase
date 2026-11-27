@@ -44,4 +44,73 @@ class DamageCaseUnitTest extends TestCase
         $casePaid = new DamageCase(['case_status' => 'kompensasi_dibayar']);
         $this->assertEquals('Menunggu Verifikasi Toko', $casePaid->status_label);
     }
+
+    /**
+     * [9.1-I1] Memastikan kalkulasi total biaya kompensasi tetap presisi saat denda bernilai nol.
+     */
+    public function test_ut_10_016_total_amount_calculation_without_fine(): void
+    {
+        $damageCase = new DamageCase([
+            'repair_cost' => 120000,
+            'fine_amount' => 0,
+        ]);
+
+        $this->assertEquals(120000.0, $damageCase->total_amount);
+    }
+
+    /**
+     * [8.1-I4] Memastikan mapping status kasus kerusakan mengembalikan label 'Selesai' saat kasus lunas.
+     */
+    public function test_ut_10_017_status_label_completed(): void
+    {
+        $caseCompleted = new DamageCase(['case_status' => 'selesai']);
+
+        $this->assertEquals('Selesai', $caseCompleted->status_label);
+    }
+
+    /**
+     * [8.1-I4] Memastikan accessor can_pay dan unified_status mengembalikan status badge dan izin pembayaran kompensasi.
+     */
+    public function test_ut_10_018_damage_case_can_pay_and_unified_status_accessors(): void
+    {
+        $caseUnpaid = new DamageCase([
+            'repair_cost' => 100000,
+            'case_status' => 'menunggu_respons',
+            'payment_status' => 'belum_dibayar',
+        ]);
+
+        $this->assertTrue($caseUnpaid->can_pay);
+
+        $unified = $caseUnpaid->unified_status;
+        $this->assertIsArray($unified);
+        $this->assertArrayHasKey('label', $unified);
+        $this->assertArrayHasKey('color', $unified);
+        $this->assertArrayHasKey('key', $unified);
+
+        $casePaid = new DamageCase([
+            'case_status' => 'menunggu_verifikasi',
+            'payment_status' => 'menunggu_verifikasi',
+        ]);
+        $this->assertFalse($casePaid->can_pay);
+    }
+
+    /**
+     * [8.1-I4] Memastikan model DamageReport memiliki relasi Eloquent ke Order, EquipmentUnit, User reporter, dan accessor images_list.
+     */
+    public function test_ut_10_019_damage_report_relations_and_images_list_accessor(): void
+    {
+        $report = new \App\Models\DamageReport([
+            'image' => 'reports/foto_rusak_1.jpg,reports/foto_rusak_2.jpg',
+        ]);
+
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $report->order());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $report->equipmentUnit());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $report->reporter());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\HasOne::class, $report->damageCase());
+
+        $imagesList = $report->images_list;
+        $this->assertIsArray($imagesList);
+        $this->assertCount(2, $imagesList);
+        $this->assertStringContainsString('foto_rusak_1.jpg', $imagesList[0]);
+    }
 }

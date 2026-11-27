@@ -129,6 +129,19 @@
                             $checkedReturnCount = $allocatedUnits->filter(function ($u) {
                                 return $u->conditionChecks && $u->conditionChecks->where('check_type', 'setelah_kembali')->isNotEmpty();
                             })->count();
+                            $damagedUnitsCount = $allocatedUnits->filter(function ($u) {
+                                if (in_array($u->status, ['rusak', 'damaged', 'maintenance'], true)) {
+                                    return true;
+                                }
+                                $latestReturnCheck = $u->conditionChecks
+                                    ? $u->conditionChecks->where('check_type', 'setelah_kembali')->sortByDesc('id')->first()
+                                    : null;
+
+                                return $latestReturnCheck && in_array($latestReturnCheck->condition, ['rusak_ringan', 'rusak_berat'], true);
+                            })->count();
+                            $unresolvedDamageCasesCount = $order->damageCases->filter(function ($dc) {
+                                return ! in_array($dc->unified_status['key'] ?? '', ['selesai', 'dibatalkan'], true);
+                            })->count();
                             $totalUnitsCount = $allocatedUnits->count();
 
                             $modalPayload = [
@@ -149,6 +162,10 @@
                                 'late_fee_status' => $ret?->late_fee_status ?? 'tidak_ada',
                                 'late_fee_proof_url' => storage_url($ret?->late_fee_proof),
                                 'checked_return_count' => $checkedReturnCount,
+                                'damaged_units_count' => $damagedUnitsCount,
+                                'unresolved_damage_cases_count' => $unresolvedDamageCasesCount,
+                                'damage_cases_url' => route('admin.damage-cases.index'),
+                                'damage_create_url' => route('admin.damage-cases.create', ['order_id' => $order->id]),
                                 'total_units_count' => $totalUnitsCount,
                                 'items' => $order->orderItems->map(function ($i) {
                                     $dbFee = (float) ($i->product->late_fee_per_hour ?? 0);
@@ -219,11 +236,11 @@
                             <td class="px-6 py-4 align-top text-center whitespace-nowrap space-y-1.5">
                                 <div>
                                     @if($isLate)
-                                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
+                                        <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-rose-50 text-rose-700">
                                             Telat
                                         </span>
                                     @else
-                                        <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-50 text-emerald-700">
                                             Tepat Waktu
                                         </span>
                                     @endif
@@ -231,13 +248,13 @@
 
                                 @if($order->status === 'menunggu_pembayaran_denda')
                                     <div>
-                                        <span class="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                        <span class="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-amber-50 text-amber-700">
                                             Menunggu Bayar Denda
                                         </span>
                                     </div>
                                 @elseif($order->status === 'dikembalikan')
                                     <div>
-                                        <span class="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                        <span class="px-2.5 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-blue-50 text-blue-700">
                                             Diajukan Customer
                                         </span>
                                     </div>
@@ -245,13 +262,37 @@
                             </td>
 
                             {{-- 5. Status Fisik --}}
-                            <td class="px-6 py-4 align-top text-center whitespace-nowrap">
-                                @if($checkedReturnCount > 0)
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            <td class="px-6 py-4 align-top text-center whitespace-nowrap space-y-1">
+                                @if($unresolvedDamageCasesCount > 0)
+                                    <div>
+                                        <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                            Kasus Kerusakan Aktif ({{ $unresolvedDamageCasesCount }})
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <a href="{{ route('admin.damage-cases.index') }}"
+                                           class="inline-flex text-[11px] font-semibold text-rose-600 hover:text-rose-800 hover:underline">
+                                            Buka Kasus Kerusakan →
+                                        </a>
+                                    </div>
+                                @elseif($damagedUnitsCount > 0)
+                                    <div>
+                                        <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                            Rusak / Maintenance ({{ $damagedUnitsCount }} unit)
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <a href="{{ route('admin.damage-cases.create', ['order_id' => $order->id]) }}"
+                                           class="inline-flex text-[11px] font-semibold text-rose-600 hover:text-rose-800 hover:underline">
+                                            + Buat Klaim Kerusakan
+                                        </a>
+                                    </div>
+                                @elseif($checkedReturnCount > 0)
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-50 text-emerald-700">
                                         Sudah Dicek ({{ $checkedReturnCount }}/{{ max($totalUnitsCount, $checkedReturnCount) }})
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-50 text-amber-700">
                                         Belum Cek Fisik
                                     </span>
                                 @endif
@@ -260,7 +301,7 @@
                             {{-- 6. Aksi --}}
                             <td class="px-6 py-4 align-middle text-center whitespace-nowrap">
                                 <div class="inline-flex items-center justify-center gap-2">
-                                    <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id]) }}"
+                                    <a href="{{ route('admin.condition-checks.index', ['order_id' => $order->id, 'return_to' => 'returns']) }}"
                                        title="Klik untuk mencatat pemeriksaan kondisi fisik barang"
                                        class="inline-flex items-center justify-center px-3 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md transition">
                                         Cek Fisik
@@ -386,6 +427,7 @@
                                         <a :href="activeOrder.late_fee_proof_url" target="_blank" rel="noopener noreferrer" class="block">
                                             <img :src="activeOrder.late_fee_proof_url"
                                                  alt="Bukti Pembayaran Denda"
+                                                 loading="lazy"
                                                  class="max-h-40 w-auto rounded-md border border-blue-200 bg-white p-1 object-contain shadow-xs">
                                         </a>
                                         <a :href="activeOrder.late_fee_proof_url" target="_blank" rel="noopener noreferrer"
@@ -405,16 +447,48 @@
                                    x-text="activeOrder.checked_return_count > 0 ? 'Unit sudah diperiksa (' + activeOrder.checked_return_count + ' unit).' : 'Pastikan kondisi fisik barang telah diperiksa.'"></p>
                             </div>
                             <div class="flex items-center gap-2 shrink-0">
-                                <a :href="'/admin/condition-checks?order_id=' + activeOrder.id"
+                                <a :href="'/admin/condition-checks?order_id=' + activeOrder.id + '&return_to=returns'"
                                    class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold rounded-md transition">
                                     Cek Fisik
                                 </a>
-                                <a :href="'/admin/damage-cases/create?order_id=' + activeOrder.id"
+                                <a :href="activeOrder.damage_create_url || ('/admin/damage-cases/create?order_id=' + activeOrder.id)"
                                    class="px-3 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 font-semibold rounded-md transition">
                                     Lapor Kerusakan
                                 </a>
                             </div>
                         </div>
+
+                        {{-- Peringatan Kasus Kerusakan Aktif (Memblokir Penyelesaian Pesanan) --}}
+                        <template x-if="activeOrder.unresolved_damage_cases_count > 0">
+                            <div class="p-3.5 bg-rose-50 border border-rose-300 rounded-md text-xs space-y-2">
+                                <p class="font-bold text-rose-800">
+                                    Pesanan Memiliki <span x-text="activeOrder.unresolved_damage_cases_count"></span> Kasus Kerusakan Aktif
+                                </p>
+                                <p class="text-rose-700 leading-relaxed">
+                                    Pesanan ini belum dapat diselesaikan sebelum kompensasi kerusakan diselesaikan atau diverifikasi di menu <strong>Kasus Kerusakan</strong>.
+                                </p>
+                                <a :href="activeOrder.damage_cases_url || '/admin/damage-cases'"
+                                   class="inline-flex items-center px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-md transition">
+                                    Buka Menu Kasus Kerusakan →
+                                </a>
+                            </div>
+                        </template>
+
+                        {{-- Peringatan Unit Tercatat Rusak / Maintenance Saat Cek Fisik --}}
+                        <template x-if="activeOrder.unresolved_damage_cases_count <= 0 && activeOrder.damaged_units_count > 0">
+                            <div class="p-3.5 bg-amber-50 border border-amber-300 rounded-md text-xs space-y-2">
+                                <p class="font-bold text-amber-900">
+                                    Terdeteksi <span x-text="activeOrder.damaged_units_count"></span> Unit Berstatus Rusak / Maintenance
+                                </p>
+                                <p class="text-amber-800 leading-relaxed">
+                                    Unit tersebut otomatis <strong>dikunci</strong> (tidak akan kembali menjadi <em>Tersedia</em>). Jika Anda ingin menagih biaya ganti rugi ke penyewa, klik <strong>Lapor Kerusakan</strong> terlebih dahulu sebelum menyelesaikan pesanan.
+                                </p>
+                                <a :href="activeOrder.damage_create_url || ('/admin/damage-cases/create?order_id=' + activeOrder.id)"
+                                   class="inline-flex items-center px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-md transition">
+                                    + Buat Kasus Kerusakan Sekarang
+                                </a>
+                            </div>
+                        </template>
 
                         {{-- Kalkulasi Otomatis Keterlambatan --}}
                         <template x-if="lateHours > 0">
@@ -486,7 +560,7 @@
                                         <svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                         <span>Bukti Pembayaran Denda Customer</span>
                                     </span>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700">
                                         Perlu Verifikasi
                                     </span>
                                 </div>
@@ -518,8 +592,10 @@
                         <template x-if="Number(overrideFee) <= 0">
                             <button type="submit"
                                     @click="$refs.actionTypeInput.value = 'normal'"
-                                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-md transition shadow-xs cursor-pointer">
-                                Barang Kembali Normal
+                                    :disabled="activeOrder.unresolved_damage_cases_count > 0"
+                                    :class="activeOrder.unresolved_damage_cases_count > 0 ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'"
+                                    class="px-4 py-2 text-white text-sm font-semibold rounded-md transition shadow-xs">
+                                <span x-text="activeOrder.damaged_units_count > 0 ? 'Selesaikan Pengembalian (Unit Rusak Dikunci)' : 'Barang Kembali Normal'"></span>
                             </button>
                         </template>
 
@@ -534,8 +610,10 @@
 
                                 <button type="submit"
                                         @click="$refs.actionTypeInput.value = 'normal'"
+                                        :disabled="activeOrder.unresolved_damage_cases_count > 0"
+                                        :class="activeOrder.unresolved_damage_cases_count > 0 ? 'opacity-50 cursor-not-allowed bg-gray-400' : 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'"
                                         title="Gunakan jika customer sudah melunasi denda"
-                                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-md transition shadow-xs cursor-pointer">
+                                        class="px-4 py-2 text-white text-sm font-semibold rounded-md transition shadow-xs">
                                     Denda Lunas & Selesai
                                 </button>
                             </div>
@@ -561,6 +639,10 @@
                 customer_name: '',
                 due_date_iso: '',
                 due_date_formatted: '',
+                damaged_units_count: 0,
+                unresolved_damage_cases_count: 0,
+                damage_cases_url: '/admin/damage-cases',
+                damage_create_url: '/admin/damage-cases/create',
                 items: []
             },
             currentTime: new Date(),

@@ -252,17 +252,17 @@
                                     $isExpired = true;
                                     $passedDays = abs($diff);
                                     $daysLeftText = $passedDays === 0 ? 'Expired hari ini' : "Expired {$passedDays} hari lalu";
-                                    $daysLeftClass = 'bg-rose-50 text-rose-700 font-bold border border-rose-200';
+                                    $daysLeftClass = 'bg-rose-50 text-rose-700 font-semibold';
                                 } else {
                                     if ($diff === 0) {
                                         $daysLeftText = 'Jatuh tempo hari ini';
-                                        $daysLeftClass = 'bg-amber-50 text-amber-700 font-bold border border-amber-200 animate-pulse';
+                                        $daysLeftClass = 'bg-amber-50 text-amber-700 font-semibold';
                                     } elseif ($diff <= 7) {
                                         $daysLeftText = "{$diff} hari lagi";
-                                        $daysLeftClass = 'bg-amber-50 text-amber-700 font-bold border border-amber-200';
+                                        $daysLeftClass = 'bg-amber-50 text-amber-700 font-semibold';
                                     } else {
                                         $daysLeftText = "{$diff} hari lagi";
-                                        $daysLeftClass = 'bg-slate-100 text-slate-700 font-medium';
+                                        $daysLeftClass = 'bg-slate-100 text-slate-700 font-semibold';
                                     }
                                 }
                             }
@@ -270,32 +270,32 @@
                             // Penentuan Status Badge
                             // Active, Expiring Soon, Expired, Suspended, Menunggu Verifikasi, Ditolak
                             $badgeLabel = 'Active';
-                            $badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+                            $badgeClass = 'bg-emerald-50 text-emerald-700';
                             $dotClass = 'bg-emerald-500';
 
                             if ($sub->status === 'menunggu_konfirmasi' || $sub->payment_status === 'menunggu') {
                                 $badgeLabel = 'Menunggu Verifikasi';
-                                $badgeClass = 'bg-amber-50 text-amber-800 border border-amber-300 animate-pulse';
+                                $badgeClass = 'bg-amber-50 text-amber-700';
                                 $dotClass = 'bg-amber-500';
                             } elseif ($sub->status === 'ditolak' || $sub->payment_status === 'ditolak') {
                                 $badgeLabel = 'Ditolak';
-                                $badgeClass = 'bg-rose-50 text-rose-700 border border-rose-200';
+                                $badgeClass = 'bg-rose-50 text-rose-700';
                                 $dotClass = 'bg-rose-500';
                             } elseif ($client && $client->status === 'suspended') {
                                 $badgeLabel = 'Suspended';
-                                $badgeClass = 'bg-slate-100 text-slate-700 border border-slate-300';
+                                $badgeClass = 'bg-slate-100 text-slate-700';
                                 $dotClass = 'bg-slate-500';
                             } elseif ($sub->status === 'nonaktif') {
                                 $badgeLabel = 'Suspended';
-                                $badgeClass = 'bg-slate-100 text-slate-700 border border-slate-300';
+                                $badgeClass = 'bg-slate-100 text-slate-700';
                                 $dotClass = 'bg-slate-500';
                             } elseif ($isExpired || $sub->status === 'kadaluarsa') {
                                 $badgeLabel = 'Expired';
-                                $badgeClass = 'bg-rose-50 text-rose-700 border border-rose-200';
+                                $badgeClass = 'bg-rose-50 text-rose-700';
                                 $dotClass = 'bg-rose-500';
                             } elseif ($endDate && $endDate->diffInDays($nowTime) <= 7) {
                                 $badgeLabel = 'Expiring Soon';
-                                $badgeClass = 'bg-amber-50 text-amber-800 border border-amber-300';
+                                $badgeClass = 'bg-amber-50 text-amber-700';
                                 $dotClass = 'bg-amber-500';
                             }
 
@@ -325,9 +325,14 @@
                             {{-- Nama Toko / Tenant --}}
                             <td class="px-5 py-4 whitespace-nowrap">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
-                                        {{ strtoupper(substr($client?->business_name ?? 'T', 0, 1)) }}
-                                    </div>
+                                    @if($client?->logo_url)
+                                        <img src="{{ $client->logo_url }}" alt="{{ $client->business_name }}" loading="lazy"
+                                             class="w-9 h-9 rounded-xl object-cover border border-slate-200/80 shadow-xs shrink-0">
+                                    @else
+                                        <div class="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
+                                            {{ strtoupper(substr($client?->business_name ?? 'T', 0, 1)) }}
+                                        </div>
+                                    @endif
                                     <div>
                                         <a href="{{ route('owner.tenants.index', ['search' => $client?->subdomain]) }}"
                                            title="Buka profil usaha tenant di Manajemen Tenant"
@@ -346,7 +351,7 @@
 
                             {{-- Subdomain --}}
                             <td class="px-5 py-4 whitespace-nowrap">
-                                <a href="http://{{ $client?->subdomain }}.localhost:8000"
+                                <a href="{{ $client?->subdomain ? route('customer.home', ['subdomain' => $client->subdomain]) : '#' }}"
                                    target="_blank"
                                    class="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-orange-600 hover:underline">
                                     <span>{{ $client?->subdomain }}</span>
@@ -375,14 +380,14 @@
 
                             {{-- Sisa Hari --}}
                             <td class="px-5 py-4 whitespace-nowrap text-center">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs {{ $daysLeftClass }}">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $daysLeftClass }}">
                                     {{ $daysLeftText }}
                                 </span>
                             </td>
 
                             {{-- Status Langganan --}}
                             <td class="px-5 py-4 whitespace-nowrap text-center">
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $badgeClass }}">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold {{ $badgeClass }}">
                                     <span class="w-1.5 h-1.5 rounded-full {{ $dotClass }}"></span>
                                     {{ $badgeLabel }}
                                 </span>
@@ -784,7 +789,7 @@
                                     <template x-if="!verifyData.proof_url.endsWith('.pdf')">
                                         <div class="text-center">
                                             <a :href="verifyData.proof_url" target="_blank" title="Klik untuk memperbesar">
-                                                <img :src="verifyData.proof_url" alt="Bukti Transfer" class="max-h-56 mx-auto rounded-lg object-contain shadow-xs hover:opacity-95 transition-opacity" />
+                                                <img :src="verifyData.proof_url" alt="Bukti Transfer" loading="lazy" class="max-h-56 mx-auto rounded-lg object-contain shadow-xs hover:opacity-95 transition-opacity" />
                                             </a>
                                             <p class="text-[11px] text-slate-400 mt-1">Klik gambar untuk melihat resolusi penuh di tab baru.</p>
                                         </div>

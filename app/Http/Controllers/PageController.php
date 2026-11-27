@@ -2,16 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
-use App\Models\Order;
-use App\Models\ReturnModel;
+use App\Events\IdentityProofUploaded;
+use App\Events\LateFeePaymentUploaded;
+use App\Events\OrderCancelled;
+use App\Events\OrderReceived;
+use App\Events\PaymentProofUploaded;
+use App\Events\ReturnRequested;
 use App\Models\ActivityLog;
+use App\Models\Client;
+use App\Models\ClientPaymentMethod;
+use App\Models\EquipmentUnit;
+use App\Models\Order;
+use App\Models\Payment;
+use App\Models\ReturnModel;
 use App\Models\User;
+use App\Services\StorageHelper;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class PageController extends Controller
@@ -93,12 +102,12 @@ class PageController extends Controller
         $activeSubdomain = session('active_client_subdomain') ?? ($client?->subdomain ?? 'babyrental');
         $activeNamaUsaha = $client?->nama_usaha ?? ($client?->name ?? 'BabyRent Malang');
         $client ??= (object) [
-            'id'                => 1,
-            'name'              => $activeNamaUsaha,
-            'nama_usaha'        => $activeNamaUsaha,
-            'subdomain'         => $activeSubdomain,
-            'address'           => 'Jl. Contoh No. 12, Malang',
-            'phone'             => '08123456789',
+            'id' => 1,
+            'name' => $activeNamaUsaha,
+            'nama_usaha' => $activeNamaUsaha,
+            'subdomain' => $activeSubdomain,
+            'address' => 'Jl. Contoh No. 12, Malang',
+            'phone' => '08123456789',
             'operational_hours' => '08:00 - 20:00',
         ];
 
@@ -110,6 +119,7 @@ class PageController extends Controller
                 'shipment',
                 'payments',
                 'returnModel',
+                'damageReports.damageCase',
             ]);
 
         if ($client && isset($client->id)) {
@@ -130,10 +140,13 @@ class PageController extends Controller
         $order->loadMissing([
             'orderItems.product',
             'client.paymentMethods',
+            'client.tenantProfile',
+            'client.primaryAdmin',
             'identityGuarantee',
             'shipment',
             'payments',
             'returnModel',
+            'damageReports.damageCase',
         ]);
 
         $client = $order->client;
@@ -160,7 +173,7 @@ class PageController extends Controller
             // Lepaskan alokasi unit fisik jika sempat dialokasikan
             foreach ($lockedOrder->orderItems as $item) {
                 foreach ($item->orderItemUnits as $oiu) {
-                    $unit = \App\Models\EquipmentUnit::where('id', $oiu->equipment_unit_id)->lockForUpdate()->first();
+                    $unit = EquipmentUnit::where('id', $oiu->equipment_unit_id)->lockForUpdate()->first();
                     $oiu->delete();
 
                     if ($unit && ! $unit->isActivelyRented()) {
@@ -178,21 +191,21 @@ class PageController extends Controller
                 'refund_status' => $hasPayment ? 'menunggu_refund' : 'tidak_ada',
             ]);
 
-            \App\Models\ActivityLog::create([
-                'client_id'   => $lockedOrder->client_id,
-                'user_id'     => Auth::id(),
-                'action'      => 'order_cancelled_by_customer',
-                'module'      => 'orders',
+            ActivityLog::create([
+                'client_id' => $lockedOrder->client_id,
+                'user_id' => Auth::id(),
+                'action' => 'order_cancelled_by_customer',
+                'module' => 'orders',
                 'description' => sprintf('Pelanggan membatalkan pesanan #%s dengan alasan: %s. Alokasi unit telah dikembalikan ke inventaris.', $lockedOrder->order_number, $reason),
-                'ip_address'  => $request->ip(),
-                'user_agent'  => $request->userAgent(),
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
             ]);
 
-            if (class_exists(\App\Events\OrderCancelled::class)) {
-                event(new \App\Events\OrderCancelled($lockedOrder));
+            if (class_exists(OrderCancelled::class)) {
+                event(new OrderCancelled($lockedOrder));
             }
 
-            return back()->with('success', 'Pesanan #' . $lockedOrder->order_number . ' berhasil dibatalkan.');
+            return back()->with('success', 'Pesanan #'.$lockedOrder->order_number.' berhasil dibatalkan.');
         });
     }
 
@@ -219,11 +232,11 @@ class PageController extends Controller
             ]);
         }
 
-        if (class_exists(\App\Events\OrderReceived::class)) {
-            event(new \App\Events\OrderReceived($order));
+        if (class_exists(OrderReceived::class)) {
+            event(new OrderReceived($order));
         }
 
-        return back()->with('success', 'Penerimaan barang pesanan #' . $order->order_number . ' berhasil dikonfirmasi. Masa sewa sedang berjalan.');
+        return back()->with('success', 'Penerimaan barang pesanan #'.$order->order_number.' berhasil dikonfirmasi. Masa sewa sedang berjalan.');
     }
 
     /**
@@ -262,21 +275,21 @@ class PageController extends Controller
 
             $itemBreakdown[] = [
                 'product_name' => $item->product->name ?? 'Barang Sewa',
-                'quantity'     => $qty,
-                'hourly_rate'  => $hourlyRate,
-                'late_hours'   => $lateHours,
+                'quantity' => $qty,
+                'hourly_rate' => $hourlyRate,
+                'late_hours' => $lateHours,
                 'subtotal_fee' => $itemFee,
             ];
         }
 
         return [
-            'is_late'         => $isLate,
-            'late_hours'      => $lateHours,
-            'late_days'       => (int) floor($lateHours / 24),
+            'is_late' => $isLate,
+            'late_hours' => $lateHours,
+            'late_days' => (int) floor($lateHours / 24),
             'remaining_hours' => $lateHours % 24,
-            'total_late_fee'  => $totalLateFee,
-            'items'           => $itemBreakdown,
-            'checked_at'      => $now,
+            'total_late_fee' => $totalLateFee,
+            'items' => $itemBreakdown,
+            'checked_at' => $now,
         ];
     }
 
@@ -345,12 +358,12 @@ class PageController extends Controller
 
         // 4. HITUNG ULANG DENDA DI BACKEND (Jangan pernah percaya angka dari browser!)
         $lateFeeData = $this->calculateLateFeeData($order);
-        $hasLateFee  = $lateFeeData['is_late'] && $lateFeeData['total_late_fee'] > 0;
+        $hasLateFee = $lateFeeData['is_late'] && $lateFeeData['total_late_fee'] > 0;
 
         // 5. Bersihkan spasi berlebih pada nomor resi sebelum divalidasi (atau kosongkan jika ambil_toko)
         if ($request->input('return_method') !== 'kurir') {
             $request->merge([
-                'courier_name'    => null,
+                'courier_name' => null,
                 'tracking_number' => null,
             ]);
         } elseif ($request->has('tracking_number')) {
@@ -361,8 +374,8 @@ class PageController extends Controller
 
         // 6. VALIDASI INPUT BERDASARKAN METODE PENGEMBALIAN & STATUS DENDA
         $rules = [
-            'return_method'   => ['required', 'string', 'in:kurir,ambil_toko'],
-            'courier_name'    => [
+            'return_method' => ['required', 'string', 'in:kurir,ambil_toko'],
+            'courier_name' => [
                 $request->input('return_method') === 'kurir' ? 'required' : 'nullable',
                 'string',
                 'in:JNE,J&T,SiCepat,Gojek,Grab',
@@ -373,26 +386,21 @@ class PageController extends Controller
                 'max:100',
                 'regex:/.*\S.*/',
             ],
-            'late_fee_proof'  => [
-                $hasLateFee ? 'required' : 'nullable',
-                'file',
-                'mimes:jpg,jpeg,png',
-                'max:2048',
-            ],
+            'late_fee_proof'  => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'],
             'notes'           => ['nullable', 'string', 'max:1000'],
         ];
 
         $messages = [
-            'return_method.required'   => 'Silakan pilih metode pengembalian barang.',
-            'return_method.in'         => 'Metode pengembalian yang dipilih tidak valid.',
-            'courier_name.required'    => 'Nama ekspedisi/kurir wajib dipilih jika dikirim via kurir.',
-            'courier_name.in'          => 'Pilihan kurir harus salah satu dari: JNE, J&T, SiCepat, Gojek, atau Grab.',
+            'return_method.required' => 'Silakan pilih metode pengembalian barang.',
+            'return_method.in' => 'Metode pengembalian yang dipilih tidak valid.',
+            'courier_name.required' => 'Nama ekspedisi/kurir wajib dipilih jika dikirim via kurir.',
+            'courier_name.in' => 'Pilihan kurir harus salah satu dari: JNE, J&T, SiCepat, Gojek, atau Grab.',
             'tracking_number.required' => 'Nomor resi retur wajib diisi jika menggunakan ekspedisi/kurir.',
-            'tracking_number.regex'    => 'Nomor resi tidak boleh hanya berisi spasi.',
-            'late_fee_proof.required'  => 'Karena pesanan melewati batas waktu sewa, Anda wajib mengunggah bukti pembayaran denda.',
-            'late_fee_proof.mimes'     => 'Bukti pembayaran denda harus berformat JPG atau PNG.',
-            'late_fee_proof.max'       => 'Ukuran foto bukti pembayaran denda maksimal 2 MB.',
-            'notes.max'                => 'Catatan tambahan maksimal 1000 karakter.',
+            'tracking_number.regex' => 'Nomor resi tidak boleh hanya berisi spasi.',
+            'late_fee_proof.required' => 'Karena pesanan melewati batas waktu sewa, Anda wajib mengunggah bukti pembayaran denda.',
+            'late_fee_proof.mimes' => 'Bukti pembayaran denda harus berformat JPG atau PNG.',
+            'late_fee_proof.max' => 'Ukuran foto bukti pembayaran denda maksimal 2 MB.',
+            'notes.max' => 'Catatan tambahan maksimal 1000 karakter.',
         ];
 
         $validated = $request->validate($rules, $messages);
@@ -411,7 +419,7 @@ class PageController extends Controller
 
         try {
             if ($request->hasFile('late_fee_proof')) {
-                $disk = config('filesystems.default', 'public');
+                $disk = \App\Services\StorageHelper::disk();
                 $proofPath = $request->file('late_fee_proof')->store('returns', $disk);
             }
 
@@ -430,11 +438,11 @@ class PageController extends Controller
                         'return_method'       => $validated['return_method'],
                         'courier_name'        => $isCourier ? ($validated['courier_name'] ?? null) : null,
                         'tracking_number'     => $isCourier ? ($validated['tracking_number'] ?? null) : null,
-                        'return_date'         => $lateFeeData['checked_at'],
-                        'late_hours'          => $lateFeeData['late_hours'],
+                        'return_date'         => $lateFeeData['checked_at'] ?? now(),
+                        'late_hours'          => $lateFeeData['late_hours'] ?? 0,
                         'return_status'       => 'diajukan',
-                        'calculated_late_fee' => $lateFeeData['total_late_fee'],
-                        'late_fee_amount'     => $lateFeeData['total_late_fee'],
+                        'calculated_late_fee' => $lateFeeData['total_late_fee'] ?? 0,
+                        'late_fee_amount'     => $lateFeeData['total_late_fee'] ?? 0,
                         'late_fee_status'     => $hasLateFee ? 'menunggu_pembayaran' : 'tidak_ada',
                         'late_fee_proof'      => $proofPath,
                         'notes'               => $validated['notes'] ?? null,
@@ -453,14 +461,14 @@ class PageController extends Controller
 
                 foreach ($adminUsers as $admin) {
                     DB::table('notifications')->insert([
-                        'client_id'  => $lockedOrder->client_id,
-                        'user_id'    => $admin->id,
-                        'title'      => 'Pengajuan Pengembalian Barang Baru',
-                        'message'    => 'Customer mengajukan pengembalian untuk pesanan #' . $lockedOrder->order_number
-                                        . ($isCourier ? ' via kurir ' . ($validated['courier_name'] ?? '') . ' (Resi: ' . ($validated['tracking_number'] ?? '-') . ')' : ' (Antar langsung ke toko)')
-                                        . ($hasLateFee ? ' disertai bukti bayar denda Rp ' . number_format($lateFeeData['total_late_fee'], 0, ',', '.') : '.'),
-                        'type'       => 'return',
-                        'is_read'    => false,
+                        'client_id' => $lockedOrder->client_id,
+                        'user_id' => $admin->id,
+                        'title' => 'Pengajuan Pengembalian Barang Baru',
+                        'message' => 'Customer mengajukan pengembalian untuk pesanan #'.$lockedOrder->order_number
+                                        .($isCourier ? ' via kurir '.($validated['courier_name'] ?? '').' (Resi: '.($validated['tracking_number'] ?? '-').')' : ' (Antar langsung ke toko)')
+                                        .($hasLateFee ? ' disertai bukti bayar denda Rp '.number_format($lateFeeData['total_late_fee'], 0, ',', '.') : '.'),
+                        'type' => 'return',
+                        'is_read' => false,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -468,36 +476,36 @@ class PageController extends Controller
 
                 // Catat rekam jejak audit pengajuan pengembalian
                 ActivityLog::create([
-                    'client_id'   => $lockedOrder->client_id,
-                    'user_id'     => Auth::id(),
-                    'action'      => 'return_requested',
-                    'module'      => 'returns',
+                    'client_id' => $lockedOrder->client_id,
+                    'user_id' => Auth::id(),
+                    'action' => 'return_requested',
+                    'module' => 'returns',
                     'description' => sprintf(
                         'Pelanggan mengajukan pengembalian pesanan #%s%s%s.',
                         $lockedOrder->order_number,
-                        $isCourier ? ' via ' . ($validated['courier_name'] ?? '') . ' (Resi: ' . ($validated['tracking_number'] ?? '-') . ')' : ' (antar langsung ke toko)',
-                        $hasLateFee ? ' dengan denda keterlambatan terhitung Rp ' . number_format($lateFeeData['total_late_fee'], 0, ',', '.') : ''
+                        $isCourier ? ' via '.($validated['courier_name'] ?? '').' (Resi: '.($validated['tracking_number'] ?? '-').')' : ' (antar langsung ke toko)',
+                        $hasLateFee ? ' dengan denda keterlambatan terhitung Rp '.number_format($lateFeeData['total_late_fee'], 0, ',', '.') : ''
                     ),
-                    'ip_address'  => $request->ip(),
-                    'user_agent'  => $request->userAgent(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
                 ]);
 
-                if (class_exists(\App\Events\ReturnRequested::class)) {
-                    event(new \App\Events\ReturnRequested($lockedOrder));
+                if (class_exists(ReturnRequested::class)) {
+                    event(new ReturnRequested($lockedOrder));
                 }
             });
 
             return redirect()->route('customer.orders.show', $order->id)
-                ->with('success', 'Pengajuan pengembalian barang pesanan #' . $order->order_number . ' berhasil dikirim ke toko!');
+                ->with('success', 'Pengajuan pengembalian barang pesanan #'.$order->order_number.' berhasil dikirim ke toko!');
 
         } catch (\Throwable $e) {
             if ($proofPath) {
-                \App\Services\StorageHelper::delete($proofPath);
+                StorageHelper::delete($proofPath);
             }
 
             return back()
                 ->withInput()
-                ->with('error', 'Gagal menyimpan pengajuan pengembalian: ' . $e->getMessage());
+                ->with('error', 'Gagal menyimpan pengajuan pengembalian: '.$e->getMessage());
         }
     }
 
@@ -514,10 +522,10 @@ class PageController extends Controller
                 ->first();
 
             if ($recentPayment) {
-                return back()->with('success', 'Bukti pembayaran pesanan #' . $order->order_number . ' sudah berhasil diterima dan sedang dalam antrean verifikasi toko.');
+                return back()->with('success', 'Bukti pembayaran pesanan #'.$order->order_number.' sudah berhasil diterima dan sedang dalam antrean verifikasi toko.');
             }
 
-            return back()->with('error', 'Unggah bukti pembayaran belum diizinkan. Pastikan verifikasi identitas telah disetujui.');
+            return back()->with('error', 'Unggah bukti pembayaran belum diizinkan. Silakan periksa status pesanan Anda.');
         }
 
         $request->validate([
@@ -530,16 +538,16 @@ class PageController extends Controller
             ],
         ]);
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $path = $request->file('payment_proof')->store('payments', $disk);
 
-        $paymentMethodId = $request->input('client_payment_method_id') 
+        $paymentMethodId = $request->input('client_payment_method_id')
             ?? $order->client?->clientPaymentMethods()->where('is_active', true)->value('id')
             ?? $order->client?->clientPaymentMethods()->first()?->id
-            ?? \App\Models\ClientPaymentMethod::where('is_active', true)->value('id')
-            ?? \App\Models\ClientPaymentMethod::first()?->id;
+            ?? ClientPaymentMethod::where('is_active', true)->value('id')
+            ?? ClientPaymentMethod::first()?->id;
 
-        \App\Models\Payment::create([
+        Payment::create([
             'order_id' => $order->id,
             'client_payment_method_id' => $paymentMethodId,
             'amount' => $order->total_amount,
@@ -552,11 +560,11 @@ class PageController extends Controller
             'status' => 'menunggu_verifikasi',
         ]);
 
-        if (class_exists(\App\Events\PaymentProofUploaded::class)) {
-            event(new \App\Events\PaymentProofUploaded($order));
+        if (class_exists(PaymentProofUploaded::class)) {
+            event(new PaymentProofUploaded($order));
         }
 
-        return back()->with('success', 'Bukti pembayaran pesanan #' . $order->order_number . ' berhasil diunggah. Toko akan segera memverifikasinya.');
+        return back()->with('success', 'Bukti pembayaran pesanan #'.$order->order_number.' berhasil diunggah. Toko akan segera memverifikasinya.');
     }
 
     public function reuploadIdentity(Request $request, Order $order)
@@ -574,7 +582,7 @@ class PageController extends Controller
             'face_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $docPath = $request->file('identity_document_image')->store('identity_guarantees', $disk);
         $facePath = $request->file('face_image')->store('identity_guarantees', $disk);
 
@@ -590,8 +598,8 @@ class PageController extends Controller
             'status' => 'menunggu_konfirmasi',
         ]);
 
-        if (class_exists(\App\Events\IdentityProofUploaded::class)) {
-            event(new \App\Events\IdentityProofUploaded($order));
+        if (class_exists(IdentityProofUploaded::class)) {
+            event(new IdentityProofUploaded($order));
         }
 
         return back()->with('success', 'Dokumen identitas berhasil diunggah ulang dan sedang ditinjau kembali oleh toko.');
@@ -607,7 +615,7 @@ class PageController extends Controller
             // Jika bukti denda sebenarnya baru saja diunggah (misal akibat double-click / resubmit)
             $recentLateFee = $order->returnModel?->late_fee_status === 'menunggu_verifikasi';
             if ($recentLateFee) {
-                return back()->with('success', 'Bukti pembayaran denda pesanan #' . $order->order_number . ' sudah berhasil diunggah dan sedang diverifikasi oleh toko.');
+                return back()->with('success', 'Bukti pembayaran denda pesanan #'.$order->order_number.' sudah berhasil diunggah dan sedang diverifikasi oleh toko.');
             }
 
             return back()->with('error', 'Pembayaran denda tidak dapat diproses untuk pesanan ini.');
@@ -617,43 +625,43 @@ class PageController extends Controller
             'late_fee_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
         ], [
             'late_fee_proof.required' => 'File bukti pembayaran denda wajib diunggah.',
-            'late_fee_proof.mimes'    => 'Format file bukti pembayaran harus jpeg, png, jpg, atau pdf.',
-            'late_fee_proof.max'      => 'Ukuran file bukti pembayaran denda maksimal 2MB.',
+            'late_fee_proof.mimes' => 'Format file bukti pembayaran harus jpeg, png, jpg, atau pdf.',
+            'late_fee_proof.max' => 'Ukuran file bukti pembayaran denda maksimal 2MB.',
         ]);
 
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $path = $request->file('late_fee_proof')->store('returns', $disk);
 
         $return = $order->returnModel;
         if (! $return) {
-            $return = \App\Models\ReturnModel::create([
-                'order_id'         => $order->id,
-                'return_method'    => $order->isPickup() ? 'ambil_toko' : 'kurir',
-                'return_date'      => now(),
-                'return_status'    => 'diterima',
-                'late_fee_amount'  => 0,
+            $return = ReturnModel::create([
+                'order_id' => $order->id,
+                'return_method' => $order->isPickup() ? 'ambil_toko' : 'kurir',
+                'return_date' => now(),
+                'return_status' => 'diterima',
+                'late_fee_amount' => 0,
             ]);
         }
 
         $return->update([
-            'late_fee_proof'  => $path,
+            'late_fee_proof' => $path,
             'late_fee_status' => 'menunggu_verifikasi',
         ]);
 
         ActivityLog::create([
-            'client_id'   => $order->client_id,
-            'user_id'     => Auth::id(),
-            'action'      => 'late_fee_payment_uploaded',
-            'module'      => 'returns',
+            'client_id' => $order->client_id,
+            'user_id' => Auth::id(),
+            'action' => 'late_fee_payment_uploaded',
+            'module' => 'returns',
             'description' => sprintf('Pelanggan mengunggah bukti pembayaran denda keterlambatan untuk pesanan #%s.', $order->order_number),
-            'ip_address'  => $request->ip(),
-            'user_agent'  => $request->userAgent(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
-        if (class_exists(\App\Events\LateFeePaymentUploaded::class)) {
-            event(new \App\Events\LateFeePaymentUploaded($order));
+        if (class_exists(LateFeePaymentUploaded::class)) {
+            event(new LateFeePaymentUploaded($order));
         }
 
-        return back()->with('success', 'Bukti pembayaran denda pesanan #' . $order->order_number . ' berhasil diunggah dan sedang diverifikasi oleh toko.');
+        return back()->with('success', 'Bukti pembayaran denda pesanan #'.$order->order_number.' berhasil diunggah dan sedang diverifikasi oleh toko.');
     }
 }

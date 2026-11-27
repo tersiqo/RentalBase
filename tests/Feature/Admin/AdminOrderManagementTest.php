@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Events\IdentityApproved;
 use App\Events\OrderConfirmed;
 use App\Events\PaymentVerified;
+use App\Jobs\CancelUnpaidOrderJob;
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\ClientPaymentMethod;
@@ -21,7 +22,6 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-use App\Jobs\CancelUnpaidOrderJob;
 use Tests\TestCase;
 
 /**
@@ -45,11 +45,17 @@ class AdminOrderManagementTest extends TestCase
     use RefreshDatabase;
 
     private Client $clientA;
+
     private Client $clientB;
+
     private User $adminA;
+
     private User $customer;
+
     private Category $category;
+
     private Product $product;
+
     private int $seq = 0;
 
     /**
@@ -65,44 +71,44 @@ class AdminOrderManagementTest extends TestCase
 
         $this->clientA = Client::create([
             'business_name' => 'Rental Kamera Studio A',
-            'subdomain'     => 'studio-a',
-            'status'        => 'aktif',
+            'subdomain' => 'studio-a',
+            'status' => 'aktif',
         ]);
 
         $this->clientB = Client::create([
             'business_name' => 'Outdoor Camp Rental B',
-            'subdomain'     => 'camp-b',
-            'status'        => 'aktif',
+            'subdomain' => 'camp-b',
+            'status' => 'aktif',
         ]);
 
         $this->adminA = User::factory()->create([
             'client_id' => $this->clientA->id,
-            'name'      => 'Admin Studio A',
-            'role'      => 'admin_rental',
-            'status'    => 'aktif',
+            'name' => 'Admin Studio A',
+            'role' => 'admin_rental',
+            'status' => 'aktif',
         ]);
 
         $this->customer = User::factory()->create([
             'client_id' => $this->clientA->id,
-            'name'      => 'Dimas Penyewa',
-            'role'      => 'customer',
-            'status'    => 'aktif',
+            'name' => 'Dimas Penyewa',
+            'role' => 'customer',
+            'status' => 'aktif',
         ]);
 
         $this->category = Category::create([
             'client_id' => $this->clientA->id,
-            'name'      => 'Kamera Cinema',
-            'slug'      => 'kamera-cinema',
+            'name' => 'Kamera Cinema',
+            'slug' => 'kamera-cinema',
         ]);
 
         $this->product = Product::create([
-            'client_id'            => $this->clientA->id,
-            'category_id'          => $this->category->id,
-            'name'                 => 'Blackmagic Pocket 4K',
-            'slug'                 => 'bmpcc-4k',
+            'client_id' => $this->clientA->id,
+            'category_id' => $this->category->id,
+            'name' => 'Blackmagic Pocket 4K',
+            'slug' => 'bmpcc-4k',
             'rental_price_per_day' => 300000,
-            'late_fee_per_hour'    => 30000,
-            'status'               => 'aktif',
+            'late_fee_per_hour' => 30000,
+            'status' => 'aktif',
         ]);
     }
 
@@ -115,24 +121,24 @@ class AdminOrderManagementTest extends TestCase
         $this->seq++;
 
         $order = Order::create(array_merge([
-            'client_id'         => $client->id,
-            'user_id'           => $this->customer->id,
-            'order_number'      => sprintf('ORD-MGR-%03d', $this->seq),
+            'client_id' => $client->id,
+            'user_id' => $this->customer->id,
+            'order_number' => sprintf('ORD-MGR-%03d', $this->seq),
             'rental_start_date' => now()->addDays(1)->setTime(10, 0),
-            'rental_end_date'   => now()->addDays(4)->setTime(10, 0),
-            'duration_days'     => 3,
-            'total_amount'      => 900000,
-            'shipping_address'  => 'Jl. Thamrin No. 88, Jakarta Pusat',
-            'shipping_method'   => 'kurir',
-            'status'            => 'menunggu_konfirmasi',
+            'rental_end_date' => now()->addDays(4)->setTime(10, 0),
+            'duration_days' => 3,
+            'total_amount' => 900000,
+            'shipping_address' => 'Jl. Thamrin No. 88, Jakarta Pusat',
+            'shipping_method' => 'kurir',
+            'status' => 'menunggu_konfirmasi',
         ], $overrides));
 
         OrderItem::create([
-            'order_id'      => $order->id,
-            'product_id'    => $this->product->id,
-            'quantity'      => 1,
+            'order_id' => $order->id,
+            'product_id' => $this->product->id,
+            'quantity' => 1,
             'price_per_day' => 300000,
-            'subtotal'      => 900000,
+            'subtotal' => 900000,
         ]);
 
         return $order;
@@ -163,7 +169,7 @@ class AdminOrderManagementTest extends TestCase
     public function test_it_ord_002_filter_status_pesanan_bekerja_akurat(): void
     {
         $orderKonfirmasi = $this->createOrder(['status' => 'menunggu_konfirmasi', 'order_number' => 'ORD-FLT-KONF']);
-        $orderSiapKirim  = $this->createOrder(['status' => 'siap_kirim', 'order_number' => 'ORD-FLT-KIRIM']);
+        $orderSiapKirim = $this->createOrder(['status' => 'siap_kirim', 'order_number' => 'ORD-FLT-KIRIM']);
 
         // Filter: hanya menunggu_konfirmasi
         $response = $this->actingAs($this->adminA)->get(route('admin.orders.index', ['status' => 'menunggu_konfirmasi']));
@@ -225,14 +231,14 @@ class AdminOrderManagementTest extends TestCase
 
         $order = $this->createOrder(['status' => 'menunggu_konfirmasi']);
         $ktp = IdentityGuarantee::create([
-            'order_id'                => $order->id,
-            'customer_id'             => $order->user_id,
-            'full_name'               => 'Dimas Penyewa',
-            'identity_number'         => '3171010101010001',
+            'order_id' => $order->id,
+            'customer_id' => $order->user_id,
+            'full_name' => 'Dimas Penyewa',
+            'identity_number' => '3171010101010001',
             'identity_document_image' => 'identity/ktp.jpg',
-            'face_image'              => 'identity/face.jpg',
-            'identity_address'        => 'Jl. Thamrin No. 88',
-            'status'                  => 'menunggu',
+            'face_image' => 'identity/face.jpg',
+            'identity_address' => 'Jl. Thamrin No. 88',
+            'status' => 'menunggu',
         ]);
 
         $response = $this->actingAs($this->adminA)->post(route('admin.orders.confirm', $order));
@@ -242,13 +248,13 @@ class AdminOrderManagementTest extends TestCase
 
         // Status pesanan beralih ke menunggu_pembayaran
         $this->assertDatabaseHas('orders', [
-            'id'     => $order->id,
+            'id' => $order->id,
             'status' => 'menunggu_pembayaran',
         ]);
 
         // Status KTP jaminan terverifikasi
         $this->assertDatabaseHas('identity_guarantees', [
-            'id'     => $ktp->id,
+            'id' => $ktp->id,
             'status' => 'diverifikasi',
         ]);
 
@@ -264,18 +270,18 @@ class AdminOrderManagementTest extends TestCase
 
         $order = $this->createOrder(['status' => 'menunggu_verifikasi']);
         $paymentMethod = ClientPaymentMethod::create([
-            'client_id'      => $this->clientA->id,
-            'bank_name'      => 'BCA',
+            'client_id' => $this->clientA->id,
+            'bank_name' => 'BCA',
             'account_number' => '1234567890',
             'account_holder' => 'Studio A',
-            'is_active'      => true,
+            'is_active' => true,
         ]);
         $payment = Payment::create([
-            'order_id'       => $order->id,
+            'order_id' => $order->id,
             'client_payment_method_id' => $paymentMethod->id,
-            'amount'         => 900000,
-            'payment_proof'  => 'payments/transfer.jpg',
-            'status'         => 'menunggu_konfirmasi',
+            'amount' => 900000,
+            'payment_proof' => 'payments/transfer.jpg',
+            'status' => 'menunggu_konfirmasi',
         ]);
 
         $response = $this->actingAs($this->adminA)->post(route('admin.orders.confirm', $order));
@@ -285,13 +291,13 @@ class AdminOrderManagementTest extends TestCase
 
         // Status pesanan siap kirim
         $this->assertDatabaseHas('orders', [
-            'id'     => $order->id,
+            'id' => $order->id,
             'status' => 'siap_kirim',
         ]);
 
         // Status pembayaran terverifikasi
         $this->assertDatabaseHas('payments', [
-            'id'     => $payment->id,
+            'id' => $payment->id,
             'status' => 'terverifikasi',
         ]);
 
@@ -313,8 +319,8 @@ class AdminOrderManagementTest extends TestCase
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('orders', [
-            'id'                  => $order->id,
-            'status'              => 'dibatalkan',
+            'id' => $order->id,
+            'status' => 'dibatalkan',
             'cancellation_reason' => 'Foto KTP tidak jelas / buram',
         ]);
     }
@@ -328,15 +334,15 @@ class AdminOrderManagementTest extends TestCase
         $orderItem = $order->orderItems()->first();
 
         $unit = EquipmentUnit::create([
-            'client_id'  => $this->clientA->id,
+            'client_id' => $this->clientA->id,
             'product_id' => $this->product->id,
-            'unit_code'  => 'BMPCC-UNIT-01',
-            'condition'  => 'baik',
-            'status'     => 'tersedia',
+            'unit_code' => 'BMPCC-UNIT-01',
+            'condition' => 'baik',
+            'status' => 'tersedia',
         ]);
 
         $response = $this->actingAs($this->adminA)->post(route('admin.orders.allocate', $order), [
-            'order_item_id'     => $orderItem->id,
+            'order_item_id' => $orderItem->id,
             'equipment_unit_id' => $unit->id,
         ]);
 
@@ -345,7 +351,7 @@ class AdminOrderManagementTest extends TestCase
 
         // Record order_item_units terbentuk
         $this->assertDatabaseHas('order_item_units', [
-            'order_item_id'     => $orderItem->id,
+            'order_item_id' => $orderItem->id,
             'equipment_unit_id' => $unit->id,
         ]);
     }
@@ -358,7 +364,7 @@ class AdminOrderManagementTest extends TestCase
         Storage::fake('public');
 
         $order = $this->createOrder([
-            'status'        => 'dibatalkan',
+            'status' => 'dibatalkan',
             'refund_status' => 'menunggu_refund',
         ]);
 
@@ -374,5 +380,57 @@ class AdminOrderManagementTest extends TestCase
         $order->refresh();
         $this->assertSame('refund_selesai', $order->refund_status);
         $this->assertNotNull($order->refund_proof);
+    }
+
+    /**
+     * Test kolom aksi tabel master pesanan merender Single Contextual Action Button.
+     */
+    public function test_admin_orders_index_renders_single_contextual_action_button(): void
+    {
+        $orderPending = $this->createOrder(['status' => 'menunggu_konfirmasi', 'order_number' => 'ORD-ACT-PENDING']);
+        $orderCanceled = $this->createOrder(['status' => 'batal', 'order_number' => 'ORD-ACT-CANCELED']);
+
+        $response = $this->actingAs($this->adminA)->get(route('admin.orders.index'));
+
+        $response->assertOk();
+        $response->assertSee('Periksa');
+        $response->assertSee('Detail');
+        $response->assertDontSee('Review KTP');
+        $response->assertDontSee('Review Bayar');
+    }
+
+    /**
+     * Test tampilan show admin merender tombol dan modal Minta Unggah Ulang KTP serta tombol Tolak Permanen.
+     */
+    public function test_admin_orders_show_renders_request_reupload_button_and_modal(): void
+    {
+        $order = $this->createOrder([
+            'status' => 'menunggu_konfirmasi',
+            'order_number' => 'ORD-REUPLOAD-TEST',
+        ]);
+
+        IdentityGuarantee::create([
+            'order_id' => $order->id,
+            'customer_id' => $this->customer->id,
+            'full_name' => 'Budi Santoso',
+            'identity_number' => '3578012345678901',
+            'identity_address' => 'Jl. Mawar No 1',
+            'identity_document_image' => 'ktp_buram.jpg',
+            'face_image' => 'selfie_buram.jpg',
+            'status' => 'menunggu',
+        ]);
+
+        $response = $this->actingAs($this->adminA)->get(route('admin.orders.show', $order));
+
+        $response->assertOk();
+        $response->assertSee('Minta Unggah Ulang KTP (Foto Buram)');
+        $response->assertSee('openReuploadModal = true', false);
+        $response->assertSee('value="request_reupload"', false);
+        $response->assertSee('Foto KTP buram atau tidak terbaca jelas');
+        $response->assertSee('Foto selfie memegang KTP terpotong / wajah tertutup');
+        $response->assertSee('NIK / Nama tidak sesuai dengan data formulir sewa');
+        $response->assertSee('Pesanan TIDAK akan dibatalkan.');
+        $response->assertSee('Kirim Permintaan ke Customer');
+        $response->assertSee('Tolak &amp; Batalkan Pesanan Permanen', false);
     }
 }

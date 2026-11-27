@@ -113,13 +113,13 @@ class SubscriptionController extends Controller
         }
 
         // Upload bukti pembayaran
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $proofPath = $request->file('payment_proof')->store('subscriptions/proofs', $disk);
 
         $newSubscription = Subscription::create([
             'client_id'      => $client->id,
             'plan_name'      => $packageConfig['name'] ?? ucfirst($planKey),
-            'max_products'   => $packageConfig['limits']['products'] ?? 10,
+            'max_products'   => $packageConfig['limits']['products'] ?? ($planKey === 'professional' ? 9999 : 10),
             'max_users'      => $packageConfig['limits']['admins'] ?? 1,
             'price'          => $price,
             'billing_cycle'  => 'monthly',
@@ -197,13 +197,13 @@ class SubscriptionController extends Controller
         }
 
         // Upload bukti pembayaran
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         $proofPath = $request->file('payment_proof')->store('subscriptions/proofs', $disk);
 
         $newSubscription = Subscription::create([
             'client_id'      => $client->id,
             'plan_name'      => $packageConfig['name'] ?? ucfirst($targetPlanKey),
-            'max_products'   => $packageConfig['limits']['products'] ?? null,
+            'max_products'   => $packageConfig['limits']['products'] ?? ($targetPlanKey === 'professional' ? 9999 : 50),
             'max_users'      => $packageConfig['limits']['admins'] ?? 3,
             'price'          => $price,
             'billing_cycle'  => 'monthly',

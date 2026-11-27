@@ -58,6 +58,20 @@ class Product extends Model
         return $this->main_image ? [$this->main_image] : [];
     }
 
+    public function getImagesAttribute($value): array
+    {
+        if (empty($value)) {
+            return [];
+        }
+
+        $decoded = is_string($value) ? json_decode($value, true) : $value;
+        if (is_string($decoded)) {
+            $decoded = json_decode($decoded, true);
+        }
+
+        return is_array($decoded) ? array_values(array_filter($decoded)) : [];
+    }
+
     public function getCoverImageUrlAttribute(): string
     {
         if ($this->main_image) {

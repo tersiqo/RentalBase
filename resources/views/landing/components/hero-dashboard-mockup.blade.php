@@ -31,12 +31,12 @@
     </div>
 
     <!-- ── 2. Layout Dashboard Desktop (Kiri: Sidebar, Kanan: Main Content) ── -->
-    <div class="flex flex-row h-[395px] overflow-hidden">
+    <div class="flex flex-row min-h-0 h-auto md:h-[395px] overflow-hidden">
 
         <!-- ===================================================================== -->
-        <!-- 3. SIDEBAR (Kiri - Lebar Proporsional w-36, Rapi & Lengkap)            -->
+        <!-- 3. SIDEBAR (Kiri - Tersembunyi di Mobile, Tampil di Desktop w-36)     -->
         <!-- ===================================================================== -->
-        <aside class="w-36 shrink-0 bg-white border-r border-gray-100 flex flex-col p-2 overflow-hidden justify-between">
+        <aside class="hidden md:flex w-36 shrink-0 bg-white border-r border-gray-100 flex-col p-2 overflow-hidden justify-between">
             <div class="space-y-1.5">
                 <!-- Header Sidebar: Logo & Nama Usaha -->
                 <div class="flex items-center gap-1.5 pb-1.5 border-b border-gray-100">
@@ -145,7 +145,7 @@
         <!-- ===================================================================== -->
         <!-- 4. MAIN CONTENT (Kanan - Tampilan Rapi, Proporsional & Lengkap)       -->
         <!-- ===================================================================== -->
-        <main class="flex-1 bg-slate-50 p-2.5 flex flex-col justify-between overflow-hidden min-w-0">
+        <main class="flex-1 bg-slate-50 p-2.5 sm:p-3 flex flex-col gap-2.5 sm:gap-2 justify-between min-w-0">
 
             <!-- ── Topbar: Breadcrumb, Tanggal, Badge Paket, Lonceng, Avatar ── -->
             <header class="flex items-center justify-between bg-white px-2.5 py-1 rounded-lg border border-gray-100 shadow-xs shrink-0">
@@ -156,7 +156,7 @@
                     </svg>
                     <span>Baby Rental Studio</span>
                     <span class="text-gray-300">/</span>
-                    <span class="text-gray-500 font-medium">Dashboard Operasional</span>
+                    <span class="text-gray-500 font-medium hidden sm:inline">Dashboard Operasional</span>
                 </div>
 
                 <!-- Kanan: Tanggal, Badge Paket, Lonceng, Avatar -->
@@ -185,22 +185,22 @@
             </header>
 
             <!-- ── Hero Title & Action Header ── -->
-            <div class="flex items-center justify-between gap-2 shrink-0">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
                 <div class="min-w-0">
                     <span class="text-[7.5px] font-bold text-orange-500 tracking-wider uppercase flex items-center gap-1">
                         <span class="w-1 h-1 rounded-full bg-orange-500"></span>
                         PUSAT KENDALI RENTAL
                     </span>
-                    <h1 class="text-xs sm:text-[13px] font-bold text-gray-900 tracking-tight leading-tight whitespace-nowrap">
+                    <h1 class="text-xs sm:text-[13px] font-bold text-gray-900 tracking-tight leading-tight">
                         Selamat Datang kembali, Budi!
                     </h1>
-                    <p class="text-[8px] text-gray-500 leading-none truncate mt-0.5">
+                    <p class="text-[8px] text-gray-500 leading-normal sm:leading-none mt-0.5">
                         Pantau pesanan masuk, jadwal pengiriman, dan verifikasi jaminan secara real-time.
                     </p>
                 </div>
 
                 <!-- Sisi Kanan: Search Input & Tombol Oranye Solid -->
-                <div class="flex items-center gap-1.5 shrink-0">
+                <div class="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
                     <div class="relative hidden sm:block">
                         <svg class="size-2.5 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -220,9 +220,9 @@
                 </div>
             </div>
 
-            <!-- ── 4 Metric Cards (grid grid-cols-4 gap-2) ── -->
-            <div class="grid grid-cols-4 gap-2 shrink-0">
-                <!-- Card 1: ORDER BARU 0 -->
+            <!-- ── 4 Metric Cards (grid grid-cols-2 md:grid-cols-4 gap-2) ── -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 shrink-0">
+                <!-- Card 1: ORDER BARU 4 -->
                 <div class="bg-white rounded-lg p-2 shadow-xs border border-gray-100 flex flex-col justify-between">
                     <div class="flex items-center justify-between gap-1">
                         <span class="text-[7.5px] font-bold text-gray-400 tracking-wider uppercase truncate">ORDER BARU</span>
@@ -233,12 +233,12 @@
                         </div>
                     </div>
                     <div class="mt-1">
-                        <div class="text-sm font-extrabold text-gray-900 leading-none">0</div>
+                        <div class="text-sm font-extrabold text-gray-900 leading-none">4</div>
                         <p class="text-[7.5px] font-semibold text-emerald-600 mt-1 whitespace-nowrap leading-none">+3 pengajuan sewa</p>
                     </div>
                 </div>
 
-                <!-- Card 2: VERIFIKASI 0 -->
+                <!-- Card 2: VERIFIKASI 2 -->
                 <div class="bg-white rounded-lg p-2 shadow-xs border border-gray-100 flex flex-col justify-between">
                     <div class="flex items-center justify-between gap-1">
                         <span class="text-[7.5px] font-bold text-gray-400 tracking-wider uppercase truncate">VERIFIKASI</span>
@@ -249,12 +249,12 @@
                         </div>
                     </div>
                     <div class="mt-1">
-                        <div class="text-sm font-extrabold text-gray-900 leading-none">0</div>
+                        <div class="text-sm font-extrabold text-gray-900 leading-none">2</div>
                         <p class="text-[7.5px] font-semibold text-amber-600 mt-1 whitespace-nowrap leading-none">Cek Pembayaran</p>
                     </div>
                 </div>
 
-                <!-- Card 3: DISEWA 2 -->
+                <!-- Card 3: DISEWA 12 -->
                 <div class="bg-white rounded-lg p-2 shadow-xs border border-gray-100 flex flex-col justify-between">
                     <div class="flex items-center justify-between gap-1">
                         <span class="text-[7.5px] font-bold text-gray-400 tracking-wider uppercase truncate">DISEWA</span>
@@ -265,12 +265,12 @@
                         </div>
                     </div>
                     <div class="mt-1">
-                        <div class="text-sm font-extrabold text-gray-900 leading-none">2</div>
+                        <div class="text-sm font-extrabold text-gray-900 leading-none">12</div>
                         <p class="text-[7.5px] font-semibold text-emerald-600 mt-1 whitespace-nowrap leading-none">Unit aktif disewa</p>
                     </div>
                 </div>
 
-                <!-- Card 4: PENDAPATAN Rp 0 -->
+                <!-- Card 4: PENDAPATAN Rp 18.450.000 -->
                 <div class="bg-white rounded-lg p-2 shadow-xs border border-gray-100 flex flex-col justify-between">
                     <div class="flex items-center justify-between gap-1">
                         <span class="text-[7.5px] font-bold text-gray-400 tracking-wider uppercase truncate">PENDAPATAN</span>
@@ -281,14 +281,14 @@
                         </div>
                     </div>
                     <div class="mt-1">
-                        <div class="text-sm font-extrabold text-gray-900 leading-none">Rp 0</div>
+                        <div class="text-xs sm:text-[13px] font-extrabold text-gray-900 leading-none tracking-tight truncate" title="Rp 18.450.000">Rp 18.450.000</div>
                         <p class="text-[7.5px] font-semibold text-purple-600 mt-1 whitespace-nowrap leading-none">Bulan Nov 2026</p>
                     </div>
                 </div>
             </div>
 
             <!-- ── Quota Banner (Sisa Kuota Limit Paket) ── -->
-            <div class="bg-white rounded-lg p-2 shadow-xs border border-gray-100 flex items-center justify-between gap-2 shrink-0">
+            <div class="bg-white rounded-lg p-2 shadow-xs border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
                 <div class="flex items-center gap-2 min-w-0">
                     <div class="w-6 h-6 rounded-md bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
                         <svg class="size-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -296,7 +296,7 @@
                         </svg>
                     </div>
                     <div class="min-w-0">
-                        <div class="flex items-center gap-1.5">
+                        <div class="flex items-center gap-1.5 flex-wrap">
                             <h3 class="font-bold text-[9.5px] text-gray-800 leading-none">Sisa Kuota Limit Paket</h3>
                             <span class="text-[7.5px] font-semibold text-orange-600 bg-orange-50 px-1 py-0.2 rounded border border-orange-200">Pro Enterprise</span>
                         </div>
@@ -309,7 +309,7 @@
                 </div>
 
                 <!-- Tombol Kelola Unit & Upgrade Paket -->
-                <div class="flex items-center gap-1.5 shrink-0">
+                <div class="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                     <span class="text-xs font-black text-orange-500">6%</span>
                     <button type="button" class="px-2 py-0.5 rounded border border-gray-200 text-gray-700 text-[8px] font-medium hover:bg-gray-50 shadow-xs">
                         Kelola Unit
@@ -331,8 +331,8 @@
                     </div>
                 </div>
 
-                <div class="w-full">
-                    <table class="w-full text-left border-collapse">
+                <div class="w-full overflow-x-auto scrollbar-thin">
+                    <table class="w-full min-w-[380px] sm:min-w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-gray-50/70 border-b border-gray-100 text-[7.5px] font-bold text-gray-400 uppercase tracking-wider">
                                 <th class="py-0.5 px-1.5">ID Pesanan</th>
@@ -346,25 +346,25 @@
                         <tbody class="divide-y divide-gray-100 text-[8.5px]">
                             <!-- Baris 1: #ORD-001 / iqo gibran / Rp 180.000 / Siap Kirim (Biru) -->
                             <tr class="hover:bg-gray-50/50">
-                                <td class="py-1 px-1.5 font-mono font-bold text-orange-600 text-[8px]">
+                                <td class="py-1 px-1.5 font-mono font-bold text-orange-600 text-[8px] whitespace-nowrap">
                                     #ORD-001
                                 </td>
-                                <td class="py-1 px-1.5">
+                                <td class="py-1 px-1.5 whitespace-nowrap">
                                     <div class="font-semibold text-gray-800 leading-tight">iqo gibran</div>
                                     <div class="text-[7px] text-gray-400">Cocolatte Pockit Gen 7</div>
                                 </td>
-                                <td class="py-1 px-1.5 text-gray-600 text-[7.5px]">
+                                <td class="py-1 px-1.5 text-gray-600 text-[7.5px] whitespace-nowrap">
                                     21 - 23 Oct
                                 </td>
-                                <td class="py-1 px-1.5 font-bold text-gray-800 text-[8px]">
+                                <td class="py-1 px-1.5 font-bold text-gray-800 text-[8px] whitespace-nowrap">
                                     Rp 180.000
                                 </td>
-                                <td class="py-1 px-1.5 text-center">
-                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded-full text-[7.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                <td class="py-1 px-1.5 text-center whitespace-nowrap">
+                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded-full text-[7.5px] font-semibold bg-blue-50 text-blue-700">
                                         ● Siap Kirim
                                     </span>
                                 </td>
-                                <td class="py-1 px-1.5 text-right">
+                                <td class="py-1 px-1.5 text-right whitespace-nowrap">
                                     <button type="button" class="px-1.5 py-0.2 rounded border border-gray-200 text-gray-600 text-[7.5px] font-medium hover:bg-gray-50">
                                         Kelola
                                     </button>
@@ -373,25 +373,25 @@
 
                             <!-- Baris 2: #ORD-002 / Sarah Amalia / Rp 300.000 / Batal (Merah) -->
                             <tr class="hover:bg-gray-50/50">
-                                <td class="py-1 px-1.5 font-mono font-bold text-orange-600 text-[8px]">
+                                <td class="py-1 px-1.5 font-mono font-bold text-orange-600 text-[8px] whitespace-nowrap">
                                     #ORD-002
                                 </td>
-                                <td class="py-1 px-1.5">
+                                <td class="py-1 px-1.5 whitespace-nowrap">
                                     <div class="font-semibold text-gray-800 leading-tight">Sarah Amalia</div>
                                     <div class="text-[7px] text-gray-400">Babyzen YOYO2 Frame</div>
                                 </td>
-                                <td class="py-1 px-1.5 text-gray-600 text-[7.5px]">
+                                <td class="py-1 px-1.5 text-gray-600 text-[7.5px] whitespace-nowrap">
                                     22 - 24 Oct
                                 </td>
-                                <td class="py-1 px-1.5 font-bold text-gray-800 text-[8px]">
+                                <td class="py-1 px-1.5 font-bold text-gray-800 text-[8px] whitespace-nowrap">
                                     Rp 300.000
                                 </td>
-                                <td class="py-1 px-1.5 text-center">
-                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded-full text-[7.5px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                <td class="py-1 px-1.5 text-center whitespace-nowrap">
+                                    <span class="inline-flex items-center px-1.5 py-0.2 rounded-full text-[7.5px] font-semibold bg-rose-50 text-rose-700">
                                         ● Batal
                                     </span>
                                 </td>
-                                <td class="py-1 px-1.5 text-right">
+                                <td class="py-1 px-1.5 text-right whitespace-nowrap">
                                     <button type="button" class="px-1.5 py-0.2 rounded border border-gray-200 text-gray-600 text-[7.5px] font-medium hover:bg-gray-50">
                                         Kelola
                                     </button>

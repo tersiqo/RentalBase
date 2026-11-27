@@ -31,6 +31,7 @@ class TenantProfileController extends Controller
                 'name'        => $client->business_name ?? 'RentalBase Store',
                 'subdomain'   => $client->subdomain,
                 'description' => $client->description,
+                'logo_path'   => $client->logo,
                 'theme_color' => $client->theme_color ?? '#F97316',
             ]
         );

@@ -96,7 +96,7 @@ class DamageCaseController extends Controller
             $query->where('payment_status', $selectedPaymentStatus);
         }
 
-        $damageCases = $query->latest()->get();
+        $damageCases = $query->latest()->paginate(15)->withQueryString();
 
         return view('admin.damage-cases.index', compact(
             'damageCases',
@@ -233,7 +233,7 @@ class DamageCaseController extends Controller
 
         // Unggah foto-foto bukti jika ada
         $photoPaths = [];
-        $disk = config('filesystems.default', 'public');
+        $disk = \App\Services\StorageHelper::disk();
         if ($request->hasFile('photos')) {
             foreach ($request->file('photos') as $photoFile) {
                 $path = $photoFile->store('damages', $disk);
@@ -331,7 +331,7 @@ class DamageCaseController extends Controller
 
         $request->validate([
             'notes' => 'required|string|min:5|max:2000',
-            'case_status' => 'nullable|string|in:terbuka,menunggu_respons,dalam_tinjauan,negosiasi,menunggu_pembayaran',
+            'case_status' => 'nullable|string|in:terbuka,menunggu_respons,dalam_tinjauan,negosiasi,menunggu_pembayaran,kompensasi_dibayar',
         ], [
             'notes.required' => 'Catatan tanggapan tidak boleh kosong.',
             'notes.min' => 'Catatan tanggapan minimal 5 karakter.',
@@ -348,12 +348,21 @@ class DamageCaseController extends Controller
         $existingNotes = $damageCase->resolution_notes ? trim($damageCase->resolution_notes) . "\n\n" : '';
         $updatedNotes = $existingNotes . $newNote;
 
-        $targetStatus = $request->input('case_status', 'menunggu_respons');
+        $targetStatus = $request->filled('case_status')
+            ? $request->input('case_status')
+            : $damageCase->case_status;
 
         $damageCase->update([
             'resolution_notes' => $updatedNotes,
             'case_status' => $targetStatus,
         ]);
+
+        // Siarkan pembaruan pesan secara real-time via Pusher WebSocket ke customer
+        try {
+            event(new \App\Events\DamageCaseResponded($damageCase->fresh(['damageReport.order']), 'admin', trim($request->notes)));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[Realtime] Gagal broadcast DamageCaseResponded (Admin): ' . $e->getMessage());
+        }
 
         return back()->with('success', 'Tanggapan pihak toko berhasil dicatat dan status kasus diperbarui.');
     }
@@ -414,6 +423,12 @@ class DamageCaseController extends Controller
             'resolution_notes' => $updatedNotes,
         ]);
 
+        try {
+            event(new \App\Events\DamageCaseResponded($damageCase->fresh(['damageReport.order']), 'admin', "Pembayaran kompensasi sebesar {$damageCase->formatted_total} telah diverifikasi dan ditandai lunas oleh toko."));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[Realtime] Gagal broadcast DamageCaseResponded (Admin Verify): ' . $e->getMessage());
+        }
+
         return back()->with('success', "Pembayaran kompensasi sebesar {$damageCase->formatted_total} berhasil diverifikasi dan ditandai lunas.");
     }
 
@@ -471,13 +486,26 @@ class DamageCaseController extends Controller
                     ->orWhere('payment_status', 'belum_dibayar');
               })->exists();
 
-            $isReturnReceived = $return && in_array($return->return_status, ['diterima', 'selesai']);
+            $isReturnValid = ! $return || in_array($return->return_status, ['diajukan', 'diterima', 'selesai']);
             $isLateFeeSettled = ! $return || in_array($return->late_fee_status, ['lunas', 'tidak_ada']);
 
-            if (! $hasOtherPendingDamage && $isReturnReceived && $isLateFeeSettled) {
+            if (! $hasOtherPendingDamage && $isReturnValid && $isLateFeeSettled) {
                 $order->update(['status' => 'selesai']);
                 if ($return && $return->return_status !== 'selesai') {
-                    $return->update(['return_status' => 'selesai']);
+                    $return->update([
+                        'return_status' => 'selesai',
+                        'return_date'   => $return->return_date ?: now(),
+                    ]);
+                }
+
+                // Kembalikan status unit fisik non-rusak pada pesanan ini ke 'tersedia'
+                foreach ($order->orderItems as $item) {
+                    foreach ($item->orderItemUnits as $oiu) {
+                        $otherUnit = $oiu->equipmentUnit;
+                        if ($otherUnit && ! in_array($otherUnit->status, ['rusak', 'damaged', 'maintenance'])) {
+                            $otherUnit->update(['status' => 'tersedia']);
+                        }
+                    }
                 }
 
                 ActivityLog::create([

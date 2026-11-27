@@ -11,6 +11,7 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Shipment;
+use App\Models\TenantProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -37,27 +38,27 @@ class CustomerOrderDetailTest extends TestCase
             'role' => 'customer',
             'client_id' => $client->id,
             'name' => 'Budi Santoso',
-            'email' => 'budi_' . uniqid() . '@example.com',
+            'email' => 'budi_'.uniqid().'@example.com',
         ]);
 
         $otherCustomer = User::factory()->create([
             'role' => 'customer',
             'client_id' => $client->id,
             'name' => 'Siti Rahma',
-            'email' => 'siti_' . uniqid() . '@example.com',
+            'email' => 'siti_'.uniqid().'@example.com',
         ]);
 
         $category = Category::create([
             'client_id' => $client->id,
             'name' => 'Kamera & Lensa',
-            'slug' => 'kamera-lensa-' . uniqid(),
+            'slug' => 'kamera-lensa-'.uniqid(),
         ]);
 
         $product = Product::create([
             'client_id' => $client->id,
             'category_id' => $category->id,
             'name' => 'Sony Alpha A7 IV',
-            'slug' => 'sony-alpha-a7-iv-' . uniqid(),
+            'slug' => 'sony-alpha-a7-iv-'.uniqid(),
             'rental_price_per_day' => 250000,
             'status' => 'aktif',
         ]);
@@ -233,5 +234,79 @@ class CustomerOrderDetailTest extends TestCase
         $response->assertSee('Status Pembatalan');
         $response->assertSee('Unit rusak saat inspeksi sebelum dikirim.');
         $response->assertSee('transfer_refund_999.jpg');
+    }
+
+    public function test_order_detail_renders_store_location_maps_and_whatsapp_buttons_for_pickup_orders(): void
+    {
+        $fixture = $this->createFullOrderDetailFixture();
+
+        TenantProfile::create([
+            'client_id' => $fixture['client']->id,
+            'name' => 'Rental Maju Jaya Outlet',
+            'subdomain' => $fixture['client']->subdomain,
+            'address' => 'Jl. Borobudur No. 100, Mojolangu, Lowokwaru',
+            'city' => 'Kota Malang',
+            'whatsapp' => '081233445566',
+        ]);
+
+        $pickupOrder = Order::create([
+            'client_id' => $fixture['client']->id,
+            'user_id' => $fixture['customer']->id,
+            'order_number' => 'ORD-PICKUP-12345',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(2),
+            'duration_days' => 1,
+            'total_amount' => 250000,
+            'shipping_method' => Order::SHIPPING_AMBIL_TOKO,
+            'shipping_address' => 'Ambil langsung di toko rental',
+            'status' => 'menunggu_pembayaran',
+        ]);
+
+        $response = $this->actingAs($fixture['customer'])
+            ->withSession(['active_client_id' => $fixture['client']->id, 'active_client_subdomain' => $fixture['client']->subdomain])
+            ->get("/my-orders/{$pickupOrder->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Lokasi Pengambilan Sendiri di Toko');
+        $response->assertSee('Jl. Borobudur No. 100, Mojolangu, Lowokwaru');
+        $response->assertSee('Buka di Google Maps');
+        $response->assertSee('https://www.google.com/maps/search/?api=1', false);
+        $response->assertSee('Chat WhatsApp Toko');
+        $response->assertSee('https://wa.me/6281233445566', false);
+    }
+
+    public function test_order_detail_prioritizes_custom_maps_url_if_available(): void
+    {
+        $fixture = $this->createFullOrderDetailFixture();
+
+        TenantProfile::create([
+            'client_id' => $fixture['client']->id,
+            'name' => 'Rental Maju Jaya Outlet',
+            'subdomain' => $fixture['client']->subdomain,
+            'address' => 'Jl. Borobudur No. 100, Mojolangu, Lowokwaru',
+            'city' => 'Kota Malang',
+            'whatsapp' => '081233445566',
+            'maps_url' => 'https://maps.app.goo.gl/custompinpoint456',
+        ]);
+
+        $pickupOrder = Order::create([
+            'client_id' => $fixture['client']->id,
+            'user_id' => $fixture['customer']->id,
+            'order_number' => 'ORD-PICKUP-56789',
+            'rental_start_date' => now()->addDay(),
+            'rental_end_date' => now()->addDays(2),
+            'duration_days' => 1,
+            'total_amount' => 250000,
+            'shipping_method' => Order::SHIPPING_AMBIL_TOKO,
+            'shipping_address' => 'Ambil langsung di toko rental',
+            'status' => 'menunggu_pembayaran',
+        ]);
+
+        $response = $this->actingAs($fixture['customer'])
+            ->withSession(['active_client_id' => $fixture['client']->id, 'active_client_subdomain' => $fixture['client']->subdomain])
+            ->get("/my-orders/{$pickupOrder->id}");
+
+        $response->assertStatus(200);
+        $response->assertSee('https://maps.app.goo.gl/custompinpoint456', false);
     }
 }

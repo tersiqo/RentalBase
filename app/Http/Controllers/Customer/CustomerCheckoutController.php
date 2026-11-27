@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\Customer;
 
+use App\Events\NewOrderPlaced;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\IdentityGuarantee;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -20,12 +25,13 @@ class CustomerCheckoutController extends Controller
 {
     public function create(Request $request, string $subdomain)
     {
-        if (auth()->check() && auth()->user()->role !== 'customer') {
+        if (Auth::check() && Auth::user()?->role !== 'customer') {
             return redirect()->route('customer.home', $subdomain)
                 ->with('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
         }
 
         $client = $this->resolveClient($subdomain);
+        $client->loadMissing(['tenantProfile', 'primaryAdmin']);
 
         $cart = session()->get('cart', []);
 
@@ -36,8 +42,10 @@ class CustomerCheckoutController extends Controller
             }
             if (isset($item['product_id'])) {
                 $prod = Product::find($item['product_id']);
+
                 return $prod && (int) $prod->client_id === (int) $client->id;
             }
+
             return false;
         })->all();
 
@@ -69,7 +77,8 @@ class CustomerCheckoutController extends Controller
 
         session()->put('checkout_items', $selectedHashes);
 
-        $user = auth()->user();
+        /** @var User|null $user */
+        $user = Auth::user();
         $profileAddress = $user?->address ? trim($user->address) : null;
 
         $lastOrder = null;
@@ -104,7 +113,7 @@ class CustomerCheckoutController extends Controller
 
     public function direct(string $subdomain, Product $product)
     {
-        if (auth()->check() && auth()->user()->role !== 'customer') {
+        if (Auth::check() && Auth::user()?->role !== 'customer') {
             return redirect()->route('customer.home', $subdomain)
                 ->with('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
         }
@@ -142,6 +151,8 @@ class CustomerCheckoutController extends Controller
 
         $cart = session()->get('cart', []);
 
+        $durationDays = max(1, (int) $start->diffInDays($end));
+
         $cart[$hash] = [
             'hash' => $hash,
             'client_id' => $client->id,
@@ -152,9 +163,9 @@ class CustomerCheckoutController extends Controller
             'main_image' => $product->main_image,
             'start_date' => $start->format('Y-m-d'),
             'end_date' => $end->format('Y-m-d'),
-            'duration_days' => 2,
+            'duration_days' => $durationDays,
             'quantity' => 1,
-            'subtotal' => $product->rental_price_per_day * 2,
+            'subtotal' => $product->rental_price_per_day * $durationDays,
         ];
 
         session()->put('cart', $cart);
@@ -165,19 +176,48 @@ class CustomerCheckoutController extends Controller
 
     public function store(Request $request, string $subdomain)
     {
-        if (auth()->check() && auth()->user()->role !== 'customer') {
+        if (Auth::check() && Auth::user()?->role !== 'customer') {
             return redirect()->route('customer.home', $subdomain)
                 ->with('error', 'Akun Pengelola (Admin/Owner) tidak dapat melakukan transaksi sewa. Silakan keluar dan gunakan Akun Customer untuk menyewa alat.');
         }
 
         $client = $this->resolveClient($subdomain);
 
+        $useExistingIdentity = $request->boolean('use_existing_identity');
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        $lastIdentity = $user
+            ? IdentityGuarantee::where('customer_id', $user->id)
+                ->whereNotNull('identity_document_image')
+                ->whereNotNull('face_image')
+                ->latest('id')
+                ->first()
+            : null;
+
+        $docFile = $lastIdentity?->identity_document_image;
+        $faceFile = $lastIdentity?->face_image;
+
+        $canReuseIdentity = $useExistingIdentity && $lastIdentity && ! empty($docFile) && ! empty($faceFile);
+
+        if ($canReuseIdentity) {
+            if (! $request->filled('full_name') && ! empty($lastIdentity->full_name)) {
+                $request->merge(['full_name' => $lastIdentity->full_name]);
+            }
+            if (! $request->filled('identity_number') && ! empty($lastIdentity->identity_number)) {
+                $request->merge(['identity_number' => $lastIdentity->identity_number]);
+            }
+            if (! $request->filled('identity_address') && ! empty($lastIdentity->identity_address)) {
+                $request->merge(['identity_address' => $lastIdentity->identity_address]);
+            }
+        }
+
         $request->validate([
             'selected_hashes' => 'nullable|array',
             'items' => 'nullable|array',
             'items.*.quantity' => 'nullable|integer|min:1',
             'start_date' => 'required|date|after_or_equal:today',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'end_date' => 'required|date|after:start_date',
             'rental_time' => ['nullable', 'date_format:H:i'],
             'shipping_address' => 'required|string|min:10',
             'shipping_method' => ['required', Rule::in([Order::SHIPPING_KURIR, Order::SHIPPING_AMBIL_TOKO])],
@@ -186,16 +226,17 @@ class CustomerCheckoutController extends Controller
             'full_name' => 'required|string|max:255',
             'identity_number' => 'required|string|min:8|max:30',
             'identity_address' => 'required|string|min:10',
-            'identity_document_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'face_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'identity_document_image' => $canReuseIdentity ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'face_image' => $canReuseIdentity ? 'nullable|image|mimes:jpeg,png,jpg|max:2048' : 'required|image|mimes:jpeg,png,jpg|max:2048',
             'terms' => 'required|accepted',
+            'pdp_agreement' => $request->has('pdp_agreement') ? 'required|accepted' : 'nullable',
         ], [
             'selected_hashes.required' => 'Item yang dipilih tidak ditemukan. Silakan ulangi checkout.',
             'items.*.quantity.required' => 'Jumlah unit sewa wajib diisi.',
             'items.*.quantity.min' => 'Jumlah unit sewa minimal 1.',
             'start_date.required' => 'Tanggal mulai sewa wajib diisi.',
             'end_date.required' => 'Tanggal selesai sewa wajib diisi.',
-            'end_date.after_or_equal' => 'Tanggal selesai harus setelah tanggal mulai.',
+            'end_date.after' => 'Tanggal selesai sewa minimal 1 hari (H+1) setelah tanggal mulai sewa.',
             'rental_time.date_format' => 'Format jam sewa harus berupa jam:menit (contoh 14:00).',
             'shipping_address.required' => 'Alamat pengiriman / rincian lokasi wajib diisi.',
             'shipping_address.min' => 'Alamat pengiriman terlalu singkat.',
@@ -211,12 +252,14 @@ class CustomerCheckoutController extends Controller
             'face_image.required' => 'Foto swafoto (selfie memegang KTP) wajib diunggah.',
             'face_image.image' => 'Foto swafoto harus berupa gambar.',
             'terms.accepted' => 'Anda harus menyetujui ketentuan dan jaminan sewa.',
+            'pdp_agreement.accepted' => 'Anda harus menyetujui pemrosesan data identitas sesuai ketentuan UU Perlindungan Data Pribadi (UU PDP).',
         ]);
 
         $startDay = Carbon::parse($request->start_date)->startOfDay();
         if ($startDay->isToday() && $request->filled('rental_time')) {
-            $selectedDateTime = Carbon::parse($request->start_date . ' ' . $request->rental_time);
-            if ($selectedDateTime->isPast()) {
+            $selectedDateTime = Carbon::parse($request->start_date.' '.$request->rental_time);
+            // Beri toleransi 15 menit agar saat customer memilih jam sekarang atau proses isi form beberapa menit tidak memicu false-positive error
+            if ($selectedDateTime->lt(now()->subMinutes(15))) {
                 return back()->withErrors([
                     'rental_time' => 'Jam mulai sewa tidak boleh menggunakan waktu yang sudah lewat untuk penyewaan hari ini.',
                 ])->withInput();
@@ -230,8 +273,10 @@ class CustomerCheckoutController extends Controller
             }
             if (isset($item['product_id'])) {
                 $prod = Product::find($item['product_id']);
+
                 return $prod && (int) $prod->client_id === (int) $client->id;
             }
+
             return false;
         })->all();
 
@@ -271,7 +316,7 @@ class CustomerCheckoutController extends Controller
             : now()->format('H:i');
 
         $endDay = Carbon::parse($request->end_date)->startOfDay();
-        $durationDays = max(1, (int) $startDay->diffInDays($endDay) + 1);
+        $durationDays = max(1, (int) $startDay->diffInDays($endDay));
 
         $startDate = Carbon::parse($request->start_date)->setTimeFromTimeString($rentalTime);
         $endDate = Carbon::parse($request->end_date)->setTimeFromTimeString($rentalTime);
@@ -315,19 +360,36 @@ class CustomerCheckoutController extends Controller
             ];
         }
 
+        $order = null;
+        $orderNumber = '';
+
         DB::beginTransaction();
         try {
-            $disk = config('filesystems.default', 'public');
-            $docPath = $request->file('identity_document_image')->store('identity_guarantees', $disk);
-            $facePath = $request->file('face_image')->store('identity_guarantees', $disk);
+            $disk = \App\Services\StorageHelper::disk();
+
+            if ($canReuseIdentity && ! $request->hasFile('identity_document_image')) {
+                $docPath = $docFile;
+            } else {
+                $docPath = $this->storeWatermarkedKtp(
+                    $request->file('identity_document_image'),
+                    $client->business_name,
+                    $disk
+                );
+            }
+
+            if ($canReuseIdentity && ! $request->hasFile('face_image')) {
+                $facePath = $faceFile;
+            } else {
+                $facePath = $request->file('face_image')->store('identity_guarantees', $disk);
+            }
 
             do {
-                $orderNumber = 'ORD-' . strtoupper(Str::random(6)) . '-' . date('Ymd');
+                $orderNumber = 'ORD-'.strtoupper(Str::random(6)).'-'.date('Ymd');
             } while (Order::where('order_number', $orderNumber)->exists());
 
             $order = Order::create([
                 'client_id' => $client->id,
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
                 'order_number' => $orderNumber,
                 'rental_start_date' => $startDate,
                 'rental_end_date' => $endDate,
@@ -335,7 +397,7 @@ class CustomerCheckoutController extends Controller
                 'total_amount' => $totalAmount,
                 'shipping_address' => $request->shipping_address,
                 'shipping_method' => $request->shipping_method,
-                'status' => 'menunggu_konfirmasi',
+                'status' => 'menunggu_pembayaran',
             ]);
 
             foreach ($lines as $line) {
@@ -348,19 +410,23 @@ class CustomerCheckoutController extends Controller
                 ]);
             }
 
+            $guaranteeStatus = ($canReuseIdentity && in_array($lastIdentity->status, ['diverifikasi', 'dikembalikan', 'dititipkan']))
+                ? 'diverifikasi'
+                : 'menunggu';
+
             IdentityGuarantee::create([
                 'order_id' => $order->id,
-                'customer_id' => auth()->id(),
+                'customer_id' => Auth::id(),
                 'full_name' => $request->full_name,
                 'identity_number' => $request->identity_number,
                 'identity_document_image' => $docPath,
                 'face_image' => $facePath,
                 'identity_address' => $request->identity_address,
-                'status' => 'menunggu',
+                'status' => $guaranteeStatus,
             ]);
 
-            $user = auth()->user();
-            if ($user) {
+            $user = Auth::user();
+            if ($user instanceof User) {
                 $userUpdates = [];
 
                 $isKurir = $request->shipping_method === Order::SHIPPING_KURIR;
@@ -383,11 +449,11 @@ class CustomerCheckoutController extends Controller
 
             DB::commit();
 
-            if (class_exists(\App\Events\NewOrderPlaced::class)) {
-                event(new \App\Events\NewOrderPlaced($order));
+            if (class_exists(NewOrderPlaced::class)) {
+                event(new NewOrderPlaced($order));
             }
 
-            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_counts_' . $client->id);
+            Cache::forget('admin_dashboard_counts_'.$client->id);
         } catch (\Throwable $e) {
             DB::rollBack();
 
@@ -402,8 +468,8 @@ class CustomerCheckoutController extends Controller
         session()->put('cart', $globalCart);
         session()->forget('checkout_items');
 
-        return redirect()->route('customer.orders')
-            ->with('success', 'Pesanan #'.$orderNumber.' berhasil dibuat! Jaminan identitas Anda sedang diverifikasi admin. Pembayaran dibuka setelah verifikasi disetujui.');
+        return redirect()->route('customer.orders.show', $order->id)
+            ->with('success', 'Pesanan #'.$orderNumber.' berhasil dibuat! Silakan selesaikan pembayaran di bawah ini.');
     }
 
     protected function resolveClient(string $subdomain): Client
@@ -462,7 +528,7 @@ class CustomerCheckoutController extends Controller
         return [
             'start_date' => $first['start_date'],
             'end_date' => $first['end_date'],
-            'days' => max(1, $start->diffInDays($end) + 1),
+            'days' => max(1, (int) $start->diffInDays($end)),
         ];
     }
 
@@ -487,5 +553,102 @@ class CustomerCheckoutController extends Controller
                 'subtotal' => $item['price'] * $period['days'] * $quantity,
             ]);
         })->values();
+    }
+
+    /**
+     * Memberikan watermark dinamis pelindung identitas pada foto KTP sebelum disimpan ke storage privat.
+     * Teks watermark: "HANYA UNTUK VERIFIKASI SEWA DI [NAMA TOKO]"
+     */
+    protected function storeWatermarkedKtp(UploadedFile $file, string $storeName, string $disk): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $fileName = 'identity_guarantees/'.Str::random(40).'.'.$extension;
+
+        if (! extension_loaded('gd')) {
+            return $file->store('identity_guarantees', $disk);
+        }
+
+        try {
+            $imageContent = file_get_contents($file->getRealPath());
+            if (! $imageContent) {
+                return $file->store('identity_guarantees', $disk);
+            }
+
+            $image = @imagecreatefromstring($imageContent);
+            if (! $image) {
+                return $file->store('identity_guarantees', $disk);
+            }
+
+            $width = imagesx($image);
+            $height = imagesy($image);
+
+            $cleanStoreName = strtoupper(trim($storeName));
+            $watermarkText = 'HANYA UNTUK VERIFIKASI SEWA DI '.$cleanStoreName;
+            $subText = 'RENTALBASE • UU PDP NO. 27/2022 • '.date('d/m/Y');
+
+            imagealphablending($image, true);
+            imagesavealpha($image, true);
+
+            // Banner semi-transparan melintang di tengah KTP
+            $bannerHeight = max(45, (int) ($height * 0.18));
+            $bannerY = (int) (($height - $bannerHeight) / 2);
+
+            // Background banner gelap transparan (alpha: 45 dari 127)
+            $bannerColor = imagecolorallocatealpha($image, 15, 23, 42, 45);
+            imagefilledrectangle($image, 0, $bannerY, $width, $bannerY + $bannerHeight, $bannerColor);
+
+            // Border garis aksen tipis
+            $lineColor = imagecolorallocatealpha($image, 249, 115, 22, 20);
+            imageline($image, 0, $bannerY, $width, $bannerY, $lineColor);
+            imageline($image, 0, $bannerY + $bannerHeight, $width, $bannerY + $bannerHeight, $lineColor);
+
+            // Teks putih dengan drop shadow
+            $textColor = imagecolorallocate($image, 255, 255, 255);
+            $shadowColor = imagecolorallocatealpha($image, 0, 0, 0, 30);
+
+            // Font 5 untuk teks utama
+            $font = 5;
+            $charWidth = imagefontwidth($font);
+            $charHeight = imagefontheight($font);
+
+            $textWidth = strlen($watermarkText) * $charWidth;
+            $textX = max(8, (int) (($width - $textWidth) / 2));
+            $textY = (int) ($bannerY + ($bannerHeight / 2) - $charHeight + 2);
+
+            imagestring($image, $font, $textX + 1, $textY + 1, $watermarkText, $shadowColor);
+            imagestring($image, $font, $textX, $textY, $watermarkText, $textColor);
+
+            // Font 3 untuk sub-teks regulasi UU PDP & tanggal
+            $fontSub = 3;
+            $charWidthSub = imagefontwidth($fontSub);
+            $subWidth = strlen($subText) * $charWidthSub;
+            $subX = max(8, (int) (($width - $subWidth) / 2));
+            $subY = $textY + $charHeight + 4;
+
+            $subColor = imagecolorallocate($image, 254, 215, 170); // amber-200
+            imagestring($image, $fontSub, $subX + 1, $subY + 1, $subText, $shadowColor);
+            imagestring($image, $fontSub, $subX, $subY, $subText, $subColor);
+
+            ob_start();
+            if ($extension === 'png') {
+                imagepng($image, null, 8);
+            } elseif ($extension === 'webp') {
+                imagewebp($image, null, 85);
+            } else {
+                imagejpeg($image, null, 85);
+            }
+            $watermarkedBytes = ob_get_clean();
+            imagedestroy($image);
+
+            if (! empty($watermarkedBytes)) {
+                Storage::disk($disk)->put($fileName, $watermarkedBytes);
+
+                return $fileName;
+            }
+
+            return $file->store('identity_guarantees', $disk);
+        } catch (\Throwable $e) {
+            return $file->store('identity_guarantees', $disk);
+        }
     }
 }

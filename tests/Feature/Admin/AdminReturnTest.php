@@ -387,4 +387,61 @@ class AdminReturnTest extends TestCase
             'late_fee_amount' => 45000,
         ]);
     }
+
+    /**
+     * IT-RET-011: Pesanan dengan Kasus Kerusakan aktif tidak bisa diselesaikan normal sebelum kasus selesai/lunas.
+     */
+    public function test_it_ret_011_pesanan_dengan_kasus_kerusakan_aktif_diblokir_dari_penyelesaian(): void
+    {
+        $order = $this->createRentalOrder();
+        $unit = $order->orderItems->first()->orderItemUnits->first()->equipmentUnit;
+        $unit->update(['status' => 'rusak', 'condition' => 'rusak_berat']);
+
+        $report = \App\Models\DamageReport::create([
+            'order_id'          => $order->id,
+            'equipment_unit_id' => $unit->id,
+            'description'       => 'Lensa retak parah akibat terjatuh saat disewa.',
+            'reported_by'       => $this->adminA->id,
+        ]);
+
+        $damageCase = \App\Models\DamageCase::create([
+            'damage_report_id' => $report->id,
+            'repair_cost'      => 500000,
+            'fine_amount'      => 100000,
+            'payment_status'   => 'belum_dibayar',
+            'case_status'      => 'terbuka',
+        ]);
+
+        // Halaman retur harus menampilkan peringatan Kasus Kerusakan Aktif
+        $indexResponse = $this->actingAs($this->adminA)->get(route('admin.returns.index'));
+        $indexResponse->assertOk();
+        $indexResponse->assertSee('Kasus Kerusakan Aktif');
+
+        // Coba selesaikan pesanan -> harus diblokir
+        $blockedResponse = $this->actingAs($this->adminA)->post(route('admin.returns.process', $order), [
+            'action_type'     => 'normal',
+            'late_fee_amount' => 0,
+        ]);
+
+        $blockedResponse->assertRedirect(route('admin.returns.index'));
+        $blockedResponse->assertSessionHas('error');
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'sedang_disewa']);
+        $this->assertDatabaseHas('equipment_units', ['id' => $unit->id, 'status' => 'rusak']);
+
+        // Setelah kasus kerusakan dilunasi/diselesaikan, pesanan boleh diselesaikan tapi unit rusak tetap terkunci
+        $damageCase->update([
+            'payment_status' => 'lunas',
+            'case_status'    => 'selesai',
+        ]);
+
+        $resolvedResponse = $this->actingAs($this->adminA)->post(route('admin.returns.process', $order), [
+            'action_type'     => 'normal',
+            'late_fee_amount' => 0,
+        ]);
+
+        $resolvedResponse->assertRedirect(route('admin.returns.index'));
+        $resolvedResponse->assertSessionHas('success');
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'selesai']);
+        $this->assertDatabaseHas('equipment_units', ['id' => $unit->id, 'status' => 'rusak']);
+    }
 }

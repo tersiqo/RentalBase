@@ -6,10 +6,12 @@ use App\Models\Category;
 use App\Models\EquipmentUnit;
 use App\Models\Order;
 use App\Models\Product;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CatalogAndInventoryUnitTest extends TestCase
 {
+    use RefreshDatabase;
     /**
      * [8.1-I1] Memastikan relasi dan fillable attribute pada model Category terkonfigurasi benar.
      */
@@ -97,5 +99,64 @@ class CatalogAndInventoryUnitTest extends TestCase
         $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $order->client());
         $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class, $order->user());
         $this->assertInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class, $order->items());
+    }
+
+    /**
+     * [8.1-I1] Memastikan atribut slug pada kategori terisi string slug URL ramah SEO.
+     */
+    public function test_ut_05_007_category_slug_and_attributes(): void
+    {
+        $category = new Category([
+            'name' => 'Kamera & Lensa',
+            'slug' => 'kamera-dan-lensa',
+        ]);
+
+        $this->assertEquals('kamera-dan-lensa', $category->slug);
+        $this->assertEquals('Kamera & Lensa', $category->name);
+    }
+
+    /**
+     * [8.1-I2] Memastikan nilai harga sewa harian produk tersimpan dengan presisi numerik integer.
+     */
+    public function test_ut_05_008_product_rental_price_integer_precision(): void
+    {
+        $product = new Product(['rental_price_per_day' => 175000]);
+
+        $this->assertEquals(175000, (int) $product->rental_price_per_day);
+        $this->assertGreaterThan(0, $product->rental_price_per_day);
+    }
+
+    /**
+     * [7.1-I2] Memastikan accessor gallery_images mengembalikan daftar URL gambar lengkap termasuk main_image dan ekstra foto galeri.
+     */
+    public function test_ut_05_009_product_gallery_images_attribute(): void
+    {
+        $product = new Product([
+            'name' => 'Kamera DSLR Canon 80D',
+            'main_image' => 'products/canon_main.jpg',
+            'images' => ['products/canon_side.jpg', 'products/canon_back.jpg'],
+        ]);
+
+        $gallery = $product->gallery_images;
+        $this->assertIsArray($gallery);
+        $this->assertCount(3, $gallery);
+        $this->assertStringContainsString('canon_main.jpg', $gallery[0]);
+
+        // Fallback placeholder ketika foto kosong
+        $emptyProduct = new Product(['name' => 'Lensa 50mm']);
+        $this->assertNotEmpty($emptyProduct->gallery_images);
+        $this->assertStringContainsString('placehold.co', $emptyProduct->gallery_images[0]);
+    }
+
+    /**
+     * [7.1-I1] Memastikan method getAvailableUnitsForPeriod mengembalikan kuantitas unit yang siap disewa pada rentang tanggal sewa.
+     */
+    public function test_ut_05_010_product_get_available_units_for_period(): void
+    {
+        $product = new Product(['id' => 999]);
+        // Saat produk belum memiliki relasi unit terdaftar
+        $available = $product->getAvailableUnitsForPeriod('2026-11-20', '2026-11-22');
+        $this->assertIsInt($available);
+        $this->assertEquals(0, $available);
     }
 }

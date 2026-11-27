@@ -293,4 +293,78 @@ class AdminConditionCheckTest extends TestCase
         $response->assertSessionHasErrors(['order_id', 'equipment_unit_id']);
         $this->assertDatabaseCount('condition_checks', 0);
     }
+
+    /**
+     * IT-CHK-007: Konteks order_id dan return_to terpropagasi dengan benar di controller dan view.
+     */
+    public function test_it_chk_007_konteks_order_id_dan_return_to_terpropagasi_di_controller_dan_view(): void
+    {
+        $response = $this->actingAs($this->adminA)->get(route('admin.condition-checks.index', [
+            'order_id'  => $this->orderA->id,
+            'return_to' => 'returns',
+        ]));
+
+        $response->assertOk();
+        $response->assertViewHas('selectedOrderId', (string) $this->orderA->id);
+        $response->assertViewHas('returnTo', 'returns');
+        $response->assertViewHas('selectedOrder');
+        $response->assertSee($this->orderA->order_number);
+    }
+
+    /**
+     * IT-CHK-008: Simpan rekaman dengan return_to=returns otomatis redirect kembali ke antrean pengembalian.
+     */
+    public function test_it_chk_008_simpan_rekaman_dengan_return_to_returns_redirect_ke_halaman_pengembalian(): void
+    {
+        $response = $this->actingAs($this->adminA)->post(route('admin.condition-checks.store'), [
+            'order_id'          => $this->orderA->id,
+            'equipment_unit_id' => $this->unitA->id,
+            'check_type'        => 'setelah_kembali',
+            'condition'         => 'baik',
+            'return_to'         => 'returns',
+        ]);
+
+        $response->assertRedirect(route('admin.returns.index'));
+        $response->assertSessionHas('success');
+    }
+
+    /**
+     * IT-CHK-009: Inspeksi setelah_kembali dengan kondisi rusak_berat/rusak_ringan otomatis mengunci status unit fisik.
+     */
+    public function test_it_chk_009_inspeksi_setelah_kembali_rusak_otomatis_mengunci_status_unit(): void
+    {
+        // Rusak berat -> status unit menjadi 'rusak'
+        $responseBerat = $this->actingAs($this->adminA)->post(route('admin.condition-checks.store'), [
+            'order_id'          => $this->orderA->id,
+            'equipment_unit_id' => $this->unitA->id,
+            'check_type'        => 'setelah_kembali',
+            'condition'         => 'rusak_berat',
+            'notes'             => 'Lensa pecah parah saat dikembalikan.',
+            'return_to'         => 'returns',
+        ]);
+
+        $responseBerat->assertRedirect(route('admin.returns.index'));
+        $responseBerat->assertSessionHas('success');
+        $this->assertDatabaseHas('equipment_units', [
+            'id'        => $this->unitA->id,
+            'condition' => 'rusak_berat',
+            'status'    => 'rusak',
+        ]);
+
+        // Rusak ringan -> status unit menjadi 'maintenance'
+        $responseRingan = $this->actingAs($this->adminA)->post(route('admin.condition-checks.store'), [
+            'order_id'          => $this->orderA->id,
+            'equipment_unit_id' => $this->unitA->id,
+            'check_type'        => 'setelah_kembali',
+            'condition'         => 'rusak_ringan',
+            'notes'             => 'Goresan halus perlu kalibrasi.',
+        ]);
+
+        $responseRingan->assertRedirect(route('admin.condition-checks.index'));
+        $this->assertDatabaseHas('equipment_units', [
+            'id'        => $this->unitA->id,
+            'condition' => 'rusak_ringan',
+            'status'    => 'maintenance',
+        ]);
+    }
 }

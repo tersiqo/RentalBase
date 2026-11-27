@@ -29,9 +29,6 @@ Schedule::command('auth:clear-resets')
 Schedule::command('queue:prune-failed --hours=48')
     ->daily();
 
-Schedule::command('queue:prune-batches --hours=48')
-    ->daily();
-
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

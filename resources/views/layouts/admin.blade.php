@@ -10,10 +10,14 @@
         $storeLogoUrl = storage_url($storeLogo);
     }
 
-    // Notifikasi operasional untuk toko aktif
+    // Notifikasi operasional & langganan aktif untuk toko
     $adminNotifications = collect();
     $adminUnreadNotificationsCount = 0;
+    $activeLayoutSub = $subscription ?? null;
     if ($currentClient) {
+        if (! $activeLayoutSub) {
+            $activeLayoutSub = $currentClient->activeSubscription()->first() ?? $currentClient->latestSubscription;
+        }
         $adminNotifications = \App\Models\Notification::where('client_id', $currentClient->id)
             ->latest()
             ->take(5)
@@ -21,7 +25,11 @@
         $adminUnreadNotificationsCount = \App\Models\Notification::where('client_id', $currentClient->id)
             ->where('is_read', false)
             ->count();
+        $adminUnreadChatCount = (int) \App\Models\ChatConversation::where('client_id', $currentClient->id)
+            ->sum('unread_by_admin');
     }
+    $activePlanLabel = $activeLayoutSub?->plan_name ?? 'Starter';
+    $activePlanStatus = $activeLayoutSub?->status === 'aktif' ? 'Aktif' : ucfirst(str_replace('_', ' ', $activeLayoutSub?->status ?? 'Aktif'));
 @endphp
 <!DOCTYPE html>
 <html lang="id" class="h-full">
@@ -31,10 +39,23 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') - {{ $storeName }}</title>
     <meta name="description" content="Panel Admin RentalBase — Kelola pesanan, produk, dan operasional rental peralatan bayi Anda.">
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}">
-    <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- PWA & Mobile Web App Meta -->
+    <meta name="apple-mobile-web-app-title" content="{{ $storeName }}">
+    <meta name="application-name" content="{{ $storeName }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#F97316">
+    
+    <!-- Icons & Manifest -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=4">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/rentalbase-icon.svg') }}?v=4">
+    <link rel="alternate icon" href="{{ asset('favicon.ico') }}?v=4">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="{{ asset('js/rentalbase-webpush.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -120,21 +141,15 @@
         @if($storeLogoUrl)
             <img src="{{ $storeLogoUrl }}"
                  alt="{{ $storeName }}"
-                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';"
+                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='block';"
                  class="shrink-0 w-9 h-9 rounded-xl object-contain border border-gray-100 p-0.5 bg-white shadow-sm">
-            <div class="hidden shrink-0 w-9 h-9 bg-orange-500 rounded-xl items-center justify-center shadow-md shadow-orange-500/30">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                </svg>
-            </div>
+            <img src="{{ asset('images/rentalbase-icon.svg') }}"
+                 alt="{{ $storeName }}"
+                 class="hidden shrink-0 w-9 h-9 drop-shadow-xs">
         @else
-            <div class="shrink-0 w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center shadow-md shadow-orange-500/30">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                </svg>
-            </div>
+            <img src="{{ asset('images/rentalbase-icon.svg') }}"
+                 alt="{{ $storeName }}"
+                 class="shrink-0 w-9 h-9 drop-shadow-xs">
         @endif
         <div x-show="!collapsed || mobileOpen"
              x-transition:enter="transition-opacity duration-150"
@@ -186,6 +201,36 @@
                     {{ $adminUnreadNotificationsCount > 99 ? '99+' : $adminUnreadNotificationsCount }}
                 </span>
             @endif
+        </a>
+
+        {{-- Chat Penyewa --}}
+        <a href="{{ route('admin.chat.index') }}"
+           title="Layanan obrolan langsung (Live Chat) real-time dengan penyewa / customer toko Anda."
+           class="group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 relative
+                  {{ request()->routeIs('admin.chat.*') ? 'bg-orange-50 text-orange-600 font-semibold shadow-sm border border-orange-100/50' : 'text-gray-600 hover:bg-stone-50 hover:text-gray-900' }}">
+            <div class="flex items-center gap-3 min-w-0">
+                <span class="shrink-0 w-5 h-5 {{ request()->routeIs('admin.chat.*') ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-600' }}">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                </span>
+                <span x-show="!collapsed || mobileOpen" class="truncate">Chat Penyewa</span>
+            </div>
+            
+            <!-- Real-time Unread Badge -->
+            <span x-show="unreadChatCount > 0 && (!collapsed || mobileOpen)"
+                  x-cloak
+                  x-transition:enter="transition ease-out duration-200"
+                  x-transition:enter-start="scale-0 opacity-0"
+                  x-transition:enter-end="scale-100 opacity-100"
+                  class="shrink-0 px-2 py-0.5 text-[10px] font-bold rounded-full bg-orange-500 text-white shadow-2xs"
+                  x-text="unreadChatCount > 99 ? '99+' : unreadChatCount">
+            </span>
+
+            <!-- Dot indikator jika sidebar di-collapse -->
+            <span x-show="unreadChatCount > 0 && collapsed && !mobileOpen"
+                  x-cloak
+                  class="absolute top-2 right-2 w-2.5 h-2.5 bg-orange-500 border-2 border-white rounded-full"></span>
         </a>
 
         {{-- Pesanan --}}
@@ -433,17 +478,17 @@
     </button>
 
     {{-- Breadcrumb/Page title --}}
-    <div class="flex items-center gap-2 text-xs font-medium">
-        <span class="font-bold text-gray-900">{{ $storeName }}</span>
-        <span class="text-gray-300">/</span>
-        <span class="text-gray-500">@yield('page-title', 'Dashboard Operasional')</span>
+    <div class="flex items-center gap-2 text-xs font-medium min-w-0">
+        <span class="font-bold text-gray-900 truncate max-w-[130px] sm:max-w-[200px]">{{ $storeName }}</span>
+        <span class="text-gray-300 shrink-0">/</span>
+        <span id="topbar-page-title" class="text-gray-500 truncate max-w-[150px] sm:max-w-[260px] md:max-w-none">@yield('page-title', 'Dashboard Operasional')</span>
     </div>
 
     {{-- Spacer --}}
     <div class="flex-1"></div>
 
     {{-- Date --}}
-    <div class="hidden lg:flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+    <div class="hidden lg:flex items-center gap-1.5 text-xs text-gray-500 font-medium shrink-0">
         <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -454,18 +499,18 @@
     {{-- Subscription badge --}}
     <a href="{{ route('admin.subscriptions.index') }}"
        title="Kelola Langganan & Upgrade Paket"
-       class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-50/80 hover:bg-orange-100/90 border border-orange-200/60 rounded-full transition-colors cursor-pointer group">
+       class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-50/80 hover:bg-orange-100/90 border border-orange-200/60 rounded-full transition-colors cursor-pointer group shrink-0">
         <span class="w-2 h-2 rounded-full bg-orange-500 group-hover:scale-125 transition-transform"></span>
-        <span class="text-xs font-bold text-orange-700">Paket: {{ $subscription->plan_name ?? 'Business' }} (Aktif)</span>
+        <span class="text-xs font-bold text-orange-700">Paket: {{ $activePlanLabel }} ({{ $activePlanStatus }})</span>
     </a>
 
     {{-- Bell Notification Dropdown --}}
-    <div x-data="{ notifOpen: false }" class="relative" @keydown.escape.stop="notifOpen = false">
+    <div x-data="{ notifOpen: false }" class="relative shrink-0" @keydown.escape.stop="notifOpen = false">
         <button @click="notifOpen = !notifOpen"
                 type="button"
                 id="btn-admin-notifications"
                 title="Pemberitahuan Operasional Toko"
-                class="relative w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
+                class="relative w-9 h-9 shrink-0 aspect-square rounded-full flex items-center justify-center text-gray-500 hover:bg-stone-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
                 :aria-expanded="notifOpen.toString()">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
@@ -508,6 +553,40 @@
                         </button>
                     </form>
                 @endif
+            </div>
+
+            {{-- Web Push OS Device Notification Bar --}}
+            <div x-data="rbWebPush()" x-init="init()" class="px-4 py-2.5 bg-gradient-to-r from-orange-50/80 to-amber-50/50 border-b border-orange-100/70">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2 h-2 rounded-full shrink-0" :class="isSubscribed ? 'bg-emerald-500' : 'bg-gray-400'"></span>
+                        <div class="min-w-0">
+                            <p class="font-bold text-gray-800 text-[11px] truncate" x-text="isSubscribed ? 'Notifikasi Perangkat: Aktif' : 'Notifikasi Saat Tab Ditutup'"></p>
+                            <p class="text-[10px] text-gray-500 truncate" x-text="isSubscribed ? 'Pesanan & chat masuk ke layar desktop' : 'Terima pesanan walau browser ditutup'"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button type="button"
+                                x-show="isSubscribed"
+                                @click="sendTestNotification()"
+                                :disabled="isLoading"
+                                class="px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 transition cursor-pointer"
+                                title="Kirim notifikasi tes ke layar Anda">
+                            Tes
+                        </button>
+                        <button type="button"
+                                @click="toggleSubscription()"
+                                :disabled="isLoading"
+                                class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer"
+                                :class="isSubscribed 
+                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' 
+                                    : 'bg-orange-500 text-white hover:bg-orange-600 shadow-2xs'">
+                            <span x-show="!isLoading" x-text="isSubscribed ? 'Aktif ✓' : 'Aktifkan'"></span>
+                            <span x-show="isLoading" class="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full"></span>
+                        </button>
+                    </div>
+                </div>
+                <p x-show="feedbackMessage" x-text="feedbackMessage" class="text-[10px] text-orange-700 mt-1.5 font-semibold"></p>
             </div>
 
             {{-- 5 Latest Notifications List --}}
@@ -560,19 +639,17 @@
     </div>
 
     {{-- Profile Dropdown --}}
-    <div x-data="{ profileOpen: false }" class="relative" @keydown.escape.stop="profileOpen = false">
+    <div x-data="{ profileOpen: false }" class="relative shrink-0" @keydown.escape.stop="profileOpen = false">
         <button @click="profileOpen = !profileOpen"
                 type="button"
                 id="btn-profile-dropdown"
                 title="Menu Profil Admin"
-                class="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-sm hover:ring-2 hover:ring-orange-500 hover:ring-offset-2 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+                class="w-9 h-9 shrink-0 aspect-square rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-gray-200 shadow-sm hover:ring-2 hover:ring-orange-500 hover:ring-offset-2 transition-all focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                 :aria-expanded="profileOpen.toString()">
-            @if(Auth::user()?->avatar)
-                <img src="{{ storage_url(Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="w-full h-full rounded-full object-cover">
-            @else
-                <span class="sr-only">Buka menu profil</span>
-                <span class="uppercase font-semibold text-xs">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</span>
-            @endif
+            <img src="{{ Auth::user()?->avatar ? storage_url(Auth::user()->avatar) : asset('images/default-avatar.svg') }}"
+                 alt="{{ Auth::user()?->name ?? 'Admin' }}"
+                 onerror="this.src='{{ asset('images/default-avatar.svg') }}'"
+                 class="w-full h-full shrink-0 aspect-square rounded-full object-cover">
         </button>
 
         {{-- Dropdown Menu --}}
@@ -648,10 +725,25 @@
             collapsed: false,
             mobileOpen: false,
             isMobile: false,
+            unreadChatCount: {{ (int) ($adminUnreadChatCount ?? 0) }},
 
             init() {
                 this.checkMobile();
                 window.addEventListener('resize', () => this.checkMobile());
+
+                // Tangkap event saat ada chat baru masuk secara real-time
+                window.addEventListener('admin-new-chat-message', (e) => {
+                    const isOnChatPage = window.location.pathname.includes('/admin/chat');
+                    if (!isOnChatPage) {
+                        this.unreadChatCount++;
+                    }
+                });
+
+                // Tangkap event saat chat sudah dibaca
+                window.addEventListener('admin-chat-read', (e) => {
+                    const decrement = e.detail?.count || 1;
+                    this.unreadChatCount = Math.max(0, this.unreadChatCount - decrement);
+                });
             },
 
             checkMobile() {
@@ -829,6 +921,28 @@
                     script.parentNode.replaceChild(newScript, script);
                 });
 
+                // Synchronize topbar page title
+                const currentPageTitle = document.getElementById('topbar-page-title');
+                const newPageTitle = doc.getElementById('topbar-page-title');
+                if (currentPageTitle && newPageTitle) {
+                    currentPageTitle.textContent = newPageTitle.textContent;
+                }
+
+                // Synchronize sidebar active link styling without destroying Alpine state
+                const currentNavLinks = document.querySelectorAll('#sidebar nav a[href]');
+                const newNavLinks = doc.querySelectorAll('#sidebar nav a[href]');
+                if (currentNavLinks.length === newNavLinks.length) {
+                    currentNavLinks.forEach((curLink, i) => {
+                        const newLink = newNavLinks[i];
+                        curLink.className = newLink.className;
+                        const curIcon = curLink.querySelector('span');
+                        const newIcon = newLink.querySelector('span');
+                        if (curIcon && newIcon) {
+                            curIcon.className = newIcon.className;
+                        }
+                    });
+                }
+
                 // Synchronize notification bell & dropdown in topbar
                 const currentBell = document.getElementById('btn-admin-notifications');
                 const newBell = doc.getElementById('btn-admin-notifications');
@@ -881,6 +995,8 @@
                             behavior: 'smooth'
                         });
                     }
+                } else {
+                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 }
             } catch (err) {
                 if (err.name === 'AbortError') {
@@ -929,17 +1045,34 @@
             });
         });
 
-        // 2. Intercept Reset, Pagination, and Notification tab links inside main
+        // 2. Intercept Sidebar Navigation, Toast Action, Reset, Pagination, and Notification tab links
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a');
             if (!link || !link.href) return;
             if (link.target && link.target !== '_self') return;
             if (link.hasAttribute('download') || link.hasAttribute('data-no-ajax')) return;
             if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-            if (!link.closest('main')) return;
 
             const url = new URL(link.href, window.location.origin);
             if (url.origin !== window.location.origin) return;
+
+            const isSidebarLink = Boolean(link.closest('#sidebar nav'));
+            const isToastLink = Boolean(link.closest('[x-data^="realtimeNotification"]'));
+
+            if (isSidebarLink || isToastLink) {
+                e.preventDefault();
+                if (typeof window.__rbUnlockAudio === 'function') {
+                    window.__rbUnlockAudio();
+                }
+                window.adminPartialSwap(link.href, {
+                    pushHistory: true,
+                    preserveFocus: false,
+                    scrollToTable: false
+                });
+                return;
+            }
+
+            if (!link.closest('main')) return;
 
             const isResetLink = link.closest('form[method="GET"], form[method="get"]') ||
                                 link.hasAttribute('data-ajax-reset') ||
@@ -1030,7 +1163,7 @@
                 <h4 class="text-sm font-bold text-gray-900" x-text="toast.title"></h4>
                 <p class="text-xs text-gray-600 mt-0.5" x-text="toast.message"></p>
                 <div class="mt-2 flex items-center gap-2">
-                    <a x-show="toast.url" :href="toast.url" class="text-xs font-semibold text-orange-600 hover:text-orange-700">Lihat Pesanan &rarr;</a>
+                    <a x-show="toast.url" :href="toast.url" class="text-xs font-semibold text-orange-600 hover:text-orange-700" x-html="toast.actionLabel || 'Lihat Detail &rarr;'"></a>
                     <button @click="removeToast(toast.id)" class="text-xs text-gray-400 hover:text-gray-600 ml-auto">Tutup</button>
                 </div>
             </div>
@@ -1039,6 +1172,165 @@
 </div>
 
 <script>
+    // Global Audio Unlocker, Pre-Encoded WAV Chime & WebAudio Engine
+    (function() {
+        function buildChimeWavUri() {
+            try {
+                const sampleRate = 22050;
+                const duration = 0.38;
+                const numSamples = Math.floor(sampleRate * duration);
+                const buffer = new ArrayBuffer(44 + numSamples * 2);
+                const view = new DataView(buffer);
+                const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+
+                writeStr(0, 'RIFF');
+                view.setUint32(4, 36 + numSamples * 2, true);
+                writeStr(8, 'WAVE');
+                writeStr(12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeStr(36, 'data');
+                view.setUint32(40, numSamples * 2, true);
+
+                let phase = 0;
+                for (let i = 0; i < numSamples; i++) {
+                    const t = i / sampleRate;
+                    const freq = t < 0.08 ? 880 : 1174.66;
+                    phase += (2 * Math.PI * freq) / sampleRate;
+                    const env = 0.42 * Math.exp(-t * 9.5);
+                    const sample = Math.max(-1, Math.min(1, Math.sin(phase) * env));
+                    view.setInt16(44 + i * 2, sample * 32767, true);
+                }
+
+                const bytes = new Uint8Array(buffer);
+                let bin = '';
+                for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                return 'data:audio/wav;base64,' + btoa(bin);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        const wavUri = buildChimeWavUri();
+        if (wavUri && !window.__rbChimeAudio) {
+            try {
+                window.__rbChimeAudio = new Audio(wavUri);
+                window.__rbChimeAudio.preload = 'auto';
+            } catch (e) {}
+        }
+
+        try {
+            if (!window.__rbAudioCtx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) window.__rbAudioCtx = new AudioCtx();
+            }
+        } catch (e) {}
+
+        let audioWarmed = false;
+        const unlockAudio = () => {
+            try {
+                if (!window.__rbAudioCtx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) window.__rbAudioCtx = new AudioCtx();
+                }
+                const ctx = window.__rbAudioCtx;
+                if (ctx) {
+                    if (ctx.state === 'suspended') {
+                        ctx.resume().catch(() => {});
+                    }
+                    if (!audioWarmed && ctx.state === 'running') {
+                        audioWarmed = true;
+                        const buf = ctx.createBuffer(1, 1, 22050);
+                        const src = ctx.createBufferSource();
+                        src.buffer = buf;
+                        src.connect(ctx.destination);
+                        src.start(0);
+                    }
+                }
+            } catch (e) {}
+        };
+        window.__rbUnlockAudio = unlockAudio;
+
+        ['mousedown', 'mouseup', 'click', 'pointerdown', 'pointerup', 'touchstart', 'touchend', 'keydown'].forEach(ev => {
+            document.addEventListener(ev, unlockAudio, { passive: true, capture: true });
+        });
+        window.addEventListener('focus', unlockAudio);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) unlockAudio(); });
+
+        let lastChimeAt = 0;
+        window.__rbPlayChime = function() {
+            const nowMs = Date.now();
+            if (nowMs - lastChimeAt < 250) return;
+            lastChimeAt = nowMs;
+
+            try {
+                if (!window.__rbAudioCtx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) window.__rbAudioCtx = new AudioCtx();
+                }
+                const ctx = window.__rbAudioCtx;
+
+                const executeWebAudio = () => {
+                    const now = ctx.currentTime;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.setValueAtTime(1174.66, now + 0.08);
+                    gain.gain.setValueAtTime(0.42, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.38);
+                };
+
+                if (ctx && ctx.state === 'running') {
+                    executeWebAudio();
+                    return;
+                }
+
+                // Fallback 1: Coba HTML5 Audio WAV (mendukung Chrome Media Engagement Index)
+                if (window.__rbChimeAudio) {
+                    try {
+                        window.__rbChimeAudio.currentTime = 0;
+                        const playPromise = window.__rbChimeAudio.play();
+                        if (playPromise && typeof playPromise.then === 'function') {
+                            playPromise.catch(() => {
+                                // Fallback 2: Coba resume AudioContext dengan guard 150ms agar tidak nyangkut menunggu klik
+                                if (ctx && ctx.state === 'suspended') {
+                                    let active = true;
+                                    const guard = setTimeout(() => { active = false; }, 150);
+                                    ctx.resume().then(() => {
+                                        clearTimeout(guard);
+                                        if (active) executeWebAudio();
+                                    }).catch(() => {});
+                                }
+                            });
+                            return;
+                        }
+                    } catch (e) {}
+                }
+
+                if (ctx && ctx.state === 'suspended') {
+                    let active = true;
+                    const guard = setTimeout(() => { active = false; }, 150);
+                    ctx.resume().then(() => {
+                        clearTimeout(guard);
+                        if (active) executeWebAudio();
+                    }).catch(() => {});
+                }
+            } catch (err) {
+                console.warn('[RentalBase] Chime error:', err);
+            }
+        };
+    })();
+
     function realtimeNotification(clientId) {
         return {
             toasts: [],
@@ -1131,9 +1423,26 @@
                                 this.triggerReload(1500);
                             }
                         })
+                        .listen('.damage.responded', (e) => {
+                            this.playChime();
+                            this.addToast('Tanggapan Baru dari Penyewa!', e.message || `Customer menanggapi kasus kerusakan #${e.case_id}.`, `/admin/damage-cases/${e.case_id}`);
+                            if (window.location.pathname.includes('/admin/damage-cases')) {
+                                this.triggerReload(1200);
+                            }
+                        })
                         .listen('.tenant.quota_alert', (e) => {
                             this.playChime();
                             this.addToast('Peringatan Kuota Produk!', e.message, '/admin/products');
+                        })
+                        .listen('.chat.message', (e) => {
+                            if (e.sender_role === 'customer') {
+                                this.playChime();
+                                const isOnChatPage = window.location.pathname.includes('/admin/chat');
+                                if (!isOnChatPage) {
+                                    this.addToast('Pesan Baru dari ' + (e.sender_name || 'Penyewa') + '!', e.message || 'Pesan baru diterima.', '/admin/chat?conversation_id=' + e.conversation_id, 'Buka Chat &rarr;');
+                                }
+                                window.dispatchEvent(new CustomEvent('admin-new-chat-message', { detail: e }));
+                            }
                         });
                     return true;
                 };
@@ -1199,29 +1508,18 @@
                     window.location.reload();
                 }, delay);
             },
-            addToast(title, message, url = null) {
+            addToast(title, message, url = null, actionLabel = 'Lihat Detail &rarr;') {
                 const id = Date.now() + Math.floor(Math.random() * 1000);
-                this.toasts.push({ id, title, message, url });
+                this.toasts.push({ id, title, message, url, actionLabel });
                 setTimeout(() => this.removeToast(id), 6000);
             },
             removeToast(id) {
                 this.toasts = this.toasts.filter(t => t.id !== id);
             },
             playChime() {
-                try {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12);
-                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.5);
-                } catch (err) {}
+                if (typeof window.__rbPlayChime === 'function') {
+                    window.__rbPlayChime();
+                }
             }
         };
     }

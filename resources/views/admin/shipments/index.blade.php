@@ -51,6 +51,17 @@
                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
             </div>
 
+            {{-- Filter Status Pengiriman --}}
+            <div class="w-full lg:w-48">
+                <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Status Pengiriman</label>
+                <select name="status"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    <option value="" {{ request('status') === '' ? 'selected' : '' }}>Siap Kirim / Diproses</option>
+                    <option value="dikirim" {{ request('status') === 'dikirim' ? 'selected' : '' }}>Sedang Dikirim (Kurir)</option>
+                    <option value="semua" {{ request('status') === 'semua' ? 'selected' : '' }}>Semua Status</option>
+                </select>
+            </div>
+
             {{-- Filter metode pengiriman --}}
             <div class="w-full lg:w-52">
                 <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Metode Pengiriman</label>
@@ -109,6 +120,7 @@
                     @forelse($orders as $order)
                         @php
                             $isPickup = $order->isPickup();
+                            $isShipped = ($order->status === 'dikirim');
                             $isToday = $order->rental_start_date ? \Carbon\Carbon::parse($order->rental_start_date)->isToday() : false;
                             $totalReq = $order->orderItems->sum('quantity');
                             $totalAlloc = $order->orderItems->sum(fn($i) => $i->orderItemUnits->count());
@@ -161,26 +173,51 @@
                                 @if($isPickup)
                                     <div class="text-sm font-semibold text-purple-600">Ambil di Toko</div>
                                     <div class="text-xs text-gray-500 mt-1">Pelanggan ambil langsung di toko rental</div>
+                                @elseif($isShipped)
+                                    <div class="text-sm font-semibold text-blue-600">Kirim via Kurir</div>
+                                    <div class="text-xs text-gray-700 mt-1">
+                                        Kurir: <span class="font-semibold">{{ $order->shipment->courier_name ?? 'Kurir' }}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-700">
+                                        Resi: <span class="font-mono font-bold text-gray-900">{{ $order->shipment->tracking_number ?? '-' }}</span>
+                                    </div>
+                                    <div class="text-[11px] text-gray-500 mt-0.5 truncate max-w-[220px]" title="{{ $order->shipping_address ?? '-' }}">
+                                        {{ $order->shipping_address ?: 'Alamat belum diatur' }}
+                                    </div>
                                 @else
                                     <div class="text-sm font-semibold text-blue-500">Kirim via Kurir</div>
                                     <div class="text-xs text-gray-600 mt-1 truncate max-w-[220px]" title="{{ $order->shipping_address ?? '-' }}">
                                         {{ $order->shipping_address ?: 'Alamat belum diatur' }}
                                     </div>
+                                    @if($order->status === 'dikirim' && $order->shipment)
+                                        <div class="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-purple-50 border border-purple-200 text-[11px] font-semibold text-purple-700">
+                                            <span>{{ $order->shipment->courier_name ?? 'Kurir' }}</span>
+                                            <span class="text-purple-300">&bull;</span>
+                                            <span class="font-mono">{{ $order->shipment->tracking_number ?? '-' }}</span>
+                                        </div>
+                                    @endif
                                 @endif
                             </td>
 
                             {{-- 5. Status Unit --}}
                             <td class="px-6 py-4 align-top text-center whitespace-nowrap">
-                                @if($isReadyToShip)
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                @if($isShipped)
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                                        Sedang Dikirim
+                                    </span>
+                                    <div class="text-[11px] text-gray-500 mt-1">
+                                        {{ $order->shipment?->shipped_at ? $order->shipment->shipped_at->translatedFormat('d M, H:i') : 'Dalam Pengiriman' }}
+                                    </div>
+                                @elseif($isReadyToShip)
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-50 text-emerald-700">
                                         Unit Siap ({{ $totalAlloc }}/{{ $totalReq }})
                                     </span>
                                 @elseif($totalAlloc > 0)
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-50 text-amber-700">
                                         Sebagian Siap ({{ $totalAlloc }}/{{ $totalReq }})
                                     </span>
                                 @else
-                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700">
                                         Siap Disiapkan (0/{{ $totalReq }})
                                     </span>
                                 @endif
@@ -188,7 +225,24 @@
 
                             {{-- 6. Aksi --}}
                             <td class="px-6 py-4 align-middle text-center whitespace-nowrap">
-                                @if(! $isReadyToShip)
+                                @if($isShipped)
+                                    <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                        <form method="POST" action="{{ route('admin.shipments.delivered', $order->id) }}"
+                                              onsubmit="return confirm('Konfirmasi bahwa barang pesanan #{{ $order->order_number ?? $order->id }} telah sampai dan diterima oleh pelanggan?');">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md font-semibold text-xs transition shadow-xs cursor-pointer"
+                                                    title="Tandai barang telah diterima pelanggan">
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                <span>Tandai Diterima</span>
+                                            </button>
+                                        </form>
+                                        <a href="{{ route('admin.orders.show', $order->id) }}"
+                                            class="inline-flex items-center px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md font-semibold text-xs transition">
+                                            Detail
+                                        </a>
+                                    </div>
+                                @elseif(! $isReadyToShip)
                                     <a href="{{ route('admin.orders.show', $order->id) }}" 
                                        title="Klik untuk memilih unit fisik di Detail Pesanan"
                                        class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-md font-semibold text-xs transition shadow-sm">
@@ -312,13 +366,10 @@
                                         Pilih Ekspedisi <span class="text-red-500">*</span>
                                     </label>
                                     <select name="courier_name" required class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-orange-500 focus:border-orange-500 px-3 py-2 border">
-                                        <option value="" disabled selected>-- Pilih Kurir --</option>
-                                        <option value="JNE">JNE</option>
-                                        <option value="J&T Express">J&T Express</option>
-                                        <option value="SiCepat">SiCepat</option>
-                                        <option value="GoSend">GoSend</option>
-                                        <option value="GrabExpress">GrabExpress</option>
-                                        <option value="Kurir Toko">Kurir Toko</option>
+                                        <option value="" disabled {{ !old('courier_name') ? 'selected' : '' }}>-- Pilih Kurir --</option>
+                                        @foreach(['JNE', 'J&T Express', 'SiCepat', 'GoSend', 'GrabExpress', 'Kurir Toko'] as $cName)
+                                            <option value="{{ $cName }}" {{ old('courier_name') === $cName ? 'selected' : '' }}>{{ $cName }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 

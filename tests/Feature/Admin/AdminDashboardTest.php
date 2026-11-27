@@ -269,6 +269,16 @@ class AdminDashboardTest extends TestCase
         $response->assertViewHas('totalUnit', 1);
         $response->assertViewHas('pendapatanBulanIni', 300000.0);
         $response->assertViewHas('maxProduk', 10);
+        $response->assertViewHas('maxKategori', 5);
+        $response->assertViewHas('maxAdmin', 1);
+        $response->assertViewHas('daysRemaining');
+        $response->assertViewHas('isExpired', false);
+        $response->assertSee('Paket Starter');
+        $response->assertSee('Maks. 10 jenis produk');
+        $response->assertSee('Maks. 50 unit peralatan total');
+        $response->assertSee('Maks. 5 kategori');
+        $response->assertSee('Maks. 1 Admin Rental');
+        $response->assertSee('Hari Tersisa');
         $response->assertSee('ORD-TEST-001');
     }
 
@@ -397,6 +407,215 @@ class AdminDashboardTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewHas('totalProduk', 1);
+    }
+
+    public function test_admin_dashboard_provides_revenue_chart_data_and_unit_status_data(): void
+    {
+        Cache::flush();
+
+        $prodA = Product::create([
+            'client_id' => $this->clientA->id,
+            'category_id' => $this->categoryA->id,
+            'name' => 'Produk Tes Toko A',
+            'slug' => 'produk-tes-a',
+            'rental_price_per_day' => 100000,
+            'status' => 'aktif',
+        ]);
+
+        $prodB = Product::create([
+            'client_id' => $this->clientB->id,
+            'category_id' => $this->categoryB->id,
+            'name' => 'Produk Tes Toko B',
+            'slug' => 'produk-tes-b',
+            'rental_price_per_day' => 100000,
+            'status' => 'aktif',
+        ]);
+
+        // 1. Buat unit dengan status berbeda untuk Toko A
+        EquipmentUnit::create([
+            'client_id' => $this->clientA->id,
+            'product_id' => $prodA->id,
+            'unit_code' => 'UNIT-A-01',
+            'condition' => 'baik',
+            'status' => 'tersedia',
+        ]);
+        EquipmentUnit::create([
+            'client_id' => $this->clientA->id,
+            'product_id' => $prodA->id,
+            'unit_code' => 'UNIT-A-02',
+            'condition' => 'baik',
+            'status' => 'disewa',
+        ]);
+        EquipmentUnit::create([
+            'client_id' => $this->clientA->id,
+            'product_id' => $prodA->id,
+            'unit_code' => 'UNIT-A-03',
+            'condition' => 'perlu_dibersihkan',
+            'status' => 'maintenance',
+        ]);
+        EquipmentUnit::create([
+            'client_id' => $this->clientA->id,
+            'product_id' => $prodA->id,
+            'unit_code' => 'UNIT-A-04',
+            'condition' => 'rusak_ringan',
+            'status' => 'rusak',
+        ]);
+
+        // Unit untuk Toko B (harus tidak terhitung di Toko A)
+        EquipmentUnit::create([
+            'client_id' => $this->clientB->id,
+            'product_id' => $prodB->id,
+            'unit_code' => 'UNIT-B-01',
+            'condition' => 'baik',
+            'status' => 'tersedia',
+        ]);
+
+        // 2. Buat order untuk 30 hari terakhir
+        Order::create([
+            'client_id' => $this->clientA->id,
+            'user_id' => $this->customer->id,
+            'order_number' => 'ORD-CHART-01',
+            'rental_start_date' => Carbon::today(),
+            'rental_end_date' => Carbon::today()->addDays(2),
+            'duration_days' => 2,
+            'total_amount' => 175000,
+            'shipping_address' => 'Jl. Mawar No. 1',
+            'shipping_method' => 'kurir',
+            'status' => 'sedang_disewa',
+            'created_at' => Carbon::today(),
+        ]);
+
+        // Order batal (tidak boleh masuk revenue chart)
+        Order::create([
+            'client_id' => $this->clientA->id,
+            'user_id' => $this->customer->id,
+            'order_number' => 'ORD-CHART-BATAL',
+            'rental_start_date' => Carbon::today(),
+            'rental_end_date' => Carbon::today()->addDays(2),
+            'duration_days' => 2,
+            'total_amount' => 999000,
+            'shipping_address' => 'Jl. Mawar No. 2',
+            'shipping_method' => 'kurir',
+            'status' => 'dibatalkan',
+            'created_at' => Carbon::today(),
+        ]);
+
+        $response = $this->actingAs($this->adminA)->get(route('admin.dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertViewHas('revenueChartData');
+        $response->assertViewHas('unitStatusData');
+
+        $revenueChartData = $response->viewData('revenueChartData');
+        $this->assertCount(30, $revenueChartData['labels']);
+        $this->assertCount(30, $revenueChartData['data']);
+        $this->assertEquals(175000, $revenueChartData['total_30_days']);
+
+        $unitStatusData = $response->viewData('unitStatusData');
+        $this->assertEquals(1, $unitStatusData['tersedia']);
+        $this->assertEquals(1, $unitStatusData['disewa']);
+        $this->assertEquals(1, $unitStatusData['maintenance']);
+        $this->assertEquals(1, $unitStatusData['rusak']);
+        $this->assertEquals(4, $unitStatusData['total']);
+        $this->assertEquals(25, $unitStatusData['utilization_rate']); // 1 dari 4 = 25%
+
+        // Cek elemen Chart.js di HTML
+        $response->assertSee('https://cdn.jsdelivr.net/npm/chart.js', false);
+        $response->assertSee('revenueChart');
+        $response->assertSee('unitStatusChart');
+    }
+
+    public function test_admin_dashboard_provides_top_products_and_today_schedules(): void
+    {
+        Cache::flush();
+
+        $product1 = Product::create([
+            'client_id' => $this->clientA->id,
+            'category_id' => $this->categoryA->id,
+            'name' => 'Kamera Canon R5',
+            'slug' => 'canon-r5',
+            'rental_price_per_day' => 300000,
+            'status' => 'aktif',
+        ]);
+
+        $product2 = Product::create([
+            'client_id' => $this->clientA->id,
+            'category_id' => $this->categoryA->id,
+            'name' => 'Lensa 24-70mm',
+            'slug' => 'lensa-24-70',
+            'rental_price_per_day' => 150000,
+            'status' => 'aktif',
+        ]);
+
+        // Order kirim hari ini (siap_kirim)
+        $orderKirim = Order::create([
+            'client_id' => $this->clientA->id,
+            'user_id' => $this->customer->id,
+            'order_number' => 'ORD-SHIP-01',
+            'rental_start_date' => Carbon::today(),
+            'rental_end_date' => Carbon::today()->addDays(2),
+            'duration_days' => 2,
+            'total_amount' => 600000,
+            'shipping_address' => 'Jl. Melati No. 5',
+            'shipping_method' => 'kurir',
+            'status' => 'siap_kirim',
+            'created_at' => Carbon::now(),
+        ]);
+
+        \App\Models\OrderItem::create([
+            'order_id' => $orderKirim->id,
+            'product_id' => $product1->id,
+            'quantity' => 2,
+            'price_per_day' => 300000,
+            'subtotal' => 600000,
+        ]);
+
+        // Order kembali hari ini (sedang_disewa, rental_end_date = hari ini)
+        $orderKembali = Order::create([
+            'client_id' => $this->clientA->id,
+            'user_id' => $this->customer->id,
+            'order_number' => 'ORD-RET-01',
+            'rental_start_date' => Carbon::yesterday(),
+            'rental_end_date' => Carbon::today(),
+            'duration_days' => 1,
+            'total_amount' => 150000,
+            'shipping_address' => 'Ambil langsung di toko',
+            'shipping_method' => 'ambil_toko',
+            'status' => 'sedang_disewa',
+            'created_at' => Carbon::now(),
+        ]);
+
+        \App\Models\OrderItem::create([
+            'order_id' => $orderKembali->id,
+            'product_id' => $product2->id,
+            'quantity' => 1,
+            'price_per_day' => 150000,
+            'subtotal' => 150000,
+        ]);
+
+        $response = $this->actingAs($this->adminA)->get(route('admin.dashboard'));
+
+        $response->assertStatus(200);
+        $response->assertViewHas('topProducts');
+        $response->assertViewHas('todayShipments');
+        $response->assertViewHas('todayReturns');
+
+        $topProducts = $response->viewData('topProducts');
+        $this->assertNotEmpty($topProducts);
+        $this->assertEquals('Kamera Canon R5', $topProducts->first()->name);
+        $this->assertEquals(2, $topProducts->first()->total_rented);
+
+        $todayShipments = $response->viewData('todayShipments');
+        $this->assertCount(1, $todayShipments);
+        $this->assertEquals('ORD-SHIP-01', $todayShipments->first()->order_number);
+
+        $todayReturns = $response->viewData('todayReturns');
+        $this->assertCount(1, $todayReturns);
+        $this->assertEquals('ORD-RET-01', $todayReturns->first()->order_number);
+
+        $response->assertSee('Kamera Canon R5');
+        $response->assertSee('ORD-SHIP-01');
+        $response->assertSee('ORD-RET-01');
     }
 }
 

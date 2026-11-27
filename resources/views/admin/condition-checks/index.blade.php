@@ -21,6 +21,41 @@
         </div>
     @endif
 
+    {{-- ===== BANNER KONTEKSTUAL JIKA DATANG DARI ORDER TERTENTU ===== --}}
+    @if($selectedOrder)
+        <div class="p-4 rounded-xl bg-orange-50 border border-orange-200/90 shadow-2xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-orange-700 bg-orange-100 px-2 py-0.5 rounded">Konteks Otomatis</span>
+                            <h3 class="font-bold text-gray-900 text-sm">Pesanan #{{ $selectedOrder->order_number }}</h3>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-0.5">
+                            Customer: <strong class="text-gray-900">{{ $selectedOrder->user->name ?? 'Customer' }}</strong> • 
+                            Status Pesanan: <span class="font-semibold text-orange-700">{{ $selectedOrder->status_label }}</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="{{ route('admin.returns.index') }}" 
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition shadow-2xs">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        <span>Ke Pengembalian</span>
+                    </a>
+                    <a href="{{ route('admin.orders.show', $selectedOrder->id) }}" 
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-white transition shadow-2xs">
+                        <span>Detail Pesanan</span>
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- ===== FORM TAMBAH REKAMAN ===== --}}
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
         <h3 class="text-lg font-bold text-gray-800 mb-5 pb-3 border-b">Tambah Rekaman Baru</h3>
@@ -30,6 +65,7 @@
 
             {{-- Hidden input order_id terikat ke Alpine x-model --}}
             <input type="hidden" name="order_id" :value="selectedOrderId">
+            <input type="hidden" name="return_to" value="{{ old('return_to', $returnTo ?? '') }}">
 
             {{-- Error validasi --}}
             @if($errors->any())
@@ -53,13 +89,13 @@
                     class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                     <option value="">-- Pilih Order --</option>
-                    @foreach($orders as $order)
-                        <option value="{{ $order->id }}">
-                            {{ $order->order_number }} — {{ $order->user->name ?? 'Customer' }}
+                    @foreach($orders as $ord)
+                        <option value="{{ $ord->id }}" {{ (string)old('order_id', $selectedOrderId ?? '') === (string)$ord->id ? 'selected' : '' }}>
+                            {{ $ord->order_number }} — {{ $ord->user->name ?? 'Customer' }} ({{ $ord->status_label }})
                         </option>
                     @endforeach
                 </select>
-                <p class="text-xs text-gray-400 mt-1">Hanya pesanan yang sudah dikonfirmasi atau sedang disewa yang ditampilkan.</p>
+                <p class="text-xs text-gray-400 mt-1">Hanya pesanan yang sudah dikonfirmasi atau dalam masa sewa/kembali yang ditampilkan.</p>
             </div>
 
             {{-- Pilih Unit Fisik (Dinamis) --}}
@@ -69,18 +105,23 @@
                 </label>
 
                 {{-- Loading state --}}
-                <div x-show="isLoadingUnits" class="text-sm text-gray-400 italic py-2">Memuat daftar unit...</div>
+                <div x-show="isLoadingUnits" class="text-sm text-gray-400 italic py-2 flex items-center gap-2">
+                    <svg class="w-4 h-4 animate-spin text-orange-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                    <span>Memuat daftar unit fisik pesanan...</span>
+                </div>
 
                 {{-- Dropdown unit --}}
                 <select
                     x-show="!isLoadingUnits"
                     name="equipment_unit_id"
+                    x-model="selectedUnitId"
                     :disabled="units.length === 0"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:text-gray-400"
+                    required
                 >
                     <option value="" x-text="selectedOrderId ? (units.length === 0 ? '-- Belum ada unit fisik dialokasikan pada order ini --' : '-- Pilih Unit Fisik --') : '-- Pilih pesanan terlebih dahulu --'"></option>
                     <template x-for="unit in units" :key="unit.id">
-                        <option :value="unit.id" x-text="unit.label"></option>
+                        <option :value="unit.id" :selected="String(unit.id) === String(selectedUnitId)" x-text="unit.label"></option>
                     </template>
                 </select>
 
@@ -102,13 +143,11 @@
                     </label>
                     <div class="space-y-2">
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="check_type" value="sebelum_serah" class="text-orange-600 focus:ring-orange-500"
-                                {{ old('check_type') === 'sebelum_serah' ? 'checked' : '' }}>
+                            <input type="radio" name="check_type" value="sebelum_serah" x-model="checkType" class="text-orange-600 focus:ring-orange-500">
                             <span class="text-sm text-gray-700">Sebelum Diserahkan ke Customer</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="check_type" value="setelah_kembali" class="text-orange-600 focus:ring-orange-500"
-                                {{ old('check_type') === 'setelah_kembali' ? 'checked' : '' }}>
+                            <input type="radio" name="check_type" value="setelah_kembali" x-model="checkType" class="text-orange-600 focus:ring-orange-500">
                             <span class="text-sm text-gray-700">Setelah Dikembalikan Customer</span>
                         </label>
                     </div>
@@ -121,18 +160,15 @@
                     </label>
                     <div class="space-y-2">
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="condition" value="baik" class="text-emerald-600 focus:ring-emerald-500"
-                                {{ old('condition') === 'baik' ? 'checked' : '' }}>
+                            <input type="radio" name="condition" value="baik" x-model="condition" class="text-emerald-600 focus:ring-emerald-500">
                             <span class="text-sm text-gray-700">Baik</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="condition" value="rusak_ringan" class="text-amber-600 focus:ring-amber-500"
-                                {{ old('condition') === 'rusak_ringan' ? 'checked' : '' }}>
+                            <input type="radio" name="condition" value="rusak_ringan" x-model="condition" class="text-amber-600 focus:ring-amber-500">
                             <span class="text-sm text-gray-700">Rusak Ringan</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="condition" value="rusak_berat" class="text-red-600 focus:ring-red-500"
-                                {{ old('condition') === 'rusak_berat' ? 'checked' : '' }}>
+                            <input type="radio" name="condition" value="rusak_berat" x-model="condition" class="text-red-600 focus:ring-red-500">
                             <span class="text-sm text-gray-700">Rusak Berat</span>
                         </label>
                     </div>
@@ -220,22 +256,22 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($check->check_type === 'sebelum_serah')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
                                         Sebelum Serah
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700">
                                         Setelah Kembali
                                     </span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-center">
                                 @if($check->condition === 'baik')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Baik</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">Baik</span>
                                 @elseif($check->condition === 'rusak_ringan')
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">Rusak Ringan</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">Rusak Ringan</span>
                                 @else
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">Rusak Berat</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700">Rusak Berat</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 max-w-xs">
@@ -327,11 +363,20 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('conditionCheckForm', () => ({
-        selectedOrderId: '',
+        selectedOrderId: '{{ old('order_id', $selectedOrderId ?? '') }}',
+        selectedUnitId: '{{ old('equipment_unit_id', $selectedUnitId ?? '') }}',
+        checkType: '{{ old('check_type', $defaultCheckType ?? 'setelah_kembali') }}',
+        condition: '{{ old('condition', 'baik') }}',
         units: [],
         isLoadingUnits: false,
         imagePreview: null,
         modalImage: null,
+
+        async init() {
+            if (this.selectedOrderId) {
+                await this.loadUnits();
+            }
+        },
 
         openImageModal(url) {
             this.modalImage = url;
@@ -357,13 +402,16 @@ document.addEventListener('alpine:init', () => {
         },
 
         /**
-         * Dipanggil saat order dipilih.
+         * Dipanggil saat order dipilih atau saat inisialisasi awal.
          * Mengambil daftar unit dari server via fetch (AJAX).
          */
         async loadUnits() {
             this.units = [];
 
-            if (!this.selectedOrderId) return;
+            if (!this.selectedOrderId) {
+                this.selectedUnitId = '';
+                return;
+            }
 
             this.isLoadingUnits = true;
 
@@ -381,9 +429,24 @@ document.addEventListener('alpine:init', () => {
                 if (!response.ok) throw new Error('Request gagal');
 
                 this.units = await response.json();
+
+                // Auto-select unit:
+                // 1. Jika ada unit_id sebelumnya (atau dari URL) yang cocok, pertahankan
+                // 2. Jika order hanya punya 1 unit fisik, otomatis pilih unit tersebut
+                // 3. Jika datang dari konteks order spesifik dan ada unit, default ke unit pertama
+                if (this.selectedUnitId && this.units.some(u => String(u.id) === String(this.selectedUnitId))) {
+                    // Biarkan selectedUnitId yang sudah valid
+                } else if (this.units.length === 1) {
+                    this.selectedUnitId = String(this.units[0].id);
+                } else if (this.units.length > 1 && '{{ $selectedOrderId ?? '' }}') {
+                    this.selectedUnitId = String(this.units[0].id);
+                } else {
+                    this.selectedUnitId = '';
+                }
             } catch (error) {
                 console.error('Gagal memuat unit:', error);
                 this.units = [];
+                this.selectedUnitId = '';
             } finally {
                 this.isLoadingUnits = false;
             }

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Logo RentalBase — Isometric Storage Crate Stack">
+  <!-- RentalBase — 02. Isometric Storage Crate Stack -->
+  <g id="isometric-crates">
+    <!-- Top Crate - Top Surface (Highlight #FB923C) -->
+    <polygon points="32,8 53,20 32,32 11,20" fill="#FB923C"/>
+    
+    <!-- Top Crate - Left Facet (Midtone #F97316) -->
+    <polygon points="11,20 32,32 32,42.5 11,30.5" fill="#F97316"/>
+    
+    <!-- Bottom Crate - Left Facet (Midtone #F97316) -->
+    <polygon points="11,33.5 32,45.5 32,56 11,44" fill="#F97316"/>
+    
+    <!-- Top Crate - Right Facet (Shadow #EA580C) -->
+    <polygon points="32,32 53,20 53,30.5 32,42.5" fill="#EA580C"/>
+    
+    <!-- Bottom Crate - Right Facet (Shadow #EA580C) -->
+    <polygon points="32,45.5 53,33.5 53,44 32,56" fill="#EA580C"/>
+  </g>
+</svg>
