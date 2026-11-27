@@ -237,7 +237,7 @@ class SubscriptionController extends Controller
                 'payment_status' => 'lunas',
                 'payment_proof'  => $storedPath,
                 'price'          => $price,
-                'max_products'   => $packageConfig['limits']['products'] ?? $subscription->max_products,
+                'max_products'   => $packageConfig['limits']['products'] ?? (strtolower($subscription->plan_name) === 'professional' ? 9999 : $subscription->max_products),
                 'max_users'      => $packageConfig['limits']['admins'] ?? $subscription->max_users,
             ]);
 
@@ -362,7 +362,7 @@ class SubscriptionController extends Controller
                 'status' => 'aktif',
                 'payment_status' => 'diverifikasi',
                 'rejection_reason' => null,
-                'max_products' => $packageConfig['limits']['products'] ?? $subscription->max_products,
+                'max_products' => $packageConfig['limits']['products'] ?? (strtolower($subscription->plan_name) === 'professional' ? 9999 : $subscription->max_products),
                 'max_users' => $packageConfig['limits']['admins'] ?? $subscription->max_users,
             ]);
 
